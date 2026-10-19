@@ -55,10 +55,63 @@ const PT_BR = {
   },
 };
 
-const LOCALES = { 'pt-BR': PT_BR };
+const ES = {
+  statLabels: { craft: 'Forja', lore: 'Saber', shell: 'Terminal', test: 'Prueba', roam: 'Viaje', swarm: 'Enjambre' },
+  natures: {
+    brave: { label: 'Valiente', text: 'Salta mucho y celebra a lo grande.' },
+    sleepy: { label: 'Dormilona', text: 'Dormita siempre que puede y bosteza entre tareas.' },
+    curious: { label: 'Curiosa', text: 'Siempre mirando lo que estás haciendo.' },
+    cheerful: { label: 'Alegre', text: 'Saltarina, celebra cada pequeña victoria.' },
+    calm: { label: 'Tranquila', text: 'Despacio y con buena letra. Casi nada la sorprende.' },
+    cheeky: { label: 'Pícara', text: 'Te guiña el ojo y se burla de tu código.' },
+  },
+  achievements: {
+    hatch: { title: 'Hola, mundo', text: 'Nació tu Openmon.' },
+    'first-green': { title: 'Primer verde', text: 'Tu agente hizo pasar una ronda de pruebas.' },
+    'first-evolution': { title: 'Creciendo', text: 'Primera evolución.' },
+    'green-100': { title: 'Máquina verde', text: '100 rondas de pruebas verdes.' },
+    'edits-1000': { title: 'Mil cortes', text: '1.000 ediciones.' },
+    marathon: { title: 'Maratón', text: '50 acciones en un solo pedido al agente.' },
+    swarm: { title: 'Señor del enjambre', text: 'Cinco agentes trabajando a la vez.' },
+    'night-owl': { title: 'Búho', text: 'Tu agente trabajó entre medianoche y las 5 de la mañana.' },
+    'quick-hands': { title: 'Manos rápidas', text: 'Respondiste rápido al agente 10 veces en un día.' },
+    'best-friends': { title: 'Mejores amigos', text: 'La amistad llegó a 100.' },
+    mythic: { title: 'Leyenda', text: 'Llegó a la etapa Mítica.' },
+    shiny: { title: '¡Brillante!', text: 'Nació un Openmon brillante, una posibilidad entre 128.' },
+    hidden: { title: '¿Quién es ese Openmon?', text: 'Encontraste una forma oculta.' },
+    nocturne: { title: 'Hijo de la noche', text: 'Evolucionó entre medianoche y las 5, con colores nocturnos.' },
+  },
+  dex: {
+    egg: 'Tibio al tacto. Escucha cada tecla y se abre cuando ya oyó lo suficiente.',
+    sprout: 'Recién nacido y curioso. La hoja de su cabeza gira hacia lo que hace el agente.',
+    'craft-juvenile': 'Golpea todo lo que alcanza. Sus cuernitos se calientan tras una edición larga.',
+    'craft-adult': 'Martilla código en bruto hasta darle forma en un yunque diminuto. Duerme con gafas de protección.',
+    'craft-mythic': 'Dicen que forjó el primer compilador. Su corona de brasas brilla más con cada build limpio.',
+    'lore-juvenile': 'Lee más rápido de lo que parpadea. Se enfurruña cuando un archivo es más largo de lo esperado.',
+    'lore-adult': 'Su cola es un pergamino de todos los archivos que leyó. Nunca olvida un número de línea.',
+    'lore-mythic': 'Su tercer ojo ve todo el código a la vez. Solo responde con citas perfectas.',
+    'shell-juvenile': 'Su antena chispea cuando un comando va a ejecutarse. Le encanta el olor a terminal nueva.',
+    'shell-adult': 'Choca las pinzas al ritmo del cursor. Puede pasar cualquier cosa por pipe a cualquier cosa.',
+    'shell-mythic': 'Vive en el ring cero. Todo proceso de la máquina se inclina a su paso.',
+    'test-juvenile': 'Se esconde en su caparazón con la primera prueba roja, y luego asoma para intentarlo otra vez.',
+    'test-adult': 'Una muralla que ninguna regresión atravesó. Su caparazón se endurece con cada ronda verde.',
+    'test-mythic': 'Su escudo dorado convierte los fallos en lecciones. Los bugs no nacen cerca de él.',
+    'roam-juvenile': 'Flota de página en página en corrientes de curiosidad.',
+    'roam-adult': 'Nada por la web abierta tan fácil como por el cielo. Siempre vuelve con un enlace.',
+    'roam-mythic': 'Visitó cada rincón de internet y guardó una postal de cada uno.',
+    'swarm-juvenile': 'Nunca está solo mucho tiempo. Aparecen copitas suyas cuando hay demasiado trabajo.',
+    'swarm-adult': 'Una colonia alegre. Cada ayudante se ocupa de una tarea y vuelve corriendo a la colmena.',
+    'swarm-mythic': 'Dirige a mil ayudantes con un solo pensamiento. Su corona está hecha de motas leales.',
+    'chimera-adult': 'Nace cuando dos tipos de trabajo pesan exactamente igual. Cada ojo es de un tipo.',
+    'chimera-mythic': 'Un equilibrio perfecto que pocos entrenadores alcanzan. Los investigadores discuten de qué tipo es en realidad.',
+  },
+};
+
+const LOCALES = { 'pt-BR': PT_BR, es: ES };
 
 function localeOf(lang) {
-  return /^pt/i.test(String(lang || '')) ? 'pt-BR' : 'en';
+  const l = String(lang || '');
+  return /^pt/i.test(l) ? 'pt-BR' : /^es/i.test(l) ? 'es' : 'en';
 }
 
 // Returns the species payload for /api/species, translated when we can.

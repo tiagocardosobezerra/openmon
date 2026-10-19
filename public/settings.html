@@ -59,6 +59,25 @@
         keys: 'Atalhos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre o card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> leva ao agente que está esperando.',
         obs: 'Pet no OBS (live)', obsSub: 'Adicione uma Fonte de Navegador no OBS com este endereço, 300 × 560. O fundo é transparente.', copy: 'Copiar', copied: 'Copiado ✓',
       }
+    : lang === 'es'
+    ? {
+        title: 'Ajustes', sub: 'Todo lo que cambia cómo te ayuda Openmon. Las elecciones se aplican al instante y quedan guardadas.',
+        answer: 'Responder desde la mascota', answerSub: 'Cuando un agente pida permiso, el globo muestra Permitir, Permitir siempre y Rechazar.',
+        answerOn: 'Responder permisos desde la mascota', answerOnSub: 'Apagado por defecto. Claude Code espera tu respuesta en la mascota el tiempo de abajo; después pregunta como siempre.',
+        wait: 'Tiempo de espera', waitSub: 'Cuántos segundos espera Claude Code tu respuesta en la mascota.',
+        calm: 'Calma y foco', calmSub: 'Para días de reuniones, pantalla compartida o trabajo profundo.',
+        present: 'Modo presentación', presentSub: 'Oculta los nombres de proyectos y los comandos en todo lo que muestra Openmon. Úsalo al compartir pantalla.',
+        breaks: 'Recordatorio de pausa', breaksSub: 'Tras mucho tiempo seguido de trabajo, la mascota sugiere una pausa.', off: 'Apagado', min: '{n} minutos',
+        follow: 'Mostrar el Openmon del proyecto activo', followSub: 'La mascota en pantalla cambia a la del proyecto en el que trabaja el agente.',
+        phone: 'Avisos en el celular', phoneSub: 'Opcional. Usa ntfy (una app gratuita y abierta): cuando un agente te espera, llega un aviso al celular. Es la única función de Openmon que usa internet, y solo envía "Tu agente te necesita".',
+        phoneOn: 'Avisar al celular', phoneOnSub: 'Instala la app ntfy en tu celular y suscríbete al mismo tema de abajo.',
+        topic: 'Tema', topicSub: 'Un nombre difícil de adivinar (8 a 64 letras, números, _ o -). Quien conozca el tema puede leer los avisos.', random: 'Generar', test: 'Probar', sent: 'Enviado ✓', failed: 'No funcionó: revisa el tema e internet.',
+        after: 'Después de', afterSub: 'Cuánto espera el agente antes del aviso.', seconds: '{n} segundos', immediately: 'Al instante',
+        project: 'Incluir el nombre del proyecto', projectSub: 'Apagado: el aviso no dice en qué proyecto.',
+        more: 'Más', moreSub: 'Atajos y transmisión.',
+        keys: 'Atajos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre la tarjeta · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> te lleva al agente que espera.',
+        obs: 'Mascota en OBS (directo)', obsSub: 'Agrega una Fuente de navegador en OBS con esta dirección, 300 × 560. El fondo es transparente.', copy: 'Copiar', copied: 'Copiado ✓',
+      }
     : {
         title: 'Settings', sub: 'Everything that changes how Openmon helps you. Choices apply right away and are saved.',
         answer: 'Answer from the pet', answerSub: 'When an agent asks for permission, the bubble shows Allow, Always allow and Deny.',

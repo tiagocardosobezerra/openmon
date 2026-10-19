@@ -83,6 +83,40 @@
           ['Como removo?', 'No terminal: openmon uninstall (tira os avisos do Claude Code) e depois desinstale o app. Seu pet fica guardado, caso queira voltar.'],
         ],
       }
+    : lang === 'es'
+    ? {
+        title: 'Cómo funciona',
+        lead: 'Openmon es una criaturita que vive en una esquina de la pantalla y muestra, de un vistazo, lo que hace tu agente de IA (como Claude Code). Cuando el agente te necesita, te avisa. Y, con el tiempo, crece y evoluciona.',
+        poses: 'Lo que te está diciendo',
+        steps: 'Lo que puedes hacer',
+        faq: 'Preguntas frecuentes',
+        pose: [
+          ['attention', 'Saltando con el cartel', 'Tu agente te necesita (un permiso o una pregunta). Haz clic en él para ir directo.'],
+          ['working', 'Con una herramienta', 'Tu agente está trabajando: el martillo es editar, el libro es leer, el escudo es probar.'],
+          ['done', 'Celebrando', 'Tu agente terminó y te toca responder.'],
+          ['error', 'Haciendo una mueca', 'Algo salió mal, como una prueba que falló.'],
+          ['sleep', 'Durmiendo', 'No pasa nada desde hace unos minutos.'],
+        ],
+        step: [
+          ['Clic', 'Lo acaricias. Si sostiene el cartel, te lleva a la ventana del agente.'],
+          ['Clic derecho', 'Abre su tarjeta: tus agentes, las misiones del día, los tipos de trabajo y los atajos. El engranaje tiene los ajustes.'],
+          ['Arrastrar', 'Llévalo a cualquier rincón de la pantalla. Recuerda dónde quedó.'],
+          ['Déjalo crecer', 'Todo lo que hace tu agente vale experiencia (XP). Con suficiente, evoluciona. Su tipo depende del trabajo que más hace el agente.'],
+          ['Cumple misiones', 'Tres por día, como "responder rápido 3 veces". Dan galletas y experiencia. Los objetos van a la Mochila.'],
+          ['Gana accesorios', 'Gorros, bufandas y más, desbloqueados con logros. Póntelos desde la Mochila.'],
+        ],
+        q: [
+          ['¿Puedo aprobar o rechazar desde la mascota?', 'Sí. Clic derecho → engranaje → Ajustes → "Responder permisos desde la mascota". El globo muestra Permitir y Rechazar, y Claude Code espera tu respuesta en la mascota hasta 25 segundos; después pregunta como siempre.'],
+          ['¿Hace más lento a mi agente?', 'No. Solo escucha los avisos que Claude Code ya envía, no bloquea nada y no escribe nada por ti.'],
+          ['¿Envía mi código a algún lugar?', 'No. Todo queda en tu computadora. No usa internet, no tiene cuenta y no recoge datos. Las contraseñas y claves aparecen ocultas (•••).'],
+          ['¿Cómo lo silencio?', 'Clic derecho → engranaje → Modo silencioso (30 minutos, 1 hora o hasta mañana), o apaga Sonidos y Charla en Ajustes.'],
+          ['Me estorba. ¿Puedo esconderlo?', 'Sí: en el icono de la bandeja, desmarca "Mostrar mascota". En Ajustes también puedes cambiar su tamaño y apagar el paseo por la pantalla.'],
+          ['Formateé la computadora. ¿Perdí mi mascota?', 'No, si tu carpeta Documentos está en OneDrive (u otra copia). Guarda copias en Documentos/Openmon Backups y, en una instalación nueva, pregunta si quieres traerla de vuelta.'],
+          ['¿Qué es la Opendex?', 'Un álbum con todas las formas que puede tener un Openmon. Las que ya viste aparecen en color; las demás, en silueta.'],
+          ['¿Puede morir o enfermarse?', 'Nunca. Tampoco pierde lo que ganó. La amistad solo sube.'],
+          ['¿Cómo lo quito?', 'En una terminal: openmon uninstall (quita los avisos de Claude Code) y luego desinstala la app. Tu mascota queda guardada por si vuelves.'],
+        ],
+      }
     : {
         title: 'How Openmon works',
         lead: 'Openmon is a little creature that lives in the corner of your screen and shows, at a glance, what your AI coding agent (such as Claude Code) is doing. When the agent needs you, it tells you. Over time, it grows and evolves.',

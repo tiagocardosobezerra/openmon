@@ -161,7 +161,7 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
     },
 
     lang(body) {
-      bus.emit('lang', /^pt/i.test(String(body.lang)) ? 'pt-BR' : 'en');
+      bus.emit('lang', /^pt/i.test(String(body.lang)) ? 'pt-BR' : /^es/i.test(String(body.lang)) ? 'es' : 'en');
       return [];
     },
   };
