@@ -19,6 +19,10 @@ const PT = {
   'Nickname…': 'Apelido…',
   'Play demo': 'Ver demonstração',
   'Show pet': 'Mostrar pet',
+  Lv: 'Nv',
+  main: 'principal',
+  'Make it the main one': 'Colocar como principal',
+  'Take off screen': 'Tirar da tela',
   'Sounds': 'Sons',
   'Notify when an agent waits': 'Avisar quando um agente esperar',
   'Chatter and emotes': 'Falas e emoções',
@@ -72,6 +76,10 @@ const PT = {
 };
 // Spanish menu and notification text.
 const ES_TEXT = {
+  Lv: "Nv",
+  main: "principal",
+  "Make it the main one": "Hacerlo el principal",
+  "Take off screen": "Quitar de la pantalla",
   "Open card": "Abrir tarjeta",
   "Name…": "Apodo…",
   "Nickname…": "Apodo…",
@@ -189,6 +197,7 @@ if (autostartArg >= 0) {
 
 let tray = null;
 let trayAlert = false;
+let trayWasWaiting = false;
 let win = null;
 let daemon = null;
 let port = null;
@@ -296,10 +305,29 @@ function menuTemplate() {
     return Math.ceil((t - Date.now()) / 60_000) + 8 * 60; // until 8 am
   };
   const size = config.scale || 1;
+  const title = (p) => `${p.nickname ? `${p.nickname} · ${p.form}` : p.form} · ${L('Lv')} ${p.level}`;
+  const companions = Object.entries((latest && latest.companions) || {});
+  // With companions, each Openmon on screen gets its own entry: its card,
+  // making it the main one, or taking it off screen.
+  const team = companions.length
+    ? [
+        { label: pet ? `${title(pet)} · ${L('main')}` : 'Openmon', submenu: [{ label: L('Open card'), click: () => win.webContents.send('command', 'card') }] },
+        ...companions.map(([id, c]) => ({
+          label: title(c),
+          submenu: [
+            { label: L('Open card'), click: () => { const w = companionWins.get(id); if (w && !w.isDestroyed()) w.webContents.send('command', 'card'); } },
+            { label: L('Make it the main one'), click: () => daemon.makeMain(id) },
+            { label: L('Take off screen'), click: () => daemon.setConfig({ companions: (config.companions || []).filter((x) => x !== id) }) },
+          ],
+        })),
+      ]
+    : [
+        { label: pet ? title(pet) : 'Openmon', enabled: false },
+        { type: 'separator' },
+        { label: L('Open card'), click: () => win.webContents.send('command', 'card') },
+      ];
   return [
-    { label: pet ? `${pet.nickname ? `${pet.nickname} · ${pet.form}` : pet.form} · Lv ${pet.level}` : 'Openmon', enabled: false },
-    { type: 'separator' },
-    { label: L('Open card'), click: () => win.webContents.send('command', 'card') },
+    ...team,
     {
       label: L('Pages'),
       submenu: [
@@ -459,7 +487,9 @@ function openNameWindow() {
 function refreshTray() {
   if (!tray) return;
   const pet = latest && latest.pet;
-  tray.setToolTip(`${PLAYGROUND ? 'Openmon Playground: ' : ''}${pet ? (pet.nickname ? `${pet.nickname} the ${pet.form}` : pet.form) : 'Openmon'}`);
+  const name = (p) => (p.nickname ? `${p.nickname} (${p.form})` : p.form);
+  const all = [pet, ...Object.values((latest && latest.companions) || {})].filter(Boolean);
+  tray.setToolTip(`${PLAYGROUND ? 'Openmon Playground: ' : ''}${all.length ? all.map(name).join(' · ') : 'Openmon'}`);
   // Linux trays only show a static menu; elsewhere it is built fresh on open.
   if (process.platform === 'linux') tray.setContextMenu(Menu.buildFromTemplate(menuTemplate()));
 }
@@ -740,11 +770,15 @@ app.whenReady().then(async () => {
       trayAlert = waiting;
       const img = brandTrayIcon(waiting);
       if (img) tray.setImage(img);
-      tray.setToolTip(waiting && s.live.focus ? L('{label} needs you', { label: s.live.focus.label }) : 'Openmon');
+      if (waiting && s.live.focus) tray.setToolTip(L('{label} needs you', { label: s.live.focus.label }));
     }
-    const formBefore = latest && latest.pet && latest.pet.form;
+    // The tooltip names every Openmon on screen: refresh it when one
+    // evolves, is renamed, or comes on or off screen.
+    const teamKey = (x) => [x.pet, ...Object.values(x.companions || {})].map((p) => p && `${p.nickname}|${p.form}|${p.level}`).join(',');
+    const before = latest ? teamKey(latest) : '';
     watchAttention(s);
-    if (s.pet.form !== formBefore) refreshTray();
+    if (teamKey(s) !== before || (!waiting && trayWasWaiting)) refreshTray();
+    trayWasWaiting = waiting;
   });
   setInterval(() => watchAttention(daemon.state()), 2000).unref();
 

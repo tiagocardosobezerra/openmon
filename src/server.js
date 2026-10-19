@@ -162,6 +162,19 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     return out;
   }
 
+  // Puts a team member on screen as the main pet. A companion swaps places
+  // with the main one, so both stay on screen.
+  function makeMain(id) {
+    return partyAction(() => {
+      const before = real.pet.id;
+      real.pet = party.setActive(real.pet, id);
+      if (real.pet.id === before) return false;
+      const list = config.companions || [];
+      if (list.includes(id)) setConfig({ companions: list.map((x) => (x === id ? before : x)) });
+      return true;
+    });
+  }
+
   function state() {
     const live = world.sessions.snapshot(now());
     // A finished turn carries its recap (files, commands, tests, time).
@@ -664,12 +677,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'POST /api/party/active':
         return readJson(req, (err, body) => {
           if (err || !body) return res.writeHead(400).end();
-          json(res, 200, { ok: partyAction(() => {
-            const before = real.pet.id;
-            real.pet = party.setActive(real.pet, String(body.id || ''));
-            if ((config.companions || []).includes(real.pet.id)) setConfig({ companions: config.companions.filter((x) => x !== real.pet.id) });
-            return real.pet.id !== before;
-          }) });
+          json(res, 200, { ok: makeMain(String(body.id || '')) });
         });
       case 'POST /api/party/move':
         return readJson(req, (err, body) => {
@@ -815,6 +823,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     runDemo,
     stopDemo,
     setConfig,
+    makeMain,
     setQuiet,
     state,
     config: publicConfig,

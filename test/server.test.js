@@ -445,9 +445,12 @@ test('companions: other team members on screen, never the main one; seasons off 
     const petted = JSON.parse((await request(port, 'POST', '/api/pet', { body: JSON.stringify({ id: other.id }) })).body).events;
     assert.ok(petted.every((e) => e.petId === other.id));
     assert.equal(JSON.parse((await request(port, 'GET', '/api/state')).body).pet.bond, before);
-    // Putting it on screen as the main pet removes it from the companions.
+    // Making it the main pet swaps places: the old main one stays on screen as a companion.
+    const mainId = state.pet.id;
     await request(port, 'POST', '/api/party/active', { body: JSON.stringify({ id: other.id }) });
-    assert.deepEqual(JSON.parse((await request(port, 'GET', '/api/state')).body).config.companions, []);
+    const after = JSON.parse((await request(port, 'GET', '/api/state')).body);
+    assert.equal(after.pet.id, other.id);
+    assert.deepEqual(after.config.companions, [mainId]);
   } finally {
     await daemon.close();
   }
