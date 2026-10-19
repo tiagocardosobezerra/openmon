@@ -13,7 +13,8 @@
     "public",
     "docs",
     "art",
-    "assets"
+    "assets",
+    "README.en.md"
   ],
   "scripts": {
     "start": "node bin/openmon.js start --foreground",
