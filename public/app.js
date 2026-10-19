@@ -77,12 +77,15 @@
   let permissions = [];
   // "Give it a nickname?" after hatching, until answered or for 2 minutes.
   let nicknameOffer = null;
-  // The bubble you clicked (Answer / Open): it stays hidden until the next one.
+  // The bubble you clicked (Answer / Open): it stays hidden for as long as
+  // that same bubble would show. Each bubble has a stable id (kind, session,
+  // when it started), so ticking timers and other agents' events do not
+  // bring it back; a different bubble ends the dismissal.
   let dismissed = null;
-  const bubbleKey = () => (live.focus ? `${pose}|${live.focus.id}|${live.focus.since}` : null);
+  let bubbleId = null;
   function dismissBubble() {
     if (pose === 'attention' && live.focus) ackedFor = live.focus.since;
-    dismissed = bubbleKey();
+    dismissed = bubbleId;
     renderBubble();
   }
   let renudged = null;
@@ -617,17 +620,27 @@
   // line and, when it can jump to the agent's window, an action button.
   const BUBBLE_ICON = { attention: '!', done: '✓', error: '✕', toast: '★', setup: 'i', restore: '↺', warn: '?', notice: 'i' };
   let bubbleJump = null;
-  function setBubble(cls, title, sub, { jump = null, eyebrow = null, action = null, choices = null, note = null } = {}) {
+  function setBubble(cls, title, sub, { jump = null, eyebrow = null, action = null, choices = null, note = null, id = null } = {}) {
     const b = $('bubble');
-    bubbleJump = jump;
+    // A toast or the card in between (no id) keeps the dismissal; another
+    // agent bubble, or no agent bubble at all (see renderBubble), ends it.
+    if (cls && id && id === dismissed) cls = null;
+    else if (dismissed && id && id !== dismissed) dismissed = null;
+    bubbleId = cls ? id : null;
+    bubbleJump = cls ? jump : null;
     if (!cls) {
       b.hidden = true;
       b.dataset.key = '';
       return;
     }
-    const key = [cls, title, sub, jump, eyebrow, action, choices && choices.id].join('|');
+    // The title is left out of the key: it carries the waiting clock, which
+    // ticks every second. Rebuilding the bubble each second swapped its
+    // buttons under the cursor, so a click on "Open" could get lost.
+    const key = [cls, sub, jump, eyebrow, action, choices && choices.id].join('|');
     if (b.dataset.key === key && !b.hidden) {
-      // Same bubble: only the countdown changes, so buttons stay under the cursor.
+      // Same bubble: only the clock and the countdown change, in place.
+      const t = b.querySelector('.title');
+      if (t && t.textContent !== title) t.textContent = title;
       const n = b.querySelector('.note');
       if (n && note) n.textContent = note;
       return;
@@ -702,10 +715,9 @@
       return desktop && desktop.installHooks ? setBubble('setup', tr('setup'), tr('setup.click'), { jump: 'install', action: tr('setup.action') }) : setBubble('setup', tr('setup'), tr('setup.sub'));
     }
     const jump = !demo && f.id ? f.id : null;
-    if (dismissed && dismissed === bubbleKey()) return setBubble(null);
     if (pose === 'attention') {
       const waiting = (live.sessions || []).filter((s) => s.state === 'attention');
-      const answer = { jump, action: tr('jump.answer') };
+      const answer = { jump, action: tr('jump.answer'), id: `attention|${waiting.length > 1 ? waiting.map((s) => s.id).join(',') : f.id}|${f.since}` };
       if (waiting.length > 1) return setBubble('attention', tr('needsYou.many', { n: waiting.length }), waiting.map((s) => s.label).join(', '), answer);
       const waited = f.since ? ` · ${clock(Date.now() - f.since)}` : '';
       const long = f.since && Date.now() - f.since > LONG_WAIT_MS && ackedFor !== f.since;
@@ -715,18 +727,20 @@
       const cls = danger ? 'attention danger' : long ? 'attention long' : 'attention';
       if (pending) {
         const left = Math.max(0, Math.ceil((pending.until - Date.now()) / 1000));
-        return setBubble(cls, title, trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: danger ? tr('danger.note') : tr('perm.note', { s: left }) });
+        return setBubble(cls, title, trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: danger ? tr('danger.note') : tr('perm.note', { s: left }), id: answer.id });
       }
       return setBubble(cls, title + waited, trDetail(f.detail), { ...answer, eyebrow: f.label || tr('yourAgent') });
     }
-    if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent') });
+    if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent'), id: `error|${f.id}|${f.since}` });
     // Mid-task and silent for minutes, or one command running very long.
     const stuck = (live.sessions || []).find((x) => x.stuck);
-    if (stuck && pose !== 'done') return setBubble('warn', tr('stuck.title', { t: clock(stuck.stuck) }), tr('stuck.sub'), { jump: demo ? null : stuck.id, eyebrow: stuck.label });
+    if (stuck && pose !== 'done') return setBubble('warn', tr('stuck.title', { t: clock(stuck.stuck) }), tr('stuck.sub'), { jump: demo ? null : stuck.id, eyebrow: stuck.label, id: `stuck|${stuck.id}` });
     const longTool = (live.sessions || []).find((x) => x.longTool);
-    if (longTool && pose === 'working') return setBubble('warn', tr('longTool.title', { t: clock(longTool.longTool.ms) }), trDetail(longTool.longTool.detail), { jump: demo ? null : longTool.id, eyebrow: longTool.label });
+    if (longTool && pose === 'working') return setBubble('warn', tr('longTool.title', { t: clock(longTool.longTool.ms) }), trDetail(longTool.longTool.detail), { jump: demo ? null : longTool.id, eyebrow: longTool.label, id: `long|${longTool.id}|${longTool.longTool.detail}` });
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
-    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent') });
+    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}` });
+    // Nothing to say about the agents: whatever was dismissed is over.
+    dismissed = null;
     return setBubble(null);
   }
 
