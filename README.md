@@ -72,7 +72,7 @@ Todo ovo nasce com uma **natureza** (Corajosa, Sonolenta, Curiosa, Alegre, Calma
 
 As evoluções são como num jogo de portátil: *"O quê? Openmon está evoluindo!"*, a tela escurece, a forma antiga e a nova piscam, vem a revelação, uma fanfarra e o grito da nova forma.
 
-Como no Pokémon, sem apelido ele usa o nome da espécie, que muda a cada evolução (Tinkit, depois Forgemaw). Dê um apelido pelo menu (Configurações → Nome…) e ele fica fixo; deixe vazio para voltar ao nome da espécie.
+Ao chocar, ele pergunta se você quer dar um apelido. Como no Pokémon, sem apelido ele usa o nome da espécie, que muda a cada evolução (Tinkit, depois Forgemaw). Dê um apelido pelo menu (Configurações → Nome…) e ele fica fixo; deixe vazio para voltar ao nome da espécie.
 
 O **laço** (0 a 100) só sobe: responda ao agente em até 30 segundos (+2), faça carinho com um clique (+1, cinco por dia), volte em um novo dia (+1).
 
@@ -90,6 +90,7 @@ O XP tem limite de 120 a cada 10 minutos, então um loop descontrolado não acel
 - **Clique para responder**: quando um agente espera uma permissão, clique no pet, no balão, na sessão dentro do card ou na notificação do sistema, e a janela onde o agente roda (terminal, VS Code, app do Claude) vem para a frente, pronta para aprovar ou recusar. O hook acha essa janela uma vez por sessão subindo pela própria árvore de processos; nada é enviado para fora.
 - **O card**: clique com o botão direito no pet para abrir, e ele fica aberto até você fechar (X, Esc ou outro clique direito). Abas para seus agentes, as missões de hoje e os atributos, mais Poderes, Opendex e cartão de treinador a um clique. A engrenagem no card abre as configurações (nome, sons, falas, notificações, modo silencioso, tamanho), que também ficam no ícone da bandeja.
 - **Resumo do turno**: quando um agente termina, o balão diz o que o turno fez: *"shop-api terminou ✓ · 3 arquivos · 12 comandos · testes ✓ · 2m 10s"*.
+- **Presente do dia e sequência**: o primeiro uso de cada dia dá um Biscoito; dias seguidos formam uma sequência (🔥 na aba Hoje), e a cada 7 vem uma Bala rara.
 - **Missões diárias**: três por dia (as mesmas para todo mundo), como "responder ao agente em até 30 s, 3×" ou "3 rodadas de testes verdes". +25 XP e laço cada, +50 por um dia perfeito.
 - **Modo silencioso**: 30 minutos, 1 hora ou até amanhã, pelo menu. O pet continua mostrando tudo, em silêncio.
 - **Esperas longas**: depois de dois minutos esperando, mais um toque e um cutucão mais forte; o ícone da bandeja ganha um "!" enquanto algum agente espera.

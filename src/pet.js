@@ -177,6 +177,7 @@ function view(pet) {
     cosmetics: cosmeticsView(pet),
     bag: pet.bag,
     holding: pet.holding,
+    streak: pet.streak || { days: 0, best: 0 },
   };
 }
 
@@ -291,8 +292,19 @@ function rollDay(pet, now, events) {
     if (!Array.isArray(pet.daily.missions)) pet.daily.missions = missionsFor(day);
     return;
   }
+  const previous = pet.daily.day;
   pet.daily = { day, pets: 0, fastAnswers: 0, waitMs: 0, waits: 0, fastestMs: null, tools: 0, edits: 0, green: 0, turns: 0, missions: missionsFor(day), perfect: false, activeDays: (pet.daily.activeDays || 0) + 1 };
-  if (pet.daily.activeDays > 1) addBond(pet, 1, now, events);
+  // Streak: consecutive days with your agent. A missed day starts over.
+  const yesterday = dayKey(now - 24 * 60 * 60 * 1000);
+  pet.streak = { days: previous === yesterday ? ((pet.streak && pet.streak.days) || 0) + 1 : 1, best: Math.max((pet.streak && pet.streak.best) || 0, 1) };
+  pet.streak.best = Math.max(pet.streak.best, pet.streak.days);
+  if (pet.daily.activeDays > 1) {
+    addBond(pet, 1, now, events);
+    // A small gift every new day, and a candy every 7 days in a row.
+    giveItem(pet, 'snack', 1, events);
+    events.push({ type: 'daily-gift', streak: pet.streak.days });
+    if (pet.streak.days % 7 === 0) giveItem(pet, 'candy', 1, events);
+  }
 }
 
 function missionView(pet) {

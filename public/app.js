@@ -68,6 +68,8 @@
   const particles = [];
   let ackedFor = null;
   let restoreOffer = null;
+  // "Give it a nickname?" after hatching, until answered or for 2 minutes.
+  let nicknameOffer = null;
   // The bubble you clicked (Answer / Open): it stays hidden until the next one.
   let dismissed = null;
   const bubbleKey = () => (live.focus ? `${pose}|${live.focus.id}|${live.focus.since}` : null);
@@ -294,6 +296,7 @@
           const dexLine = evolveFx.newDex && pet ? tr('scene.newDex', { no: String(pet.dexNo).padStart(3, '0') }) : '';
           toast = null;
           if (evolveFx.toStage === 'sprout') {
+            nicknameOffer = { until: Date.now() + 120_000 };
             if (evolveFx.shiny) burst('spark', 24, petCX(), GROUND - 50, Math.PI * 2, { colors: ['#fffbe0', '#ffe156'], gravity: 40, max: 1.8 });
             pushToast(evolveFx.shiny ? tr('scene.shiny', { form: evolveFx.toName }) : tr('scene.hatched', { name }), tr(evolveFx.shiny ? 'scene.shiny.sub' : 'scene.hatched.sub'), 5500, 'scene');
           } else {
@@ -606,6 +609,9 @@
       return setBubble('restore', tr('restore.title'), tr('restore.sub', { name: o.name, form: o.form, level: o.level, date: new Date(o.savedAt).toLocaleDateString() }), { jump: 'restore', action: tr('restore.action') });
     }
     if (toast) return setBubble(toast.style || 'toast', toast.title, toast.text);
+    if (nicknameOffer && Date.now() < nicknameOffer.until && pet && !pet.nickname && pose !== 'attention') {
+      return setBubble('toast', tr('nick.title', { form: pet.form }), tr('nick.sub'), { jump: 'nickname', action: tr('nick.action') });
+    }
     if (hovering) return setBubble(null);
     if (!connected && !preview) return setBubble(null);
     if (!connected) return setBubble('error', tr('offline'), tr('offline.sub'));
@@ -763,6 +769,7 @@
     wait.textContent = '';
     if (pet.today && pet.today.waitMs) wait.append(el('b', '', shortDur(pet.today.waitMs)), el('span', '', tr('today.waited')));
     else wait.append(el('span', '', tr('today.noWaits')));
+    if (pet.streak && pet.streak.days > 1) wait.append(el('span', 'chip sun streak', tr('today.streak', { n: pet.streak.days })));
     const ml = $('missions');
     ml.textContent = '';
     ml.hidden = !missions.length;
@@ -904,6 +911,9 @@
           break;
         case 'wear':
           burst('spark', 10, petCX(), top - 6, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 50 });
+          break;
+        case 'daily-gift':
+          setTimeout(() => pushToast(tr('gift.title'), e.streak > 1 ? tr('gift.streak', { n: e.streak }) : tr('gift.sub'), 5000), 2500);
           break;
         case 'restored':
           pushToast(tr('restore.done', { name: e.name }), tr('restore.doneSub'), 6000, 'scene');
@@ -1104,6 +1114,13 @@
   });
   $('bubble').addEventListener('click', () => {
     if (!bubbleJump) return;
+    if (bubbleJump === 'nickname') {
+      nicknameOffer = null;
+      if (desktop && desktop.openName) desktop.openName();
+      else window.open('/name.html', '_blank', 'width=340,height=170');
+      renderBubble();
+      return;
+    }
     if (bubbleJump === 'restore') {
       post('/api/restore', { file: 'latest' });
       return;

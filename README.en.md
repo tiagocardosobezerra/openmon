@@ -72,7 +72,7 @@ Every egg is born with a **nature** (Brave, Sleepy, Curious, Cheerful, Calm or C
 
 Evolutions play like a handheld game: *"What? Openmon is evolving!"*, the screen dims, the old and new forms flicker, then the reveal, a fanfare and the new form's own cry.
 
-Like Pokémon, without a nickname it goes by its species name, which changes as it evolves (Tinkit, then Forgemaw). Give it a nickname from the menu (Settings → Name…) and it sticks; leave it empty to go back to the species name.
+When it hatches, it asks if you want to give it a nickname. Like Pokémon, without a nickname it goes by its species name, which changes as it evolves (Tinkit, then Forgemaw). Give it a nickname from the menu (Settings → Name…) and it sticks; leave it empty to go back to the species name.
 
 **Bond** (0 to 100) only goes up: answer your agent within 30 seconds (+2), pet it with a click (+1, five a day), come back on a new day (+1).
 
@@ -90,6 +90,7 @@ XP is capped at 120 per 10 minutes, so a runaway loop cannot fast-forward your p
 - **Click to answer**: when an agent waits for a permission, click the pet, its bubble, the session in its card or the OS notification, and the window that runs that agent (terminal, VS Code, the Claude app) comes to the front, ready to approve or deny. The hook finds that window once per session by walking up its own process tree; nothing is sent anywhere.
 - **The card**: right-click the pet to open it, and it stays open until you close it (X, Esc or another right-click). Tabs for your agents, today's missions and stats, plus Powers, Opendex and the trainer card one click away. The gear on the card opens the settings (name, sounds, chatter, notifications, quiet mode, size), also in the tray icon.
 - **Turn recap**: when an agent finishes, the bubble says what the turn did: *"shop-api is done ✓ · 3 files · 12 commands · tests ✓ · 2m 10s"*.
+- **Daily gift and streak**: the first use each day gives a Snack; days in a row build a streak (🔥 on the Today tab), and every 7 days bring a Rare candy.
 - **Daily missions**: three a day (the same for everyone), such as "answer your agent within 30 s, 3×" or "3 green test runs". +25 XP and bond each, +50 for a perfect day.
 - **Quiet mode**: 30 minutes, 1 hour or until tomorrow, from the menu. The pet still shows everything, silently.
 - **Long waits**: after two minutes waiting, one more chime and a stronger nudge; the tray icon wears a "!" while any agent waits.

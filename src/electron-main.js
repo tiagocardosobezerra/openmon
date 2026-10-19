@@ -460,6 +460,7 @@ function wireIpc() {
   ipcMain.on('interactive', (_e, on) => win && win.setIgnoreMouseEvents(!on, { forward: true }));
   ipcMain.on('menu', () => Menu.buildFromTemplate(menuTemplate()).popup({ window: win }));
   ipcMain.on('open-powers', openPowersWindow);
+  ipcMain.on('open-name', () => openNameWindow());
   ipcMain.on('open-page', (_e, page) => {
     openAppWindow(page);
   });

@@ -306,3 +306,19 @@ test('items: missions give snacks, snacks build bond, the Everstone stops evolut
   assert.equal(p.holding, null);
   assert.ok(ev.some((e) => e.type === 'evolve'));
 });
+
+test('every new day: a snack, and a streak that resets after a missed day', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const p = pet.createPet(T0, null, () => 0.5);
+  pet.petIt(p, T0);
+  assert.equal(p.streak.days, 1);
+  let events = pet.petIt(p, T0 + DAY);
+  assert.ok(events.some((e) => e.type === 'daily-gift' && e.streak === 2));
+  assert.equal(p.bag.snack, 1);
+  for (let d = 2; d < 7; d++) pet.petIt(p, T0 + d * DAY);
+  assert.equal(p.streak.days, 7);
+  assert.equal(p.bag.candy, 1);
+  pet.petIt(p, T0 + 9 * DAY);
+  assert.equal(p.streak.days, 1);
+  assert.equal(p.streak.best, 7);
+});
