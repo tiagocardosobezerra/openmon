@@ -15,7 +15,7 @@ const installer = require('./install');
 
 // Menu and notification text follow the OS language (English or Portuguese).
 const PT = {
-  'Stats card': 'Cartão de status',
+  'Open card': 'Abrir card',
   'Name…': 'Dar nome…',
   'Play demo': 'Ver demonstração',
   'Show pet': 'Mostrar pet',
@@ -190,7 +190,7 @@ function menuTemplate() {
   return [
     { label: pet ? `${pet.name} · ${pet.form} · Lv ${pet.level}` : 'Openmon', enabled: false },
     { type: 'separator' },
-    { label: L('Stats card'), click: () => win.webContents.send('command', 'card') },
+    { label: L('Open card'), click: () => win.webContents.send('command', 'card') },
     { label: L('Powers…'), click: openPowersWindow },
     { label: 'Opendex', click: () => openAppWindow('dex') },
     { label: L('Trainer card (share)'), click: () => openAppWindow('card') },

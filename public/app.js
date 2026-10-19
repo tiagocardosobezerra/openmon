@@ -54,9 +54,8 @@
   let testFlash = null;
   let evolveFx = null;
   let force = null;
-  // ?hover keeps the stats card open (screenshots, smoke test).
+  // The card opens with a right-click; ?hover opens it at start (screenshots, smoke test).
   let hovering = params.has('hover');
-  let pinned = hovering;
   let lastZ = 0;
   let lastSpark = 0;
   const particles = [];
@@ -588,11 +587,10 @@
     }
     card.classList.remove('closing');
     card.hidden = false;
-    card.classList.toggle('pinned', pinned);
-    const pinBtn = $('card-pin');
-    pinBtn.setAttribute('aria-pressed', String(pinned));
-    pinBtn.title = tr(pinned ? 'card.unpin' : 'card.pin');
-    pinBtn.setAttribute('aria-label', pinBtn.title);
+    const gear = $('card-settings');
+    gear.hidden = !desktop;
+    gear.title = tr('card.settings');
+    gear.setAttribute('aria-label', gear.title);
     $('card-close').title = tr('card.close');
     $('card-close').setAttribute('aria-label', tr('card.close'));
 
@@ -625,7 +623,7 @@
     const waitingN = sessions.filter((x) => x.state === 'attention').length;
     const missions = (pet.today && pet.today.missions) || [];
     const left = missions.filter((m) => !m.done).length;
-    const tab = waitingN ? 'agents' : cardTab;
+    const tab = cardTab;
     for (const [id, label, n] of [['agents', tr('tab.agents'), waitingN], ['today', tr('tab.today'), left], ['stats', tr('tab.stats'), 0]]) {
       const b = $(`tab-${id}`);
       b.textContent = label;
@@ -884,41 +882,20 @@
   });
   canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (desktop) desktop.menu();
-    else setPinned(!(hovering && pinned));
+    setHover(!hovering);
   });
 
-  // The card opens after resting on the pet, and stays open while the
-  // cursor travels up to it (a short grace period), while it is over the
-  // card, and for good when pinned.
-  let hoverTimer = null;
-  let leaveTimer = null;
-  const OPEN_MS = 380;
-  const GRACE_MS = 650;
-  function setHover(on) {
-    clearTimeout(hoverTimer);
-    clearTimeout(leaveTimer);
-    hoverTimer = leaveTimer = null;
-    if (!on) pinned = false;
+  // The card opens with a right-click on the pet (or a click on the agent
+  // counter) and stays until closed: X, Esc, another right-click, or
+  // dragging the pet. A waiting agent opens it on the Agents tab.
+  function setHover(on, tab = null) {
+    if (on && !hovering) {
+      const waiting = (live.sessions || []).some((x) => x.state === 'attention');
+      if (tab || waiting) cardTab = tab || 'agents';
+    } else if (on && tab) cardTab = tab;
     if (on === hovering) return renderCard();
     hovering = on;
     renderAll();
-  }
-  function setPinned(on) {
-    pinned = on;
-    if (on) setHover(true);
-    else renderCard();
-  }
-  function scheduleClose() {
-    if (pinned || !hovering || leaveTimer) return;
-    leaveTimer = setTimeout(() => {
-      leaveTimer = null;
-      if (!pinned) setHover(false);
-    }, GRACE_MS);
-  }
-  function keepOpen() {
-    clearTimeout(leaveTimer);
-    leaveTimer = null;
   }
 
   // Brings the agent's window (terminal, editor, app) to the front.
@@ -941,34 +918,19 @@
     cursor = { x: (p.x - CX) / 110, y: (p.y - faceY) / 110, at: Date.now() };
     const inPet = overPet(p.x, p.y);
     canvas.style.cursor = down ? 'grabbing' : inPet ? 'grab' : 'default';
-    const inCard = Boolean(e.target.closest && e.target.closest('#card'));
-    const inUi = inCard || Boolean(e.target.closest && e.target.closest('#bubble, #controls'));
+    const inUi = Boolean(e.target.closest && e.target.closest('#card, #bubble, #badge, #controls'));
     const want = Boolean(inPet || inUi || down);
     if (desktop && want !== interactive) {
       interactive = want;
       desktop.setInteractive(want);
     }
-    if (inPet && !down) {
-      keepOpen();
-      if (!hovering && !hoverTimer) hoverTimer = setTimeout(() => { hoverTimer = null; setHover(true); }, OPEN_MS);
-    } else if (inCard) {
-      keepOpen();
-    } else {
-      clearTimeout(hoverTimer);
-      hoverTimer = null;
-      scheduleClose();
-    }
-  });
-  document.addEventListener('mouseleave', () => {
-    clearTimeout(hoverTimer);
-    hoverTimer = null;
-    scheduleClose();
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && hovering) setHover(false);
   });
 
-  $('card-pin').addEventListener('click', () => setPinned(!pinned));
+  $('card-settings').addEventListener('click', () => desktop && desktop.menu());
+  $('badge').addEventListener('click', () => setHover(!(hovering && cardTab === 'agents'), 'agents'));
   $('card-close').addEventListener('click', () => setHover(false));
   $('card-tabs').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-tab]');
@@ -1023,7 +985,7 @@
 
   if (desktop && desktop.onCommand) {
     desktop.onCommand((cmd) => {
-      if (cmd === 'card') setPinned(!(hovering && pinned));
+      if (cmd === 'card') setHover(!hovering);
       if (cmd === 'powers') openPowers();
     });
   }

@@ -43,7 +43,7 @@ Start a new Claude Code session and get to work. The egg hatches during your fir
 | Finishes its turn | Celebrates, then shows "done ✓" until you reply |
 | Nothing for 5 minutes | Falls asleep |
 
-Several agents at once: a counter shows how many are busy, the pose follows the most urgent one, and hovering the pet lists every session.
+Several agents at once: a counter shows how many are busy, the pose follows the most urgent one, and a click on the counter opens the card with a summary of each session.
 
 ## How it grows
 
@@ -86,7 +86,7 @@ XP is capped at 120 per 10 minutes, so a runaway loop cannot fast-forward your p
 ## Everyday helpers
 
 - **Click to answer**: when an agent waits for a permission, click the pet, its bubble, the session in its card or the OS notification, and the window that runs that agent (terminal, VS Code, the Claude app) comes to the front, ready to approve or deny. The hook finds that window once per session by walking up its own process tree; nothing is sent anywhere.
-- **The card**: rest the cursor on the pet to open it, and it stays open while you move to it; the pin keeps it open. Tabs for your agents, today's missions and stats, plus Powers, Opendex and the trainer card one click away.
+- **The card**: right-click the pet to open it, and it stays open until you close it (X, Esc or another right-click). Tabs for your agents, today's missions and stats, plus Powers, Opendex and the trainer card one click away. The gear on the card opens the settings (name, sounds, chatter, notifications, quiet mode, size), also in the tray icon.
 - **Turn recap**: when an agent finishes, the bubble says what the turn did: *"shop-api is done ✓ · 3 files · 12 commands · tests ✓ · 2m 10s"*.
 - **Daily missions**: three a day (the same for everyone), such as "answer your agent within 30 s, 3×" or "3 green test runs". +25 XP and bond each, +50 for a perfect day.
 - **Quiet mode**: 30 minutes, 1 hour or until tomorrow, from the menu. The pet still shows everything, silently.
@@ -136,7 +136,7 @@ openmon uninstall    remove the hooks (your pet is kept)
 
 `--settings .claude/settings.json` installs for a single project. `OPENMON_PORT` and `OPENMON_HOME` change the port and the data folder.
 
-On the pet: **click** to pet it (or, while an agent waits for you, to jump to that agent's window), **drag** to move, **hover** for the card (it stays open while you move to it; the pin keeps it open), **right-click** for the menu (name, Opendex, trainer card, sounds, chatter, notifications, start with the computer, demo, quit). Its eyes follow your cursor.
+On the pet: **click** to pet it (or, while an agent waits for you, to jump to that agent's window), **drag** to move, **right-click** to open or close the card; the card's **gear** and the tray icon open the menu (name, Opendex, trainer card, sounds, chatter, notifications, start with the computer, demo, quit). Its eyes follow your cursor.
 
 Only permission prompts and questions raise the alarm, with at most one chime every 20 s. "Waiting for your input" after a finished turn just shows "done ✓".
 

@@ -43,7 +43,7 @@ Abra uma sessão nova do Claude Code e trabalhe normalmente. O ovo choca durante
 | Termina o turno | Comemora e mostra "terminou ✓" até você responder |
 | Nada por 5 minutos | Dorme |
 
-Vários agentes ao mesmo tempo: um contador mostra quantos estão ocupados, a pose segue o mais urgente e o card lista todas as sessões.
+Vários agentes ao mesmo tempo: um contador mostra quantos estão ocupados, a pose segue o mais urgente, e um clique no contador abre o card com o resumo de cada sessão.
 
 ## Como ele cresce
 
@@ -86,7 +86,7 @@ O XP tem limite de 120 a cada 10 minutos, então um loop descontrolado não acel
 ## Ajudas do dia a dia
 
 - **Clique para responder**: quando um agente espera uma permissão, clique no pet, no balão, na sessão dentro do card ou na notificação do sistema, e a janela onde o agente roda (terminal, VS Code, app do Claude) vem para a frente, pronta para aprovar ou recusar. O hook acha essa janela uma vez por sessão subindo pela própria árvore de processos; nada é enviado para fora.
-- **O card**: pare o cursor sobre o pet para abrir, e ele continua aberto enquanto você vai até ele; o alfinete deixa fixo. Abas para seus agentes, as missões de hoje e os atributos, mais Poderes, Opendex e cartão de treinador a um clique.
+- **O card**: clique com o botão direito no pet para abrir, e ele fica aberto até você fechar (X, Esc ou outro clique direito). Abas para seus agentes, as missões de hoje e os atributos, mais Poderes, Opendex e cartão de treinador a um clique. A engrenagem no card abre as configurações (nome, sons, falas, notificações, modo silencioso, tamanho), que também ficam no ícone da bandeja.
 - **Resumo do turno**: quando um agente termina, o balão diz o que o turno fez: *"shop-api terminou ✓ · 3 arquivos · 12 comandos · testes ✓ · 2m 10s"*.
 - **Missões diárias**: três por dia (as mesmas para todo mundo), como "responder ao agente em até 30 s, 3×" ou "3 rodadas de testes verdes". +25 XP e laço cada, +50 por um dia perfeito.
 - **Modo silencioso**: 30 minutos, 1 hora ou até amanhã, pelo menu. O pet continua mostrando tudo, em silêncio.
@@ -136,7 +136,7 @@ openmon uninstall    remove os hooks (seu pet é mantido)
 
 `--settings .claude/settings.json` instala só para um projeto. `OPENMON_PORT` e `OPENMON_HOME` mudam a porta e a pasta de dados.
 
-No pet: **clique** para fazer carinho (ou, enquanto um agente espera por você, para ir até a janela dele), **arraste** para mover, **pare o cursor** em cima para abrir o card (ele continua aberto enquanto você vai até ele; o alfinete deixa fixo), **clique direito** para o menu (nome, Opendex, cartão de treinador, sons, falas, notificações, iniciar com o computador, demo, sair). Os olhos dele seguem o cursor.
+No pet: **clique** para fazer carinho (ou, enquanto um agente espera por você, para ir até a janela dele), **arraste** para mover, **clique direito** para abrir ou fechar o card; a **engrenagem** do card e o ícone da bandeja abrem o menu (nome, Opendex, cartão de treinador, sons, falas, notificações, iniciar com o computador, demo, sair). Os olhos dele seguem o cursor.
 
 Só pedidos de permissão e perguntas disparam o alarme, com no máximo um toque a cada 20 s. "Esperando sua resposta" depois de um turno terminado só mostra "terminou ✓".
 

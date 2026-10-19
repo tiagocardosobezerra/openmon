@@ -120,6 +120,8 @@ html, body {
   box-shadow: 0 2px 0 var(--outline);
 }
 #badge.waiting { background: var(--warn); color: #2a2140; }
+#badge { z-index: 2; cursor: pointer; }
+#badge:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--outline); }
 
 /* The card: who your Openmon is, your agents, today, stats, actions. */
 #card {
@@ -144,7 +146,6 @@ html, body {
   transform-origin: 50% 100%;
 }
 #card.closing { animation: sink 0.14s ease-in forwards; }
-#card.pinned { box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--brand) 35%, transparent), 0 10px 24px rgba(20, 12, 40, 0.18); }
 /* A tail pointing down at the pet, like the bubbles. */
 #card::after {
   content: "";
