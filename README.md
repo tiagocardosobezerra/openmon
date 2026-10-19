@@ -206,7 +206,7 @@ Para todo mundo: o **Diário** dos últimos 14 dias e o **contador de espera**, 
 
 ### Configurações
 
-Clique com o botão direito no pet e na engrenagem do card (ou no ícone da bandeja). O menu tem o card, as páginas, o **modo foco**, o **modo silencioso** e as **Configurações**, uma página com seis seções:
+Clique com o botão direito no pet e em **Mais**, no pé do card (ou no ícone da bandeja). O menu tem o card, as páginas, o **modo foco**, o **modo silencioso** e as **Configurações**, uma página com seis seções:
 
 * **Pet**: apelido, tamanho, idioma, cores de época, sons, falas, passear pela tela e mostrar o Openmon do projeto ativo.
 * **Avisos**: notificação do sistema e responder permissões pelo pet (com o tempo de espera).

@@ -825,10 +825,6 @@
     }
     card.classList.remove('closing');
     card.hidden = false;
-    const gear = $('card-settings');
-    gear.hidden = !desktop;
-    gear.title = tr('card.settings');
-    gear.setAttribute('aria-label', gear.title);
     $('card-close').title = tr('card.close');
     $('card-close').setAttribute('aria-label', tr('card.close'));
 
@@ -1357,11 +1353,20 @@
       desktop.setInteractive(want);
     }
   });
+  // Leaving the window: let clicks through again, or its whole invisible
+  // rectangle would keep catching them.
+  document.documentElement.addEventListener('mouseleave', () => {
+    if (desktop && interactive && !down) {
+      interactive = false;
+      desktop.setInteractive(false);
+    }
+  });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && hovering) setHover(false);
   });
 
-  $('card-settings').addEventListener('click', () => desktop && desktop.menu());
+  // "More": the menu with every page, focus, quiet mode and Settings.
+  $('card-more').addEventListener('click', () => (desktop ? desktop.menu() : openPage('settings')));
   $('badge').addEventListener('click', () => setHover(!(hovering && cardTab === 'agents'), 'agents'));
   $('card-close').addEventListener('click', () => setHover(false));
   $('card-tabs').addEventListener('click', (e) => {
@@ -1478,6 +1483,8 @@
     desktop.onCommand((cmd) => {
       if (cmd === 'card') setHover(!hovering);
       if (cmd === 'powers') openPowers();
+      // The shell made the window click-through again (the pointer left it).
+      if (cmd === 'pointer-out') interactive = false;
     });
   }
 
@@ -1486,6 +1493,7 @@
   $('lbl-bond').textContent = tr('card.bond');
   $('lbl-powers').textContent = tr('act.powers');
   $('lbl-bag').textContent = tr('act.bag');
+  $('lbl-more').textContent = tr('act.more');
   function openPowers() {
     if (desktop && desktop.openPowers) desktop.openPowers();
     else window.open('/powers.html', '_blank');
@@ -1495,7 +1503,6 @@
     else window.open(`/${page}.html`, '_blank');
   }
   $('card-powers').addEventListener('click', openPowers);
-  $('card-dex').addEventListener('click', () => openPage('dex'));
   $('card-bag').addEventListener('click', () => openPage('bag'));
 
   OpenmonArt.loadPack();

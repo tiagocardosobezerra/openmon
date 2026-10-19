@@ -206,7 +206,7 @@ For everyone: the **Journal** of the last 14 days and the **waiting counter**, h
 
 ### Settings
 
-Right-click the pet and click the gear on its card (or the tray icon). The menu has the card, the pages, **focus mode**, **quiet mode** and **Settings**, a page with six sections:
+Right-click the pet and click **More** at the bottom of its card (or the tray icon). The menu has the card, the pages, **focus mode**, **quiet mode** and **Settings**, a page with six sections:
 
 * **Pet**: nickname, size, language, season colours, sounds, chatter, walking around and showing the Openmon of the active project.
 * **Alerts**: system notification and answering permissions from the pet (with the waiting time).

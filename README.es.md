@@ -206,7 +206,7 @@ Para todos: el **Diario** de los últimos 14 días y el **contador de espera**, 
 
 ### Configuración
 
-Haz clic derecho en la mascota y en el engranaje de la tarjeta (o en el ícono de la bandeja). El menú tiene la tarjeta, las páginas, el **modo foco**, el **modo silencio** y la **Configuración**, una página con seis secciones:
+Haz clic derecho en la mascota y en **Más**, al pie de la tarjeta (o en el ícono de la bandeja). El menú tiene la tarjeta, las páginas, el **modo foco**, el **modo silencio** y la **Configuración**, una página con seis secciones:
 
 * **Mascota**: apodo, tamaño, idioma, colores de temporada, sonidos, frases, pasear por la pantalla y mostrar el Openmon del proyecto activo.
 * **Avisos**: notificación del sistema y responder permisos desde la mascota (con el tiempo de espera).

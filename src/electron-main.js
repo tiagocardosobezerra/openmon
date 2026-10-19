@@ -665,8 +665,24 @@ function wireIpc() {
     const w = senderWin(e);
     if (!w || w.isDestroyed()) return;
     w.setIgnoreMouseEvents(!on, { forward: true });
+    w.__interactive = on;
     if (on && !dragTimer) liftPet(w);
   });
+  // Safety net: a pet window that takes clicks while the pointer is outside
+  // it goes back to click-through. A transparent window catches clicks on
+  // its whole rectangle, so a missed "leave" would block what is under it.
+  setInterval(() => {
+    if (dragTimer) return;
+    const p = screen.getCursorScreenPoint();
+    for (const w of [win, ...companionWins.values()]) {
+      if (!w || w.isDestroyed() || !w.__interactive) continue;
+      const b = w.getBounds();
+      if (p.x >= b.x && p.x < b.x + b.width && p.y >= b.y && p.y < b.y + b.height) continue;
+      w.setIgnoreMouseEvents(true, { forward: true });
+      w.__interactive = false;
+      w.webContents.send('command', 'pointer-out');
+    }
+  }, 250).unref();
   ipcMain.on('menu', (e) => Menu.buildFromTemplate(menuTemplate()).popup({ window: senderWin(e) || win }));
   ipcMain.on('open-powers', openPowersWindow);
   ipcMain.on('open-name', () => openNameWindow());
