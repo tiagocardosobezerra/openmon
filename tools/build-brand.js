@@ -32,6 +32,13 @@ const OUTPUTS = [
   ['source/favicon-16.svg', 'favicon-16.png', 16],
   ['source/favicon-32.svg', 'favicon-32.png', 32],
   ['icon.svg', 'favicon-48.png', 48],
+  // The window and taskbar icon: the purple tile, readable on light and dark
+  // title bars; small sizes use the simple light egg on the tile.
+  ['source/app-icon-small.svg', 'app-icon-16.png', 16],
+  ['source/app-icon-small.svg', 'app-icon-24.png', 24],
+  ['source/app-icon-small.svg', 'app-icon-32.png', 32],
+  ['app-icon.svg', 'app-icon-48.png', 48],
+  ['app-icon.svg', 'app-icon-64.png', 64],
   ['app-icon.svg', 'app-icon-256.png', 256],
   ['app-icon.svg', 'app-icon-1024.png', 1024],
   ['logo-mark.svg', 'logo-mark-1024.png', 1024],
@@ -111,7 +118,7 @@ app.whenReady().then(async () => {
     console.log(`${out} ${size}px`);
   }
   fs.writeFileSync(path.join(BRAND, 'favicon.ico'), ico(['favicon-16.png', 'favicon-32.png', 'favicon-48.png'].map((n) => rendered[n])));
-  fs.writeFileSync(path.join(BRAND, 'app-icon.ico'), ico([{ size: 16, data: rendered['favicon-16.png'].data }, rendered['app-icon-256.png']]));
+  fs.writeFileSync(path.join(BRAND, 'app-icon.ico'), ico([16, 24, 32, 48, 64, 256].map((n) => rendered[`app-icon-${n}.png`])));
   console.log('favicon.ico, app-icon.ico');
   app.exit(0);
 });
