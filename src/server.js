@@ -156,7 +156,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   function companionViews() {
     const out = {};
     for (const id of config.companions || []) {
-      const member = (real.pet.others || []).find((m) => m.id === id);
+      // Only Party members walk on screen; the Box stays home.
+      const member = (real.pet.others || []).find((m) => m.id === id && m.place === 'party');
       if (member) out[id] = { ...pet.view(party.merge(real.pet, member)), project: member.project ?? null };
     }
     return out;
@@ -165,14 +166,15 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   // Puts a team member on screen as the main pet. A companion swaps places
   // with the main one, so both stay on screen.
   function makeMain(id) {
-    return partyAction(() => {
-      const before = real.pet.id;
-      real.pet = party.setActive(real.pet, id);
-      if (real.pet.id === before) return false;
-      const list = config.companions || [];
-      if (list.includes(id)) setConfig({ companions: list.map((x) => (x === id ? before : x)) });
-      return true;
-    });
+    return partyAction(() => swapMain(id));
+  }
+  function swapMain(id) {
+    const before = real.pet.id;
+    real.pet = party.setActive(real.pet, id);
+    if (real.pet.id === before) return false;
+    const list = config.companions || [];
+    if (list.includes(id)) setConfig({ companions: list.map((x) => (x === id ? before : x)) });
+    return true;
   }
 
   function state() {
@@ -257,7 +259,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     if (!config.followProject || signal.kind !== 'tool-start' || t - lastFollow < 20_000) return;
     const target = party.petFor(real.pet, party.projectOf(signal));
     if (target === real.pet || target.place !== 'party') return;
-    real.pet = party.setActive(real.pet, target.id);
+    // A companion swaps places with the main pet, so it stays on screen.
+    swapMain(target.id);
     lastFollow = t;
     events.push({ type: 'switched', project: target.project });
   }
@@ -415,7 +418,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const { pet: egg, events } = pet.layEgg(old, now());
     if (!events.length) return events;
     // The new egg takes the retired pet's place: same project, same party.
-    Object.assign(egg, { project: old.project ?? null, place: 'party', others: old.others || [], projects: old.projects || {}, journal: old.journal, streak: old.streak, gifts: old.gifts, dexRegions: old.dexRegions });
+    Object.assign(egg, { project: old.project ?? null, place: 'party', others: old.others || [], projects: old.projects || {} });
     real.pet = party.ensure(egg);
     persist(true);
     pushEvents(events);
@@ -744,7 +747,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'POST /api/use':
         return readJson(req, (err, body) => {
           if (err) return res.writeHead(400).end();
-          const events = change((p) => pet.useItem(p, String(body.item || ''), now()));
+          // A stone another member holds is not free to take.
+          const item = String(body.item || '');
+          const reserved = world === real ? party.heldByOthers(real.pet)[item] || 0 : 0;
+          const events = change((p) => pet.useItem(p, item, now(), reserved));
           // A mystery egg hatches into a new member of the team.
           if (events.some((e) => e.type === 'mystery-egg') && world === real) {
             const hatched = partyAction(() => party.hatchMystery(real.pet, now()));

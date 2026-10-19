@@ -31,6 +31,9 @@ const PT = {
   'Connect to Claude Code': 'Conectar ao Claude Code',
   'Trainer card (share)': 'Cartão de treinador (compartilhar)',
   'Retire to Hall of Fame and lay a new egg': 'Aposentar no Hall da Fama e botar um novo ovo',
+  'Retire {name} to the Hall of Fame?': 'Aposentar {name} no Hall da Fama?',
+  'It leaves the team for good and lays a new egg in its place. The egg keeps the Opendex, the Bag, the accessories and a tenth of its stats.': 'Ele sai do time de vez e bota um novo ovo no lugar. O ovo mantém a Opendex, a Mochila, os acessórios e um décimo dos atributos.',
+  Retire: 'Aposentar',
   Powers: 'Poderes',
   'Quiet mode': 'Modo silencioso',
   'Focus mode': 'Modo foco',
@@ -96,6 +99,9 @@ const ES_TEXT = {
   "Connect to Claude Code": "Conectar con Claude Code",
   "Trainer card (share)": "Tarjeta de entrenador (compartir)",
   "Retire to Hall of Fame and lay a new egg": "Retirar al Salón de la Fama y poner un huevo nuevo",
+  "Retire {name} to the Hall of Fame?": "¿Retirar a {name} al Salón de la Fama?",
+  "It leaves the team for good and lays a new egg in its place. The egg keeps the Opendex, the Bag, the accessories and a tenth of its stats.": "Deja el equipo para siempre y pone un huevo nuevo en su lugar. El huevo conserva la Opendex, la Mochila, los accesorios y una décima parte de sus atributos.",
+  Retire: "Retirar",
   Powers: "Poderes",
   "Quiet mode": "Modo silencioso",
   "Quiet until {t}": "Silencio hasta {t}",
@@ -365,14 +371,22 @@ function menuTemplate() {
     { label: L('Settings'), click: () => openAppWindow('settings') },
     {
       label: L('Retire to Hall of Fame and lay a new egg'),
-      visible: Boolean(pet && pet.stage === 'mythic'),
-      click: () => daemon.layEgg(),
+      // Legendaries are Mythic too, but they never retire.
+      visible: Boolean(pet && pet.stage === 'mythic' && !pet.legend),
+      click: () => retire(),
     },
     { type: 'separator' },
     { label: L('Show pet'), type: 'checkbox', checked: win.isVisible(), click: (item) => showPets(item.checked) },
     { type: 'separator' },
     { label: L('Quit'), click: () => app.quit() },
   ].filter(Boolean);
+}
+
+// Retiring cannot be undone, so it asks first.
+async function retire() {
+  const name = (latest && latest.pet && latest.pet.name) || 'Openmon';
+  const r = await dialog.showMessageBox({ type: 'question', buttons: [L('Retire'), L('Cancel')], defaultId: 1, cancelId: 1, message: L('Retire {name} to the Hall of Fame?', { name }), detail: L('It leaves the team for good and lays a new egg in its place. The egg keeps the Opendex, the Bag, the accessories and a tenth of its stats.') });
+  if (r.response === 0) daemon.layEgg();
 }
 
 // Saves: export to a file you choose, or bring one back.

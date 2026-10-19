@@ -11,7 +11,8 @@
 //
 // Each project (the folder an agent works in) feeds its own pet. A project
 // with no pet yet feeds your first one (project: null) until it has seen
-// enough work to earn an egg of its own.
+// enough work to earn an egg of its own. Mystery eggs belong to no project:
+// they grow with that same work, side by side with your first pet.
 
 const crypto = require('node:crypto');
 const pet = require('./pet');
@@ -20,7 +21,7 @@ const { ACHIEVEMENTS } = require('./species');
 const PARTY_SIZE = 6;
 // Real work in a project before it earns its own egg: one-off folders never do.
 const EGG_AFTER_ACTIONS = 60;
-const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region', 'legend', 'friend'];
+const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region', 'legend', 'friend', 'xpLog'];
 
 const newId = () => crypto.randomBytes(6).toString('hex');
 
@@ -35,6 +36,8 @@ function ensure(root) {
     if (!m.id) m.id = newId();
     if (!m.place) m.place = 'party';
     if (!m.worn) m.worn = { head: null, face: null, neck: null };
+    // The 10-minute XP cap is per pet (older saves shared one).
+    if (!Array.isArray(m.xpLog)) m.xpLog = [];
     if (m.worn.face === undefined) m.worn.face = null;
     // Legendaries arrive at Mythic level (older saves gave them level 1).
     if (m.legend && (m.xp || 0) < 15000) m.xp = 15000;
@@ -94,6 +97,7 @@ function petFor(root, project) {
 function applySignal(root, signal, ctx, now) {
   ensure(root);
   const target = petFor(root, projectOf(signal));
+  const before = { xp: target.xp, stats: { ...target.stats }, langs: { ...(target.langs || {}) } };
   let events;
   if (target === root) events = pet.applySignal(root, signal, ctx, now);
   else {
@@ -108,6 +112,7 @@ function applySignal(root, signal, ctx, now) {
       }
     }
   }
+  if (target.project === null) events.push(...shareWithMystery(root, target, before, events, now));
   events.push(...countProject(root, signal, now));
   events.push(...checkLegends(root, now));
   return events;
@@ -148,6 +153,42 @@ function checkLegends(root, now) {
     events.push({ type: 'legend', id, petId: mon.id, place: mon.place, shiny: mon.shiny });
   }
   return events;
+}
+
+const isMystery = (m) => typeof m.project === 'string' && m.project.startsWith('mystery:');
+
+// Work that fed your first pet (projects with no pet of their own) also
+// grows every mystery egg: the same XP from the work, stats and languages.
+// Mission rewards and counters are not doubled.
+function shareWithMystery(root, target, before, events, now) {
+  const bonus = events.filter((e) => e.type === 'mission' || e.type === 'missions-all').reduce((a, e) => a + (e.xp || 0), 0);
+  const gain = {
+    xp: Math.max(0, target.xp - before.xp - bonus),
+    stats: Object.fromEntries(Object.entries(target.stats).map(([k, v]) => [k, v - (before.stats[k] || 0)])),
+    langs: Object.fromEntries(Object.entries(target.langs || {}).map(([k, v]) => [k, v - (before.langs[k] || 0)])),
+  };
+  if (!gain.xp && !Object.values(gain.stats).some((n) => n > 0)) return [];
+  const out = [];
+  for (const m of [root, ...root.others]) {
+    if (m === target || !isMystery(m)) continue;
+    if (m === root) {
+      out.push(...pet.grow(root, gain, now));
+      continue;
+    }
+    const merged = merge(root, m);
+    const evs = pet.grow(merged, gain, now);
+    split(root, m, merged);
+    for (const e of evs) if (['evolve', 'level'].includes(e.type)) Object.assign(e, { petId: m.id, project: m.project, petName: pet.displayName(merged) });
+    out.push(...evs);
+  }
+  return out;
+}
+
+// How many of each item the other members hold (the Bag is shared).
+function heldByOthers(root) {
+  const held = {};
+  for (const m of root.others || []) if (m.holding) held[m.holding] = (held[m.holding] || 0) + 1;
+  return held;
 }
 
 // A mystery egg from the Bag: a new egg with better shiny odds (1 in 16).
@@ -227,7 +268,7 @@ function view(root) {
     .map(([label, actions]) => ({ project: label, actions, needed: EGG_AFTER_ACTIONS }))
     .sort((a, b) => b.actions - a.actions)
     .slice(0, 6);
-  return { size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
+  return { held: heldByOthers(root), size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
 }
 
-module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, PARTY_SIZE, EGG_AFTER_ACTIONS };
+module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, heldByOthers, PARTY_SIZE, EGG_AFTER_ACTIONS };

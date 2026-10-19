@@ -261,8 +261,12 @@ const UNLOCKS = {
   pearls: (p) => (p.counters.perfectDays || 0) >= 7,
   cape: (p) => Object.keys(p.legends || {}).length > 0,
   bell: (p) => (p.counters.pets || 0) >= 100,
-  backpack: (p) => Object.keys(ITEMS).every((id) => (p.bagSeen || {})[id]),
+  backpack: (p) => bagKindsSeen(p) >= ITEM_KINDS.length,
 };
+// The backpack asks for every kind of item, not every type stone: which
+// stone you get depends on your agent's work, so one of any type counts.
+const ITEM_KINDS = ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone', 'stone'];
+const bagKindsSeen = (p) => ITEM_KINDS.filter((k) => Object.keys(p.bagSeen || {}).some((id) => id === k || (k === 'stone' && ITEMS[id] && ITEMS[id].stone))).length;
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 // The first briefing's forms (#001 to #022), hidden ones included.
 const ORIGINAL_DEX = () => dexEntries().slice(0, 22).map((e) => e.key);
@@ -289,7 +293,7 @@ const UNLOCK_PROGRESS = {
   necktie: (p) => [p.counters.prs || 0, 50],
   pearls: (p) => [p.counters.perfectDays || 0, 7],
   bell: (p) => [p.counters.pets || 0, 100],
-  backpack: (p) => [Object.keys(ITEMS).filter((id) => (p.bagSeen || {})[id]).length, Object.keys(ITEMS).length],
+  backpack: (p) => [bagKindsSeen(p), ITEM_KINDS.length],
 };
 
 function cosmeticsView(pet) {
@@ -350,14 +354,18 @@ function wear(pet, slot, id) {
 }
 
 // Use an item from the bag. Snack: +2 bond. Candy: one level up. Steady stone:
-// hold it to stop evolving (hold again to let go).
-function useItem(pet, item, now) {
+// hold it to stop evolving (hold again to let go). `reserved` is how many of
+// this item other members of the team are holding: the Bag is shared, so a
+// stone one pet holds cannot be held by another.
+function useItem(pet, item, now, reserved = 0) {
   const events = [];
   if (!ITEMS[item]) return events;
   rollDay(pet, now, events);
   // Held items: the Steady stone and the type stones. One at a time.
   if (ITEMS[item].use === 'hold') {
-    if (pet.holding !== item && !pet.bag[item]) return [];
+    // Letting go always works; taking one needs a free one in the Bag and a
+    // pet that can still evolve (not a legendary, not a Mythic).
+    if (pet.holding !== item && ((pet.bag[item] || 0) - reserved <= 0 || !nextStage(pet))) return [];
     pet.holding = pet.holding === item ? null : item;
     events.push({ type: 'hold', item, holding: pet.holding });
     if (!pet.holding) evolve(pet, now, events);
@@ -371,6 +379,9 @@ function useItem(pet, item, now) {
     return events;
   }
   if (pet.stage === 'egg' || pet.legend) return [];
+  // Nothing is used up for nothing: no snack at full friendship, no candy at Lv 100.
+  if ((item === 'snack' || item === 'friend-candy') && pet.bond >= BOND_MAX) return [];
+  if (item === 'candy' && level(pet.xp) >= MAX_LEVEL) return [];
   pet.bag[item]--;
   const levelBefore = level(pet.xp);
   if (item === 'snack') {
@@ -424,6 +435,7 @@ function journalEntry(d) {
     waits: d.waits || 0,
     fastestMs: d.fastestMs ?? null,
     tokens: d.tokens || 0,
+    fixes: d.fixes || 0,
     agentMs: { ...(d.agentMs || {}) },
     families: { ...(d.families || {}) },
     projects: { ...(d.projects || {}) },
@@ -476,9 +488,13 @@ function rollDay(pet, now, events) {
   }
 }
 
+// The stone of yesterday's main kind of work, weighted like evolution (rare
+// work counts more) so every stone can come up. Debug is never a tool of its
+// own: yesterday's fixes count for it.
 function stoneFor(pet, day) {
   const last = (pet.journal || [])[pet.journal ? pet.journal.length - 1 : 0];
-  const fam = Object.entries((last && last.families) || {}).filter(([k]) => STATS.includes(k)).sort((a, b) => b[1] - a[1])[0];
+  const counts = { ...((last && last.families) || {}), debug: (last && last.fixes) || 0 };
+  const fam = Object.entries(counts).filter(([k, n]) => STATS.includes(k) && n > 0).map(([k, n]) => [k, n * STAT_WEIGHTS[k]]).sort((a, b) => b[1] - a[1])[0];
   if (fam) return fam[0];
   let h = 0;
   for (const ch of day) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -713,6 +729,23 @@ function applySignal(pet, signal, ctx = {}, now) {
   return events;
 }
 
+// Growth another pet earned from work, shared with this one: its XP from
+// the work (already capped), the stats and the file languages it gained.
+// Nothing is counted twice: missions, counters and the journal stay with
+// the pet the work fed.
+function grow(pet, gain, now) {
+  const events = [];
+  if (pet.legend) return events;
+  const levelBefore = level(pet.xp);
+  if (gain.xp > 0) pet.xp += gain.xp;
+  for (const [s, n] of Object.entries(gain.stats || {})) if (n > 0 && pet.stats[s] != null) pet.stats[s] += n;
+  for (const [l, n] of Object.entries(gain.langs || {})) if (n > 0) pet.langs = { ...(pet.langs || {}), [l]: ((pet.langs || {})[l] || 0) + n };
+  evolve(pet, now, events);
+  checkCosmetics(pet, now, events);
+  if (level(pet.xp) > levelBefore) events.push({ type: 'level', level: level(pet.xp) });
+  return events;
+}
+
 // Counters for accessories and legendaries: commits, pull requests opened
 // and merged, pages fetched, shell commands, files read.
 const SHELL = new Set(['Bash', 'PowerShell']);
@@ -751,9 +784,11 @@ function petIt(pet, now) {
 // Post-game: a Mythic pet retires to the Hall of Fame and leaves an egg.
 // The Opendex, achievements and Hall of Fame carry over, and the egg
 // inherits a tenth of its parent's stats, so the next one starts leaning
-// the same way unless your work changes.
+// the same way unless your work changes. Everything that belongs to you as
+// a trainer (today's missions, streak, journal, active charm) carries on.
+// Legendaries are Mythic but never retire: each one only comes once.
 function layEgg(pet, now, rng = Math.random) {
-  if (pet.stage !== 'mythic') return { pet, events: [] };
+  if (pet.stage !== 'mythic' || pet.legend) return { pet, events: [] };
   const retired = { name: displayName(pet), form: form(pet), lineage: pet.lineage, shiny: pet.shiny, nature: pet.nature, generation: pet.generation, bornAt: pet.bornAt, retiredAt: now };
   // A new creature: it starts with no nickname.
   const egg = createPet(now, DEFAULT_NAME, rng);
@@ -765,8 +800,10 @@ function layEgg(pet, now, rng = Math.random) {
   egg.bagSeen = { ...(pet.bagSeen || {}) };
   egg.legends = { ...(pet.legends || {}) };
   egg.trainerSince = pet.trainerSince || pet.bornAt;
+  // A held item never left the Bag, so it simply stays there.
   egg.bag = { ...pet.bag };
-  if (pet.holding) egg.bag[pet.holding] = (egg.bag[pet.holding] || 0) + (pet.holding === 'everstone' ? 1 : 0);
+  egg.daily = { ...pet.daily };
+  for (const k of ['streak', 'journal', 'gifts', 'seenNight', 'dexRegions', 'charmUntil']) if (pet[k] !== undefined) egg[k] = pet[k];
   egg.hallOfFame = [...(pet.hallOfFame || []), retired];
   egg.stats = Object.fromEntries(STATS.map((s) => [s, Math.floor((pet.stats[s] || 0) / 10)]));
   return { pet: egg, events: [{ type: 'new-egg', generation: egg.generation, retired }] };
@@ -787,6 +824,8 @@ module.exports = {
   createPet,
   migrate,
   applySignal,
+  grow,
+  nextStage,
   petIt,
   rename,
   layEgg,

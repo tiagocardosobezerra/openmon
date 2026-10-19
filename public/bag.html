@@ -81,6 +81,8 @@
 
   let pet = null;
   let cfg = {};
+  // How many of each item other team members hold: those are not free.
+  let held = {};
   const previews = [];
 
   async function act(path, body) {
@@ -93,8 +95,8 @@
   const TYPES = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm', 'docs', 'git', 'debug', 'data', 'style'];
 
   function itemCard(id, small) {
-    const n = pet.bag[id] || 0;
     const holding = pet.holding === id;
+    const n = Math.max(0, (pet.bag[id] || 0) - (held[id] || 0) - (holding ? 1 : 0));
     const card = el('div', `item panel${holding ? ' holding' : ''}${!n && !holding && small ? ' empty' : ''}`);
     const icon = el('div', 'icon');
     if (ICONS[id]) icon.innerHTML = ICONS[id];
@@ -111,12 +113,20 @@
     let btn;
     if (HELD(id)) {
       btn = el('button', `btn sm${holding ? ' brand' : ''}`, holding ? tr('bag.letGo') : tr('bag.hold'));
-      btn.disabled = !n && !holding;
+      // Legendaries and Mythics never evolve again, so they hold nothing.
+      const final = pet.legend || pet.stage === 'mythic';
+      btn.disabled = !holding && (!n || final);
+      if (!holding && final) btn.title = tr('bag.noEvolve');
+      else if (!holding && !n && held[id]) btn.title = tr('bag.heldElsewhere');
     } else {
       btn = el('button', 'btn sm primary', tr(id === 'mystery-egg' ? 'bag.hatch' : 'bag.use'));
       const eggNo = pet.stage === 'egg' && id !== 'mystery-egg';
-      btn.disabled = !n || eggNo || (pet.legend && id !== 'mystery-egg');
+      const full = (id === 'snack' || id === 'friend-candy') && pet.bond >= 100;
+      const top = id === 'candy' && pet.level >= 100;
+      btn.disabled = !n || eggNo || full || top || (pet.legend && id !== 'mystery-egg');
       if (eggNo) btn.title = tr('bag.eggNo');
+      else if (full) btn.title = tr('bag.fullBond');
+      else if (top) btn.title = tr('bag.maxLevel');
     }
     btn.onclick = () => act('/api/use', { item: id });
     card.append(btn);
@@ -183,6 +193,7 @@
     const s = await (await fetch('/api/state')).json();
     pet = s.pet;
     cfg = s.config || {};
+    held = (s.party && s.party.held) || {};
     renderItems();
     renderWear();
   }
