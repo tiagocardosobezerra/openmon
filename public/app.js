@@ -56,6 +56,7 @@
   let force = null;
   // ?hover keeps the stats card open (screenshots, smoke test).
   let hovering = params.has('hover');
+  let pinned = hovering;
   let lastZ = 0;
   let lastSpark = 0;
   const particles = [];
@@ -463,22 +464,32 @@
     renderBubble();
   }
 
-  function setBubble(cls, title, sub) {
+  // jump: the session id a click on the bubble brings to the front.
+  let bubbleJump = null;
+  function setBubble(cls, title, sub, jump = null) {
     const b = $('bubble');
+    bubbleJump = jump;
     if (!cls) {
       b.hidden = true;
       b.dataset.key = '';
       return;
     }
-    const key = `${cls}|${title}|${sub}`;
+    const key = `${cls}|${title}|${sub}|${jump || ''}`;
     if (b.dataset.key === key && !b.hidden) return;
     b.dataset.key = key;
-    b.className = cls;
+    b.className = jump ? `${cls} jump` : cls;
     b.textContent = title;
     if (sub) {
       const small = document.createElement('small');
       small.textContent = sub;
       b.appendChild(small);
+    }
+    if (jump) {
+      const hint = document.createElement('span');
+      hint.className = 'hint';
+      hint.textContent = tr('jump.hint');
+      b.appendChild(document.createElement('br'));
+      b.appendChild(hint);
     }
     b.hidden = false;
   }
@@ -495,16 +506,17 @@
     if (!connected) return setBubble('error', tr('offline'), tr('offline.sub'));
     // Not connected to any agent yet: say how, until it is.
     if (setupInfo && !setupInfo.hooks && !(live.sessions || []).length) return setBubble('setup', tr('setup'), tr('setup.sub'));
+    const jump = !demo && f.id ? f.id : null;
     if (pose === 'attention') {
       const waiting = (live.sessions || []).filter((s) => s.state === 'attention');
-      if (waiting.length > 1) return setBubble('attention', tr('needsYou.many', { n: waiting.length }), waiting.map((s) => s.label).join(', '));
+      if (waiting.length > 1) return setBubble('attention', tr('needsYou.many', { n: waiting.length }), waiting.map((s) => s.label).join(', '), jump);
       const waited = f.since ? ` · ${clock(Date.now() - f.since)}` : '';
       const long = f.since && Date.now() - f.since > LONG_WAIT_MS && ackedFor !== f.since;
-      return setBubble(long ? 'attention long' : 'attention', tr('needsYou', { label: f.label || tr('yourAgent') }) + waited, trDetail(f.detail));
+      return setBubble(long ? 'attention long' : 'attention', tr('needsYou', { label: f.label || tr('yourAgent') }) + waited, trDetail(f.detail), jump);
     }
-    if (pose === 'error') return setBubble('error', tr('ouch'), `${f.label || ''} · ${f.detail ? trDetail(f.detail) : tr('failed')}`);
+    if (pose === 'error') return setBubble('error', tr('ouch'), `${f.label || ''} · ${f.detail ? trDetail(f.detail) : tr('failed')}`, jump);
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
-    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('done', { label: f.label || tr('yourAgent') }), recapLine(f.recap) || tr('done.sub'));
+    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('done', { label: f.label || tr('yourAgent') }), recapLine(f.recap) || tr('done.sub'), jump);
     return setBubble(null);
   }
 
@@ -534,95 +546,141 @@
   let stats = null;
   let statLabels = {};
   let natures = {};
+  // Which tab the card shows. An agent waiting for you always wins.
+  let cardTab = 'agents';
+  try {
+    cardTab = localStorage.getItem('openmon.cardTab') || 'agents';
+  } catch {}
+  function setCardTab(t) {
+    cardTab = t;
+    try {
+      localStorage.setItem('openmon.cardTab', t);
+    } catch {}
+    renderCard();
+  }
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
   function renderCard() {
     const card = $('card');
     // Never cover an evolution or a scene message.
-    card.hidden = !hovering || !pet || Boolean(evolveFx) || Boolean(toast && toast.style === 'scene');
-    if (card.hidden) return;
+    const show = hovering && pet && !evolveFx && !(toast && toast.style === 'scene');
+    if (!show) {
+      if (!card.hidden && !card.classList.contains('closing')) {
+        card.classList.add('closing');
+        setTimeout(() => {
+          if (card.classList.contains('closing')) {
+            card.hidden = true;
+            card.classList.remove('closing');
+          }
+        }, 140);
+      }
+      return;
+    }
+    card.classList.remove('closing');
+    card.hidden = false;
+    card.classList.toggle('pinned', pinned);
+    const pinBtn = $('card-pin');
+    pinBtn.setAttribute('aria-pressed', String(pinned));
+    pinBtn.title = tr(pinned ? 'card.unpin' : 'card.pin');
+    pinBtn.setAttribute('aria-label', pinBtn.title);
+    $('card-close').title = tr('card.close');
+    $('card-close').setAttribute('aria-label', tr('card.close'));
+
     $('card-name').textContent = pet.shiny && pet.stage !== 'egg' ? `${pet.name} ★` : pet.name;
     $('card-form').textContent = pet.dexNo ? `#${String(pet.dexNo).padStart(3, '0')} ${pet.form}` : pet.form;
-    const nature = natures[pet.nature] ? natures[pet.nature].label : '';
     $('card-level').textContent = `Lv ${pet.level || 1}`;
+    $('card-stage').textContent = tr(`stage.${pet.stage}`);
     const pr = pet.progress;
     const soon = pr.next && pr.ratio >= 0.9 && !pr.needsBond;
-    $('card-sub').textContent = [
-      soon ? tr(pet.stage === 'egg' ? 'card.aboutToHatch' : 'card.evolveSoon') : null,
-      pet.nocturne ? tr('card.night') : null,
-      pet.leaning && pet.stage !== 'mythic' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null,
-      nature && tr('card.nature', { nature }),
-      tr('card.gen', { n: pet.generation || 1 }),
-    ].filter(Boolean).join(' · ');
-    $('card-stage').textContent = tr(`stage.${pet.stage}`);
+    const nature = natures[pet.nature] ? natures[pet.nature].label : '';
     const quiet = config.quiet && config.quietUntil ? tr('card.quiet', { t: new Date(config.quietUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : '';
-    $('card-wait').textContent = [quiet, pet.today && pet.today.waitMs ? tr('card.waited', { t: shortDur(pet.today.waitMs) }) : ''].filter(Boolean).join(' · ');
-    $('card-powers').textContent = tr('card.powers');
-    // Today's missions.
-    const ml = $('missions');
-    ml.textContent = '';
-    const missions = (pet.today && pet.today.missions) || [];
-    ml.hidden = !missions.length;
-    if (missions.length) {
-      const head = document.createElement('li');
-      head.className = 'head';
-      head.textContent = pet.today.perfect ? tr('missions.perfectHead') : tr('missions.head');
-      ml.appendChild(head);
-      for (const m of missions) {
-        const li = document.createElement('li');
-        li.className = m.done ? 'done' : '';
-        const mark = document.createElement('span');
-        mark.textContent = m.done ? '✓' : '○';
-        const text = document.createElement('span');
-        text.textContent = tr(`mission.${m.id}`, { n: m.target });
-        const count = document.createElement('b');
-        count.textContent = m.done ? '' : `${m.progress}/${m.target}`;
-        li.append(mark, text, count);
-        ml.appendChild(li);
-      }
-    }
+    const chips = $('card-sub');
+    chips.textContent = '';
+    for (const [text, cls] of [
+      [soon ? tr(pet.stage === 'egg' ? 'card.aboutToHatch' : 'card.evolveSoon') : null, 'sun'],
+      [quiet || null, ''],
+      [pet.nocturne ? tr('card.night') : null, 'brand'],
+      [pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null, ''],
+      [nature ? tr('card.nature', { nature }) : null, ''],
+      [(pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null, ''],
+    ]) if (text) chips.appendChild(el('span', `chip ${cls}`.trim(), text));
+
     $('xp-bar').style.width = `${Math.round(pr.ratio * 100)}%`;
     $('xp-text').textContent = !pr.next ? tr('card.max') : pr.needsBond && pr.xpToGo === 0 ? tr('card.needsBond', { n: pr.bondNeeded }) : tr(pet.stage === 'egg' ? 'card.hatchesIn' : 'card.toEvolve', { n: pr.xpToGo });
     $('bond-bar').style.width = `${pet.bond}%`;
-    $('bond-text').textContent = `${pet.bond}`;
-    const box = $('stats');
-    box.textContent = '';
-    box.hidden = pet.stage === 'egg';
-    // Affinity bars: the weighted share that actually decides the lineage.
-    const aff = pet.affinity || {};
-    const max = Math.max(0.0001, ...Object.values(aff));
-    for (const [k, v] of Object.entries(pet.stats)) {
-      const d = document.createElement('div');
-      if (k === pet.leaning && v > 0) d.className = 'top';
-      d.title = tr('actions', { n: v, stat: statLabels[k] || k });
-      const name = document.createElement('span');
-      name.textContent = statLabels[k] || k;
-      const bar = document.createElement('i');
-      bar.style.setProperty('--w', `${Math.round(((aff[k] || 0) / max) * 100)}%`);
-      bar.className = `aff aff-${k}`;
-      d.append(name, bar);
-      box.appendChild(d);
+    $('bond-text').textContent = `${pet.bond}/100`;
+
+    // Tabs, with a count on Agents (waiting) and Today (missions left).
+    const sessions = live.sessions || [];
+    const waitingN = sessions.filter((x) => x.state === 'attention').length;
+    const missions = (pet.today && pet.today.missions) || [];
+    const left = missions.filter((m) => !m.done).length;
+    const tab = waitingN ? 'agents' : cardTab;
+    for (const [id, label, n] of [['agents', tr('tab.agents'), waitingN], ['today', tr('tab.today'), left], ['stats', tr('tab.stats'), 0]]) {
+      const b = $(`tab-${id}`);
+      b.textContent = label;
+      if (n) b.appendChild(el('span', 'n', String(n)));
+      b.setAttribute('aria-selected', String(id === tab));
     }
+    for (const sec of card.querySelectorAll('.tab-body')) sec.hidden = sec.dataset.tab !== tab;
+
+    // Agents.
     const list = $('sessions');
     list.textContent = '';
-    const sessions = live.sessions || [];
-    if (!sessions.length) {
-      const li = document.createElement('li');
-      li.className = 'empty';
-      li.textContent = tr('noAgents');
-      list.appendChild(li);
-    }
+    if (!sessions.length) list.appendChild(el('li', 'empty', tr('noAgents')));
     const order = { attention: 0, working: 1, done: 2, idle: 3 };
     const sorted = [...sessions].sort((a, b) => (order[a.state] ?? 4) - (order[b.state] ?? 4));
-    for (const s of sorted.slice(0, 4)) {
-      const li = document.createElement('li');
-      li.className = s.state;
-      const dot = document.createElement('i');
-      dot.className = 'dot';
-      const label = document.createElement('b');
-      label.textContent = s.label;
-      const detail = document.createElement('span');
-      detail.textContent = s.state === 'attention' ? trDetail(s.detail) || tr('session.needsYou') : s.state === 'working' ? trDetail(s.detail) || tr('session.working') : tr(s.state === 'done' ? 'session.done' : 'session.idle');
-      li.append(dot, label, detail);
+    for (const x of sorted.slice(0, 5)) {
+      const li = el('li', x.state);
+      if (!demo) {
+        li.classList.add('jump');
+        li.dataset.id = x.id;
+        li.title = tr('session.jump');
+      }
+      const detail = x.state === 'attention' ? trDetail(x.detail) || tr('session.needsYou') : x.state === 'working' ? trDetail(x.detail) || tr('session.working') : tr(x.state === 'done' ? 'session.done' : 'session.idle');
+      li.append(el('i', 'dot'), el('b', '', x.label), el('span', '', detail), el('em', 'go', demo ? '' : x.state === 'attention' ? tr('session.go') : '↗'));
       list.appendChild(li);
+    }
+
+    // Today.
+    const wait = $('card-wait');
+    wait.textContent = '';
+    if (pet.today && pet.today.waitMs) wait.append(el('b', '', shortDur(pet.today.waitMs)), el('span', '', tr('today.waited')));
+    else wait.append(el('span', '', tr('today.noWaits')));
+    const ml = $('missions');
+    ml.textContent = '';
+    ml.hidden = !missions.length;
+    if (missions.length) {
+      ml.appendChild(el('li', 'head', pet.today.perfect ? tr('missions.perfectHead') : tr('missions.head')));
+      for (const m of missions) {
+        const li = el('li', m.done ? 'done' : '');
+        li.append(el('span', 'mark', m.done ? '✓' : ''), el('span', '', tr(`mission.${m.id}`, { n: m.target })), el('b', '', m.done ? '' : `${m.progress}/${m.target}`));
+        ml.appendChild(li);
+      }
+    }
+
+    // Stats: affinity bars, the weighted share that actually decides the lineage.
+    const box = $('stats');
+    box.textContent = '';
+    if (pet.stage === 'egg') box.appendChild(el('span', 'egg-note', tr('card.eggStats')));
+    else {
+      const aff = pet.affinity || {};
+      const max = Math.max(0.0001, ...Object.values(aff));
+      const total = Object.values(aff).reduce((a, b) => a + b, 0) || 1;
+      for (const [k, v] of Object.entries(pet.stats)) {
+        const d = el('div', k === pet.leaning && v > 0 ? 'top' : '');
+        d.title = tr('actions', { n: v, stat: statLabels[k] || k });
+        const bar = el('i', `aff aff-${k}`);
+        bar.style.setProperty('--w', `${Math.round(((aff[k] || 0) / max) * 100)}%`);
+        d.append(el('span', '', statLabels[k] || k), bar, el('em', '', `${Math.round(((aff[k] || 0) / total) * 100)}%`));
+        box.appendChild(d);
+      }
     }
   }
 
@@ -811,27 +869,64 @@
     if (desktop) desktop.dragEnd();
     canvas.classList.remove('dragging');
     if (!down.moved) {
-      // Clicking while it waits means "I saw it": it calms down.
-      if (pose === 'attention' && live.focus) ackedFor = live.focus.since;
-      post('/api/pet');
+      // Clicking while it waits means "take me there": it calms down and
+      // brings the agent's window to the front.
+      if (pose === 'attention' && live.focus) {
+        ackedFor = live.focus.since;
+        jumpTo(live.focus.id);
+      } else post('/api/pet');
     }
     down = null;
   });
   canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if (desktop) desktop.menu();
-    else setHover(!hovering);
+    else setPinned(!(hovering && pinned));
   });
 
+  // The card opens after resting on the pet, and stays open while the
+  // cursor travels up to it (a short grace period), while it is over the
+  // card, and for good when pinned.
   let hoverTimer = null;
+  let leaveTimer = null;
+  const OPEN_MS = 380;
+  const GRACE_MS = 650;
   function setHover(on) {
     clearTimeout(hoverTimer);
-    if (on === hovering) return;
+    clearTimeout(leaveTimer);
+    hoverTimer = leaveTimer = null;
+    if (!on) pinned = false;
+    if (on === hovering) return renderCard();
     hovering = on;
     renderAll();
   }
+  function setPinned(on) {
+    pinned = on;
+    if (on) setHover(true);
+    else renderCard();
+  }
+  function scheduleClose() {
+    if (pinned || !hovering || leaveTimer) return;
+    leaveTimer = setTimeout(() => {
+      leaveTimer = null;
+      if (!pinned) setHover(false);
+    }, GRACE_MS);
+  }
+  function keepOpen() {
+    clearTimeout(leaveTimer);
+    leaveTimer = null;
+  }
 
-  // Click-through outside the pet (desktop), hover card after a short rest.
+  // Brings the agent's window (terminal, editor, app) to the front.
+  async function jumpTo(id) {
+    if (!id || demo) return;
+    try {
+      const r = await (await fetch('/api/focus', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })).json();
+      if (!r.ok) pushToast(tr('jump.fail'), tr('jump.failSub'), 4000);
+    } catch {}
+  }
+
+  // Click-through outside the pet and its UI (desktop).
   let interactive = null;
   let cursor = null;
   document.addEventListener('mousemove', (e) => {
@@ -842,24 +937,47 @@
     cursor = { x: (p.x - CX) / 110, y: (p.y - faceY) / 110, at: Date.now() };
     const inPet = overPet(p.x, p.y);
     canvas.style.cursor = down ? 'grabbing' : inPet ? 'grab' : 'default';
-    const inUi = e.target.closest && e.target.closest('#card, #bubble, #controls');
+    const inCard = Boolean(e.target.closest && e.target.closest('#card'));
+    const inUi = inCard || Boolean(e.target.closest && e.target.closest('#bubble, #controls'));
     const want = Boolean(inPet || inUi || down);
     if (desktop && want !== interactive) {
       interactive = want;
       desktop.setInteractive(want);
     }
     if (inPet && !down) {
-      if (!hovering && !hoverTimer) hoverTimer = setTimeout(() => { hoverTimer = null; setHover(true); }, 450);
-    } else if (!inUi || !e.target.closest('#card')) {
+      keepOpen();
+      if (!hovering && !hoverTimer) hoverTimer = setTimeout(() => { hoverTimer = null; setHover(true); }, OPEN_MS);
+    } else if (inCard) {
+      keepOpen();
+    } else {
       clearTimeout(hoverTimer);
       hoverTimer = null;
-      if (hovering && !inUi) setHover(false);
+      scheduleClose();
     }
   });
   document.addEventListener('mouseleave', () => {
     clearTimeout(hoverTimer);
     hoverTimer = null;
-    setHover(false);
+    scheduleClose();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && hovering) setHover(false);
+  });
+
+  $('card-pin').addEventListener('click', () => setPinned(!pinned));
+  $('card-close').addEventListener('click', () => setHover(false));
+  $('card-tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-tab]');
+    if (b) setCardTab(b.dataset.tab);
+  });
+  $('sessions').addEventListener('click', (e) => {
+    const li = e.target.closest('li.jump');
+    if (li) jumpTo(li.dataset.id);
+  });
+  $('bubble').addEventListener('click', () => {
+    if (!bubbleJump) return;
+    if (pose === 'attention' && live.focus) ackedFor = live.focus.since;
+    jumpTo(bubbleJump);
   });
 
   // --- preview controls ------------------------------------------------------------
@@ -901,18 +1019,26 @@
 
   if (desktop && desktop.onCommand) {
     desktop.onCommand((cmd) => {
-      if (cmd === 'card') setHover(!hovering);
+      if (cmd === 'card') setPinned(!(hovering && pinned));
       if (cmd === 'powers') openPowers();
     });
   }
 
   document.documentElement.lang = window.OpenmonI18n.lang;
   $('lbl-bond').textContent = tr('card.bond');
+  $('lbl-powers').textContent = tr('act.powers');
+  $('lbl-share').textContent = tr('act.card');
   function openPowers() {
     if (desktop && desktop.openPowers) desktop.openPowers();
     else window.open('/powers.html', '_blank');
   }
+  function openPage(page) {
+    if (desktop && desktop.openPage) desktop.openPage(page);
+    else window.open(`/${page}.html`, '_blank');
+  }
   $('card-powers').addEventListener('click', openPowers);
+  $('card-dex').addEventListener('click', () => openPage('dex'));
+  $('card-share').addEventListener('click', () => openPage('card'));
 
   OpenmonArt.loadPack();
   connect();

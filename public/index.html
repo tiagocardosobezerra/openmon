@@ -6,22 +6,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/brand/icon.svg">
 <title>Openmon</title>
+<link rel="stylesheet" href="ui.css">
 <link rel="stylesheet" href="pet.css">
 </head>
 <body>
   <div id="stage">
     <div id="card" hidden>
-      <div class="card-head">
-        <div><span id="card-name"></span> <span id="card-level" class="lv"></span> <span id="card-form" class="muted"></span></div>
-        <div id="card-stage" class="pill"></div>
+      <header class="card-head">
+        <div class="card-id">
+          <div class="card-title"><span id="card-name"></span><span id="card-level" class="lv"></span></div>
+          <div class="card-form"><span id="card-form"></span><span id="card-stage" class="chip brand"></span></div>
+        </div>
+        <button id="card-pin" class="icon-btn" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/></svg></button>
+        <button id="card-close" class="icon-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </header>
+      <div id="card-sub" class="card-chips"></div>
+      <div class="meters">
+        <div class="meter"><span>XP</span><div class="bar"><i id="xp-bar"></i></div><b id="xp-text"></b></div>
+        <div class="meter"><span id="lbl-bond">Bond</span><div class="bar bond"><i id="bond-bar"></i></div><b id="bond-text"></b></div>
       </div>
-      <div id="card-sub" class="card-sub muted"></div>
-      <div class="meter"><span>XP</span><div class="bar"><i id="xp-bar"></i></div><b id="xp-text"></b></div>
-      <div class="meter"><span id="lbl-bond">Bond</span><div class="bar bond"><i id="bond-bar"></i></div><b id="bond-text"></b></div>
-      <div class="card-wait"><span id="card-wait"></span><button id="card-powers" type="button"></button></div>
-      <ul id="missions" class="missions"></ul>
-      <ul id="sessions"></ul>
-      <div id="stats" class="stats"></div>
+      <div class="seg" role="tablist" id="card-tabs">
+        <button role="tab" data-tab="agents" id="tab-agents"></button>
+        <button role="tab" data-tab="today" id="tab-today"></button>
+        <button role="tab" data-tab="stats" id="tab-stats"></button>
+      </div>
+      <section class="tab-body" data-tab="agents">
+        <ul id="sessions"></ul>
+      </section>
+      <section class="tab-body" data-tab="today" hidden>
+        <div id="card-wait" class="card-wait"></div>
+        <ul id="missions" class="missions"></ul>
+      </section>
+      <section class="tab-body" data-tab="stats" hidden>
+        <div id="stats" class="stats"></div>
+      </section>
+      <footer class="card-actions">
+        <button id="card-powers" class="btn primary sm" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg><span id="lbl-powers"></span></button>
+        <button id="card-dex" class="btn sm" type="button"><span>Opendex</span></button>
+        <button id="card-share" class="btn sm" type="button"><span id="lbl-share"></span></button>
+      </footer>
     </div>
     <div id="bubble" hidden></div>
     <div id="badge" hidden></div>

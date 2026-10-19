@@ -6,27 +6,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/brand/icon.svg">
 <title>Name your Openmon</title>
+<link rel="stylesheet" href="ui.css">
 <style>
-  :root { --ink: #2a2140; --paper: #fffdf7; --muted: #6d6680; }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  form { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 16px 18px; border: 3px solid var(--ink); }
-  label { font-weight: 800; font-size: 15px; }
-  p { margin: -6px 0 0; color: var(--muted); font-size: 12.5px; }
+  html, body { height: 100%; }
+  body.page { min-height: 0; background: var(--surface); }
+  form { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 16px 18px; border: 2.5px solid var(--outline); border-radius: 0; }
+  label { font: 600 17px var(--font-display); }
+  p { margin: -4px 0 4px; color: var(--muted); font-size: 12.5px; }
   .row { display: flex; gap: 8px; }
-  input { flex: 1; min-width: 0; font: inherit; font-size: 16px; font-weight: 700; padding: 7px 10px; border: 2px solid var(--ink); border-radius: 10px; background: #fff; color: var(--ink); }
-  input:focus { outline: 3px solid #9381f2; outline-offset: 1px; }
-  button { font: inherit; font-weight: 800; padding: 7px 14px; border: 2px solid var(--ink); border-radius: 10px; background: #ffe156; color: var(--ink); cursor: pointer; box-shadow: 0 2px 0 var(--ink); }
-  button:active { transform: translateY(2px); box-shadow: none; }
+  .row .input { flex: 1; min-width: 0; }
 </style>
 </head>
-<body>
+<body class="page">
 <form id="f">
   <label for="name">What will you call it?</label>
   <p id="hint">Up to 24 characters. You can change it later.</p>
   <div class="row">
-    <input id="name" maxlength="24" autocomplete="off" spellcheck="false" required>
-    <button type="submit">OK</button>
+    <input id="name" class="input" maxlength="24" autocomplete="off" spellcheck="false" required>
+    <button type="submit" class="btn primary">OK</button>
   </div>
 </form>
 <script src="i18n.js"></script>

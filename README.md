@@ -83,6 +83,8 @@ XP is capped at 120 per 10 minutes, so a runaway loop cannot fast-forward your p
 
 ## Everyday helpers
 
+- **Click to answer**: when an agent waits for a permission, click the pet, its bubble, the session in its card or the OS notification, and the window that runs that agent (terminal, VS Code, the Claude app) comes to the front, ready to approve or deny. The hook finds that window once per session by walking up its own process tree; nothing is sent anywhere.
+- **The card**: rest the cursor on the pet to open it, and it stays open while you move to it; the pin keeps it open. Tabs for your agents, today's missions and stats, plus Powers, Opendex and the trainer card one click away.
 - **Turn recap**: when an agent finishes, the bubble says what the turn did: *"shop-api is done ✓ · 3 files · 12 commands · tests ✓ · 2m 10s"*.
 - **Daily missions**: three a day (the same for everyone), such as "answer your agent within 30 s, 3×" or "3 green test runs". +25 XP and bond each, +50 for a perfect day.
 - **Quiet mode**: 30 minutes, 1 hour or until tomorrow, from the menu. The pet still shows everything, silently.

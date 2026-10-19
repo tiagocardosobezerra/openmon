@@ -6,67 +6,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/brand/icon.svg">
 <title>Openmon Powers</title>
+<link rel="stylesheet" href="ui.css">
 <style>
-  :root { --bg: #f4efe6; --card: #fffdf8; --ink: #2a2140; --muted: #6d6680; --line: #e6dfd1; --ok: #2f9e55; --bad: #d64545; --wait: #ffe156;
-    --craft: #ff9f43; --lore: #9381f2; --shell: #35d0bf; --test: #74cc63; --roam: #5fb3ff; --swarm: #ff80b8; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #16121d; --card: #211b2c; --ink: #f3eefc; --muted: #a49cb8; --line: #352d45; --ok: #5ccf74; --bad: #ff7b7b; } }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header { padding: 16px 18px 14px; background: #7c6cf2; color: #fff; border-bottom: 3px solid #2a2140; }
-  header .row { display: flex; align-items: center; gap: 10px; }
-  header img { width: 40px; height: 40px; }
-  h1 { margin: 0; font-size: 22px; letter-spacing: -0.01em; }
-  header p { margin: 4px 0 0; font-size: 13px; opacity: 0.92; }
-  main { padding: 14px 16px 40px; max-width: 760px; margin: 0 auto; }
-  .wait { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: center; background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px; }
-  .wait .big { font-size: 26px; font-weight: 850; font-variant-numeric: tabular-nums; grid-row: span 2; }
-  .wait .now { grid-column: 1 / -1; margin-top: 6px; padding: 6px 10px; border-radius: 10px; background: var(--wait); color: #2a2140; font-weight: 700; }
-  .muted { color: var(--muted); }
-  .sessions { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 10px; }
-  .chip { font: inherit; font-size: 13px; font-weight: 650; padding: 4px 10px; border-radius: 99px; border: 2px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
-  .chip.on { border-color: var(--ink); }
-  .tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-  .tab { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); cursor: pointer; }
-  .tab img { width: 40px; height: 40px; object-fit: contain; }
-  .tab b { font-size: 12px; }
+  main { padding-bottom: 48px; }
+  .top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; align-items: stretch; }
+  .wait { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; align-items: center; padding: 14px 16px; }
+  .wait .big-number { grid-row: span 2; }
+  .wait .now { grid-column: 1 / -1; margin-top: 8px; padding: 6px 10px; border-radius: var(--r-sm); background: var(--sun); color: #2a2140; font-weight: 700; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .wait .now button { flex: none; }
+  .sessions-box { padding: 12px 14px; }
+  .sessions-box h3 { margin: 0 0 8px; font-size: 14px; }
+  .sessions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sessions .recap { flex-basis: 100%; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 22px; }
+  .tab { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px 8px; border: var(--bw) solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--ink); cursor: pointer; transition: transform 0.08s ease; }
+  .tab:hover { transform: translateY(-2px); border-color: var(--c); }
+  .tab img { width: 46px; height: 46px; object-fit: contain; }
+  .tab b { font: 600 13px var(--font-display); }
   .tab small { font-size: 11px; color: var(--muted); }
-  .tab.on { border-color: var(--c); box-shadow: inset 0 -4px 0 var(--c); }
-  .tab.locked img { filter: grayscale(1) brightness(0.3); opacity: 0.6; }
-  .panel { margin-top: 10px; background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px; min-height: 160px; }
-  .panel h2 { margin: 0 0 2px; font-size: 16px; }
-  .panel > p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+  .tab.on { border-color: var(--outline); box-shadow: 0 3px 0 var(--outline), inset 0 -5px 0 var(--c); }
+  .tab.locked img { filter: grayscale(1) brightness(0.3); opacity: 0.55; }
+  .panel-body { margin-top: 12px; padding: 16px 18px; min-height: 180px; border-top: 6px solid var(--c, var(--brand)); }
+  .panel-body h2 { margin: 0 0 2px; font-size: 19px; }
+  .panel-body > p { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  td, th { text-align: left; padding: 5px 6px; border-top: 1px solid var(--line); vertical-align: top; }
+  td, th { text-align: left; padding: 7px 8px; border-top: 1px solid var(--line); vertical-align: top; }
   th { color: var(--muted); font-weight: 650; font-size: 12px; border-top: 0; }
+  tr:hover td { background: var(--surface-2); }
   td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  code { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; overflow-wrap: anywhere; }
   .add { color: var(--ok); font-weight: 700; } .del { color: var(--bad); font-weight: 700; }
   .ok { color: var(--ok); font-weight: 800; } .bad { color: var(--bad); font-weight: 800; }
-  .badge { display: inline-block; padding: 2px 9px; border-radius: 99px; font-weight: 750; font-size: 12px; background: var(--line); }
   .lock { text-align: center; padding: 24px 8px; }
-  .lock img { width: 90px; height: 90px; object-fit: contain; filter: grayscale(1) brightness(0.3); opacity: 0.55; }
-  .empty { color: var(--muted); padding: 10px 0; }
-  button.copy { font: inherit; font-size: 11px; padding: 1px 7px; border-radius: 7px; border: 1.5px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
-  @media (max-width: 560px) { .tabs { grid-template-columns: repeat(3, 1fr); } }
+  .lock img { width: 96px; height: 96px; object-fit: contain; filter: grayscale(1) brightness(0.3); opacity: 0.55; }
+  @media (max-width: 720px) { .top { grid-template-columns: 1fr; } .tabs { grid-template-columns: repeat(3, 1fr); } }
 </style>
 </head>
-<body>
-<header>
-  <div class="row"><img src="/brand/logo-mark.svg" alt=""><h1 id="title">Powers</h1></div>
-  <p id="sub"></p>
-</header>
-<main>
-  <section class="wait" id="wait"></section>
-  <div class="sessions" id="sessions"></div>
+<body class="page" data-page="powers">
+<main class="wrap">
+  <div class="hero"><div><h1 id="title">Powers</h1><p id="sub"></p></div></div>
+  <div class="top">
+    <section class="wait panel" id="wait"></section>
+    <section class="sessions-box panel soft"><h3 id="h-sessions"></h3><div class="sessions" id="sessions"></div></section>
+  </div>
   <div class="tabs" id="tabs"></div>
-  <section class="panel" id="panel"></section>
+  <section class="panel panel-body" id="panel"></section>
 </main>
 <script src="i18n.js"></script>
+<script src="nav.js"></script>
 <script>
   const { t: tr, lang } = window.OpenmonI18n;
   document.documentElement.lang = lang;
   document.getElementById('title').textContent = tr('powers.title');
   document.getElementById('sub').textContent = tr('powers.sub');
+  document.getElementById('h-sessions').textContent = tr('powers.sessions');
   const POWERS = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
   let data = null;
   let live = null;
@@ -95,9 +87,13 @@
     const box = $('wait');
     box.textContent = '';
     const today = data.today || {};
-    box.append(h('div', { class: 'big' }, dur(today.waitMs || 0)), h('div', {}, h('b', {}, tr('powers.waited'))), h('div', { class: 'muted' }, today.waits ? tr('powers.waitedSub', { n: today.waits, fast: dur(today.fastestMs) }) : tr('powers.noWaits')));
+    box.append(h('div', { class: 'big-number' }, dur(today.waitMs || 0)), h('div', {}, h('b', {}, tr('powers.waited'))), h('div', { class: 'muted' }, today.waits ? tr('powers.waitedSub', { n: today.waits, fast: dur(today.fastestMs) }) : tr('powers.noWaits')));
     const waiting = live && live.pose === 'attention' && live.focus ? live.focus : null;
-    if (waiting) box.append(h('div', { class: 'now' }, tr('powers.waitingNow', { label: waiting.label, t: dur(Date.now() - waiting.since) })));
+    if (waiting) {
+      const go = h('button', { class: 'btn sm' }, tr('session.go'));
+      go.onclick = () => fetch('/api/focus', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: waiting.id }) });
+      box.append(h('div', { class: 'now' }, h('span', {}, tr('powers.waitingNow', { label: waiting.label, t: dur(Date.now() - waiting.since) })), go));
+    }
   }
 
   function renderSessions() {
@@ -106,12 +102,12 @@
     if (!data.sessions.length) return box.append(h('span', { class: 'muted' }, tr('powers.noSessions')));
     if (!selected || !data.sessions.some((s) => s.id === selected)) selected = data.sessions[0].id;
     for (const s of data.sessions) {
-      const b = h('button', { class: `chip${s.id === selected ? ' on' : ''}` }, s.label, ' ', h('span', { class: 'muted' }, s.ended ? tr('powers.ended') : ago(s.lastAt)));
+      const b = h('button', { class: 'chip', 'aria-pressed': String(s.id === selected) }, h('b', {}, s.label), h('span', { class: 'muted' }, s.ended ? tr('powers.ended') : ago(s.lastAt)));
       b.onclick = () => { selected = s.id; render(); };
       box.append(b);
     }
     const current = data.sessions.find((x) => x.id === selected);
-    if (current && current.lastTurn) box.append(h('div', { class: 'muted', style: 'flex-basis:100%;font-size:12.5px' }, recapText(current.lastTurn)));
+    if (current && current.lastTurn) box.append(h('div', { class: 'recap' }, recapText(current.lastTurn)));
   }
 
   function recapText(r) {
@@ -141,7 +137,7 @@
   }
 
   const copyBtn = (text) => {
-    const b = h('button', { class: 'copy' }, tr('powers.copy'));
+    const b = h('button', { class: 'btn ghost sm' }, tr('powers.copy'));
     b.onclick = () => navigator.clipboard.writeText(text).then(() => (b.textContent = '✓'));
     return b;
   };
@@ -165,7 +161,7 @@
     },
     test(s) {
       if (!s.test.runs.length) return null;
-      const head = h('p', {}, h('span', { class: 'badge' }, s.test.streak === 1 ? tr('powers.streak1') : tr('powers.streak', { n: s.test.streak })), ' ', s.test.lastGreenAt ? tr('powers.lastGreen', { t: ago(s.test.lastGreenAt) }) : tr('powers.neverGreen'));
+      const head = h('p', {}, h('span', { class: 'chip sun' }, s.test.streak === 1 ? tr('powers.streak1') : tr('powers.streak', { n: s.test.streak })), ' ', s.test.lastGreenAt ? tr('powers.lastGreen', { t: ago(s.test.lastGreenAt) }) : tr('powers.neverGreen'));
       return h('div', {}, head, h('table', {}, h('tr', {}, h('th', {}, ''), h('th', {}, tr('powers.run')), h('th', { class: 'n' }, tr('powers.time'))),
         s.test.runs.map((r) => h('tr', {}, h('td', {}, h('span', { class: r.passed === true ? 'ok' : r.passed === false ? 'bad' : 'muted' }, r.passed === true ? '✓' : r.passed === false ? '✗' : '?')), h('td', {}, h('code', {}, r.command), r.summary ? h('div', { class: 'muted' }, r.summary) : null), h('td', { class: 'n muted' }, dur(r.ms))))));
     },
@@ -184,7 +180,7 @@
   function renderPanel() {
     const box = $('panel');
     box.textContent = '';
-    box.style.borderColor = `var(--${tab})`;
+    box.style.setProperty('--c', `var(--${tab})`);
     box.append(h('h2', {}, `${tr(`power.${tab}`)} · ${tr(`power.${tab}.title`)}`), h('p', {}, tr(`power.${tab}.text`)));
     if (!data.unlocked.includes(tab)) {
       box.append(h('div', { class: 'lock' }, h('img', { src: `/art/${tab}-juvenile.svg`, alt: '' }), h('p', {}, h('b', {}, tr('powers.locked', { lineage: tr(`power.${tab}`) }))), h('p', { class: 'muted' }, tr('powers.lockedHow', { work: tr(`work.${tab}`) }))));

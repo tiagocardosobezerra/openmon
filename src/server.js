@@ -17,6 +17,7 @@ const { demoScript, DEMO_START_XP } = require('./demo');
 const installer = require('./install');
 const { localizeSpecies } = require('./i18n');
 const { createPlayground } = require('./playground');
+const { createFocus } = require('./focus');
 const { createPowers, unlockedPowers } = require('./powers');
 
 const DEFAULT_PORT = Number(process.env.OPENMON_PORT) || 4747;
@@ -31,6 +32,8 @@ const MIME = {
   '.webp': 'image/webp',
   '.json': 'application/json',
   '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.txt': 'text/plain; charset=utf-8',
 };
 
 function createWorld(petState) {
@@ -72,7 +75,7 @@ function listArt(dirs) {
   return { files: Object.keys(where).sort(), pack, where };
 }
 
-function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json') } = {}) {
+function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus() } = {}) {
   const artDirs = [artDir, bundledArt].filter(Boolean);
   const bus = new EventEmitter();
   const powers = createPowers();
@@ -130,7 +133,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const signal = classify(payload);
     if (!signal) return [];
     const t = now();
-    if (target === real) powers.record(payload, signal.label, t);
+    if (target === real) {
+      powers.record(payload, signal.label, t);
+      if (signal.kind === 'session-end') focus.forget(signal.session);
+    }
     const ctx = target.sessions.apply(signal, t);
     const events = pet.applySignal(target.pet, signal, ctx, t);
     if (target === real) store.save(real.pet);
@@ -146,6 +152,14 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       pushState();
     }
     return events;
+  }
+
+  // Brings the window of a waiting agent (or the given session) to the front.
+  function focusAgent(id) {
+    const live = real.sessions.snapshot(now());
+    const target = typeof id === 'string' && id ? id : live.focus && live.focus.id;
+    if (!target) return Promise.resolve({ ok: false, reason: 'unknown' });
+    return focus.focus(target);
   }
 
   function petIt() {
@@ -293,6 +307,9 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         return readJson(req, (err, body) => {
           if (err) return res.writeHead(400).end();
           ingest(body);
+          // Once per session the hook is asked to find its agent's window.
+          const sid = body && body.session_id ? String(body.session_id) : 'default';
+          if (body && body._ppid && body.hook_event_name !== 'SessionEnd' && focus.wants(sid)) return json(res, 200, { findWindow: true });
           res.writeHead(204).end();
         });
       case 'POST /api/pet':
@@ -303,6 +320,17 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         return json(res, 200, { unlocked: unlockedPowers(world.pet), today: pet.view(world.pet).today, sessions: powers.view() });
       case 'GET /api/playground':
         return json(res, 200, { playground: Boolean(dev) });
+      case 'POST /api/window':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          focus.setWindow(body.session_id ? String(body.session_id) : 'default', body.window);
+          res.writeHead(204).end();
+        });
+      case 'POST /api/focus':
+        return readJson(req, (err, body) => {
+          if (err) return res.writeHead(400).end();
+          focusAgent(body && body.id).then((r) => json(res, 200, r));
+        });
       case 'POST /api/lay-egg':
         return json(res, 200, { events: layEgg() });
       case 'POST /api/shutdown':
@@ -402,6 +430,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     bus,
     ingest,
     petIt,
+    focusAgent,
     rename,
     layEgg,
     runDemo,

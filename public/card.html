@@ -6,28 +6,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/brand/icon.svg">
 <title>Trainer card</title>
+<link rel="stylesheet" href="ui.css">
 <style>
-  :root { --bg: #f4efe6; --ink: #2a2140; --muted: #6d6680; --card: #fffdf8; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #16121d; --ink: #f3eefc; --muted: #a49cb8; --card: #211b2c; } }
-  * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, Segoe UI, sans-serif; display: grid; place-items: center; padding: 24px 16px; }
-  main { width: min(960px, 100%); text-align: center; }
-  canvas { width: 100%; height: auto; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); display: block; }
-  .actions { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
-  button { font: inherit; font-weight: 700; padding: 8px 16px; border: 2px solid var(--ink); border-radius: 12px; background: var(--card); color: var(--ink); cursor: pointer; }
-  #msg { color: var(--muted); min-height: 1.5em; margin-top: 8px; }
+  main { padding: 8px 0 48px; }
+  .hero { padding-bottom: 14px; }
+  canvas { width: 100%; height: auto; border-radius: 20px; border: 2.5px solid var(--outline); box-shadow: 0 5px 0 var(--outline), 0 16px 40px rgba(0,0,0,0.16); display: block; }
+  .actions { display: flex; gap: 8px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+  #msg { color: var(--muted); min-height: 1.5em; margin-top: 10px; text-align: center; }
 </style>
 </head>
-<body>
-<main>
+<body class="page" data-page="card">
+<main class="wrap">
+  <div class="hero"><div><h1 id="title"></h1><p id="sub"></p></div></div>
   <canvas id="card" width="1200" height="630"></canvas>
   <div class="actions">
-    <button id="save"></button>
-    <button id="copy"></button>
+    <button id="copy" class="btn primary"></button>
+    <button id="save" class="btn"></button>
   </div>
   <div id="msg"></div>
 </main>
 <script src="i18n.js"></script>
+<script src="nav.js"></script>
 <script src="art.js"></script>
 <script src="motion.js"></script>
 <script>
@@ -38,6 +37,8 @@
   document.documentElement.lang = lang;
   document.getElementById('save').textContent = tr('card.save');
   document.getElementById('copy').textContent = tr('card.copy');
+  document.getElementById('title').textContent = tr('nav.card');
+  document.getElementById('sub').textContent = tr('card.pageSub');
   let data = null;
   const logo = new Image();
   logo.src = '/brand/logo-full.svg';

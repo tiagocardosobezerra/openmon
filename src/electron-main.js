@@ -381,6 +381,9 @@ function wireIpc() {
   ipcMain.on('interactive', (_e, on) => win && win.setIgnoreMouseEvents(!on, { forward: true }));
   ipcMain.on('menu', () => Menu.buildFromTemplate(menuTemplate()).popup({ window: win }));
   ipcMain.on('open-powers', openPowersWindow);
+  ipcMain.on('open-page', (_e, page) => {
+    if (page === 'dex' || page === 'card') shell.openExternal(`http://127.0.0.1:${port}/${page}.html`);
+  });
   ipcMain.on('drag-start', () => {
     clearInterval(dragTimer);
     const start = screen.getCursorScreenPoint();
@@ -409,7 +412,11 @@ function watchAttention(state) {
   if (Date.now() - since < NOTIFY_AFTER_MS) return;
   notifiedFor = since;
   if (Notification.isSupported()) {
-    new Notification({ title: L('{label} needs you', { label: live.focus.label }), body: live.focus.detail || L('Your agent is waiting.'), silent: true }).show();
+    const n = new Notification({ title: L('{label} needs you', { label: live.focus.label }), body: live.focus.detail || L('Your agent is waiting.'), silent: true });
+    // Clicking the notification jumps to the agent's window.
+    const id = live.focus.id;
+    n.on('click', () => daemon.focusAgent(id));
+    n.show();
   }
 }
 

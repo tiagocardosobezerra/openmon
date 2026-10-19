@@ -12,17 +12,18 @@ const http = require('node:http');
 const { spawn } = require('node:child_process');
 const { createDaemon } = require('../src/server');
 const { createStore } = require('../src/store');
+const { createFocus } = require('../src/focus');
 
 const HOOK = path.join(__dirname, '..', 'src', 'hook.js');
 
-async function boot() {
+async function boot({ focus = createFocus({ driver: null }) } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-home-'));
   const store = createStore({ dir, delay: 10 });
   const artDir = path.join(dir, 'art');
   fs.mkdirSync(artDir);
   fs.writeFileSync(path.join(artDir, 'craft-adult.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
   fs.writeFileSync(path.join(artDir, 'notes.txt'), 'not art');
-  const daemon = createDaemon({ port: 0, store, hooksInstalled: () => true, artDir, bundledArt: null, configFile: path.join(dir, 'config.json') });
+  const daemon = createDaemon({ port: 0, store, hooksInstalled: () => true, artDir, bundledArt: null, configFile: path.join(dir, 'config.json'), focus });
   const port = await daemon.listen();
   return { daemon, port, dir, store };
 }
@@ -274,4 +275,26 @@ test('settings persist across restarts; quiet mode expires', async () => {
   t += 31 * 60_000;
   assert.equal(b.config().quiet, false);
   await b.close();
+});
+
+test('click to answer: the hook is asked for its window once, then focus raises it', async () => {
+  const raised = [];
+  const driver = { find: async () => null, raise: async (win) => (raised.push(win.pid), true) };
+  const { daemon, port } = await boot({ focus: createFocus({ driver }) });
+  try {
+    const ev = (extra) => JSON.stringify({ session_id: 'win1', hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'npm publish' }, cwd: '/tmp/proj', ...extra });
+    const json = { 'Content-Type': 'application/json' };
+    // Without a parent pid there is nothing to look up.
+    assert.equal((await request(port, 'POST', '/event', { body: ev(), headers: json })).status, 204);
+    const first = await request(port, 'POST', '/event', { body: ev({ _ppid: 1234 }), headers: json });
+    assert.deepEqual(JSON.parse(first.body), { findWindow: true });
+    assert.equal((await request(port, 'POST', '/event', { body: ev({ _ppid: 1234 }), headers: json })).status, 204);
+    await request(port, 'POST', '/api/window', { body: JSON.stringify({ session_id: 'win1', window: { pid: 5150, app: 'WindowsTerminal' } }), headers: json });
+    // No id: the waiting agent.
+    const r = await request(port, 'POST', '/api/focus', { body: '{}', headers: json });
+    assert.deepEqual(JSON.parse(r.body), { ok: true, app: 'WindowsTerminal' });
+    assert.deepEqual(raised, [5150]);
+  } finally {
+    await daemon.close();
+  }
 });

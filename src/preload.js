@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('openmonDesktop', {
   setInteractive: (on) => ipcRenderer.send('interactive', Boolean(on)),
   onCommand: (fn) => ipcRenderer.on('command', (_e, cmd) => fn(cmd)),
   openPowers: () => ipcRenderer.send('open-powers'),
+  openPage: (page) => ipcRenderer.send('open-page', String(page)),
 });
