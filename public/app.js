@@ -26,7 +26,8 @@
   const preview = params.has('preview');
   if (preview) {
     document.body.classList.add('preview');
-    $('controls').hidden = false;
+    // ?bare: the preview without its buttons (README screenshots).
+    $('controls').hidden = params.has('bare');
   }
   if (params.get('scale')) document.documentElement.style.setProperty('--scale', String(Number(params.get('scale')) || 1));
 

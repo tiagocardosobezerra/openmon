@@ -1193,7 +1193,7 @@
     const eye = eyeY != null ? eyeY * H : top + body * 0.45;
     // Head width just above the eyes; the neckwear between mouth and feet.
     const headRow = top + (eye - top) * 0.55;
-    const neckRow = eye + (bottom - eye) * 0.62;
+    const neckRow = eye + (bottom - eye) * 0.7;
     found = {
       top: top / H,
       // Wide bodies (claws, swarms) would make giant hats.
@@ -1558,22 +1558,30 @@
       const root = doc.documentElement;
       const vb = (root.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
       if (vb.length !== 4 || !vb[3]) return null;
+      // Every transform list, from the eye up to the root, applied right to
+      // left within each list (that is how SVG composes them).
+      let x = eyes[0].cx;
       let y = eyes[0].cy;
       for (let el = eyes[0].el; el && el !== root; el = el.parentNode) {
         const tr = el.getAttribute && el.getAttribute('transform');
         if (!tr) continue;
-        const m = tr.match(/matrix\(([^)]+)\)/);
-        const t = tr.match(/translate\(([^)]+)\)/);
-        const sc = tr.match(/scale\(([^)]+)\)/);
-        if (m) {
-          const [a, b, c, d, e, f2] = m[1].split(/[\s,]+/).map(Number);
-          y = b * eyes[0].cx + d * y + f2;
-        } else {
-          if (sc) y *= Number(sc[1].split(/[\s,]+/).pop());
-          if (t) y += Number(t[1].split(/[\s,]+/)[1] || 0);
+        const ops = [...tr.matchAll(/(matrix|translate|scale|rotate)\(([^)]*)\)/g)].reverse();
+        for (const [, op, args] of ops) {
+          const n = args.split(/[\s,]+/).filter(Boolean).map(Number);
+          if (op === 'matrix') [x, y] = [n[0] * x + n[2] * y + n[4], n[1] * x + n[3] * y + n[5]];
+          else if (op === 'translate') [x, y] = [x + n[0], y + (n[1] || 0)];
+          else if (op === 'scale') [x, y] = [x * n[0], y * (n[1] ?? n[0])];
+          else if (op === 'rotate') {
+            const r = (n[0] * Math.PI) / 180;
+            const cx = n[1] || 0;
+            const cy = n[2] || 0;
+            [x, y] = [cx + (x - cx) * Math.cos(r) - (y - cy) * Math.sin(r), cy + (x - cx) * Math.sin(r) + (y - cy) * Math.cos(r)];
+          }
         }
       }
-      return (y - vb[1]) / vb[3];
+      const at = (y - vb[1]) / vb[3];
+      // Eyes are always inside the picture; anything else is a misread.
+      return at > 0.05 && at < 0.9 ? at : null;
     } catch {
       return null;
     }

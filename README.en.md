@@ -1,212 +1,205 @@
-<p align="center"><img src="assets/brand/logo-full.svg" alt="Openmon" width="440"></p>
-
 # Openmon
 
 [Português](README.md) | **English**
 
-**A desktop pet that grows from the work your AI coding agent does.**
+**Your AI agent works. A little creature in the corner of your screen shows what it is doing, tells you when it needs you, and grows with every task.**
 
-Your Openmon lives in the corner of your screen. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps up and down holding a sign when the agent **needs you**. Over days and weeks it hatches, grows and evolves into one of 18 forms (plus a hidden line few will find), decided by how your agent actually works.
+![Node.js 20+](https://img.shields.io/badge/node.js-20%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white)
+![Electron](https://img.shields.io/badge/electron-33-47848F?style=flat-square&logo=electron&logoColor=white)
+![Claude Code](https://img.shields.io/badge/Claude%20Code-official%20hooks-D97757?style=flat-square&logo=anthropic&logoColor=white)
+![100% local](https://img.shields.io/badge/data-100%25%20local-2ea44f?style=flat-square)
+![MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-- **Useful first.** You see at a glance when Claude Code is waiting for a permission, has finished, or broke something. No more coming back after 10 minutes to find the agent idle since minute two.
-- **Never in the way.** Official hooks only (`async`), nothing printed, nothing blocked, no fake keystrokes. Clicks pass through everything except the pet.
-- **Kind.** It never dies, never gets sick and never loses progress. Answering your agent quickly is what builds your bond.
-- **Private.** No network beyond `127.0.0.1`, no telemetry, no account. Your pet is one JSON file in `~/.openmon`.
+<img width="100%" alt="Openmon: an egg that hatches and evolves from your AI agent's work" src="assets/openmon-banner.en.svg" />
 
-## Quick start
+Openmon is a desktop pet, in the spirit of Pokémon and Tamagotchi, that lives in the corner of your screen while Claude Code works. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps holding a sign when the agent **needs you**. Click it and the agent's window comes to the front, ready for you to approve or reply. Over the days, the egg hatches, grows and evolves into one of 22 forms, decided by the kind of work your agent does most.
+
+## What it does for you
+
+* **Tells you when your agent needs you.** A permission or a question: it jumps with a sign, shows the project and the request in plain words ("Wants permission to run a command: npm publish") and plays a soft chime. If you do not look, a notification follows.
+* **Takes you straight to the agent.** A click on the pet, its bubble or the notification brings the window your agent runs in to the front: a terminal, VS Code or the Claude app.
+* **Shows what is happening, without watching the terminal.** A hammer is editing, a book reading, a shield testing, a spyglass the web. Several agents at once? The card lists each one and what it is doing.
+* **Sums up every task.** When the agent finishes: "shop-api is done ✓ · 3 files · 12 commands · tests ✓ · 2m 10s".
+* **Keeps a journal.** What your agents did each day, by kind of work and by project, and how long they waited for you.
+* **Never in the way, never leaves your computer.** Clicks pass through its window, it never blocks or slows the agent, uses no internet, has no account, and passwords and keys show hidden (`•••`).
+* **Never lost.** It keeps copies in Documents/Openmon Backups. New computer? On a fresh install it offers to bring your pet back.
+
+## What it looks like
+
+> **You:** fix the checkout tests
+>
+> **Claude:** reads the files, edits two of them and asks to run `npm publish`.
+>
+> **Openmon:** reads a book, picks up the hammer, raises the shield… and jumps with the sign: **"shop-api needs you · Wants permission to run a command: npm publish"**. You click it, the Claude window appears, you approve. It celebrates: **"All done! · 2 files · tests ✓"**, and gains experience.
+
+<table>
+<tr>
+<td width="50%" align="center"><img src="docs/screens/pet-attention.en.png" width="300" alt="The pet jumps with a sign: the agent needs you"><br><sub>When your agent needs you</sub></td>
+<td width="50%" align="center"><img src="docs/screens/pet-card.en.png" width="300" alt="The card with your agents, experience and friendship"><br><sub>Right-click: the card with your agents</sub></td>
+</tr>
+</table>
+
+| What it does | What it means |
+|---|---|
+| Jumps holding the **!** sign | The agent waits for your permission or answer. Click it to go there |
+| Hammer, book, terminal, shield, spyglass | The agent is editing, reading, running commands, testing or on the web |
+| Little helpers flying around | The agent called other agents to help |
+| Celebrates | The agent finished: your turn |
+| Winces | Something failed, like a test |
+| Sleeps | Nothing has happened for a few minutes |
+
+## Start in 3 steps
+
+You need [Node.js](https://nodejs.org) 20 or newer and [Claude Code](https://claude.com/claude-code).
+
+### 1. Install
 
 ```bash
-npm install -g openmon
-openmon install   # adds hooks to ~/.claude/settings.json (a backup is kept)
-openmon start     # your egg appears; drag it anywhere
-openmon demo      # watch a scripted session on a throwaway egg
-openmon playground # sandbox pet + control panel: every form, scene and state in minutes
+git clone https://github.com/tiagocardosobezerra/openmon.git
+cd openmon
+npm install
+npm link
 ```
 
-Start a new Claude Code session and get to work. The egg hatches during your first real session.
+`npm link` creates the `openmon` command. npm 11 may ask you to approve Electron's install script: `npm install-scripts approve electron`.
 
-> npm 11 may ask you to approve Electron's install script: `npm install-scripts approve electron`.
+### 2. Connect Claude Code
 
-## What it shows
+```bash
+openmon install
+```
 
-| Your agent | Your Openmon |
-| --- | --- |
-| Waits for a permission or an answer | Jumps with a **!** sign, yellow bubble with the project and the question, a soft chime. An OS notification after 20 s if you still have not looked. |
-| Edits files | Hammers on a tiny anvil |
-| Reads and searches | Reads a book |
-| Runs shell commands | Types on a tiny terminal |
-| Runs tests | Holds up a shield; sparkles when they pass |
-| Browses the web or calls MCP tools | Looks through a spyglass |
-| Runs subagents | Little helpers orbit it, one per subagent |
-| Compacts its context | Munches |
-| A tool fails | Winces, sweat drop |
-| Finishes its turn | Celebrates, then shows "done ✓" until you reply |
-| Nothing for 5 minutes | Falls asleep |
+Adds the notices (hooks) to `~/.claude/settings.json` and keeps a backup. For one project only: `openmon install --settings .claude/settings.json`. Forgot? The egg itself shows a **Connect** button.
 
-Several agents at once: a counter shows how many are busy, the pose follows the most urgent one, and a click on the counter opens the card with a summary of each session.
+### 3. Call your Openmon
+
+```bash
+openmon start
+```
+
+The egg appears in the corner of your screen and an icon shows up in the tray. Start a new Claude Code conversation and work as usual: it hatches during your first session. Want to see it first? `openmon demo`.
+
+| Command | What it does |
+|---|---|
+| `openmon start` / `openmon stop` | Opens or puts away the pet |
+| `openmon install` / `openmon uninstall` | Turns the Claude Code notices on or off (your pet is kept) |
+| `openmon demo` | Plays a sample session on a throwaway egg |
+| `openmon playground` | A test pet with a control panel: every form and scene in minutes |
+| `openmon dex` / `openmon card` | Opens the Opendex or the trainer card |
+| `openmon name <nickname>` | Gives it a nickname (`--clear` goes back to the species name) |
+| `openmon backup [file]` / `openmon restore <file\|latest>` | Makes a copy or brings a pet back |
+| `openmon autostart on\|off` | Opens the pet when you turn on the computer |
+| `openmon stats` / `openmon status` | The pet in your terminal / whether everything is on |
 
 ## How it grows
 
-Every tool call your agent finishes trains one of six stats: **Craft** (edits), **Lore** (reading, search), **Shell** (commands), **Test** (test runs, green ones count triple), **Roam** (web, MCP) and **Swarm** (subagents). Agents read far more than they browse, so the lineage is picked by *weighted* affinity: rare work counts more, and every lineage is reachable.
+Everything your agent does is worth **experience (XP)**. With enough, it evolves: egg, sprout, juvenile, adult and mythic, over weeks of use. Its **type** comes from the work your agent does most:
 
-| Stage | When | Form |
-| --- | --- | --- |
-| Egg | day one | |
-| Sprout | 30 XP, inside your first session | |
-| Juvenile | 400 XP, about a day | your top stat picks the lineage |
-| Adult | 3 000 XP, about a week | top stat again (it can switch), plus a trait from your second stat |
-| Mythic | 15 000 XP and bond 60, about a month | the final form, with an aura |
+| Type | Comes from | Juvenile | Adult | Mythic |
+|---|---|---|---|---|
+| Craft | editing files | Tinkit | Forgemaw | Archsmith |
+| Lore | reading and searching | Owlet | Scrollwyrm | Oracle |
+| Shell | running commands | Sparkle | Voltcrab | Kernel |
+| Test | running tests | Shellby | Bastion | Aegis |
+| Roam | the web and MCP tools | Wisp | Skyfin | Wayfarer |
+| Swarm | calling other agents | Mote | Hivekin | Legion |
 
-| Lineage | Juvenile | Adult | Mythic |
-| --- | --- | --- | --- |
-| Craft | Tinkit | Forgemaw | Archsmith |
-| Lore | Owlet | Scrollwyrm | Oracle |
-| Shell | Sparkle | Voltcrab | Kernel |
-| Test | Shellby | Bastion | Aegis |
-| Roam | Wisp | Skyfin | Wayfarer |
-| Swarm | Mote | Hivekin | Legion |
+Rare work counts more, so every type can win. And there is a hidden line few will find: *some say balance is the key.*
 
-Evolve between midnight and 5 am and it takes its **Nocturne** colours: midnight blue, moonlit belly, a crescent on the forehead.
+* **Friendship** (0 to 100) only goes up: answer your agent quickly, pet it with a click, come back every day. The mythic stage asks for friendship 60.
+* **Personality**: every egg is born Brave, Sleepy, Curious, Cheerful, Calm or Cheeky, which changes how it moves and what it says.
+* **Rarities**: 1 in 128 hatches in shiny colours; evolving late at night gives night colours.
+* **Nickname**: without one it goes by its species name, like Pokémon. When it hatches, it asks whether you want to give it one.
+* It never dies, never gets sick and never loses what it earned.
 
-Every egg is born with a **nature** (Brave, Sleepy, Curious, Cheerful, Calm or Cheeky) that changes how it idles and what it says, and has a **1 in 128** chance to hatch **shiny**, in rare colours that sparkle.
+<table>
+<tr>
+<td width="50%"><img src="docs/screens/dex.en.png" alt="The Opendex with types and forms"><br><sub><b>Opendex</b>: the types, how to get each one and the 22 forms</sub></td>
+<td width="50%"><img src="docs/screens/bag.en.png" alt="The Bag with items and accessories"><br><sub><b>Bag</b>: items and accessories to wear</sub></td>
+</tr>
+</table>
 
-Evolutions play like a handheld game: *"What? Openmon is evolving!"*, the screen dims, the old and new forms flicker, then the reveal, a fanfare and the new form's own cry.
+## Something every day
 
-When it hatches, it asks if you want to give it a nickname. Like Pokémon, without a nickname it goes by its species name, which changes as it evolves (Tinkit, then Forgemaw). Give it a nickname from the menu (Settings → Name…) and it sticks; leave it empty to go back to the species name.
+* **Missions**: three a day, like "answer your agent within 30 s, 3 times" or "3 green test runs". Each gives experience, friendship and a Snack.
+* **Bag**: *Snack* (+2 friendship), *Rare candy* (one level up) and *Everstone* (while it holds it, it does not evolve).
+* **12 accessories**: trainer cap, party hat, beanie, headphones, flower, nightcap, wizard hat, crown, scarf, bow tie, bandana and medal, each unlocked by an achievement. They show on the pet, in the Bag and on the trainer card.
+* **Daily gift and streak**: a Snack per day of use, and a Rare candy every 7 days in a row.
+* **Opendex, badges and Hall of Fame**: once yours reaches mythic, retire it to the Hall of Fame and start a new generation; the Bag, Opendex and badges carry over.
 
-**Bond** (0 to 100) only goes up: answer your agent within 30 seconds (+2), pet it with a click (+1, five a day), come back on a new day (+1).
+## Powers: tools that evolution unlocks
 
-XP is capped at 120 per 10 minutes, so a runaway loop cannot fast-forward your pet.
+Each type your Openmon evolves into unlocks, for good, a useful panel about your agent's sessions:
 
-### Opendex, trainer card, generations
+| Power | Type | Shows |
+|---|---|---|
+| Forge log | Craft | every file changed, how many times, lines added and removed |
+| Reading list | Lore | what the agent read and searched before acting |
+| Command log | Shell | every command, whether it worked, how long it took, with a copy button |
+| Test tracker | Test | every test run and the green streak |
+| Travel log | Roam | pages opened, web searches and MCP tools |
+| Hive view | Swarm | the helper agents, which still run and how long they took |
 
-- **Levels**: Lv 1–100 on a Pokémon-like curve (about Lv 9 at the first evolution, Lv 25 at Adult, Lv 55 at Mythic). The pet glows when an evolution is close.
-- **Opendex** (`openmon dex`): 22 numbered forms with field notes, plus your badges. A **type** chart, like a Pokédex, shows what trains each type, how much each action counts, its evolution line and the power it unlocks; each form has an entry with its type and how to get it. On the card, pointing at a stat explains how to train it. Unseen forms are silhouettes, and two of them are hidden: *some say balance is the key.*
-- **Trainer card** (`openmon card`): a 1200×630 image of your pet with its stats radar, ready to post.
-- **Generations**: once your Openmon reaches Mythic, retire it to the **Hall of Fame** from its menu. It leaves an egg that inherits a tenth of its stats; your Opendex and badges carry over. Can you fill the whole dex?
+For everyone: the **Journal** of the last 14 days and the **waiting counter**, how long your agents waited for you today.
 
-## Everyday helpers
+<img width="100%" alt="Powers, with the journal of the last 14 days" src="docs/screens/powers.en.png" />
 
-- **Click to answer**: when an agent waits for a permission, click the pet, its bubble, the session in its card or the OS notification, and the window that runs that agent (terminal, VS Code, the Claude app) comes to the front, ready to approve or deny. The hook finds that window once per session by walking up its own process tree; nothing is sent anywhere.
-- **The card**: right-click the pet to open it, and it stays open until you close it (X, Esc or another right-click). Tabs for your agents, today's missions and stats, plus Powers, Opendex and the trainer card one click away. The gear on the card opens the settings (name, sounds, chatter, notifications, quiet mode, size), also in the tray icon.
-- **Turn recap**: when an agent finishes, the bubble says what the turn did: *"shop-api is done ✓ · 3 files · 12 commands · tests ✓ · 2m 10s"*.
-- **Daily gift and streak**: the first use each day gives a Snack; days in a row build a streak (🔥 on the Today tab), and every 7 days bring a Rare candy.
-- **Daily missions**: three a day (the same for everyone), such as "answer your agent within 30 s, 3×" or "3 green test runs". +25 XP and bond each, +50 for a perfect day.
-- **Quiet mode**: 30 minutes, 1 hour or until tomorrow, from the menu. The pet still shows everything, silently.
-- **Long waits**: after two minutes waiting, one more chime and a stronger nudge; the tray icon wears a "!" while any agent waits.
-- **Privacy**: tokens, passwords, API keys, Authorization headers and credentials in URLs are masked (`•••`) in bubbles, notifications and powers.
-- **Size**: small, normal or large, from the menu. Settings are saved in `~/.openmon/config.json`.
+## Going further
 
-## Bag: items and accessories
+### Settings
 
-Like Pokémon, the **Bag** keeps what you earn by playing, and all of it carries over to the next generation.
+Right-click the pet and click the gear on its card (or use the tray icon):
 
-- **Items**: *Snack* (+2 bond, one per mission), *Rare candy* (one level up right away, one per perfect day) and the *Everstone* (a gift at the first evolution: while it holds it, it does not evolve; let go whenever you like).
-- **12 accessories** for the head and neck: trainer cap, party hat, beanie, headphones, flower, nightcap, wizard hat, crown, scarf, bow tie, bandana and medal. Each one comes from a feat (hatching, 50 green test runs, a perfect day, reaching Mythic…), and the Bag shows what is left. They show on the pet, in the Bag and on the trainer card.
+* **Quiet mode**: 30 minutes, 1 hour or until tomorrow. It still shows everything, silently.
+* **Size**: small, normal or large.
+* **Sounds**, **Chatter and emotes**, **Walk around**, **Notify when an agent waits**, **Start with the computer**.
+* **Backups**: make a copy now, export your pet to a file, bring back a pet from a file, open the folder.
+* **How it works**: a page with what each pose means and common questions.
 
-## Your pet is never lost
+Your choices are saved in `~/.openmon/config.json`; the pet in `~/.openmon/pet.json`.
 
-New computer or a fresh Windows? Openmon keeps backups outside `~/.openmon`, in **Documents/Openmon Backups** (on Windows, the OneDrive Documents folder when there is one, already synced to the cloud). One file per day (the last 14) plus `latest.openmon.json`, refreshed every 10 minutes of use and at every evolution.
+### Your own art
 
-On a fresh install that finds a backup, the egg asks: *"Found your Openmon! Rex · Scrollwyrm · Lv 33 · Bring it back"*. One click and it is back, with its Opendex, badges and Hall of Fame.
+The 22 forms ship as official vector art (`art/official`), with poses, shiny and night versions. To replace them, put images named after the form (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) in `~/.openmon/art`. The guide is [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` brings back the art drawn in code.
 
-From the menu (Settings → Backups) you can save now, export to a file, import a save and open the folder. In a terminal: `openmon backup [file]` and `openmon restore <file|latest>`.
+### Other agents
 
-## Powers: what your Openmon is good for
+* **Codex CLI**: `openmon codex` prints the line to paste into `~/.codex/config.toml`. Codex only reports finished tasks, so the pet celebrates and grows but cannot show tools.
+* **Anything else**: POST `{"_agent":"signal","session":"my-agent","kind":"tool-done","family":"craft"}` to `http://127.0.0.1:4747/event`. Kinds are listed in [`src/classify.js`](src/classify.js).
 
-Each lineage your Openmon grows into unlocks a **power**, for good (the Opendex remembers across generations). Open them from the ⚡ button on the stats card or the menu.
-
-| Power | Unlocked by | Shows, per agent session |
-| --- | --- | --- |
-| Forge log | Craft | every file changed, edits, lines added and removed |
-| Reading list | Lore | files read and searches made, so you see where it is looking |
-| Command log | Shell | each command, ✓ or ✗, how long it took, one click to copy |
-| Test tracker | Test | each test run with its summary line, the green streak |
-| Travel log | Roam | pages fetched, web searches, MCP tools |
-| Hive view | Swarm | subagents, still running or done, and their time |
-
-Above the powers sits the **Journal**: a chart of the last 14 days of what your agents did by kind of work, each day's projects and, for the last week, tool calls, turns, % of green test runs, time waiting for you and the busiest project. It keeps 60 days and goes into the backups.
-
-Everyone also gets the **waiting counter**: how long your agents sat waiting for you today, your fastest answer, and a live timer in the "needs you" bubble. It is the number a good pet helps you shrink.
-
-All of it stays in memory on your machine; nothing is written to disk or sent anywhere.
-
-## Try everything now: the Playground
-
-Raising a Mythic takes weeks. `openmon playground` opens a second, sandbox pet (its own save in `~/.openmon-playground`, port 4748) next to yours, plus a control panel: hatch and evolve into any of the 22 forms with the real scene, shiny and Nocturne on/off, the hidden Chimera with any pair, every agent state (editing, tests passing or failing, subagents, "needs you" from one or two agents), level-ups, bond, natures, badges, Hall of Fame, English/Portuguese. Close the panel to end it. `--serve` runs it in a browser instead.
-
-## Commands
-
-```
-openmon install      add hooks to ~/.claude/settings.json (a backup is kept)
-openmon start        open the pet
-openmon demo         scripted session on a throwaway egg
-openmon stats        your pet in the terminal
-openmon name <nickname>  give it a nickname (--clear goes back to the species name)
-openmon dex          open the Opendex
-openmon card         open your trainer card
-openmon backup [file]      save a backup now (or export to a file)
-openmon restore <file|latest>  bring back a pet from a backup
-openmon stop         put your pet away
-openmon autostart on open the pet when you log in (off / status too)
-openmon art          art pack folder and file names (see docs/ART-PACKS.md)
-openmon serve        daemon only: open http://127.0.0.1:4747/ in a browser, or add it to OBS
-openmon codex        print the line that connects Codex CLI
-openmon status       daemon and hooks status
-openmon uninstall    remove the hooks (your pet is kept)
-```
-
-`--settings .claude/settings.json` installs for a single project. `OPENMON_PORT` and `OPENMON_HOME` change the port and the data folder.
-
-On the pet: **click** to pet it (or, while an agent waits for you, to jump to that agent's window), **drag** to move, **right-click** to open or close the card; the card's **gear** and the tray icon open the menu (name, Opendex, trainer card, sounds, chatter, notifications, start with the computer, demo, quit). Its eyes follow your cursor.
-
-Only permission prompts and questions raise the alarm, with at most one chime every 20 s. "Waiting for your input" after a finished turn just shows "done ✓".
-
-## Languages and art
-
-- English and Brazilian Portuguese, picked from your system language (or `?lang=pt-BR` in a browser). Form names stay the same in every language.
-- **Official art**: all 22 Openmons ship as vector art (`art/official`); `OPENMON_CLASSIC=1` brings back the art drawn in code.
-- **Art packs**: drop images named after forms (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) into `~/.openmon/art` and they replace the built-in art, with motion, props and effects still applied. Guide for artists: [docs/ART-PACKS.md](docs/ART-PACKS.md).
-
-## Other agents
-
-- **Codex CLI**: `openmon codex` prints a `notify = [...]` line for `~/.codex/config.toml`. Codex only reports finished turns today, so the pet celebrates and levels up, but cannot show tools.
-- **Anything else**: POST a signal to `http://127.0.0.1:4747/event`:
-  `{"_agent":"signal","session":"my-agent","kind":"tool-done","family":"craft"}`.
-  Kinds and families are listed in [`src/classify.js`](src/classify.js).
-
-## How it works
+<details>
+<summary><strong>How it works inside</strong></summary>
 
 ```
 Claude Code ──hook (async)──▶ src/hook.js ──POST /event──▶ daemon (127.0.0.1:4747)
-                                                             │ classify → sessions → pet engine
+                                                             │ classify → sessions → pet
                                                              ▼                       │
                                      pet window / browser / OBS ◀── SSE /stream      └─▶ ~/.openmon/pet.json
 ```
 
-- [`classify.js`](src/classify.js): hook payload to a small signal. One function per agent.
-- [`sessions.js`](src/sessions.js): live state per session, and the one pose that matters most.
-- [`pet.js`](src/pet.js): XP, stats, bond, evolution and achievements, as pure functions.
-- [`species.js`](src/species.js): every stage, lineage and name as data.
-- [`public/art.js`](public/art.js): draws the official vector art (`art/official`), with every form also drawn in code as a fallback.
-- [`src/focus.js`](src/focus.js): finds and raises the window an agent runs in, for "click to answer".
+* [`classify.js`](src/classify.js): turns the agent's notice into a small signal.
+* [`sessions.js`](src/sessions.js): the state of each conversation and the one pose that matters most.
+* [`pet.js`](src/pet.js): XP, friendship, evolution, missions, items and accessories, as pure functions.
+* [`focus.js`](src/focus.js): finds the agent's window and brings it to the front.
+* [`backup.js`](src/backup.js): the copies in Documents and the way back on a fresh install.
+* [`public/art.js`](public/art.js): draws the official art, with blinking eyes and accessories in the right place.
 
-`openmon start` runs the pet under a small supervisor: if the pet ever dies without being told to quit (a crashed GPU or network process can do that on some machines), it is back within two seconds, and the restart is noted in `~/.openmon/error.log`.
+The server only listens on `127.0.0.1` and refuses requests from other web pages (Origin and Host checks). The hook never prints, always exits 0 and gives up within 1.5 s. `openmon start` runs the pet under a supervisor that brings it back within two seconds if it ever falls over.
 
-The daemon only listens on `127.0.0.1` and refuses requests from other web pages (Origin and Host checks), so a website cannot feed or spy on your pet. The hook always exits 0 and prints nothing. It gives up after 1.5 s, or 4.5 s on the one event per session where it looks up its agent's window (hooks run async, so the agent never waits).
-
-Product design, principles and roadmap: [docs/DESIGN.md](docs/DESIGN.md).
+</details>
 
 ## Develop
 
 ```bash
 npm install
 npm test          # node:test, no extra dependencies
-npm run smoke     # loads every page in hidden Electron windows, fails on any console error
+npm run smoke     # opens every page in hidden Electron windows and fails on any error
 npm run serve     # then open http://127.0.0.1:4747/?preview
 npm start         # the desktop pet
 ```
 
+Design, principles and what comes next: [docs/DESIGN.md](docs/DESIGN.md). Review history: [docs/REVIEW-LOG.md](docs/REVIEW-LOG.md).
+
 ## License
 
-MIT
+MIT. Openmon is an independent fan project, not affiliated with Pokémon, Nintendo, Game Freak or The Pokémon Company.

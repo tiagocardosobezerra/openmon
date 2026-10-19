@@ -1,7 +1,7 @@
 {
   "name": "openmon",
   "version": "0.1.0",
-  "description": "A desktop pet that grows from the work your AI coding agent does, and tells you when the agent needs you.",
+  "description": "A desktop pet that grows from the work your AI coding agent does, and tells you when it needs you.",
   "license": "MIT",
   "bin": {
     "openmon": "bin/openmon.js"
@@ -22,7 +22,9 @@
     "demo": "node bin/openmon.js demo",
     "test": "node --test \"test/*.test.js\"",
     "smoke": "node test/smoke.js",
-    "brand": "node tools/build-brand.js"
+    "brand": "node tools/build-brand.js",
+    "screens": "node tools/screens.js",
+    "banner": "node tools/build-banner.js"
   },
   "engines": {
     "node": ">=18"
@@ -37,9 +39,19 @@
     "hooks",
     "desktop-pet",
     "tamagotchi",
-    "virtual-pet"
+    "virtual-pet",
+    "ai-agents",
+    "electron"
   ],
   "allowScripts": {
     "electron@33.4.11": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tiagocardosobezerra/openmon.git"
+  },
+  "homepage": "https://github.com/tiagocardosobezerra/openmon#readme",
+  "bugs": {
+    "url": "https://github.com/tiagocardosobezerra/openmon/issues"
   }
 }
