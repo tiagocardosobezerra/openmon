@@ -23,7 +23,9 @@ function defaultSettingsPath() {
 }
 
 function hookScript() {
-  return path.join(__dirname, 'hook.js').replace(/\\/g, '/');
+  // Inside an installed app the hook is unpacked next to the asar archive,
+  // because the agent runs it with plain Node.
+  return path.join(__dirname, 'hook.js').replace(`app.asar${path.sep}`, `app.asar.unpacked${path.sep}`).replace(/\\/g, '/');
 }
 
 function hookCommand() {

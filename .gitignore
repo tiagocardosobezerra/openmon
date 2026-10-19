@@ -3,3 +3,4 @@ node_modules/
 .dev-home/
 .dev-playground/
 .claude/
+dist/

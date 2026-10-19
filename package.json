@@ -14,7 +14,8 @@
     "docs",
     "art",
     "assets",
-    "README.en.md"
+    "README.en.md",
+    "!docs/screens"
   ],
   "scripts": {
     "start": "node bin/openmon.js start --foreground",
@@ -24,7 +25,9 @@
     "smoke": "node test/smoke.js",
     "brand": "node tools/build-brand.js",
     "screens": "node tools/screens.js",
-    "banner": "node tools/build-banner.js"
+    "banner": "node tools/build-banner.js",
+    "dist": "node tools/dist.js",
+    "dist:dir": "node tools/dist.js --dir"
   },
   "engines": {
     "node": ">=18"
@@ -53,5 +56,63 @@
   "homepage": "https://github.com/tiagocardosobezerra/openmon#readme",
   "bugs": {
     "url": "https://github.com/tiagocardosobezerra/openmon/issues"
-  }
+  },
+  "devDependencies": {
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "dev.openmon.app",
+    "productName": "Openmon",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "bin/**",
+      "src/**",
+      "public/**",
+      "art/**",
+      "assets/brand/**",
+      "package.json",
+      "!**/*.test.js"
+    ],
+    "asarUnpack": [
+      "src/hook.js",
+      "src/focus.js",
+      "src/adapters.js"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/brand/app-icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "Openmon-Setup-${version}.exe"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "assets/brand/app-icon-1024.png",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/brand/app-icon-1024.png",
+      "category": "Development"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "tiagocardosobezerra",
+        "repo": "openmon",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "author": "Tiago Cardoso Bezerra"
 }

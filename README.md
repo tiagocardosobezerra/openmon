@@ -89,6 +89,7 @@ O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa n
 | `openmon dex` / `openmon card` | Abre a Opendex ou o cartão de treinador |
 | `openmon name <apelido>` | Dá um apelido (`--clear` volta ao nome da espécie) |
 | `openmon backup [arquivo]` / `openmon restore <arquivo\|latest>` | Faz uma cópia ou traz um pet de volta |
+| `openmon install --agent gemini\|cursor\|aider` | Liga o Openmon no Gemini CLI, no Cursor ou no Aider |
 | `openmon autostart on\|off` | Abre o pet quando você liga o computador |
 | `openmon stats` / `openmon status` | O pet no terminal / se está tudo ligado |
 
@@ -151,6 +152,36 @@ Para todo mundo: o **Diário** dos últimos 14 dias e o **contador de espera**, 
 
 <img width="100%" alt="Os Poderes, com o diário dos últimos 14 dias" src="docs/screens/powers.pt-BR.png" />
 
+## Utilidades do dia a dia
+
+**Avisos que poupam tempo**
+* **Parece travado**: no meio de uma tarefa, sem nenhuma ferramenta rodando e nada acontecendo há 4 minutos. Um clique leva ao agente.
+* **Ainda rodando**: um comando (testes, build) rodando há mais de 8 minutos.
+* **Em loop**: a mesma falha 3 vezes seguidas.
+* **Comando perigoso**: `rm -rf`, `git push --force`, `git reset --hard`, `DROP TABLE`, `curl … | sh` e parecidos deixam o pedido de permissão **vermelho**.
+* **Commit**: 30 edições em 45 minutos sem commit ganham um lembrete gentil.
+* **Conversa longa**: avisa quando o Claude resume a conversa para continuar.
+* **Testes de volta ao verde**: comemora quando testes que falhavam voltam a passar.
+
+**Responder sem sair do que está fazendo**
+* **Permitir, Sempre permitir e Recusar** no balão (desligado por padrão). "Sempre permitir" aplica a regra que o próprio Claude Code sugere para aquele pedido.
+* **Vários agentes esperando?** O card mostra os botões embaixo de cada um.
+* **Atalhos**: `Ctrl+Alt+O` abre o card, `Ctrl+Alt+J` leva ao agente que espera.
+
+**Números do seu trabalho**
+* **Tokens** usados hoje (no card) e por dia (no Diário), lidos dos arquivos de conversa do próprio Claude Code, no seu computador.
+* **Ontem em uma linha** no primeiro uso do dia.
+* **Texto para a daily**: um botão no Diário copia "último dia de trabalho" e "hoje" prontos para colar.
+* **Horas por projeto (CSV)**: tempo de trabalho do agente por projeto e dia, para planilha de horas.
+* **Linha do tempo** de cada sessão e **busca** em todas ("em que sessão o agente mexeu em cart.ts?").
+
+**Para o seu dia**
+* **Modo foco** (25, 50 ou 90 minutos): só "precisa de você" aparece; no fim, uma sugestão de pausa.
+* **Lembrete de pausa** depois de 50 ou 90 minutos seguidos de trabalho.
+* **Modo apresentação**: troca nomes de projeto por "Projeto A, B…" e esconde comandos em tudo o que o Openmon mostra, para compartilhar a tela.
+* **Aviso no celular** (opcional, via app gratuito ntfy): se um agente espera há um tempo, chega um aviso. É a única função que usa a internet, e manda só "Seu agente precisa de você".
+* **No OBS**: o pet com fundo transparente para lives (endereço na página de Configurações).
+
 ## Para ir além
 
 ### Configurações
@@ -163,6 +194,9 @@ Clique com o botão direito no pet e na engrenagem do card (ou use o ícone da b
 * **Sons**, **Falas e emoções**, **Passear pela tela**, **Avisar quando um agente esperar**, **Iniciar com o computador**.
 * **Cópias de segurança**: fazer uma cópia agora, exportar o pet para um arquivo, trazer um pet de um arquivo, abrir a pasta.
 * **Como funciona**: uma página com o que cada pose significa e perguntas frequentes.
+* **Mais configurações…** (a engrenagem no topo das páginas): responder pelo pet e tempo de espera, modo apresentação, pausas, seguir o projeto ativo, aviso no celular, atalhos e OBS.
+
+Idiomas: português, inglês e espanhol, conforme o sistema.
 
 As escolhas ficam salvas em `~/.openmon/config.json`; o pet, em `~/.openmon/pet.json`.
 
@@ -172,6 +206,9 @@ As 22 formas vêm em arte vetorial oficial (`art/official`), com poses, versões
 
 ### Outros agentes
 
+* **Gemini CLI**: `openmon install --agent gemini`. Mostra ferramentas, testes, fim de tarefa e pedidos de permissão.
+* **Cursor**: `openmon install --agent cursor`. Mostra ferramentas, testes e fim de tarefa (o Cursor não avisa quando espera por você).
+* **Aider**: `openmon install --agent aider` mostra o comando para iniciar o Aider com aviso de "sua vez".
 * **Codex CLI**: `openmon codex` mostra a linha para colar em `~/.codex/config.toml`. O Codex só avisa tarefas terminadas, então o pet comemora e cresce, mas não mostra as ferramentas.
 * **Qualquer outro**: mande um POST para `http://127.0.0.1:4747/event` com `{"_agent":"signal","session":"meu-agente","kind":"tool-done","family":"craft"}`. Os tipos estão em [`src/classify.js`](src/classify.js).
 
