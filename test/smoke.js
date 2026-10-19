@@ -20,6 +20,8 @@ if (!process.versions.electron) {
 const fs = require('node:fs');
 const os = require('node:os');
 const { app, BrowserWindow } = require('electron');
+// Never touch the real ~/.openmon or the backups in Documents.
+process.env.OPENMON_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-test-home-'));
 const { createDaemon } = require('../src/server');
 const { createStore } = require('../src/store');
 

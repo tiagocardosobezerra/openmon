@@ -60,6 +60,7 @@
   let lastSpark = 0;
   const particles = [];
   let ackedFor = null;
+  let restoreOffer = null;
   // The bubble you clicked (Answer / Open): it stays hidden until the next one.
   let dismissed = null;
   const bubbleKey = () => (live.focus ? `${pose}|${live.focus.id}|${live.focus.since}` : null);
@@ -473,7 +474,7 @@
 
   // Status bubbles: a round icon, the session name, a title, one detail
   // line and, when it can jump to the agent's window, an action button.
-  const BUBBLE_ICON = { attention: '!', done: '✓', error: '✕', toast: '★', setup: 'i' };
+  const BUBBLE_ICON = { attention: '!', done: '✓', error: '✕', toast: '★', setup: 'i', restore: '↺' };
   let bubbleJump = null;
   function setBubble(cls, title, sub, { jump = null, eyebrow = null, action = null } = {}) {
     const b = $('bubble');
@@ -500,7 +501,7 @@
     if (eyebrow) add('span', 'eyebrow', eyebrow);
     add('span', 'title', title);
     if (sub) add('small', '', sub);
-    if (jump) add('span', `btn sm act${kind === 'attention' ? ' primary' : ''}`, action || tr('jump.open'));
+    if (jump) add('span', `btn sm act${kind === 'attention' || kind === 'restore' ? ' primary' : ''}`, action || tr('jump.open'));
     b.hidden = false;
   }
 
@@ -510,6 +511,11 @@
     document.documentElement.style.setProperty('--bubble-bottom', `${Math.min(300, H - headY(stage) + lift)}px`);
     const f = live.focus || {};
     if (toast && toast.style === 'say' && (pose === 'attention' || pose === 'error')) toast = null;
+    // First of all: a fresh install found a backup; offer to bring that pet back.
+    if (restoreOffer) {
+      const o = restoreOffer;
+      return setBubble('restore', tr('restore.title'), tr('restore.sub', { name: o.name, form: o.form, level: o.level, date: new Date(o.savedAt).toLocaleDateString() }), { jump: 'restore', action: tr('restore.action') });
+    }
     if (toast) return setBubble(toast.style || 'toast', toast.title, toast.text);
     if (hovering) return setBubble(null);
     if (!connected && !preview) return setBubble(null);
@@ -730,11 +736,14 @@
   function onState(msg) {
     const first = !pet;
     setupInfo = msg.setup || null;
+    restoreOffer = msg.restoreOffer || null;
     // Pet size from the settings (a ?scale= in the URL wins, for OBS).
     if (!params.get('scale') && msg.config) document.documentElement.style.setProperty('--scale', String(msg.config.scale || 1));
     if (first) {
       // A brand-new egg explains itself once; everyone else gets a greeting.
-      if (msg.pet.stage === 'egg' && msg.pet.counters.tools === 0 && (!msg.setup || msg.setup.hooks)) {
+      if (msg.restoreOffer) {
+        // The restore offer speaks first.
+      } else if (msg.pet.stage === 'egg' && msg.pet.counters.tools === 0 && (!msg.setup || msg.setup.hooks)) {
         setTimeout(() => pushToast(tr('intro'), tr('intro.sub'), 7000, 'say'), 1500);
       } else setTimeout(() => chatter('greet'), 2500);
     }
@@ -782,6 +791,11 @@
             burst('spark', 6, CX + 62, GROUND - 76, 2.4, { colors: ['#ffe156', '#fff'], gravity: 120, max: 0.8 });
             play('level');
           }
+          break;
+        case 'restored':
+          pushToast(tr('restore.done', { name: e.name }), tr('restore.doneSub'), 6000, 'scene');
+          burst('confetti', 26, CX, GROUND - 80, 2.2, { colors: CONFETTI, gravity: 260 });
+          play('level');
           break;
         case 'mission':
           pushToast(tr('mission.doneTitle'), `${tr(`mission.${e.id}`, { n: e.target })} · +${e.xp} XP`, 4500);
@@ -977,6 +991,10 @@
   });
   $('bubble').addEventListener('click', () => {
     if (!bubbleJump) return;
+    if (bubbleJump === 'restore') {
+      post('/api/restore', { file: 'latest' });
+      return;
+    }
     const id = bubbleJump;
     dismissBubble();
     jumpTo(id);

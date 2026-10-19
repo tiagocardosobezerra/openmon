@@ -96,6 +96,14 @@ XP is capped at 120 per 10 minutes, so a runaway loop cannot fast-forward your p
 - **Privacy**: tokens, passwords, API keys, Authorization headers and credentials in URLs are masked (`•••`) in bubbles, notifications and powers.
 - **Size**: small, normal or large, from the menu. Settings are saved in `~/.openmon/config.json`.
 
+## Your pet is never lost
+
+New computer or a fresh Windows? Openmon keeps backups outside `~/.openmon`, in **Documents/Openmon Backups** (on Windows, the OneDrive Documents folder when there is one, already synced to the cloud). One file per day (the last 14) plus `latest.openmon.json`, refreshed every 10 minutes of use and at every evolution.
+
+On a fresh install that finds a backup, the egg asks: *"Found your Openmon! Rex · Scrollwyrm · Lv 33 · Bring it back"*. One click and it is back, with its Opendex, badges and Hall of Fame.
+
+From the menu (Settings → Backups) you can save now, export to a file, import a save and open the folder. In a terminal: `openmon backup [file]` and `openmon restore <file|latest>`.
+
 ## Powers: what your Openmon is good for
 
 Each lineage your Openmon grows into unlocks a **power**, for good (the Opendex remembers across generations). Open them from the ⚡ button on the stats card or the menu.
@@ -127,6 +135,8 @@ openmon stats        your pet in the terminal
 openmon name <nickname>  give it a nickname (--clear goes back to the species name)
 openmon dex          open the Opendex
 openmon card         open your trainer card
+openmon backup [file]      save a backup now (or export to a file)
+openmon restore <file|latest>  bring back a pet from a backup
 openmon stop         put your pet away
 openmon autostart on open the pet when you log in (off / status too)
 openmon art          art pack folder and file names (see docs/ART-PACKS.md)

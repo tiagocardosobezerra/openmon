@@ -92,6 +92,7 @@ html, body {
 #bubble.toast { --c: var(--brand); }
 #bubble.toast .ic { color: #fff; }
 #bubble.setup { --c: #8fd3ff; }
+#bubble.restore { --c: var(--sun); }
 #bubble.setup small { font-family: var(--font-mono); -webkit-line-clamp: 3; }
 #bubble.say .title { font-weight: 500; }
 

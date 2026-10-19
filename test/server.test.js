@@ -10,6 +10,8 @@ const os = require('node:os');
 const path = require('node:path');
 const http = require('node:http');
 const { spawn } = require('node:child_process');
+// Never touch the real ~/.openmon or the backups in Documents.
+process.env.OPENMON_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-test-home-'));
 const { createDaemon } = require('../src/server');
 const { createStore } = require('../src/store');
 const { createFocus } = require('../src/focus');
@@ -294,6 +296,34 @@ test('click to answer: the hook is asked for its window once, then focus raises 
     const r = await request(port, 'POST', '/api/focus', { body: '{}', headers: json });
     assert.deepEqual(JSON.parse(r.body), { ok: true, app: 'WindowsTerminal' });
     assert.deepEqual(raised, [5150]);
+  } finally {
+    await daemon.close();
+  }
+});
+
+test('a fresh install that finds a backup offers to bring the pet back', async () => {
+  const { createBackups } = require('../src/backup');
+  const pet = require('../src/pet');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-fresh-'));
+  const backups = createBackups({ dir: path.join(dir, 'backups') });
+  const old = pet.createPet(Date.now(), 'Rex');
+  old.stage = 'adult';
+  old.lineage = 'lore';
+  old.xp = 5000;
+  backups.maybe(old, { scale: 1.25 }, true);
+  const daemon = createDaemon({ port: 0, store: createStore({ dir: path.join(dir, 'home'), delay: 10 }), hooksInstalled: () => true, configFile: path.join(dir, 'config.json'), backups });
+  const port = await daemon.listen();
+  try {
+    const json = { 'Content-Type': 'application/json' };
+    const before = JSON.parse((await request(port, 'GET', '/api/state')).body);
+    assert.equal(before.restoreOffer.name, 'Rex');
+    assert.equal(before.restoreOffer.form, 'Scrollwyrm');
+    const r = JSON.parse((await request(port, 'POST', '/api/restore', { body: '{}', headers: json })).body);
+    assert.equal(r.ok, true);
+    const after = JSON.parse((await request(port, 'GET', '/api/state')).body);
+    assert.equal(after.pet.name, 'Rex');
+    assert.equal(after.restoreOffer, null);
+    assert.equal(after.config.scale, 1.25);
   } finally {
     await daemon.close();
   }

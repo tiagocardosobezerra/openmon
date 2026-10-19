@@ -18,6 +18,7 @@ const installer = require('./install');
 const { localizeSpecies } = require('./i18n');
 const { createPlayground } = require('./playground');
 const { createFocus } = require('./focus');
+const { createBackups, unwrap } = require('./backup');
 const { createPowers, unlockedPowers } = require('./powers');
 
 const DEFAULT_PORT = Number(process.env.OPENMON_PORT) || 4747;
@@ -75,12 +76,15 @@ function listArt(dirs) {
   return { files: Object.keys(where).sort(), pack, where };
 }
 
-function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus() } = {}) {
+function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus(), backups = playground ? null : createBackups({ now }) } = {}) {
   const artDirs = [artDir, bundledArt].filter(Boolean);
   const bus = new EventEmitter();
   const powers = createPowers();
   const clients = new Set();
+  // A brand-new pet file: if a backup exists, offer to bring that pet back.
+  const freshInstall = Boolean(store.file) && !fs.existsSync(store.file);
   const real = createWorld(store.load());
+  let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
   const DEFAULTS = { muted: false, notify: true, chatter: true, quietUntil: null, scale: 1 };
@@ -104,7 +108,15 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const live = world.sessions.snapshot(now());
     // A finished turn carries its recap (files, commands, tests, time).
     if (live.pose === 'done' && live.focus && world === real) live.focus.recap = powers.recap(live.focus.id);
-    return { type: 'state', demo: world !== real, setup: setup(), live, pet: pet.view(world.pet), config: publicConfig() };
+    return {
+      type: 'state',
+      demo: world !== real,
+      setup: setup(),
+      live,
+      pet: pet.view(world.pet),
+      config: publicConfig(),
+      restoreOffer: restoreOffer ? restoreOffer.summary : null,
+    };
   }
 
   function broadcast(message) {
@@ -139,7 +151,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     }
     const ctx = target.sessions.apply(signal, t);
     const events = pet.applySignal(target.pet, signal, ctx, t);
-    if (target === real) store.save(real.pet);
+    if (target === real) persist(events.some((e) => e.type === 'evolve'));
     log(`${signal.kind.padEnd(14)} ${signal.label}${signal.detail ? ` · ${signal.detail}` : ''}`);
     return events;
   }
@@ -164,7 +176,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   function petIt() {
     const events = pet.petIt(world.pet, now());
-    if (world === real) store.save(real.pet);
+    if (world === real) persist();
     pushEvents(events);
     pushState();
     return events;
@@ -172,7 +184,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   function rename(name) {
     const events = pet.rename(real.pet, name);
-    store.save(real.pet);
+    persist(true);
     pushEvents(events);
     pushState();
     return events;
@@ -182,10 +194,46 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const { pet: egg, events } = pet.layEgg(real.pet, now());
     if (!events.length) return events;
     real.pet = egg;
-    store.save(real.pet);
+    persist(true);
     pushEvents(events);
     pushState(true);
     return events;
+  }
+
+  function persist(force = false) {
+    store.save(real.pet);
+    // The offer only stands until the new egg starts its own life.
+    if (restoreOffer && (real.pet.xp > 0 || real.pet.counters.tools > 0)) restoreOffer = null;
+    if (backups && !restoreOffer) backups.maybe(real.pet, config, force);
+  }
+
+  // Replaces the real pet with a saved one (backup folder or a file).
+  function restore(save) {
+    if (!save || !save.pet) return { ok: false };
+    stopDemo();
+    real.pet = save.pet;
+    restoreOffer = null;
+    store.save(real.pet);
+    store.flush();
+    if (save.config && Object.keys(save.config).length) {
+      const keep = ['muted', 'notify', 'chatter', 'scale'];
+      setConfig(Object.fromEntries(keep.filter((k) => save.config[k] !== undefined).map((k) => [k, save.config[k]])));
+    }
+    if (backups) backups.maybe(real.pet, config, true);
+    const events = [{ type: 'restored', name: pet.view(real.pet).name }];
+    pushEvents(events);
+    pushState(true);
+    return { ok: true, pet: pet.view(real.pet) };
+  }
+
+  function restoreFile(file) {
+    return restore(unwrap(fs.readFileSync(file, 'utf8'), now()));
+  }
+
+  function exportTo(file) {
+    const { wrap } = require('./backup');
+    fs.writeFileSync(file, `${JSON.stringify(wrap(real.pet, config, now()), null, 2)}\n`);
+    return file;
   }
 
   // Sandbox actions, only for `openmon playground` (its own data folder).
@@ -331,6 +379,15 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (err) return res.writeHead(400).end();
           focusAgent(body && body.id).then((r) => json(res, 200, r));
         });
+      case 'GET /api/backups':
+        return json(res, 200, backups ? { dir: backups.dir, lastAt: backups.lastAt(), items: backups.list() } : { dir: null, items: [] });
+      case 'POST /api/backup':
+        return json(res, 200, { ok: backups ? backups.maybe(real.pet, config, true) : false });
+      case 'POST /api/restore':
+        return readJson(req, (err, body) => {
+          if (err || !backups) return res.writeHead(400).end();
+          json(res, 200, restore(backups.read(String((body && body.file) || 'latest'))));
+        });
       case 'POST /api/lay-egg':
         return json(res, 200, { events: layEgg() });
       case 'POST /api/shutdown':
@@ -431,6 +488,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     ingest,
     petIt,
     focusAgent,
+    restoreFile,
+    exportTo,
+    backupNow: () => (backups ? backups.maybe(real.pet, config, true) : false),
+    backupDir: () => (backups ? backups.dir : null),
     rename,
     layEgg,
     runDemo,
@@ -449,6 +510,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         stopDemo();
         clearInterval(ticker);
         store.flush();
+        if (backups && !restoreOffer && !playground) backups.maybe(real.pet, config, true);
         for (const res of clients) res.end();
         server.close(() => resolve());
       }),

@@ -96,6 +96,14 @@ O XP tem limite de 120 a cada 10 minutos, então um loop descontrolado não acel
 - **Privacidade**: tokens, senhas, chaves de API, cabeçalhos Authorization e credenciais em URLs aparecem mascarados (`•••`) nos balões, notificações e poderes.
 - **Tamanho**: pequeno, normal ou grande, pelo menu. As configurações ficam em `~/.openmon/config.json`.
 
+## Seu pet não se perde
+
+Formatou o PC ou trocou de computador? O Openmon guarda backups fora de `~/.openmon`, em **Documentos/Openmon Backups** (no Windows, a pasta Documentos do OneDrive quando existe, que já vai para a nuvem). Um arquivo por dia (os últimos 14) mais `latest.openmon.json`, atualizados a cada 10 minutos de uso e em toda evolução.
+
+Numa instalação nova, se ele achar um backup, o ovo pergunta: *"Achei seu Openmon! Rex · Scrollwyrm · Lv 33 · Trazer de volta"*. Um clique e ele volta, com Opendex, insígnias e Hall da Fama.
+
+Pelo menu (Configurações → Backups) dá para salvar agora, exportar para um arquivo, importar um save e abrir a pasta. No terminal: `openmon backup [arquivo]` e `openmon restore <arquivo|latest>`.
+
 ## Poderes: para que serve o seu Openmon
 
 Cada linhagem em que seu Openmon evolui desbloqueia um **poder**, para sempre (a Opendex lembra entre gerações). Abra pelo botão Poderes no card ou pelo menu.
@@ -127,6 +135,8 @@ openmon stats        seu pet no terminal
 openmon name <apelido>  dá um apelido (--clear volta ao nome da espécie)
 openmon dex          abre a Opendex
 openmon card         abre o cartão de treinador
+openmon backup [arquivo]   salva um backup agora (ou exporta para um arquivo)
+openmon restore <arquivo|latest>  traz de volta um pet de um backup
 openmon stop         guarda o pet
 openmon autostart on abre o pet ao entrar no sistema (também off / status)
 openmon art          pasta e nomes de arquivo de pacotes de arte (veja docs/ART-PACKS.md)

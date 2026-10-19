@@ -6,7 +6,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, BrowserWindow, Menu, Tray, Notification, ipcMain, nativeImage, nativeTheme, screen, shell } = require('electron');
+const { app, BrowserWindow, Menu, Tray, Notification, dialog, ipcMain, nativeImage, nativeTheme, screen, shell } = require('electron');
 const { createDaemon } = require('./server');
 const { homeDir, adoptLegacyHome } = require('./store');
 
@@ -39,6 +39,16 @@ const PT = {
   'Normal': 'Normal',
   'Large': 'Grande',
   'Settings': 'Configurações',
+  'Backups': 'Backups',
+  'Save a backup now': 'Salvar um backup agora',
+  'Export save…': 'Exportar save…',
+  'Import save…': 'Importar save…',
+  'Open backups folder': 'Abrir pasta de backups',
+  'Replace': 'Substituir',
+  'Cancel': 'Cancelar',
+  'Replace {name} with the pet in this file?': 'Substituir {name} pelo pet deste arquivo?',
+  'A backup of the current pet is kept in the backups folder.': 'Um backup do pet atual fica guardado na pasta de backups.',
+  'This file is not an Openmon save.': 'Este arquivo não é um save do Openmon.',
   'Reset position': 'Voltar à posição inicial',
   'Quit': 'Sair',
   '{label} needs you': '{label} precisa de você',
@@ -237,6 +247,16 @@ function menuTemplate() {
                 refreshTray();
               },
             },
+        {
+          label: L('Backups'),
+          submenu: [
+            { label: L('Save a backup now'), click: () => daemon.backupNow() },
+            { label: L('Export save…'), click: exportSave },
+            { label: L('Import save…'), click: importSave },
+            { type: 'separator' },
+            { label: L('Open backups folder'), enabled: Boolean(daemon.backupDir()), click: () => shell.openPath(daemon.backupDir()) },
+          ],
+        },
         { label: L('Reset position'), click: () => { const p = defaultPlace(); win.setPosition(p.x, p.y); savePlace(); } },
       ],
     },
@@ -250,6 +270,27 @@ function menuTemplate() {
     { type: 'separator' },
     { label: L('Quit'), click: () => app.quit() },
   ];
+}
+
+// Saves: export to a file you choose, or bring one back.
+async function exportSave() {
+  const name = ((latest && latest.pet && latest.pet.name) || 'openmon').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const r = await dialog.showSaveDialog({ title: L('Export save…'), defaultPath: path.join(app.getPath('documents'), `${name}.openmon.json`), filters: [{ name: 'Openmon', extensions: ['json'] }] });
+  if (!r.canceled && r.filePath) daemon.exportTo(r.filePath);
+}
+
+async function importSave() {
+  const r = await dialog.showOpenDialog({ title: L('Import save…'), properties: ['openFile'], filters: [{ name: 'Openmon', extensions: ['json'] }] });
+  if (r.canceled || !r.filePaths[0]) return;
+  const current = latest && latest.pet ? `${latest.pet.name} (Lv ${latest.pet.level})` : 'Openmon';
+  const ok = await dialog.showMessageBox({ type: 'question', buttons: [L('Replace'), L('Cancel')], defaultId: 1, cancelId: 1, message: L('Replace {name} with the pet in this file?', { name: current }), detail: L('A backup of the current pet is kept in the backups folder.') });
+  if (ok.response !== 0) return;
+  daemon.backupNow();
+  try {
+    daemon.restoreFile(r.filePaths[0]);
+  } catch (err) {
+    dialog.showErrorBox('Openmon', L('This file is not an Openmon save.'));
+  }
 }
 
 // Size: the window grows or shrinks around its bottom-right corner, so the

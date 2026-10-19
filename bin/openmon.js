@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
+const fs = require('node:fs');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { createDaemon, DEFAULT_PORT } = require('../src/server');
@@ -24,7 +25,9 @@ const HELP = `
   openmon start        open the pet (tray icon; drag it anywhere)
   openmon demo         play a scripted agent session on a throwaway egg
   openmon stats        show your pet in the terminal
-  openmon name <name>  rename your pet
+  openmon name <nickname>  give it a nickname (--clear: back to the species name)
+  openmon backup [file]    save a backup now (or export to a file)
+  openmon restore <file|latest>  bring back a pet from a backup
   openmon dex          open the Opendex: every form you have seen
   openmon card         open your trainer card, ready to share
   openmon stop         put your pet away (quits the app or daemon)
@@ -249,6 +252,38 @@ async function main() {
       console.log(`Hooks added to ${result.settingsPath}`);
       if (result.backupPath) console.log(`Backup: ${result.backupPath}`);
       return console.log('New Claude Code sessions will feed your Openmon. Open it with "openmon start".');
+    }
+
+    case 'backup': {
+      const { createBackups, wrap } = require('../src/backup');
+      const file = rest.find((r) => !r.startsWith('--'));
+      if (await isRunning()) {
+        await fetch(`${base}/api/backup`, { method: 'POST' });
+      }
+      const p = createStore().load();
+      if (file) {
+        fs.writeFileSync(file, `${JSON.stringify(wrap(p, {}, Date.now()), null, 2)}\n`);
+        return console.log(`Saved ${file}`);
+      }
+      const b = createBackups();
+      if (!(await isRunning())) b.maybe(p, {}, true);
+      return console.log(`Backups: ${b.dir}\n${b.list().slice(0, 5).map((x) => `  ${x.file}  ${x.name} · ${x.form} · Lv ${x.level}`).join('\n')}`);
+    }
+
+    case 'restore': {
+      const { createBackups, unwrap } = require('../src/backup');
+      const what = rest.find((r) => !r.startsWith('--'));
+      if (!what) return console.error('Usage: openmon restore <file|latest>');
+      const save = what === 'latest' ? createBackups().latest() : unwrap(fs.readFileSync(what, 'utf8'));
+      if (!save) return console.error('No backup found.');
+      if (await isRunning()) return console.error('Put your pet away first ("openmon stop"), then restore.');
+      const store = createStore();
+      if (fs.existsSync(store.file)) fs.copyFileSync(store.file, `${store.file}.before-restore-${Date.now()}`);
+      store.save(save.pet);
+      store.flush();
+      const { view } = require('../src/pet');
+      const v = view(save.pet);
+      return console.log(`Welcome back, ${v.name} (${v.form}, Lv ${v.level}). Your previous pet.json was kept next to it.`);
     }
 
     case 'uninstall': {
