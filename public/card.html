@@ -114,7 +114,7 @@
     ctx.fillRect(70, 70, 470, 490);
     ctx.translate(305, 470);
     ctx.scale(2.6, 2.6);
-    const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny, progress: p.progress.ratio, wear: p.wear || null };
+    const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny, region: p.region || null, progress: p.progress.ratio, wear: p.wear || null };
     const anim = OpenmonMotion.poseAnim({ ...spec, pose: 'done', t: t + 3, since: 0 });
     OpenmonArt.drawCreature(ctx, { ...spec, t, size: 46, pose: 'idle', anim });
     ctx.restore();
@@ -140,7 +140,10 @@
     ctx.font = '500 22px system-ui, sans-serif';
     ctx.fillText(tr('card.meta', { nature, days: days > 1 ? tr('card.days', { n: days }) : tr('card.day'), bond: p.bond }), 580, 260);
 
-    radar(760, 425, 98, species.stats.map((s) => p.affinity[s] || 0), species.stats.map((s) => species.statLabels[s]), pal.body);
+    // Eleven axes do not fit: the six strongest kinds of work, in their usual order.
+    const top = new Set([...species.stats].sort((a, b) => (p.affinity[b] || 0) - (p.affinity[a] || 0)).slice(0, 6));
+    const axes = species.stats.filter((s) => top.has(s));
+    radar(760, 425, 98, axes.map((s) => p.affinity[s] || 0), axes.map((s) => species.statLabels[s]), pal.body);
 
     const seen = Object.keys(p.dex || {}).length;
     const facts = [

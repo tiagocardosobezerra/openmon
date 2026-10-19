@@ -67,3 +67,19 @@ test('commands are described in full, never cut at a slash', () => {
   const edit = classify(hook('PreToolUse', { tool_name: 'Edit', tool_input: { file_path: '/code/src/auth.js' } }));
   assert.equal(edit.detail, 'Edit auth.js');
 });
+
+test('docs, style, data and git work get their own families', () => {
+  const fam = (tool_name, tool_input) => classify(hook('PostToolUse', { tool_name, tool_input })).family;
+  assert.equal(fam('Edit', { file_path: '/w/README.md' }), 'docs');
+  assert.equal(fam('Write', { file_path: '/w/app.scss' }), 'style');
+  assert.equal(fam('Edit', { file_path: '/w/q.sql' }), 'data');
+  assert.equal(fam('Read', { file_path: '/w/sales.csv' }), 'data');
+  assert.equal(fam('Read', { file_path: '/w/README.md' }), 'lore');
+  assert.equal(fam('Bash', { command: 'git commit -m "x"' }), 'git');
+  assert.equal(fam('Bash', { command: 'GIT_PAGER=cat gh pr list' }), 'git');
+  assert.equal(fam('Bash', { command: 'github-cli x' }), 'shell');
+  assert.equal(fam('Bash', { command: 'psql -c "select 1"' }), 'data');
+  assert.equal(fam('Bash', { command: 'npm test' }), 'test');
+  // Every edit still counts as an edit.
+  assert.equal(classify(hook('PostToolUse', { tool_name: 'Edit', tool_input: { file_path: '/w/README.md' } })).edit, true);
+});

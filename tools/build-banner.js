@@ -39,8 +39,8 @@ function banner(lang) {
   const H = 440;
   const ground = 372;
   const tagline = pt ? 'Um bichinho de desktop que cresce com o trabalho do seu agente de IA.' : 'A desktop pet that grows from the work your AI coding agent does.';
-  const sub = pt ? 'Ele avisa quando o agente precisa de você, evolui em 22 formas e nunca sai do seu computador.' : 'It tells you when your agent needs you, evolves into 22 forms and never leaves your computer.';
-  const chips = pt ? ['Claude Code', '100% local', '22 formas', 'PT · EN'] : ['Claude Code', '100% local', '22 forms', 'EN · PT'];
+  const sub = pt ? 'Ele avisa quando o agente precisa de você, evolui em 37 formas e nunca sai do seu computador.' : 'It tells you when your agent needs you, evolves into 37 forms and never leaves your computer.';
+  const chips = pt ? ['Claude Code', '100% local', '37 formas', 'PT · EN'] : ['Claude Code', '100% local', '37 forms', 'EN · PT'];
   let x = 610;
   const creatures = [];
   const arrows = [];

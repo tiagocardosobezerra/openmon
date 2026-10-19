@@ -23,6 +23,11 @@
     roam: { body: '#5fb3ff', dark: '#3d88d8', belly: '#e0f1ff', accent: '#ffffff', glow: '#b5e0ff', extra: '#ff8a5c' },
     swarm: { body: '#ff80b8', dark: '#e0579b', belly: '#ffe3f0', accent: '#ffd166', glow: '#ffbddb', extra: '#9b5de5' },
     chimera: { body: '#b9a6ff', dark: '#8b74e6', belly: '#fff0fb', accent: '#ffd166', glow: '#ffd6f5', extra: '#5fd4c4' },
+    docs: { body: '#f3ead6', dark: '#d9c9a6', belly: '#fffaf0', accent: '#3b5bdb', glow: '#c5d3ff', extra: '#ffffff' },
+    git: { body: '#c7835a', dark: '#9c5e3b', belly: '#f6dcc4', accent: '#5fd4a0', glow: '#b8f5d6', extra: '#7a4a30' },
+    debug: { body: '#e5484d', dark: '#b8323a', belly: '#ffd9d6', accent: '#3a2f55', glow: '#ffb1a8', extra: '#ffd166' },
+    data: { body: '#5fc8e8', dark: '#3a98bd', belly: '#e2f7ff', accent: '#7c6cf2', glow: '#c9f2ff', extra: '#9ee6ff' },
+    style: { body: '#ffb3d1', dark: '#e787b0', belly: '#fff0f6', accent: '#ffd166', glow: '#ffd6f0', extra: '#5fb3ff' },
   };
 
   // Shiny variants: same form, rare colours (1 in 128, decided at birth).
@@ -34,6 +39,12 @@
     test: { body: '#41476a', dark: '#2a2e47', belly: '#d9dcef', accent: '#e2b13c', glow: '#ffe08a', extra: '#e2b13c' },
     roam: { body: '#ffd36b', dark: '#e0a93c', belly: '#fff4d4', accent: '#ffffff', glow: '#fff0b8', extra: '#5fb3ff' },
     swarm: { body: '#7ce3b5', dark: '#4fb88c', belly: '#e3fff1', accent: '#ff80b8', glow: '#c2ffe4', extra: '#9b5de5' },
+    // Same palettes as tools/build-variants.js.
+    docs: { body: '#f5d98a', dark: '#d9b45a', belly: '#fff3cf', accent: '#c0392b', glow: '#ffd9a8', extra: '#ffffff' },
+    git: { body: '#ece6dc', dark: '#c9bfae', belly: '#fffaf2', accent: '#ff9fc4', glow: '#ffd1e3', extra: '#5a4e44' },
+    debug: { body: '#f2c14e', dark: '#c9962c', belly: '#fff2c6', accent: '#1f6f5c', glow: '#ffe69a', extra: '#e5484d' },
+    data: { body: '#b48cf2', dark: '#8a62d1', belly: '#f1e6ff', accent: '#3ddc97', glow: '#e6d6ff', extra: '#dcc6ff' },
+    style: { body: '#8fe3c4', dark: '#5fbf9d', belly: '#eafff6', accent: '#ffd166', glow: '#c2ffe4', extra: '#5fb3ff' },
   };
 
   // Body proportions per lineage: width, top height, bottom height, tip.
@@ -1119,6 +1130,11 @@
       const night = sprites[key + shiny + '.night' + pose] || sprites[key + shiny + '.night'] || sprites[key + '.night' + pose] || sprites[key + '.night'];
       if (night) return { img: night, night: true };
     }
+    // The designer's own regional form wins over recolouring at draw time.
+    if (spec.region && !spec.shiny) {
+      const regional = sprites[`${key}.region-${spec.region}${pose}`] || sprites[`${key}.region-${spec.region}`];
+      if (regional && !spec.nocturne) return { img: regional, night: false, regional: true };
+    }
     // A pack without shiny art falls back to the normal image (it still twinkles);
     // without night art, the normal image is tinted at draw time.
     const img = sprites[key + shiny + pose] || sprites[key + shiny] || sprites[key + pose] || sprites[key] || null;
@@ -1595,29 +1611,51 @@
   }
 
   // --- regional forms ------------------------------------------------------------
-  // A pet raised mostly on one language gets that region's colours (body and
-  // shadow of its type swapped) and a small mark on its belly.
+  // A pet raised mostly on one language gets that region's colours (body,
+  // shadow and belly of its type swapped) and the region's mark on its
+  // forehead. A pack file "<form>.region-<region>.svg" replaces both.
   const TYPE_COLORS = {
     craft: ['#ff9f43', '#d9762b'], lore: ['#9381f2', '#6c5bcf'], shell: ['#35d0bf', '#1fa496'], test: ['#74cc63', '#4e9f42'],
     roam: ['#5fb3ff', '#3d88d8'], swarm: ['#ff80b8', '#e0579b'], chimera: ['#b9a6ff', '#8b74e6'], sprout: ['#f6e7c9', '#dcc59c'],
+    docs: ['#f3ead6', '#d9c9a6'], git: ['#c7835a', '#9c5e3b'], debug: ['#e5484d', '#b8323a'], data: ['#5fc8e8', '#3a98bd'], style: ['#ffb3d1', '#e787b0'],
   };
   const REGIONS = {
-    js: { body: '#ffd75e', shadow: '#e0b23a', mark: '#3178c6' },
-    py: { body: '#5b8fd6', shadow: '#3e6cad', mark: '#ffd34d' },
-    rs: { body: '#c8693c', shadow: '#9a4a26', mark: '#4fb3a0' },
-    go: { body: '#5fd0e0', shadow: '#38a6b8', mark: '#ffffff' },
-    jvm: { body: '#8b5e3c', shadow: '#664229', mark: '#f2c14e' },
-    cs: { body: '#8a6ad6', shadow: '#6648b5', mark: '#e8dcff' },
+    js: { body: '#ffd75e', shadow: '#e0b23a', belly: '#fff3c4', mark: '#3178c6' },
+    py: { body: '#5b8fd6', shadow: '#3e6cad', belly: '#dfeaff', mark: '#ffd34d' },
+    rs: { body: '#c8693c', shadow: '#9a4a26', belly: '#f6d8c4', mark: '#4fb3a0' },
+    go: { body: '#5fd0e0', shadow: '#38a6b8', belly: '#e2fafd', mark: '#ffffff' },
+    jvm: { body: '#8b5e3c', shadow: '#664229', belly: '#f1dcc6', mark: '#f2c14e' },
+    cs: { body: '#8a6ad6', shadow: '#6648b5', belly: '#ece4ff', mark: '#e8dcff' },
   };
 
   function regionSvg(text, region) {
     const r = REGIONS[region];
     if (!r) return text;
     let out = text;
-    for (const [body, shadow] of Object.values(TYPE_COLORS)) {
+    for (const [type, [body, shadow]] of Object.entries(TYPE_COLORS)) {
       out = out.replace(new RegExp(body, 'gi'), r.body).replace(new RegExp(shadow, 'gi'), r.shadow);
+      const belly = PALETTES[type] && PALETTES[type].belly;
+      if (belly && r.belly) out = out.replace(new RegExp(belly, 'gi'), r.belly);
     }
     return out;
+  }
+
+  // The region's mark on the forehead, just above the eyes: the designer's
+  // mark-<region>.svg when the pack has it, else drawn in code.
+  function drawRegionMark(ctx, sprite, region, h) {
+    const an = spriteAnchor(sprite.img);
+    if (!an) return;
+    const entry = sprite.img.__svg ? eyeVariants(sprite.img.__svg, region) : null;
+    const mark = sprites[`mark-${region}`];
+    if (mark) {
+      // Wait for the eye line (the SVG loads once, then every frame has it).
+      if (!entry || entry.eyeY == null) return;
+      const S = Math.max(8, an.headW * h * 0.24);
+      const y = -h + entry.eyeY * h - S * 1.05;
+      ctx.drawImage(mark, -S / 2, y - S / 2, S, S);
+      return;
+    }
+    drawMark(ctx, region, 0, -h + an.neckY * h + h * 0.03, an.headW * h);
   }
 
   function drawMark(ctx, region, x, y, S) {
@@ -1728,7 +1766,8 @@
   function drawSprite(ctx, sprite, spec, a, R, t) {
     // Regional colours only on the normal colouring (shiny and night win).
     const region = spec.region && REGIONS[spec.region] && !spec.shiny && !sprite.night && !spec.nocturne ? spec.region : null;
-    const base = livingImage(sprite.img, a, region);
+    // A designer regional file is already coloured and marked.
+    const base = livingImage(sprite.img, a, sprite.regional ? null : region);
     const img = spec.nocturne && !sprite.night ? nightTint(base) : base;
     const h = heightOf(spec.stage, spec.size || 48) * ((packInfo && packInfo.scale) || 1);
     const w = ((sprite.img.naturalWidth || 1) / Math.max(1, sprite.img.naturalHeight || 1)) * h;
@@ -1738,10 +1777,7 @@
     ctx.scale((a.turn == null ? 1 : a.turn) * (1 + a.squash), 1 - a.squash);
     if (a.glow > 0 || spec.stage === 'mythic') aura(ctx, spec, R, -h * 0.45, palette(spec), t, Math.max(a.glow, spec.stage === 'mythic' ? 0.6 : 0));
     ctx.drawImage(img, -w / 2, -h, w, h);
-    if (region && spec.stage !== 'egg' && spec.stage !== 'sprout') {
-      const an = spriteAnchor(sprite.img);
-      if (an) drawMark(ctx, region, 0, -h + an.neckY * h + h * 0.03, an.headW * h);
-    }
+    if (region && !sprite.regional && spec.stage !== 'egg' && spec.stage !== 'sprout') drawRegionMark(ctx, sprite, region, h);
     if (spec.wear && spec.stage !== 'egg') {
       const an = spriteAnchor(sprite.img);
       if (an) drawWear(ctx, spec.wear, { topY: -h + an.top * h, headW: an.headW * h, neckY: -h + an.neckY * h, neckW: an.neckW * h }, t);

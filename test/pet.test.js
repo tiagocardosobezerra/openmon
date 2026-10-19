@@ -338,3 +338,24 @@ test('the journal keeps one line per day: work by kind and by project', () => {
   assert.equal(j[0].tools, 3);
   assert.equal(j[1].tools, 1);
 });
+
+test('fixing what failed trains Debug; unrelated successes do not', () => {
+  const p = pet.createPet(T0);
+  const sig = (kind, extra) => ({ kind, session: 'dbg', tool: 'Bash', ...extra });
+  pet.applySignal(p, sig('tool-fail', { detail: 'Bash: make' }), {}, T0);
+  pet.applySignal(p, sig('tool-done', { detail: 'Bash: ls' }), {}, T0 + 1000);
+  assert.equal(p.stats.debug, 0);
+  pet.applySignal(p, sig('tool-done', { detail: 'Bash: make' }), {}, T0 + 2000);
+  assert.equal(p.stats.debug, 1);
+  // Red tests, then green: worth more.
+  pet.applySignal(p, sig('test-end', { passed: false }), {}, T0 + 3000);
+  pet.applySignal(p, sig('test-end', { passed: true }), {}, T0 + 4000);
+  assert.equal(p.stats.debug, 4);
+  assert.equal(p.counters.fixes, 2);
+});
+
+test('old pets get the new stats at zero', () => {
+  const old = pet.migrate({ bornAt: T0, stats: { craft: 5, lore: 2, shell: 0, test: 0, roam: 0, swarm: 0 } }, T0);
+  assert.equal(old.stats.craft, 5);
+  for (const s of ['docs', 'git', 'debug', 'data', 'style']) assert.equal(old.stats[s], 0);
+});

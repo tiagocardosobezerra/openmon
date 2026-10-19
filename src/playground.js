@@ -64,6 +64,7 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
       p.trait = stageIndex(stage) >= stageIndex('adult') ? body.trait || null : null;
       p.shiny = Boolean(body.shiny);
       p.nocturne = Boolean(body.nocturne);
+      p.region = typeof body.region === 'string' && /^[a-z]{2,3}$/.test(body.region) ? body.region : null;
       p.xp = Math.max(p.xp, STAGES[stageIndex(stage)].xp);
       p.dex[formKey(p.stage, p.lineage)] = p.dex[formKey(p.stage, p.lineage)] || now();
       return applyEvents([]);
@@ -152,7 +153,7 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
     // Every lineage counts as seen, so every power is unlocked.
     unlockAll() {
       const p = getPet();
-      for (const l of ['craft', 'lore', 'shell', 'test', 'roam', 'swarm']) p.dex[`${l}-juvenile`] = p.dex[`${l}-juvenile`] || now();
+      for (const l of require('./species').STATS) p.dex[`${l}-juvenile`] = p.dex[`${l}-juvenile`] || now();
       // Every accessory, and a bag to play with.
       const { COSMETICS } = require('./species');
       for (const id of Object.keys(COSMETICS)) p.wardrobe.owned[id] = p.wardrobe.owned[id] || now();

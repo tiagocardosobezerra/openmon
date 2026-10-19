@@ -44,7 +44,7 @@
   #timeline li.prompt { background: var(--surface-2); font-weight: 650; }
   #timeline li time { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
   #timeline li .who { color: var(--muted); font-size: 12px; }
-  .tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 22px; }
+  .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; margin-top: 22px; }
   .tab { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px 8px; border: var(--bw) solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--ink); cursor: pointer; transition: transform 0.08s ease; }
   .tab:hover { transform: translateY(-2px); border-color: var(--c); }
   .tab img { width: 46px; height: 46px; object-fit: contain; }
@@ -90,7 +90,7 @@
   document.getElementById('title').textContent = tr('powers.title');
   document.getElementById('sub').textContent = tr('powers.sub');
   document.getElementById('h-sessions').textContent = tr('powers.sessions');
-  const POWERS = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
+  const POWERS = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm', 'docs', 'git', 'debug', 'data', 'style'];
   let data = null;
   let live = null;
   let selected = null;
@@ -173,11 +173,32 @@
     return b;
   };
 
+  // Files with edits and lines in and out (Craft, Docs, Style).
+  const fileTable = (files) => (files && files.length
+    ? h('table', {}, h('tr', {}, h('th', {}, tr('powers.file')), h('th', { class: 'n' }, tr('powers.edits')), h('th', { class: 'n' }, tr('powers.lines'))),
+      files.map((f) => h('tr', { title: f.file }, h('td', {}, h('code', {}, f.name)), h('td', { class: 'n' }, f.edits), h('td', { class: 'n' }, h('span', { class: 'add' }, `+${f.added}`), ' ', h('span', { class: 'del' }, `−${f.removed}`)))))
+    : null);
   const VIEWS = {
-    craft(s) {
-      if (!s.craft.length) return null;
-      return h('table', {}, h('tr', {}, h('th', {}, tr('powers.file')), h('th', { class: 'n' }, tr('powers.edits')), h('th', { class: 'n' }, tr('powers.lines'))),
-        s.craft.map((f) => h('tr', { title: f.file }, h('td', {}, h('code', {}, f.name)), h('td', { class: 'n' }, f.edits), h('td', { class: 'n' }, h('span', { class: 'add' }, `+${f.added}`), ' ', h('span', { class: 'del' }, `−${f.removed}`)))));
+    craft: (s) => fileTable(s.craft),
+    docs: (s) => fileTable(s.docs),
+    style: (s) => fileTable(s.style),
+    git(s) {
+      if (!s.git || !s.git.commands.length) return null;
+      const head = h('p', {}, h('span', { class: 'chip sun' }, tr(s.git.commits === 1 ? 'powers.commit1' : 'powers.commits', { n: s.git.commits })));
+      return h('div', {}, head, h('table', {}, h('tr', {}, h('th', {}, ''), h('th', {}, tr('powers.command')), h('th', { class: 'n' }, ''), h('th', {}, '')),
+        s.git.commands.map((c) => h('tr', {}, h('td', {}, h('span', { class: c.ok ? 'ok' : 'bad' }, c.ok ? '✓' : '✗')), h('td', {}, h('code', {}, c.command)), h('td', { class: 'n muted' }, ago(c.at)), h('td', { class: 'n' }, copyBtn(c.command))))));
+    },
+    debug(s) {
+      if (!s.debug || (!s.debug.fixes.length && !s.debug.open)) return null;
+      const open = s.debug.open ? h('p', {}, h('span', { class: 'chip' }, tr('powers.openFail')), ' ', h('code', {}, s.debug.open.target || s.debug.open.tool), h('span', { class: 'muted' }, ` · ${ago(s.debug.open.at)}`)) : null;
+      return h('div', {}, open, s.debug.fixes.length ? h('table', {}, h('tr', {}, h('th', {}, ''), h('th', {}, tr('powers.fixed')), h('th', { class: 'n' }, tr('powers.tries')), h('th', { class: 'n' }, tr('powers.timeToFix'))),
+        s.debug.fixes.map((x) => h('tr', {}, h('td', {}, h('span', { class: 'ok' }, '✓')), h('td', {}, h('code', {}, x.target || x.tool)), h('td', { class: 'n' }, x.tries), h('td', { class: 'n muted' }, dur(x.fixedAt - x.failedAt))))) : null);
+    },
+    data(s) {
+      if (!s.data || (!s.data.files.length && !s.data.queries.length)) return null;
+      return h('div', {},
+        s.data.files.length ? h('table', {}, h('tr', {}, h('th', {}, tr('powers.file')), h('th', { class: 'n' }, tr('powers.times')), h('th', { class: 'n' }, tr('powers.edits'))), s.data.files.map((f) => h('tr', { title: f.file }, h('td', {}, h('code', {}, f.name)), h('td', { class: 'n' }, `×${f.reads}`), h('td', { class: 'n' }, f.edits)))) : null,
+        s.data.queries.length ? h('table', { style: 'margin-top:10px' }, h('tr', {}, h('th', {}, ''), h('th', {}, tr('powers.query')), h('th', { class: 'n' }, tr('powers.time')), h('th', {}, '')), s.data.queries.map((c) => h('tr', {}, h('td', {}, h('span', { class: c.ok ? 'ok' : 'bad' }, c.ok ? '✓' : '✗')), h('td', {}, h('code', {}, c.command)), h('td', { class: 'n muted' }, dur(c.ms)), h('td', { class: 'n' }, copyBtn(c.command))))) : null);
     },
     lore(s) {
       if (!s.lore.reads.length && !s.lore.searches.length) return null;
@@ -223,7 +244,7 @@
   }
 
   // The journal: the last 14 days of agent work, by kind of work.
-  const FAMILIES = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
+  const FAMILIES = POWERS;
   let pickedDay = null;
   const dayLabel = (key, opts) => {
     const [y, m, d] = key.split('-').map(Number);

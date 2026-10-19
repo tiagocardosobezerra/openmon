@@ -64,3 +64,37 @@ test('each turn has a recap: files, commands, tests, time', () => {
   p.record(hook('UserPromptSubmit'), 'app', T + 70_000);
   assert.equal(p.recap('s1').edits, 0);
 });
+
+test('docs, git, debug, data and style views', () => {
+  const p = createPowers();
+  let t = T;
+  const ev = (e, tool_name, tool_input, extra = {}) => p.record(hook(e, { tool_name, tool_input, ...extra }), 'app', t++);
+  ev('PostToolUse', 'Edit', { file_path: '/w/app/README.md', old_string: 'a', new_string: 'b\nc' });
+  ev('PostToolUse', 'Write', { file_path: '/w/app/ui.css', content: 'a' });
+  ev('PostToolUse', 'Bash', { command: 'git commit -m x' });
+  ev('PostToolUse', 'Bash', { command: 'git status' });
+  ev('PostToolUse', 'Bash', { command: 'sqlite3 a.db .tables' });
+  ev('PostToolUse', 'Read', { file_path: '/w/app/d.csv' });
+  ev('PostToolUseFailure', 'Bash', { command: 'make build' });
+  ev('PostToolUse', 'Bash', { command: 'ls' });
+  ev('PostToolUse', 'Bash', { command: 'make build' });
+  const v = p.view()[0];
+  assert.deepEqual(v.docs.map((f) => f.name), ['README.md']);
+  assert.deepEqual(v.style.map((f) => f.name), ['ui.css']);
+  assert.equal(v.git.commands.length, 2);
+  assert.equal(v.git.commits, 1);
+  assert.equal(v.data.queries.length, 1);
+  assert.deepEqual(v.data.files.map((f) => [f.name, f.reads]), [['d.csv', 1]]);
+  assert.equal(v.debug.fixes.length, 1);
+  assert.equal(v.debug.fixes[0].target, 'make build');
+  assert.equal(v.debug.open, null);
+});
+
+test('generated shiny and night art is up to date', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const { build } = require('../tools/build-variants');
+  for (const [name, text] of Object.entries(build())) {
+    assert.equal(fs.readFileSync(path.join(__dirname, '..', 'art', 'official', name), 'utf8'), text, name);
+  }
+});

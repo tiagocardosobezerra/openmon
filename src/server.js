@@ -48,7 +48,7 @@ function createWorld(petState) {
 
 // Art packs: images named after forms (craft-adult.png, egg@sleep.svg…)
 // in this folder replace the procedural art. See docs/ART-PACKS.md.
-const ART_FILE = /^[a-z0-9-]+(.shiny)?(.night)?(@[a-z]+)?.(png|svg|webp)$/;
+const ART_FILE = /^[a-z0-9-]+(.shiny)?(.night)?(.region-[a-z]+)?(@[a-z]+)?.(png|svg|webp)$/;
 
 // The official art ships with Openmon; a user's own pack overrides it file
 // by file. OPENMON_CLASSIC=1 goes back to the art drawn in code.

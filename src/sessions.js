@@ -43,7 +43,7 @@ function trackCommit(s, signal, t) {
     s.commit = { edits: 0, since: t, told: false };
     return;
   }
-  if (signal.family !== 'craft') return;
+  if (!(signal.edit || signal.family === 'craft')) return;
   s.commit = s.commit || { edits: 0, since: t, told: false };
   s.commit.edits++;
 }

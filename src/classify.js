@@ -10,6 +10,8 @@
 
 const { redact } = require('./redact');
 
+const SHELL_TOOL_NAMES = new Set(['Bash', 'PowerShell']);
+
 const FAMILIES = {
   craft: ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'],
   lore: ['Read', 'Grep', 'Glob', 'LS', 'NotebookRead', 'TodoWrite', 'TodoRead'],
@@ -17,6 +19,40 @@ const FAMILIES = {
   roam: ['WebFetch', 'WebSearch'],
   swarm: ['Task', 'Agent', 'SendMessage'],
 };
+
+// File kinds that move edits (and some reads) to a more specific family.
+const DOC_EXT = new Set(['md', 'mdx', 'markdown', 'rst', 'txt', 'adoc', 'org', 'tex']);
+const STYLE_EXT = new Set(['css', 'scss', 'sass', 'less', 'styl', 'pcss']);
+const DATA_EXT = new Set(['sql', 'csv', 'tsv', 'ipynb', 'parquet', 'jsonl', 'ndjson', 'xlsx', 'xls', 'db', 'sqlite', 'prql']);
+const EDIT_TOOLS = new Set(FAMILIES.craft);
+const READ_TOOLS = new Set(['Read', 'NotebookRead']);
+const GIT_COMMAND = /^\s*(?:\S+=\S+\s+)*(git|gh)\b/;
+const DATA_COMMAND = /^\s*(?:\S+=\S+\s+)*(psql|mysql|sqlite3|duckdb|mongosh|mongo|redis-cli|clickhouse(-client)?|bq|sqlcmd|pg_dump|dbt|jupyter)\b/;
+
+function extOf(input) {
+  const file = input.file_path || input.notebook_path || input.path || '';
+  const m = /\.([a-z0-9]+)$/i.exec(String(file));
+  return m ? m[1].toLowerCase() : '';
+}
+
+// The specific kind of work a tool call is, beyond its tool family:
+// docs, style or data for edits on those files, data for reading data files
+// or running a database client, git for git and gh commands. Null otherwise.
+function workKind(tool, input = {}) {
+  if (EDIT_TOOLS.has(tool)) {
+    const ext = extOf(input);
+    if (DOC_EXT.has(ext)) return 'docs';
+    if (STYLE_EXT.has(ext)) return 'style';
+    if (DATA_EXT.has(ext)) return 'data';
+    return null;
+  }
+  if (READ_TOOLS.has(tool)) return DATA_EXT.has(extOf(input)) ? 'data' : null;
+  if (SHELL_TOOL_NAMES.has(tool) && typeof input.command === 'string') {
+    if (GIT_COMMAND.test(input.command)) return 'git';
+    if (DATA_COMMAND.test(input.command)) return 'data';
+  }
+  return null;
+}
 
 const TOOL_FAMILY = new Map();
 for (const [family, tools] of Object.entries(FAMILIES)) for (const t of tools) TOOL_FAMILY.set(t, family);
@@ -150,7 +186,9 @@ function claudeSignal(payload) {
     ts: Number(payload._ts) || null,
     tool,
     toolUseId: payload.tool_use_id || null,
-    family: testing ? 'test' : toolFamily(tool),
+    family: testing ? 'test' : workKind(tool, input) || toolFamily(tool),
+    // Edits count as edits whatever the file is (docs and style included).
+    edit: EDIT_TOOLS.has(tool),
     // Set when the event comes from inside a subagent; null for the main agent.
     agentId: payload.agent_id || null,
     lang: fileLang(input),
@@ -229,4 +267,4 @@ function classify(payload) {
 }
 
 module.exports = {
-  fileLang, classify, toolFamily, isTestCommand, judgeTestOutput, responseText, FAMILIES };
+  fileLang, classify, toolFamily, workKind, DOC_EXT, STYLE_EXT, DATA_EXT, isTestCommand, judgeTestOutput, responseText, FAMILIES };

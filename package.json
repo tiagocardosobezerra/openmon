@@ -27,7 +27,8 @@
     "screens": "node tools/screens.js",
     "banner": "node tools/build-banner.js",
     "dist": "node tools/dist.js",
-    "dist:dir": "node tools/dist.js --dir"
+    "dist:dir": "node tools/dist.js --dir",
+    "variants": "node tools/build-variants.js"
   },
   "engines": {
     "node": ">=18"

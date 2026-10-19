@@ -897,7 +897,11 @@
       const aff = pet.affinity || {};
       const max = Math.max(0.0001, ...Object.values(aff));
       const total = Object.values(aff).reduce((a, b) => a + b, 0) || 1;
+      // The six first types always show; the newer ones (Docs, Git…) appear
+      // once the agent has done that kind of work, so the card stays short.
+      const CLASSIC = new Set(['craft', 'lore', 'shell', 'test', 'roam', 'swarm']);
       for (const [k, v] of Object.entries(pet.stats)) {
+        if (!CLASSIC.has(k) && !v) continue;
         const d = el('div', k === pet.leaning && v > 0 ? 'top' : '');
         d.dataset.stat = k;
         d.dataset.n = v;

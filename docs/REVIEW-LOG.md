@@ -213,3 +213,13 @@ The project is now **Openmon**, and its field guide is the **Opendex**. "Open" s
 8. **Newcomers.** After the nickname question, one tip says where the help is.
 9. **Pages explain themselves.** Window titles in your language; every page opens with what it is for.
 10. **Review.** The card now draws again once names load (it could show raw ids for a moment). Tests and smoke test pass.
+
+# Art round 2: five new types from the designer
+
+1. **Fifteen new forms (#023 to #037).** Docs (Inkling, Quillmane, Archivist), Git (Twiglet, Branchoak, Mergewood), Debug (Mitey, Beetlock, Bugbane), Data (Cubit, Prismora, Datanaut) and Style (Dabbit, Palettail, Chromancer), exported from the designer's file with styles inlined.
+2. **How the agent trains them.** Edits on docs, style and data files, reading data files, database clients and git or gh commands each count for their own type; Debug grows only when something that failed works again (the same command, or tests going green after red). Every edit still counts as an edit.
+3. **Five new powers.** Docs log, Branch log (with commits), Fix log (tries and time broken), Data log (files and database commands) and Style log.
+4. **Shiny and night colours.** `tools/build-variants.js` makes them from the designer's art: a proposed shiny palette per type, and the night rule the renderer already uses, with a crescent moon on the forehead. A test keeps them in sync.
+5. **Regions.** The designer's regional Tinkits replace the recolour for that form; every other form gets the region's body, shadow and belly colours and the designer's mark on its forehead.
+6. **Party and Box.** Icons on both sections, the empty-slot nest, the project plaque under each mon and four Box wallpapers to pick from.
+7. **Kept short.** The card lists the six first types and adds a new one once the agent has done that work; the trainer card's radar shows the six strongest types.

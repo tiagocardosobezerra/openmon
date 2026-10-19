@@ -17,6 +17,35 @@ const BOND_MAX = 100;
 
 const XP = { tool: 1, fail: 1, green: 5, turn: 3, fastAnswer: 2 };
 
+// Debug grows when a failure gets fixed: the same tool working again after
+// it failed (same command or file), or tests going green after a red run, in the same session.
+const FIX_WINDOW_MS = 15 * 60 * 1000;
+const lastFail = new Map();
+function rememberFail(signal, now, red) {
+  lastFail.set(signal.session || 'default', { tool: signal.tool, detail: signal.detail || null, red, at: now });
+  if (lastFail.size > 50) lastFail.delete(lastFail.keys().next().value);
+}
+function takeFix(signal, now, green) {
+  const key = signal.session || 'default';
+  const f = lastFail.get(key);
+  if (!f || now - f.at > FIX_WINDOW_MS) return 0;
+  if (green && f.red) {
+    lastFail.delete(key);
+    return 3;
+  }
+  if (!green && !f.red && f.tool && f.tool === signal.tool && f.detail === (signal.detail || null)) {
+    lastFail.delete(key);
+    return 1;
+  }
+  return 0;
+}
+function addFix(pet, points, now) {
+  if (!points) return;
+  pet.stats.debug = (pet.stats.debug || 0) + points;
+  pet.counters.fixes = (pet.counters.fixes || 0) + 1;
+  pet.daily.fixes = (pet.daily.fixes || 0) + 1;
+}
+
 function dayKey(now) {
   const d = new Date(now);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -55,7 +84,7 @@ function createPet(now, name = DEFAULT_NAME, rng = Math.random) {
     stage: 'egg',
     lineage: null,
     trait: null,
-    counters: { tools: 0, edits: 0, fails: 0, testsGreen: 0, testsRed: 0, turns: 0, answers: 0, fastAnswers: 0, pets: 0, evolutions: 0, waitMs: 0 },
+    counters: { tools: 0, edits: 0, fails: 0, fixes: 0, testsGreen: 0, testsRed: 0, turns: 0, answers: 0, fastAnswers: 0, pets: 0, evolutions: 0, waitMs: 0 },
     daily: { day: null, pets: 0, fastAnswers: 0, waitMs: 0, waits: 0, fastestMs: null, activeDays: 0 },
     xpLog: [],
     achievements: {},
@@ -529,18 +558,20 @@ function applySignal(pet, signal, ctx = {}, now) {
     case 'tool-done':
       c.tools++;
       pet.daily.tools = (pet.daily.tools || 0) + 1;
-      if (signal.family === 'craft') {
+      if (signal.edit || signal.family === 'craft') {
         c.edits++;
         pet.daily.edits = (pet.daily.edits || 0) + 1;
       }
       if (signal.family && pet.stats[signal.family] != null) pet.stats[signal.family]++;
       if (signal.lang) pet.langs = { ...(pet.langs || {}), [signal.lang]: ((pet.langs || {})[signal.lang] || 0) + 1 };
       countWork(pet, signal);
+      addFix(pet, takeFix(signal, now, false), now);
       addXp(pet, XP.tool, now, events);
       break;
     case 'tool-fail':
       c.tools++;
       c.fails++;
+      rememberFail(signal, now, false);
       if (signal.family && pet.stats[signal.family] != null) pet.stats[signal.family]++;
       addXp(pet, XP.fail, now, events);
       break;
@@ -552,12 +583,14 @@ function applySignal(pet, signal, ctx = {}, now) {
         c.testsGreen++;
         pet.daily.green = (pet.daily.green || 0) + 1;
         pet.stats.test += 3;
+        addFix(pet, takeFix(signal, now, true), now);
         addXp(pet, XP.green, now, events);
         events.push({ type: 'tests', passed: true });
         unlock(pet, 'first-green', now, events);
         if (c.testsGreen >= 100) unlock(pet, 'green-100', now, events);
       } else {
         if (signal.passed === false) {
+          rememberFail(signal, now, true);
           c.testsRed++;
           pet.daily.red = (pet.daily.red || 0) + 1;
         }

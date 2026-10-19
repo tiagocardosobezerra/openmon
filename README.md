@@ -12,7 +12,7 @@
 
 <img width="100%" alt="Openmon: um ovo que choca e evolui com o trabalho do seu agente de IA" src="assets/openmon-banner.svg" />
 
-O Openmon é um pet de desktop, no espírito de Pokémon e Tamagotchi, que vive no canto da tela enquanto o Claude Code trabalha. Ele lê quando o agente lê, martela quando o agente edita, levanta um escudo quando os testes rodam e pula segurando uma placa quando o agente **precisa de você**. Um clique nele e a janela do agente vem para a frente, pronta para você aprovar ou responder. Com os dias, o ovo choca, cresce e evolui para uma de 22 formas, decidida pelo tipo de trabalho que o seu agente mais faz.
+O Openmon é um pet de desktop, no espírito de Pokémon e Tamagotchi, que vive no canto da tela enquanto o Claude Code trabalha. Ele lê quando o agente lê, martela quando o agente edita, levanta um escudo quando os testes rodam e pula segurando uma placa quando o agente **precisa de você**. Um clique nele e a janela do agente vem para a frente, pronta para você aprovar ou responder. Com os dias, o ovo choca, cresce e evolui para uma de 37 formas, decidida pelo tipo de trabalho que o seu agente mais faz.
 
 ## O que ele faz por você
 
@@ -109,6 +109,11 @@ Cada coisa que o agente faz vale **experiência (XP)**. Com o bastante, ele evol
 | Teste | rodar testes | Shellby | Bastion | Aegis |
 | Viagem | web e ferramentas MCP | Wisp | Skyfin | Wayfarer |
 | Enxame | chamar outros agentes | Mote | Hivekin | Legion |
+| Escriba | escrever documentação (.md, .rst, .txt) | Inkling | Quillmane | Archivist |
+| Ramo | comandos git e gh | Twiglet | Branchoak | Mergewood |
+| Caçador | consertar o que falhou | Mitey | Beetlock | Bugbane |
+| Cristal | dados: SQL, CSV, notebooks, bancos | Cubit | Prismora | Datanaut |
+| Pincel | folhas de estilo (.css, .scss) | Dabbit | Palettail | Chromancer |
 
 Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem escondida que pouca gente vai achar: *dizem que o segredo é o equilíbrio.*
 
@@ -120,7 +125,7 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screens/dex.pt-BR.png" alt="A Opendex com os tipos e as formas"><br><sub><b>Opendex</b>: os tipos, como cada um se conquista e as 22 formas</sub></td>
+<td width="50%"><img src="docs/screens/dex.pt-BR.png" alt="A Opendex com os tipos e as formas"><br><sub><b>Opendex</b>: os tipos, como cada um se conquista e as 37 formas</sub></td>
 <td width="50%"><img src="docs/screens/bag.pt-BR.png" alt="A Mochila com itens e acessórios"><br><sub><b>Mochila</b>: itens e acessórios para usar</sub></td>
 </tr>
 </table>
@@ -151,6 +156,11 @@ Cada tipo em que seu Openmon evolui libera, para sempre, um painel útil sobre a
 | Placar de testes | Teste | cada rodada de testes e a sequência de verdes |
 | Diário de viagem | Viagem | páginas abertas, buscas na web e ferramentas MCP |
 | Visão da colmeia | Enxame | os agentes ajudantes, quais ainda rodam e quanto levaram |
+| Diário do escriba | Escriba | cada documento escrito, linhas que entraram e saíram |
+| Diário dos ramos | Ramo | cada comando git e gh, e quantos commits |
+| Diário de consertos | Caçador | o que falhou e voltou a funcionar, em quantas tentativas e quanto tempo |
+| Diário de dados | Cristal | arquivos de dados lidos ou mudados e cada comando de banco |
+| Diário de estilos | Pincel | cada folha de estilo alterada, linhas que entraram e saíram |
 
 Para todo mundo: o **Diário** dos últimos 14 dias e o **contador de espera**, quanto tempo seus agentes esperaram por você hoje.
 
@@ -206,7 +216,7 @@ As escolhas ficam salvas em `~/.openmon/config.json`; o pet, em `~/.openmon/pet.
 
 ### Sua arte
 
-As 22 formas vêm em arte vetorial oficial (`art/official`), com poses, versões brilhantes e noturnas. Para trocar, coloque imagens com o nome da forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) em `~/.openmon/art`. O guia está em [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` volta para a arte desenhada em código.
+As 37 formas vêm em arte vetorial oficial (`art/official`), com poses, versões brilhantes e noturnas. Para trocar, coloque imagens com o nome da forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) em `~/.openmon/art`. O guia está em [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` volta para a arte desenhada em código.
 
 ### Outros agentes
 

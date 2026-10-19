@@ -5,7 +5,7 @@
 // gets this through /api/species, so a theme pack only has to replace this
 // file and the art.
 
-const STATS = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
+const STATS = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm', 'docs', 'git', 'debug', 'data', 'style'];
 
 const STAT_LABELS = {
   craft: 'Craft',
@@ -14,12 +14,19 @@ const STAT_LABELS = {
   test: 'Test',
   roam: 'Roam',
   swarm: 'Swarm',
+  docs: 'Docs',
+  git: 'Git',
+  debug: 'Debug',
+  data: 'Data',
+  style: 'Style',
 };
 
 // Agents read and search far more than they browse or spawn subagents.
 // Raw counts would make almost every pet a Lore pet, so the lineage is
 // picked by weighted affinity: rare work counts more.
-const STAT_WEIGHTS = { craft: 1, lore: 0.5, shell: 0.7, test: 1, roam: 3, swarm: 5 };
+// Docs, style and data edits are taken out of Craft; git commands out of
+// Shell; Debug only grows when a failure is fixed, so it is the rarest.
+const STAT_WEIGHTS = { craft: 1, lore: 0.5, shell: 0.7, test: 1, roam: 3, swarm: 5, docs: 1.3, git: 1.6, debug: 3, data: 2, style: 1.4 };
 
 // Ordered. `xp` is the total XP needed; `bond` is an extra gate.
 const STAGES = [
@@ -37,6 +44,11 @@ const LINEAGES = {
   test: { juvenile: 'Shellby', adult: 'Bastion', mythic: 'Aegis' },
   roam: { juvenile: 'Wisp', adult: 'Skyfin', mythic: 'Wayfarer' },
   swarm: { juvenile: 'Mote', adult: 'Hivekin', mythic: 'Legion' },
+  docs: { juvenile: 'Inkling', adult: 'Quillmane', mythic: 'Archivist' },
+  git: { juvenile: 'Twiglet', adult: 'Branchoak', mythic: 'Mergewood' },
+  debug: { juvenile: 'Mitey', adult: 'Beetlock', mythic: 'Bugbane' },
+  data: { juvenile: 'Cubit', adult: 'Prismora', mythic: 'Datanaut' },
+  style: { juvenile: 'Dabbit', adult: 'Palettail', mythic: 'Chromancer' },
   // Hidden line: appears only when two kinds of work are almost exactly tied.
   chimera: { adult: 'Chimera', mythic: 'Paragon' },
 };
@@ -72,6 +84,21 @@ const DEX = [
   { key: 'swarm-mythic', text: 'Commands a thousand helpers with a single thought. Its crown is made of loyal motes.' },
   { key: 'chimera-adult', text: 'Born when two kinds of work weigh exactly the same. Each eye belongs to a different lineage.', hidden: true },
   { key: 'chimera-mythic', text: 'A perfect balance that few trainers ever reach. Researchers argue about which lineage it really is.', hidden: true },
+  { key: 'docs-juvenile', text: 'Made of a single folded page. A drop of ink on its cheek shows the last word it wrote.' },
+  { key: 'docs-adult', text: 'Its quill tail never runs dry. It writes down what the code does before anyone forgets.' },
+  { key: 'docs-mythic', text: 'An open book floats above its head, rewriting itself to stay true to the code.' },
+  { key: 'git-juvenile', text: 'A sprout of warm wood. Its leaf twitches every time something is committed.' },
+  { key: 'git-adult', text: 'Its branches split apart and grow back together without a single conflict.' },
+  { key: 'git-mythic', text: 'An ancient tree spirit. Every branch ever made is braided into its crown.' },
+  { key: 'debug-juvenile', text: 'A tiny beetle that crawls into errors. It is happiest right after one goes away.' },
+  { key: 'debug-adult', text: 'Studies every stack trace through its lens. No bug hides from it for long.' },
+  { key: 'debug-mythic', text: 'Its wing case opens like a cape when a bug is finally fixed for good.' },
+  { key: 'data-juvenile', text: 'A small crystal cube. Its core glows a little brighter for every row it counts.' },
+  { key: 'data-adult', text: 'Rows of tiny lights run inside it like a table. It can tell you any number you ask.' },
+  { key: 'data-mythic', text: 'Small cubes orbit it like moons, each holding a query it answered once.' },
+  { key: 'style-juvenile', text: 'A pink chameleon that turns a little bolder every time a colour changes.' },
+  { key: 'style-adult', text: 'Paints with its brush tail. It cannot walk past a misaligned button.' },
+  { key: 'style-mythic', text: 'Its stripes shift through every colour. Interfaces grow prettier wherever it goes.' },
 ];
 
 // Rolled at birth. Each changes idle behaviour and what the pet says.

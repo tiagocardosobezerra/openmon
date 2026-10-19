@@ -9,11 +9,16 @@
 //   Test   Test tracker  test runs, pass/fail, the failing summary line
 //   Roam   Travel log    pages fetched, searches, MCP tools used
 //   Swarm  Hive view     subagents, running or done, how long they took
+//   Docs   Docs log      documentation files written, lines in and out
+//   Git    Branch log    git and gh commands, commits counted
+//   Debug  Fix log       what failed, and how long until it worked again
+//   Data   Data log      data files touched, database commands run
+//   Style  Style log     stylesheets changed, lines in and out
 //
 // Everything stays in memory on 127.0.0.1; nothing is written to disk.
 
 const path = require('node:path');
-const { judgeTestOutput, responseText, isTestCommand } = require('./classify');
+const { judgeTestOutput, responseText, isTestCommand, workKind } = require('./classify');
 const { redact } = require('./redact');
 
 const MAX_ITEMS = 60;
@@ -80,7 +85,7 @@ function createPowers() {
     const id = payload.session_id || payload.session || 'default';
     let s = sessions.get(id);
     if (!s) {
-      s = { id, label, startedAt: now, lastAt: now, ended: false, files: {}, reads: {}, searches: [], commands: [], tests: [], web: [], agents: {}, turn: null, timeline: [] };
+      s = { id, label, startedAt: now, lastAt: now, ended: false, files: {}, reads: {}, searches: [], commands: [], tests: [], web: [], agents: {}, turn: null, timeline: [], git: [], queries: [], fixes: [], fail: null };
       sessions.set(id, s);
       // Keep the most recent sessions only.
       if (sessions.size > MAX_SESSIONS) {
@@ -136,6 +141,7 @@ function createPowers() {
     const failed = event === 'PostToolUseFailure';
     if (!done && !failed) return;
     const ms = Number(payload.duration_ms) || null;
+    trackFix(s, tool, input, payload, failed, now);
 
     if (['Edit', 'MultiEdit', 'Write', 'NotebookEdit'].includes(tool)) {
       const file = input.file_path || input.notebook_path;
@@ -183,6 +189,9 @@ function createPowers() {
       turn.commands++;
       if (failed) turn.failed++;
       push(s.commands, { command: cmd, ok: !failed, ms, at: now });
+      const kind = workKind(tool, input);
+      if (kind === 'git') push(s.git, { command: cmd, ok: !failed, commit: /\bcommit\b/.test(input.command) && !failed, at: now });
+      if (kind === 'data') push(s.queries, { command: cmd, ok: !failed, ms, at: now });
       return;
     }
     if (tool === 'WebFetch' || tool === 'WebSearch') {
@@ -195,6 +204,44 @@ function createPowers() {
       push(s.web, { kind: 'mcp', target: `${server} · ${name || ''}`.trim(), at: now });
       turn.web++;
     }
+  }
+
+  // A failure is open until the same call works again (or tests go green
+  // after a red run); then it becomes one line of the fix log.
+  function trackFix(s, tool, input, payload, failed, now) {
+    const target = short(input.command || input.file_path || input.notebook_path || input.pattern || input.url || '', 120);
+    const testing = SHELL_TOOLS.has(tool) && isTestCommand(input.command);
+    const red = testing && (failed || judgeTestOutput(responseText(payload.tool_response)) === false);
+    if (failed || red) {
+      if (!s.fail || s.fail.tool !== tool) s.fail = { tool, target, test: testing, at: now, tries: 0 };
+      s.fail.tries++;
+      return;
+    }
+    if (!s.fail || s.fail.tool !== tool || s.fail.test !== testing) return;
+    // Outside tests, the very same call must work: same command or same file.
+    if (!testing && s.fail.target !== target) return;
+    if (s.fail.test && judgeTestOutput(responseText(payload.tool_response)) !== true) return;
+    push(s.fixes, { tool, target: s.fail.target, test: s.fail.test, tries: s.fail.tries, failedAt: s.fail.at, fixedAt: now });
+    s.fail = null;
+  }
+
+  // Data files the agent read or edited, one row per file.
+  function dataFiles(s) {
+    const rows = {};
+    const row = (file, name) => rows[file] || (rows[file] = { file, name, edits: 0, reads: 0, lastAt: 0 });
+    for (const f of Object.values(s.files)) {
+      if (workKind('Read', { file_path: f.file }) !== 'data') continue;
+      const r = row(f.file, f.name);
+      r.edits += f.edits;
+      r.lastAt = Math.max(r.lastAt, f.lastAt);
+    }
+    for (const x of Object.values(s.reads)) {
+      if (workKind('Read', { file_path: x.file }) !== 'data') continue;
+      const r = row(x.file, x.name);
+      r.reads += x.count;
+      r.lastAt = Math.max(r.lastAt, x.lastAt);
+    }
+    return Object.values(rows).sort((x, y) => y.lastAt - x.lastAt);
   }
 
   // Numbers for the "done" bubble: what the agent's last turn did.
@@ -242,6 +289,14 @@ function createPowers() {
           test: { runs: tests, streak, lastGreenAt: lastGreen ? lastGreen.at : null },
           roam: s.web,
           timeline: s.timeline,
+          docs: Object.values(s.files).filter((f) => workKind('Edit', { file_path: f.file }) === 'docs').sort((a, b) => b.lastAt - a.lastAt),
+          style: Object.values(s.files).filter((f) => workKind('Edit', { file_path: f.file }) === 'style').sort((a, b) => b.lastAt - a.lastAt),
+          git: { commands: s.git, commits: s.git.filter((g) => g.commit).length },
+          debug: { fixes: s.fixes, open: s.fail ? { tool: s.fail.tool, target: s.fail.target, at: s.fail.at, tries: s.fail.tries } : null },
+          data: {
+            files: dataFiles(s),
+            queries: s.queries,
+          },
           swarm: Object.entries(s.agents)
             .map(([id, a]) => ({ id, ...a }))
             .sort((a, b) => b.startedAt - a.startedAt),
@@ -254,7 +309,7 @@ function createPowers() {
 
 // Which powers a pet has: every lineage it has ever grown into (the Opendex
 // remembers across generations), plus both halves of a current Chimera.
-const POWER_ORDER = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
+const POWER_ORDER = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm', 'docs', 'git', 'debug', 'data', 'style'];
 
 function unlockedPowers(pet) {
   const have = new Set();

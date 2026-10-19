@@ -12,7 +12,7 @@
 
 <img width="100%" alt="Openmon: an egg that hatches and evolves from your AI agent's work" src="assets/openmon-banner.en.svg" />
 
-Openmon is a desktop pet, in the spirit of Pokémon and Tamagotchi, that lives in the corner of your screen while Claude Code works. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps holding a sign when the agent **needs you**. Click it and the agent's window comes to the front, ready for you to approve or reply. Over the days, the egg hatches, grows and evolves into one of 22 forms, decided by the kind of work your agent does most.
+Openmon is a desktop pet, in the spirit of Pokémon and Tamagotchi, that lives in the corner of your screen while Claude Code works. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps holding a sign when the agent **needs you**. Click it and the agent's window comes to the front, ready for you to approve or reply. Over the days, the egg hatches, grows and evolves into one of 37 forms, decided by the kind of work your agent does most.
 
 ## What it does for you
 
@@ -109,6 +109,11 @@ Everything your agent does is worth **experience (XP)**. With enough, it evolves
 | Test | running tests | Shellby | Bastion | Aegis |
 | Roam | the web and MCP tools | Wisp | Skyfin | Wayfarer |
 | Swarm | calling other agents | Mote | Hivekin | Legion |
+| Docs | writing documentation (.md, .rst, .txt) | Inkling | Quillmane | Archivist |
+| Git | git and gh commands | Twiglet | Branchoak | Mergewood |
+| Debug | fixing what failed | Mitey | Beetlock | Bugbane |
+| Data | data: SQL, CSV, notebooks, databases | Cubit | Prismora | Datanaut |
+| Style | stylesheets (.css, .scss) | Dabbit | Palettail | Chromancer |
 
 Rare work counts more, so every type can win. And there is a hidden line few will find: *some say balance is the key.*
 
@@ -120,7 +125,7 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screens/dex.en.png" alt="The Opendex with types and forms"><br><sub><b>Opendex</b>: the types, how to get each one and the 22 forms</sub></td>
+<td width="50%"><img src="docs/screens/dex.en.png" alt="The Opendex with types and forms"><br><sub><b>Opendex</b>: the types, how to get each one and the 37 forms</sub></td>
 <td width="50%"><img src="docs/screens/bag.en.png" alt="The Bag with items and accessories"><br><sub><b>Bag</b>: items and accessories to wear</sub></td>
 </tr>
 </table>
@@ -151,6 +156,11 @@ Each type your Openmon evolves into unlocks, for good, a useful panel about your
 | Test tracker | Test | every test run and the green streak |
 | Travel log | Roam | pages opened, web searches and MCP tools |
 | Hive view | Swarm | the helper agents, which still run and how long they took |
+| Docs log | Docs | every document written, lines in and out |
+| Branch log | Git | every git and gh command, and how many commits |
+| Fix log | Debug | what failed and worked again, in how many tries and how long |
+| Data log | Data | data files read or changed and every database command |
+| Style log | Style | every stylesheet changed, lines in and out |
 
 For everyone: the **Journal** of the last 14 days and the **waiting counter**, how long your agents waited for you today.
 
@@ -206,7 +216,7 @@ Your choices are saved in `~/.openmon/config.json`; the pet in `~/.openmon/pet.j
 
 ### Your own art
 
-The 22 forms ship as official vector art (`art/official`), with poses, shiny and night versions. To replace them, put images named after the form (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) in `~/.openmon/art`. The guide is [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` brings back the art drawn in code.
+The 37 forms ship as official vector art (`art/official`), with poses, shiny and night versions. To replace them, put images named after the form (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) in `~/.openmon/art`. The guide is [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` brings back the art drawn in code.
 
 ### Other agents
 

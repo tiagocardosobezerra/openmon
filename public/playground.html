@@ -39,20 +39,23 @@
       <select id="lineage" aria-label="Lineage">
         <option value="craft">Craft</option><option value="lore">Lore</option><option value="shell">Shell</option>
         <option value="test">Test</option><option value="roam">Roam</option><option value="swarm">Swarm</option>
+        <option value="docs">Docs</option><option value="git">Git</option><option value="debug">Debug</option><option value="data">Data</option><option value="style">Style</option>
         <option value="chimera">Chimera (hidden)</option>
       </select>
       <select id="trait" aria-label="Trait">
         <option value="">Trait: none</option><option value="craft">Trait: Craft</option><option value="lore">Trait: Lore</option>
         <option value="shell">Trait: Shell</option><option value="test">Trait: Test</option><option value="roam">Trait: Roam</option><option value="swarm">Trait: Swarm</option>
+        <option value="docs">Trait: Docs</option><option value="git">Trait: Git</option><option value="debug">Trait: Debug</option><option value="data">Trait: Data</option><option value="style">Trait: Style</option>
       </select>
       <span id="chimera-pair" hidden>
-        <select id="ch-a" aria-label="Chimera first half"><option>craft</option><option>lore</option><option>shell</option><option>test</option><option>roam</option><option>swarm</option></select>
-        <select id="ch-b" aria-label="Chimera second half"><option>test</option><option>craft</option><option>lore</option><option>shell</option><option>roam</option><option>swarm</option></select>
+        <select id="ch-a" aria-label="Chimera first half"><option>craft</option><option>lore</option><option>shell</option><option>test</option><option>roam</option><option>swarm</option><option>docs</option><option>git</option><option>debug</option><option>data</option><option>style</option></select>
+        <select id="ch-b" aria-label="Chimera second half"><option>test</option><option>craft</option><option>lore</option><option>shell</option><option>roam</option><option>swarm</option><option>docs</option><option>git</option><option>debug</option><option>data</option><option>style</option></select>
       </span>
     </div>
     <div class="row">
       <label><input type="checkbox" id="shiny"> Shiny</label>
       <label><input type="checkbox" id="nocturne"> Nocturne</label>
+      <select id="region" aria-label="Region"><option value="">Region: none</option><option value="js">js</option><option value="py">py</option><option value="rs">rs</option><option value="go">go</option><option value="jvm">jvm</option><option value="cs">cs</option></select>
     </div>
     <div class="row">
       <button class="primary" data-evolve="sprout" data-t="hatch">Hatch (scene)</button>
@@ -154,7 +157,7 @@
 
   function choice() {
     const lineage = $('lineage').value;
-    const body = { shiny: $('shiny').checked, nocturne: $('nocturne').checked, trait: $('trait').value || null };
+    const body = { shiny: $('shiny').checked, nocturne: $('nocturne').checked, trait: $('trait').value || null, region: $('region').value || null };
     if (lineage === 'chimera') body.chimera = [$('ch-a').value, $('ch-b').value];
     else body.lineage = lineage;
     return body;

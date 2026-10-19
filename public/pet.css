@@ -228,6 +228,7 @@ html, body {
 .aff { display: block; height: 8px; border-radius: 99px; background: var(--sunken); position: relative; overflow: hidden; }
 .aff::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: 99px; background: var(--c, var(--brand)); }
 .aff-craft { --c: var(--craft); } .aff-lore { --c: var(--lore); } .aff-shell { --c: var(--shell); } .aff-test { --c: var(--test); } .aff-roam { --c: var(--roam); } .aff-swarm { --c: var(--swarm); }
+.aff-docs { --c: var(--docs); } .aff-git { --c: var(--git); } .aff-debug { --c: var(--debug); } .aff-data { --c: var(--data); } .aff-style { --c: var(--style); }
 .stats div[data-stat] { cursor: help; border-radius: 6px; padding: 1px 4px; margin: 0 -4px; }
 .stats div[data-stat]:hover, .stats div[data-stat]:focus-visible { background: var(--surface-2); color: var(--ink); outline: none; }
 /* Sticks to the top of the tab while the bars scroll under it. */

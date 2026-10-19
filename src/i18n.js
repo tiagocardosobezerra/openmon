@@ -4,7 +4,7 @@
 // Form names are proper nouns and stay the same everywhere.
 
 const PT_BR = {
-  statLabels: { craft: 'Forja', lore: 'Saber', shell: 'Terminal', test: 'Teste', roam: 'Viagem', swarm: 'Enxame' },
+  statLabels: { craft: 'Forja', lore: 'Saber', shell: 'Terminal', test: 'Teste', roam: 'Viagem', swarm: 'Enxame', docs: 'Escriba', git: 'Ramo', debug: 'Caçador', data: 'Cristal', style: 'Pincel' },
   natures: {
     brave: { label: 'Corajosa', text: 'Pula bastante e comemora alto.' },
     sleepy: { label: 'Sonolenta', text: 'Cochila sempre que pode e boceja entre as tarefas.' },
@@ -52,11 +52,26 @@ const PT_BR = {
     'swarm-mythic': 'Comanda mil ajudantes com um único pensamento. Sua coroa é feita de motes leais.',
     'chimera-adult': 'Nasce quando dois tipos de trabalho pesam exatamente igual. Cada olho é de um tipo.',
     'chimera-mythic': 'Um equilíbrio perfeito que poucos treinadores alcançam. Pesquisadores discutem de que tipo ele realmente é.',
+    'docs-juvenile': "Feito de uma única página dobrada. A gota de tinta na bochecha mostra a última palavra que escreveu.",
+    'docs-adult': "A cauda de pena nunca seca. Anota o que o código faz antes que alguém esqueça.",
+    'docs-mythic': "Um livro aberto flutua sobre a cabeça e se reescreve para continuar fiel ao código.",
+    'git-juvenile': "Um broto de madeira morna. A folha treme toda vez que algo vira commit.",
+    'git-adult': "Os galhos se separam e voltam a crescer juntos sem nenhum conflito.",
+    'git-mythic': "Um espírito de árvore antiga. Todo branch já criado está trançado na sua coroa.",
+    'debug-juvenile': "Um besourinho que entra nos erros. Fica mais feliz logo depois que um some.",
+    'debug-adult': "Estuda cada stack trace pela lente. Nenhum bug se esconde dele por muito tempo.",
+    'debug-mythic': "O élitro se abre como uma capa quando um bug é consertado de vez.",
+    'data-juvenile': "Um cubinho de cristal. O núcleo brilha um pouco mais a cada linha que conta.",
+    'data-adult': "Fileiras de luzinhas correm dentro dele como uma tabela. Responde qualquer número que você pedir.",
+    'data-mythic': "Cubinhos orbitam em volta dele como luas, cada um guardando uma consulta que já respondeu.",
+    'style-juvenile': "Um camaleão rosa que fica um pouco mais ousado toda vez que uma cor muda.",
+    'style-adult': "Pinta com a cauda de pincel. Não consegue passar por um botão desalinhado.",
+    'style-mythic': "As listras passam por todas as cores. As interfaces ficam mais bonitas por onde ele passa.",
   },
 };
 
 const ES = {
-  statLabels: { craft: 'Forja', lore: 'Saber', shell: 'Terminal', test: 'Prueba', roam: 'Viaje', swarm: 'Enjambre' },
+  statLabels: { craft: 'Forja', lore: 'Saber', shell: 'Terminal', test: 'Prueba', roam: 'Viaje', swarm: 'Enjambre', docs: 'Escriba', git: 'Rama', debug: 'Cazador', data: 'Cristal', style: 'Pincel' },
   natures: {
     brave: { label: 'Valiente', text: 'Salta mucho y celebra a lo grande.' },
     sleepy: { label: 'Dormilona', text: 'Dormita siempre que puede y bosteza entre tareas.' },
@@ -104,6 +119,21 @@ const ES = {
     'swarm-mythic': 'Dirige a mil ayudantes con un solo pensamiento. Su corona está hecha de motas leales.',
     'chimera-adult': 'Nace cuando dos tipos de trabajo pesan exactamente igual. Cada ojo es de un tipo.',
     'chimera-mythic': 'Un equilibrio perfecto que pocos entrenadores alcanzan. Los investigadores discuten de qué tipo es en realidad.',
+    'docs-juvenile': "Hecho de una sola página doblada. La gota de tinta en su mejilla muestra la última palabra que escribió.",
+    'docs-adult': "Su cola de pluma nunca se seca. Anota lo que hace el código antes de que alguien lo olvide.",
+    'docs-mythic': "Un libro abierto flota sobre su cabeza y se reescribe para seguir fiel al código.",
+    'git-juvenile': "Un brote de madera tibia. Su hoja tiembla cada vez que algo se vuelve commit.",
+    'git-adult': "Sus ramas se separan y vuelven a crecer juntas sin un solo conflicto.",
+    'git-mythic': "Un espíritu de árbol antiguo. Cada rama creada está trenzada en su corona.",
+    'debug-juvenile': "Un escarabajo diminuto que se mete en los errores. Es más feliz justo después de que uno desaparece.",
+    'debug-adult': "Estudia cada stack trace con su lente. Ningún bug se le esconde por mucho tiempo.",
+    'debug-mythic': "Su élitro se abre como una capa cuando un bug queda arreglado para siempre.",
+    'data-juvenile': "Un cubito de cristal. Su núcleo brilla un poco más con cada fila que cuenta.",
+    'data-adult': "Filas de lucecitas corren dentro de él como una tabla. Responde cualquier número que le pidas.",
+    'data-mythic': "Cubitos orbitan a su alrededor como lunas, cada uno con una consulta que ya respondió.",
+    'style-juvenile': "Un camaleón rosa que se vuelve un poco más audaz cada vez que cambia un color.",
+    'style-adult': "Pinta con su cola de pincel. No puede pasar junto a un botón desalineado.",
+    'style-mythic': "Sus rayas pasan por todos los colores. Las interfaces se ven más bonitas por donde pasa.",
   },
 };
 
