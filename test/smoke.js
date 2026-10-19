@@ -64,7 +64,7 @@ async function visit(port, page) {
     const { durationMs } = await (await fetch(`http://127.0.0.1:${port}/api/demo?speed=4`, { method: 'POST' })).json();
     await wait(durationMs + 500);
   } else {
-    await wait(1500);
+    await wait(2500);
   }
   // Page-level sanity: something was drawn on the first canvas.
   const drawn = await win.webContents.executeJavaScript(`(() => {
