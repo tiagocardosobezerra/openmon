@@ -88,7 +88,8 @@
     // Legendaries and mystery eggs belong to no project.
     const special = p.legend ? tr('party.legendTag') : p.project && p.project.startsWith('mystery:') ? tr('party.mysteryTag') : null;
     const label = special || p.project || tr('party.general');
-    tag.title = special || (p.project ? tr('party.project', { project: p.project }) : tr('party.general'));
+    const mystery = !p.legend && p.project && p.project.startsWith('mystery:');
+    tag.title = mystery ? tr('party.mysteryHow') : special || (p.project ? tr('party.project', { project: p.project }) : tr('party.general'));
     tag.style.setProperty('--c', p.legend ? 'var(--sun)' : p.lineage && p.lineage !== 'chimera' ? `var(--${p.lineage})` : 'var(--brand)');
     tag.append(el('i'), el('span', '', label));
     c.append(tag);

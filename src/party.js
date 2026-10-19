@@ -20,7 +20,7 @@ const { ACHIEVEMENTS } = require('./species');
 const PARTY_SIZE = 6;
 // Real work in a project before it earns its own egg: one-off folders never do.
 const EGG_AFTER_ACTIONS = 60;
-const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region', 'legend', 'friend'];
+const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region', 'legend', 'friend', 'xpLog'];
 
 const newId = () => crypto.randomBytes(6).toString('hex');
 
@@ -35,6 +35,8 @@ function ensure(root) {
     if (!m.id) m.id = newId();
     if (!m.place) m.place = 'party';
     if (!m.worn) m.worn = { head: null, face: null, neck: null };
+    // The 10-minute XP cap is per pet (older saves shared one).
+    if (!Array.isArray(m.xpLog)) m.xpLog = [];
     if (m.worn.face === undefined) m.worn.face = null;
     // Legendaries arrive at Elder level (older saves gave them level 1).
     if (m.legend && (m.xp || 0) < 15000) m.xp = 15000;
@@ -152,6 +154,13 @@ function checkLegends(root, now) {
   return events;
 }
 
+// How many of each item the other members hold (the Bag is shared).
+function heldByOthers(root) {
+  const held = {};
+  for (const m of root.others || []) if (m.holding) held[m.holding] = (held[m.holding] || 0) + 1;
+  return held;
+}
+
 // A mystery egg from the Bag: a new egg with better shiny odds (1 in 16).
 function hatchMystery(root, now, rng = Math.random) {
   ensure(root);
@@ -229,7 +238,7 @@ function view(root) {
     .map(([label, actions]) => ({ project: label, actions, needed: EGG_AFTER_ACTIONS }))
     .sort((a, b) => b.actions - a.actions)
     .slice(0, 6);
-  return { size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
+  return { held: heldByOthers(root), size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
 }
 
-module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, PARTY_SIZE, EGG_AFTER_ACTIONS };
+module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, heldByOthers, PARTY_SIZE, EGG_AFTER_ACTIONS };
