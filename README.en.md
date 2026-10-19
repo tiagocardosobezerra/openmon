@@ -89,7 +89,7 @@ The egg appears in the corner of your screen and an icon shows up in the tray. S
 | `openmon dex` / `openmon card` | Opens the Opendex or the trainer card |
 | `openmon name <nickname>` | Gives it a nickname (`--clear` goes back to the species name) |
 | `openmon backup [file]` / `openmon restore <file\|latest>` | Makes a copy or brings a pet back |
-| `openmon install --agent gemini\|cursor\|aider` | Connects Openmon to Gemini CLI, Cursor or Aider |
+| `openmon install --agent gemini|cursor|opencode|aider` | Connects Openmon to Gemini CLI, Cursor, OpenCode or Aider |
 | `openmon autostart on\|off` | Opens the pet when you turn on the computer |
 | `openmon stats` / `openmon status` | The pet in your terminal / whether everything is on |
 

@@ -89,7 +89,7 @@ O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa n
 | `openmon dex` / `openmon card` | Abre a Opendex ou o cartão de treinador |
 | `openmon name <apelido>` | Dá um apelido (`--clear` volta ao nome da espécie) |
 | `openmon backup [arquivo]` / `openmon restore <arquivo\|latest>` | Faz uma cópia ou traz um pet de volta |
-| `openmon install --agent gemini\|cursor\|aider` | Liga o Openmon no Gemini CLI, no Cursor ou no Aider |
+| `openmon install --agent gemini|cursor|opencode|aider` | Liga o Openmon no Gemini CLI, Cursor, OpenCode ou Aider |
 | `openmon autostart on\|off` | Abre o pet quando você liga o computador |
 | `openmon stats` / `openmon status` | O pet no terminal / se está tudo ligado |
 
