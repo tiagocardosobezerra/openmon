@@ -126,7 +126,7 @@ async function main() {
       if (flag('foreground')) return supervise(electron, true);
       // A small detached supervisor keeps the pet alive (see supervise()).
       spawn(process.execPath, [__filename, 'supervise'], { stdio: 'ignore', detached: true, windowsHide: true }).unref();
-      console.log('Your Openmon is out. Drag it anywhere; right-click it for the menu.');
+      console.log('Your Openmon is out. Drag it anywhere; right-click it for its card (the gear there opens the settings).');
       if (!installer.isInstalled()) console.log('Hooks are not installed yet: run "openmon install".');
       return;
     }
