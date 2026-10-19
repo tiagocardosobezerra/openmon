@@ -254,7 +254,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let lastFollow = 0;
   function followProject(signal, t, events) {
     if (!config.followProject || signal.kind !== 'tool-start' || t - lastFollow < 20_000) return;
-    const target = party.petFor(real.pet, signal.label || null);
+    const target = party.petFor(real.pet, party.projectOf(signal));
     if (target === real.pet || target.place !== 'party') return;
     real.pet = party.setActive(real.pet, target.id);
     lastFollow = t;

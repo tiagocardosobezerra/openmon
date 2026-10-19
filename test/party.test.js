@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const pet = require('../src/pet');
 const party = require('../src/party');
-const { fileLang } = require('../src/classify');
+const { fileLang, isScratchDir, classify } = require('../src/classify');
 
 const T0 = new Date(2026, 9, 1, 12).getTime();
 const tool = (label, extra = {}) => ({ kind: 'tool-done', family: 'craft', label, ...extra });
@@ -45,6 +45,28 @@ test('a project earns its own egg after enough work, then feeds only that egg', 
   assert.ok(evs.filter((e) => e.type === 'xp').every((e) => e.petId === p.others[0].id && e.project === 'web'));
   // Shared trainer state still counts the work.
   assert.ok(p.counters.tools >= party.EGG_AFTER_ACTIONS + 1);
+});
+
+test('a throwaway folder never earns an egg; its work feeds the first pet', () => {
+  const p = fresh();
+  const before = p.xp;
+  let events = [];
+  for (let i = 0; i < party.EGG_AFTER_ACTIONS * 2; i++) events.push(...party.applySignal(p, tool('scratch-2026-10-18-026f4c', { scratch: true }), {}, T0 + i * 60_000));
+  assert.ok(!events.some((e) => e.type === 'project-egg'));
+  assert.equal(p.others.length, 0);
+  assert.ok(p.xp > before);
+});
+
+test('scratch workspaces and temp folders are not projects', () => {
+  for (const dir of [
+    'C:\\Users\\a\\AppData\\Roaming\\Claude\\scratch-workspaces\\738a\\69c0\\scratch-2026-10-18-026f4c',
+    'C:\\Users\\a\\AppData\\Local\\Temp\\claude\\x',
+    '/tmp/work',
+    '/private/var/folders/ab/T/x',
+  ]) assert.equal(isScratchDir(dir), true, dir);
+  for (const dir of ['C:\\Users\\a\\Documents\\openmon', '/home/a/scratch', '/home/a/my-tmp']) assert.equal(isScratchDir(dir), false, dir);
+  const s = classify({ hook_event_name: 'PostToolUse', tool_name: 'Edit', tool_input: {}, cwd: '/tmp/work', session_id: 's' });
+  assert.equal(s.scratch, true);
 });
 
 test('switching the pet on screen keeps the Bag, Opendex and each pet\'s own things', () => {

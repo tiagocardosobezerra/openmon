@@ -75,6 +75,11 @@ function split(root, member, merged) {
   }
 }
 
+// The project a signal's work belongs to; null feeds your first pet.
+function projectOf(signal) {
+  return signal.scratch ? null : signal.label || null;
+}
+
 // Which pet a project's work feeds.
 function petFor(root, project) {
   if (root.project === project) return root;
@@ -88,7 +93,7 @@ function petFor(root, project) {
 // that is not on screen carry `petId` and `project`.
 function applySignal(root, signal, ctx, now) {
   ensure(root);
-  const target = petFor(root, signal.label || null);
+  const target = petFor(root, projectOf(signal));
   let events;
   if (target === root) events = pet.applySignal(root, signal, ctx, now);
   else {
@@ -158,7 +163,7 @@ function hatchMystery(root, now, rng = Math.random) {
 
 // Counts real work per project; enough of it earns that project an egg.
 function countProject(root, signal, now) {
-  const label = signal.label;
+  const label = projectOf(signal);
   if (!label || !['tool-done', 'tool-fail', 'test-end'].includes(signal.kind)) return [];
   const seen = (root.projects[label] = (root.projects[label] || 0) + 1);
   if (seen < EGG_AFTER_ACTIONS || root.project === label || root.others.some((m) => m.project === label)) return [];
@@ -225,4 +230,4 @@ function view(root) {
   return { size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
 }
 
-module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, checkLegends, hatchMystery, PARTY_SIZE, EGG_AFTER_ACTIONS };
+module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, PARTY_SIZE, EGG_AFTER_ACTIONS };

@@ -258,13 +258,28 @@ function genericSignal(payload) {
   return { agent: 'custom', label: String(payload.session), family: null, tool: null, ...payload, ts: Number(payload.ts) || null };
 }
 
+// Throwaway folders (system temp, an app's scratch workspace) are not
+// projects: their work feeds your first pet and never earns an egg.
+function isScratchDir(dir) {
+  if (!dir) return false;
+  const p = String(dir).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+  return (
+    /\/(scratch-workspaces|scratchpad)(\/|$)/.test(p) ||
+    /\/appdata\/local\/temp(\/|$)/.test(p) ||
+    /^\/(tmp|var\/tmp|private\/var\/folders)(\/|$)/.test(p) ||
+    /\/scratch-\d{4}-\d{2}-\d{2}-[a-z0-9]+$/.test(p)
+  );
+}
+
 function classify(payload) {
   if (!payload || typeof payload !== 'object') return null;
-  if (payload.hook_event_name) return claudeSignal(payload);
-  if (payload._agent === 'codex' || payload.type === 'agent-turn-complete') return codexSignal(payload);
-  if (payload._agent === 'signal') return genericSignal(payload);
-  return null;
+  let signal = null;
+  if (payload.hook_event_name) signal = claudeSignal(payload);
+  else if (payload._agent === 'codex' || payload.type === 'agent-turn-complete') signal = codexSignal(payload);
+  else if (payload._agent === 'signal') return genericSignal(payload);
+  if (signal && isScratchDir(payload._projectDir || payload.cwd)) signal.scratch = true;
+  return signal;
 }
 
 module.exports = {
-  fileLang, classify, toolFamily, workKind, DOC_EXT, STYLE_EXT, DATA_EXT, isTestCommand, judgeTestOutput, responseText, FAMILIES };
+  fileLang, classify, isScratchDir, toolFamily, workKind, DOC_EXT, STYLE_EXT, DATA_EXT, isTestCommand, judgeTestOutput, responseText, FAMILIES };
