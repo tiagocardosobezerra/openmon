@@ -51,7 +51,7 @@ test('a throwaway folder never earns an egg; its work feeds the first pet', () =
   const p = fresh();
   const before = p.xp;
   let events = [];
-  for (let i = 0; i < party.EGG_AFTER_ACTIONS * 2; i++) events.push(...party.applySignal(p, tool('scratch-2026-10-18-026f4c', { scratch: true }), {}, T0 + i * 60_000));
+  for (let i = 0; i < party.EGG_AFTER_ACTIONS * 2; i++) events.push(...party.applySignal(p, tool('scratch-2026-01-02-ab12cd', { scratch: true }), {}, T0 + i * 60_000));
   assert.ok(!events.some((e) => e.type === 'project-egg'));
   assert.equal(p.others.length, 0);
   assert.ok(p.xp > before);
@@ -59,7 +59,7 @@ test('a throwaway folder never earns an egg; its work feeds the first pet', () =
 
 test('scratch workspaces and temp folders are not projects', () => {
   for (const dir of [
-    'C:\\Users\\a\\AppData\\Roaming\\Claude\\scratch-workspaces\\738a\\69c0\\scratch-2026-10-18-026f4c',
+    'C:\\Users\\a\\AppData\\Roaming\\Claude\\scratch-workspaces\\738a\\69c0\\scratch-2026-01-02-ab12cd',
     'C:\\Users\\a\\AppData\\Local\\Temp\\claude\\x',
     '/tmp/work',
     '/private/var/folders/ab/T/x',

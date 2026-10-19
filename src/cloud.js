@@ -21,7 +21,6 @@
 //   grew): ask which one to keep. Never merge, never replace silently.
 
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFile } = require('node:child_process');
@@ -33,6 +32,10 @@ const DESCRIPTION = 'openmon-save · your Openmon, synced between computers (do 
 const FILE = 'openmon.json';
 // The public id of the Openmon OAuth app (device flow needs no secret).
 const CLIENT_ID = process.env.OPENMON_GITHUB_CLIENT_ID || '';
+// Only harmless settings travel: never the phone topic (it works like a
+// password for your alerts), the pets on screen or anything else.
+const SHARED_CONFIG = ['muted', 'notify', 'chatter', 'stroll', 'scale', 'lang', 'seasons'];
+const OS_NAME = { win32: 'Windows', darwin: 'macOS', linux: 'Linux' };
 
 function ghCandidates() {
   const list = ['gh'];
@@ -50,12 +53,14 @@ function readGhToken() {
   return ghCandidates().reduce((p, bin) => p.then((t) => t || tryOne(bin)), Promise.resolve(null));
 }
 
-function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (...a) => fetch(...a), ghToken = readGhToken, clientId = CLIENT_ID, machineName = os.hostname(), now = Date.now } = {}) {
+function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (...a) => fetch(...a), ghToken = readGhToken, clientId = CLIENT_ID, machineName = null, now = Date.now } = {}) {
   let st = { token: null, login: null, source: null, gistId: null, machineId: null, lastSync: null, dirty: false, syncedAt: null };
   try {
     st = { ...st, ...JSON.parse(fs.readFileSync(file, 'utf8')) };
   } catch {}
   if (!st.machineId) st.machineId = crypto.randomBytes(8).toString('hex');
+  // Not the computer's name: just its system and a short id.
+  const machine = machineName || `${OS_NAME[process.platform] || process.platform} · ${st.machineId.slice(0, 4)}`;
   // Only a device-flow token (gist scope only) is kept in the file.
   let token = st.source === 'device' ? st.token : null;
   let device = null;
@@ -207,7 +212,8 @@ function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (.
 
   async function push(pet, config) {
     const t = now();
-    const content = `${JSON.stringify({ ...wrap(pet, config, t), machine: { id: st.machineId, name: machineName } }, null, 2)}\n`;
+    const shared = Object.fromEntries(SHARED_CONFIG.filter((k) => config && config[k] !== undefined).map((k) => [k, config[k]]));
+    const content = `${JSON.stringify({ ...wrap(pet, shared, t), machine: { id: st.machineId, name: machine } }, null, 2)}\n`;
     const body = { description: DESCRIPTION, files: { [FILE]: { content } } };
     const gist = st.gistId ? await (await api('PATCH', `/gists/${st.gistId}`, body)).json() : await (await api('POST', '/gists', { ...body, public: false })).json();
     st.gistId = gist.id;
@@ -264,7 +270,7 @@ function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (.
       login: st.login,
       source: st.source,
       syncedAt: st.syncedAt,
-      machine: machineName,
+      machine,
       device: device ? { userCode: device.userCode, uri: device.uri, expiresAt: device.expiresAt } : null,
       canDevice: Boolean(clientId),
       error: lastError,

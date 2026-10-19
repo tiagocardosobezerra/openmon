@@ -132,3 +132,16 @@ test('the GitHub CLI token is never written to disk', async () => {
   assert.equal(again.connected(), true);
   assert.equal((await again.sync({ pet: grown(10), config: {} })).action, 'up-to-date');
 });
+
+test('the Gist never holds the phone topic or the computer name', async () => {
+  const gh = fakeGitHub();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-cloud-'));
+  const c = createCloud({ file: path.join(dir, 'cloud.json'), fetchImpl: gh.fetchImpl, ghToken: async () => 'tok', now: () => 1 });
+  await c.connectGh();
+  await c.sync({ pet: grown(10), config: { phoneTopic: 'openmon-secret-topic', phoneAlerts: true, companions: ['x'], lang: 'pt-BR', muted: true } });
+  const text = [...gh.gists.values()][0].files['openmon.json'].content;
+  assert.equal(text.includes('openmon-secret-topic'), false);
+  assert.equal(text.includes(os.hostname()), false);
+  const saved = JSON.parse(text);
+  assert.deepEqual(saved.config, { muted: true, lang: 'pt-BR' });
+});
