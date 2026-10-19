@@ -42,7 +42,9 @@ function step(p, now = T0) {
   const next = species.STAGES[species.stageIndex(p.stage) + 1];
   if (next.bond && p.bond < next.bond) p.bond = next.bond;
   p.xp = next.xp - 1;
-  return pet.grow(p, { xp: 1 }, now);
+  p.xpLog = [];
+  // One more XP from a tool with no kind of work, so the stats stay as set.
+  return pet.applySignal(p, { kind: 'tool-done', family: null }, {}, now);
 }
 
 // --- items -----------------------------------------------------------------
@@ -139,7 +141,8 @@ test('Steady stone: stops evolving while held, an egg still hatches, letting go 
   const p = mk({ xp: 0, bag: { everstone: 1 } });
   pet.useItem(p, 'everstone', T0);
   assert.equal(p.holding, 'everstone');
-  pet.grow(p, { xp: 500 }, T0);
+  p.xp = 499;
+  pet.applySignal(p, { kind: 'tool-done', family: null }, {}, T0);
   assert.equal(p.stage, 'sprout', 'the egg hatched but went no further');
   const events = pet.useItem(p, 'everstone', T0);
   assert.equal(p.holding, null);
@@ -519,7 +522,8 @@ test('legendaries: each joins once from its feat, at Mythic, and never grows', (
     assert.equal(merged.stage, 'mythic');
     assert.equal(merged.xp, 15000);
     assert.equal(pet.nextStage(merged), null);
-    assert.deepEqual(pet.grow(merged, { xp: 99999 }, T0), []);
+    merged.xp = 99999;
+    assert.ok(!pet.applySignal(merged, done('craft'), {}, T0).some((e) => e.type === 'evolve'));
     assert.equal(pet.view(merged).dexNo > 0, true);
   }
 });
@@ -538,50 +542,26 @@ function team() {
   return root;
 }
 
-test('mystery egg: grows with the work that feeds your first pet, and hatches', () => {
-  const root = team();
-  root.daily.missions = [{ id: 'edits', done: false }];
-  const [{ petId }] = party.hatchMystery(root, T0, () => 0.9);
-  const egg = root.others.find((m) => m.id === petId);
-  let events = [];
-  // Scratch work and a project with no pet yet both count.
-  for (let i = 0; i < 15; i++) events.push(...party.applySignal(root, tool(null), {}, T0 + i * 6000));
-  for (let i = 0; i < 15; i++) events.push(...party.applySignal(root, tool('newproj', { lang: 'py' }), {}, T0 + (15 + i) * 6000));
-  assert.equal(egg.xp, 30);
-  assert.equal(egg.stage, 'sprout');
-  assert.equal(egg.stats.craft, 30);
-  assert.equal(egg.langs.py, 15);
-  // The first pet got the same work XP plus the mission rewards, which are not shared.
-  assert.equal(root.xp, 500 + 30 + 25 + 50);
-  assert.ok(events.some((e) => e.type === 'evolve' && e.petId === egg.id && e.stage === 'sprout'));
-  // Shared trainer counters are not counted twice.
-  assert.equal(root.counters.tools, 30);
-});
-
-test('mystery egg: grows on screen too, but never from a project with its own pet', () => {
+test('mystery egg: no project, so it grows only on screen (main or companion); the Box rests', () => {
   const root = team();
   const [{ petId }] = party.hatchMystery(root, T0, () => 0.9);
-  for (let i = 0; i < party.EGG_AFTER_ACTIONS; i++) party.applySignal(root, tool('web'), {}, T0 + i * 6000);
-  const web = root.others.find((m) => m.project === 'web');
-  const mystery = root.others.find((m) => m.id === petId);
-  const before = mystery.xp;
-  for (let i = 0; i < 10; i++) party.applySignal(root, tool('web'), {}, T0 + DAY + i * 6000);
-  assert.equal(mystery.xp, before, 'work for the web pet stays with it');
-  assert.ok(web.xp > 0);
-  // As the main pet, it still grows from unclaimed work.
-  const next = party.setActive(root, petId);
-  const xp = next.xp;
-  party.applySignal(next, tool(null), {}, T0 + 2 * DAY);
-  assert.equal(next.xp, xp + 1);
-});
-
-test('legendaries do not share in the first pet\'s work', () => {
-  const root = team();
-  root.counters.merges = 1;
+  const egg = () => root.others.find((m) => m.id === petId);
+  // In the Party but not on screen: work without a pet of its own trains the main pet.
   party.applySignal(root, tool(null), {}, T0);
-  const legend = root.others.find((m) => m.legend);
-  party.applySignal(root, tool(null), {}, T0 + 6000);
-  assert.equal(legend.xp, 15000);
+  assert.equal(egg().xp, 0);
+  // Next to the main pet, an agent session handed to it trains it.
+  for (let i = 0; i < 30; i++) party.applySignal(root, tool('newproj'), {}, T0 + i * 6000, petId);
+  assert.equal(egg().stage, 'sprout');
+  // In the Box it rests, even if a session was handed to it.
+  assert.equal(party.move(root, petId, 'box'), true);
+  const xp = egg().xp;
+  party.applySignal(root, tool(null), {}, T0 + DAY, petId);
+  assert.equal(egg().xp, xp);
+  // As the main pet it trains on all work without a pet of its own.
+  const next = party.setActive(root, petId);
+  const before = next.xp;
+  party.applySignal(next, tool(null), {}, T0 + 2 * DAY);
+  assert.equal(next.xp, before + 1);
 });
 
 test('the 10-minute XP limit is per pet: two projects at once both grow fully', () => {

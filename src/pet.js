@@ -729,23 +729,6 @@ function applySignal(pet, signal, ctx = {}, now) {
   return events;
 }
 
-// Growth another pet earned from work, shared with this one: its XP from
-// the work (already capped), the stats and the file languages it gained.
-// Nothing is counted twice: missions, counters and the journal stay with
-// the pet the work fed.
-function grow(pet, gain, now) {
-  const events = [];
-  if (pet.legend) return events;
-  const levelBefore = level(pet.xp);
-  if (gain.xp > 0) pet.xp += gain.xp;
-  for (const [s, n] of Object.entries(gain.stats || {})) if (n > 0 && pet.stats[s] != null) pet.stats[s] += n;
-  for (const [l, n] of Object.entries(gain.langs || {})) if (n > 0) pet.langs = { ...(pet.langs || {}), [l]: ((pet.langs || {})[l] || 0) + n };
-  evolve(pet, now, events);
-  checkCosmetics(pet, now, events);
-  if (level(pet.xp) > levelBefore) events.push({ type: 'level', level: level(pet.xp) });
-  return events;
-}
-
 // Counters for accessories and legendaries: commits, pull requests opened
 // and merged, pages fetched, shell commands, files read.
 const SHELL = new Set(['Bash', 'PowerShell']);
@@ -824,7 +807,6 @@ module.exports = {
   createPet,
   migrate,
   applySignal,
-  grow,
   nextStage,
   petIt,
   rename,

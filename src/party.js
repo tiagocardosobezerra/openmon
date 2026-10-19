@@ -9,10 +9,9 @@
 // belongs to one creature (level, type, nickname, worn accessories, its
 // project) is kept per pet.
 //
-// Each project (the folder an agent works in) feeds its own pet. A project
-// with no pet yet feeds your first one (project: null) until it has seen
-// enough work to earn an egg of its own. Mystery eggs belong to no project:
-// they grow with that same work, side by side with your first pet.
+// Each project (the folder an agent works in) feeds its own pet while that pet
+// is in the Party. Everything else feeds the main pet on screen, and a project
+// earns an egg of its own after enough work.
 
 const crypto = require('node:crypto');
 const pet = require('./pet');
@@ -78,26 +77,27 @@ function split(root, member, merged) {
   }
 }
 
-// The project a signal's work belongs to; null feeds your first pet.
+// The project a signal's work belongs to; null feeds the main pet on screen.
 function projectOf(signal) {
   return signal.scratch ? null : signal.label || null;
 }
 
-// Which pet a project's work feeds.
+// Which pet a project's work feeds: the project's own pet while it is in the
+// Party; anything else (no project, a project without a pet, a pet resting
+// in the Box) feeds the main pet on screen. Pets in the Box do not train.
 function petFor(root, project) {
-  if (root.project === project) return root;
-  const own = root.others.find((m) => m.project === project);
-  if (own) return own;
-  if (root.project === null) return root;
-  return root.others.find((m) => m.project === null) || root;
+  if (project === null || root.project === project) return root;
+  return root.others.find((m) => m.project === project && m.place === 'party') || root;
 }
 
 // Applies a hook signal to the right pet. Returns events; events about a pet
 // that is not on screen carry `petId` and `project`.
-function applySignal(root, signal, ctx, now) {
+// petId: the pet on screen this session was handed to (see the daemon),
+// for work that has no pet of its own.
+function applySignal(root, signal, ctx, now, petId = null) {
   ensure(root);
-  const target = petFor(root, projectOf(signal));
-  const before = { xp: target.xp, stats: { ...target.stats }, langs: { ...(target.langs || {}) } };
+  const chosen = petId && petId !== root.id ? root.others.find((m) => m.id === petId && m.place === 'party') : null;
+  const target = chosen || petFor(root, projectOf(signal));
   let events;
   if (target === root) events = pet.applySignal(root, signal, ctx, now);
   else {
@@ -112,7 +112,6 @@ function applySignal(root, signal, ctx, now) {
       }
     }
   }
-  if (target.project === null) events.push(...shareWithMystery(root, target, before, events, now));
   events.push(...countProject(root, signal, now));
   events.push(...checkLegends(root, now));
   return events;
@@ -153,35 +152,6 @@ function checkLegends(root, now) {
     events.push({ type: 'legend', id, petId: mon.id, place: mon.place, shiny: mon.shiny });
   }
   return events;
-}
-
-const isMystery = (m) => typeof m.project === 'string' && m.project.startsWith('mystery:');
-
-// Work that fed your first pet (projects with no pet of their own) also
-// grows every mystery egg: the same XP from the work, stats and languages.
-// Mission rewards and counters are not doubled.
-function shareWithMystery(root, target, before, events, now) {
-  const bonus = events.filter((e) => e.type === 'mission' || e.type === 'missions-all').reduce((a, e) => a + (e.xp || 0), 0);
-  const gain = {
-    xp: Math.max(0, target.xp - before.xp - bonus),
-    stats: Object.fromEntries(Object.entries(target.stats).map(([k, v]) => [k, v - (before.stats[k] || 0)])),
-    langs: Object.fromEntries(Object.entries(target.langs || {}).map(([k, v]) => [k, v - (before.langs[k] || 0)])),
-  };
-  if (!gain.xp && !Object.values(gain.stats).some((n) => n > 0)) return [];
-  const out = [];
-  for (const m of [root, ...root.others]) {
-    if (m === target || !isMystery(m)) continue;
-    if (m === root) {
-      out.push(...pet.grow(root, gain, now));
-      continue;
-    }
-    const merged = merge(root, m);
-    const evs = pet.grow(merged, gain, now);
-    split(root, m, merged);
-    for (const e of evs) if (['evolve', 'level'].includes(e.type)) Object.assign(e, { petId: m.id, project: m.project, petName: pet.displayName(merged) });
-    out.push(...evs);
-  }
-  return out;
 }
 
 // How many of each item the other members hold (the Bag is shared).

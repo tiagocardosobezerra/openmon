@@ -158,9 +158,38 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     for (const id of config.companions || []) {
       // Only Party members walk on screen; the Box stays home.
       const member = (real.pet.others || []).find((m) => m.id === id && m.place === 'party');
-      if (member) out[id] = { ...pet.view(party.merge(real.pet, member)), project: member.project ?? null };
+      if (member) out[id] = { ...pet.view(party.merge(real.pet, member)), project: member.project ?? null, sessions: sessionsOf(id) };
     }
     return out;
+  }
+
+  // With pets on screen next to the main one, each agent session that has no
+  // pet of its own goes to the one with the fewest sessions and stays with
+  // it: that pet earns its XP and shows it on its card.
+  const SESSION_IDLE_MS = 30 * 60 * 1000;
+  const sessionPet = new Map();
+  function onScreenIds() {
+    const party = (config.companions || []).filter((id) => real.pet.others.some((m) => m.id === id && m.place === 'party'));
+    return [real.pet.id, ...party];
+  }
+  function sessionsOf(id) {
+    const t = now();
+    return [...sessionPet].filter(([, a]) => a.pet === id && t - a.at < SESSION_IDLE_MS).map(([s]) => s);
+  }
+  function petForSession(signal) {
+    const ids = onScreenIds();
+    if (ids.length < 2 || party.petFor(real.pet, party.projectOf(signal)) !== real.pet) return null;
+    const t = now();
+    const had = sessionPet.get(signal.session);
+    let id = had && ids.includes(had.pet) ? had.pet : null;
+    if (!id) {
+      const load = (x) => sessionsOf(x).length;
+      id = ids.reduce((best, x) => (load(x) < load(best) ? x : best), ids[0]);
+    }
+    sessionPet.delete(signal.session);
+    if (signal.kind !== 'session-end') sessionPet.set(signal.session, { pet: id, at: t });
+    if (sessionPet.size > 200) sessionPet.delete(sessionPet.keys().next().value);
+    return id;
   }
 
   // Puts a team member on screen as the main pet. A companion swaps places
@@ -232,7 +261,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const ctx = target.sessions.apply(signal, t);
     // The real pet routes work to the pet of each project (Party); the demo
     // pet is a single egg.
-    const events = target === real ? party.applySignal(real.pet, signal, ctx, t) : pet.applySignal(target.pet, signal, ctx, t);
+    const events = target === real ? party.applySignal(real.pet, signal, ctx, t, petForSession(signal)) : pet.applySignal(target.pet, signal, ctx, t);
     if (target === real) followProject(signal, t, events);
     if (target === real) events.push(...target.sessions.takeNotices());
     if (target === real) noteActivity(t);
