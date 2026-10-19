@@ -117,6 +117,30 @@ const ACHIEVEMENTS = {
   nocturne: { title: 'Born of the night', text: 'Evolved between midnight and 5 am, into its Nocturne colours.', secret: true },
 };
 
+// Accessories: earned by playing, kept forever (across generations), worn
+// one per slot. Labels and unlock hints live in the UI strings.
+const COSMETICS = {
+  cap: { slot: 'head' },
+  party: { slot: 'head' },
+  beanie: { slot: 'head' },
+  headphones: { slot: 'head' },
+  flower: { slot: 'head' },
+  nightcap: { slot: 'head' },
+  wizard: { slot: 'head' },
+  crown: { slot: 'head' },
+  scarf: { slot: 'neck' },
+  bowtie: { slot: 'neck' },
+  bandana: { slot: 'neck' },
+  medal: { slot: 'neck' },
+};
+
+// Items in the bag. Snacks and candies are used up; the Everstone is held.
+const ITEMS = {
+  snack: { use: 'eat' },
+  candy: { use: 'eat' },
+  everstone: { use: 'hold' },
+};
+
 function stageIndex(id) {
   return STAGES.findIndex((s) => s.id === id);
 }
@@ -153,6 +177,8 @@ module.exports = {
   CHIMERA_GAP,
   CHIMERA_MIN,
   ACHIEVEMENTS,
+  COSMETICS,
+  ITEMS,
   stageIndex,
   formKey,
   formName,

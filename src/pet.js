@@ -4,7 +4,7 @@
 // Pure functions over a plain JSON object, so it is easy to persist, test
 // and migrate. Nothing here ever takes progress away.
 
-const { MISSIONS, MISSION_XP, PERFECT_DAY_XP } = require('./species');
+const { MISSIONS, MISSION_XP, PERFECT_DAY_XP, COSMETICS, ITEMS } = require('./species');
 const { STATS, STAT_WEIGHTS, STAGES, ACHIEVEMENTS, NATURES, SHINY_ODDS, CHIMERA_GAP, CHIMERA_MIN, stageIndex, formName, formKey, dexEntries } = require('./species');
 
 const VERSION = 1;
@@ -60,6 +60,9 @@ function createPet(now, name = DEFAULT_NAME, rng = Math.random) {
     xpLog: [],
     achievements: {},
     history: [{ stage: 'egg', form: 'Egg', at: now }],
+    wardrobe: { owned: {}, head: null, neck: null },
+    bag: { snack: 0, candy: 0, everstone: 0 },
+    holding: null,
   };
 }
 
@@ -82,6 +85,9 @@ function migrate(raw, now) {
     xpLog: Array.isArray(raw.xpLog) ? raw.xpLog : [],
     history: Array.isArray(raw.history) && raw.history.length ? raw.history : fresh.history,
     dex: { ...fresh.dex, ...dexFromHistory(raw.history), ...(raw.dex || {}) },
+    wardrobe: { ...fresh.wardrobe, ...(raw.wardrobe || {}), owned: { ...((raw.wardrobe && raw.wardrobe.owned) || {}) } },
+    bag: { ...fresh.bag, ...(raw.bag || {}) },
+    holding: raw.holding || null,
   };
 }
 
@@ -166,7 +172,102 @@ function view(pet) {
     achievements: pet.achievements,
     history: pet.history,
     hallOfFame: pet.hallOfFame || [],
+    wardrobe: pet.wardrobe,
+    wear: { head: pet.wardrobe.head, neck: pet.wardrobe.neck },
+    cosmetics: cosmeticsView(pet),
+    bag: pet.bag,
+    holding: pet.holding,
   };
+}
+
+// --- accessories and items ---------------------------------------------------
+
+// When each accessory unlocks. Checked after every change; once owned,
+// always owned.
+const UNLOCKS = {
+  cap: (p) => Boolean(p.achievements.hatch),
+  party: (p) => Boolean(p.achievements['first-evolution']),
+  beanie: (p) => (p.daily.activeDays || 0) >= 7,
+  headphones: (p) => p.counters.testsGreen >= 50,
+  flower: (p) => p.bond >= 50,
+  nightcap: (p) => Boolean(p.achievements['night-owl']),
+  wizard: (p) => (p.stats.lore || 0) >= 1500,
+  crown: (p) => Boolean(p.achievements.mythic),
+  scarf: (p) => (p.counters.perfectDays || 0) >= 1,
+  bowtie: (p) => p.counters.turns >= 100,
+  bandana: (p) => p.counters.tools >= 1000,
+  medal: (p) => Boolean(p.achievements['quick-hands']),
+};
+
+// Progress toward each locked accessory, for the bag's hints.
+const UNLOCK_PROGRESS = {
+  beanie: (p) => [p.daily.activeDays || 0, 7],
+  headphones: (p) => [p.counters.testsGreen, 50],
+  flower: (p) => [p.bond, 50],
+  wizard: (p) => [p.stats.lore || 0, 1500],
+  scarf: (p) => [p.counters.perfectDays || 0, 1],
+  bowtie: (p) => [p.counters.turns, 100],
+  bandana: (p) => [p.counters.tools, 1000],
+};
+
+function cosmeticsView(pet) {
+  return Object.entries(COSMETICS).map(([id, c]) => {
+    const pr = UNLOCK_PROGRESS[id] ? UNLOCK_PROGRESS[id](pet) : null;
+    return { id, slot: c.slot, owned: Boolean(pet.wardrobe.owned[id]), worn: pet.wardrobe[c.slot] === id, progress: pr ? { have: Math.min(pr[0], pr[1]), need: pr[1] } : null };
+  });
+}
+
+function checkCosmetics(pet, now, events) {
+  for (const [id, ok] of Object.entries(UNLOCKS)) {
+    if (pet.wardrobe.owned[id] || !ok(pet)) continue;
+    pet.wardrobe.owned[id] = now;
+    events.push({ type: 'cosmetic', id, slot: COSMETICS[id].slot });
+  }
+}
+
+function giveItem(pet, item, n, events) {
+  pet.bag[item] = (pet.bag[item] || 0) + n;
+  events.push({ type: 'item', item, n, total: pet.bag[item] });
+}
+
+// Wear an owned accessory (or null to take the slot off).
+function wear(pet, slot, id) {
+  if (slot !== 'head' && slot !== 'neck') return [];
+  if (id != null && (!COSMETICS[id] || COSMETICS[id].slot !== slot || !pet.wardrobe.owned[id])) return [];
+  pet.wardrobe[slot] = id || null;
+  return [{ type: 'wear', slot, id: id || null }];
+}
+
+// Use an item from the bag. Snack: +2 bond. Candy: one level up. Everstone:
+// hold it to stop evolving (hold again to let go).
+function useItem(pet, item, now) {
+  const events = [];
+  if (!ITEMS[item]) return events;
+  rollDay(pet, now, events);
+  if (item === 'everstone') {
+    if (!pet.bag.everstone && pet.holding !== 'everstone') return [];
+    pet.holding = pet.holding === 'everstone' ? null : 'everstone';
+    events.push({ type: 'hold', item, holding: pet.holding });
+    if (!pet.holding) evolve(pet, now, events);
+    return events;
+  }
+  if (!pet.bag[item]) return [];
+  if (pet.stage === 'egg') return [];
+  pet.bag[item]--;
+  const levelBefore = level(pet.xp);
+  if (item === 'snack') {
+    events.push({ type: 'fed', item });
+    addBond(pet, 2, now, events);
+  } else if (item === 'candy') {
+    const target = xpForLevel(Math.min(MAX_LEVEL, level(pet.xp) + 1));
+    const gain = Math.max(0, target - pet.xp);
+    pet.xp += gain;
+    events.push({ type: 'fed', item }, { type: 'xp', amount: gain, xp: pet.xp });
+  }
+  checkCosmetics(pet, now, events);
+  evolve(pet, now, events);
+  if (level(pet.xp) > levelBefore) events.push({ type: 'level', level: level(pet.xp) });
+  return events;
 }
 
 // --- mutations. Each returns a list of events for the UI. -------------------
@@ -213,12 +314,15 @@ function checkMissions(pet, now, events) {
     events.push({ type: 'xp', amount: MISSION_XP, xp: pet.xp });
     addBond(pet, 2, now, events);
     events.push({ type: 'mission', id: m.id, target: def.target, xp: MISSION_XP });
+    giveItem(pet, 'snack', 1, events);
   }
   if (list.length && !pet.daily.perfect && list.every((m) => m.done)) {
     pet.daily.perfect = true;
     pet.xp += PERFECT_DAY_XP;
     events.push({ type: 'xp', amount: PERFECT_DAY_XP, xp: pet.xp });
     events.push({ type: 'missions-all', xp: PERFECT_DAY_XP });
+    pet.counters.perfectDays = (pet.counters.perfectDays || 0) + 1;
+    giveItem(pet, 'candy', 1, events);
   }
 }
 
@@ -249,6 +353,7 @@ function evolve(pet, now, events) {
   for (;;) {
     const next = nextStage(pet);
     if (!next || pet.xp < next.xp || (next.bond && pet.bond < next.bond)) return;
+    if (pet.holding === 'everstone' && pet.stage !== 'egg') return;
     const from = form(pet);
     const ranked = topStats(pet.stats);
     pet.stage = next.id;
@@ -280,7 +385,10 @@ function evolve(pet, now, events) {
     events.push({ type: 'evolve', from, to: form(pet), stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, nocturne: Boolean(pet.nocturne), shiny: pet.shiny, newDex: firstTime });
     if (pet.stage === 'sprout') unlock(pet, 'hatch', now, events);
     if (pet.stage === 'sprout' && pet.shiny) unlock(pet, 'shiny', now, events);
-    if (pet.stage === 'juvenile') unlock(pet, 'first-evolution', now, events);
+    if (pet.stage === 'juvenile') {
+      unlock(pet, 'first-evolution', now, events);
+      if (!pet.bag.everstone && pet.holding !== 'everstone') giveItem(pet, 'everstone', 1, events);
+    }
     if (pet.stage === 'mythic') unlock(pet, 'mythic', now, events);
     if (pet.lineage === 'chimera') unlock(pet, 'hidden', now, events);
   }
@@ -364,6 +472,7 @@ function applySignal(pet, signal, ctx = {}, now) {
 
   checkMissions(pet, now, events);
   evolve(pet, now, events);
+  checkCosmetics(pet, now, events);
   if (level(pet.xp) > levelBefore) events.push({ type: 'level', level: level(pet.xp) });
   return events;
 }
@@ -380,6 +489,7 @@ function petIt(pet, now) {
   }
   checkMissions(pet, now, events);
   evolve(pet, now, events);
+  checkCosmetics(pet, now, events);
   return events;
 }
 
@@ -395,6 +505,8 @@ function layEgg(pet, now, rng = Math.random) {
   egg.generation = (pet.generation || 1) + 1;
   egg.dex = { ...pet.dex };
   egg.achievements = { ...pet.achievements };
+  egg.wardrobe = { owned: { ...pet.wardrobe.owned }, head: null, neck: null };
+  egg.bag = { ...pet.bag, everstone: (pet.bag.everstone || 0) + (pet.holding === 'everstone' ? 1 : 0) };
   egg.hallOfFame = [...(pet.hallOfFame || []), retired];
   egg.stats = Object.fromEntries(STATS.map((s) => [s, Math.floor((pet.stats[s] || 0) / 10)]));
   return { pet: egg, events: [{ type: 'new-egg', generation: egg.generation, retired }] };
@@ -426,6 +538,9 @@ module.exports = {
   level,
   xpForLevel,
   displayName,
+  wear,
+  useItem,
+  checkCosmetics,
   missionsFor,
   dayKey,
   XP,

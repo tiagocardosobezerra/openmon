@@ -153,6 +153,10 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
     unlockAll() {
       const p = getPet();
       for (const l of ['craft', 'lore', 'shell', 'test', 'roam', 'swarm']) p.dex[`${l}-juvenile`] = p.dex[`${l}-juvenile`] || now();
+      // Every accessory, and a bag to play with.
+      const { COSMETICS } = require('./species');
+      for (const id of Object.keys(COSMETICS)) p.wardrobe.owned[id] = p.wardrobe.owned[id] || now();
+      p.bag = { snack: Math.max(p.bag.snack || 0, 5), candy: Math.max(p.bag.candy || 0, 3), everstone: Math.max(p.bag.everstone || 0, 1) };
       return applyEvents([]);
     },
 

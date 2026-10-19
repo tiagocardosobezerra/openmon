@@ -19,6 +19,7 @@
   for (const [id, href, label] of [
     ['powers', '/powers.html', tr('act.powers')],
     ['dex', '/dex.html', 'Opendex'],
+    ['bag', '/bag.html', tr('act.bag')],
     ['card', '/card.html', tr('nav.card')],
   ]) {
     const a = document.createElement('a');

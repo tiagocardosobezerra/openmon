@@ -96,6 +96,13 @@ O XP tem limite de 120 a cada 10 minutos, então um loop descontrolado não acel
 - **Privacidade**: tokens, senhas, chaves de API, cabeçalhos Authorization e credenciais em URLs aparecem mascarados (`•••`) nos balões, notificações e poderes.
 - **Tamanho**: pequeno, normal ou grande, pelo menu. As configurações ficam em `~/.openmon/config.json`.
 
+## Mochila: itens e acessórios
+
+Como no Pokémon, a **Mochila** guarda o que você ganha jogando, e tudo passa para a próxima geração.
+
+- **Itens**: *Biscoito* (+2 de laço, um por missão cumprida), *Bala rara* (sobe um nível na hora, uma por dia perfeito) e a *Pedra eterna* (presente da primeira evolução: enquanto ele segura, não evolui; solte quando quiser).
+- **12 acessórios** para a cabeça e o pescoço: boné de treinador, chapéu de festa, gorro, fones, flor, touca de dormir, chapéu de mago, coroa, cachecol, gravata-borboleta, bandana e medalha. Cada um sai de um feito (chocar, 50 testes verdes, um dia perfeito, chegar ao Mítico…), e a Mochila mostra o que falta. Eles aparecem no pet, na Mochila e no cartão de treinador.
+
 ## Seu pet não se perde
 
 Formatou o PC ou trocou de computador? O Openmon guarda backups fora de `~/.openmon`, em **Documentos/Openmon Backups** (no Windows, a pasta Documentos do OneDrive quando existe, que já vai para a nuvem). Um arquivo por dia (os últimos 14) mais `latest.openmon.json`, atualizados a cada 10 minutos de uso e em toda evolução.

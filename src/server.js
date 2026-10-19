@@ -182,6 +182,15 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     return events;
   }
 
+  // Wardrobe and bag actions on the pet you are looking at.
+  function change(fn) {
+    const events = fn(world.pet);
+    if (world === real) persist(events.some((e) => e.type === 'evolve'));
+    pushEvents(events);
+    pushState();
+    return events;
+  }
+
   function rename(name) {
     const events = pet.rename(real.pet, name);
     persist(true);
@@ -388,6 +397,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (err || !backups) return res.writeHead(400).end();
           json(res, 200, restore(backups.read(String((body && body.file) || 'latest'))));
         });
+      case 'POST /api/wear':
+        return readJson(req, (err, body) => (err ? res.writeHead(400).end() : json(res, 200, { events: change((p) => pet.wear(p, body.slot, body.id ?? null)) })));
+      case 'POST /api/use':
+        return readJson(req, (err, body) => (err ? res.writeHead(400).end() : json(res, 200, { events: change((p) => pet.useItem(p, String(body.item || ''), now())) })));
       case 'POST /api/lay-egg':
         return json(res, 200, { events: layEgg() });
       case 'POST /api/shutdown':

@@ -1144,6 +1144,316 @@
     return tintCanvas;
   }
 
+  // --- accessories ---------------------------------------------------------------
+  // Hats and neckwear, drawn in the same ink style as the creatures. Where they
+  // sit comes from each sprite's own outline: the top of the head (ignoring
+  // thin antennae and side ears), the head's width, and a "neck" line lower
+  // on the body for scarves and medals.
+  const anchorCache = new WeakMap();
+  const anchorCanvas = document.createElement('canvas');
+
+  function spriteAnchor(img) {
+    let found = anchorCache.get(img);
+    if (found) return found;
+    const eyes = img.__svg ? eyeVariants(img.__svg) : null;
+    const eyeY = eyes && eyes.ready ? eyes.eyeY : null;
+    const H = 160;
+    const W = Math.max(16, Math.round((H * (img.naturalWidth || 1)) / Math.max(1, img.naturalHeight || 1)));
+    anchorCanvas.width = W;
+    anchorCanvas.height = H;
+    const c = anchorCanvas.getContext('2d', { willReadFrequently: true });
+    c.clearRect(0, 0, W, H);
+    c.drawImage(img, 0, 0, W, H);
+    let data;
+    try {
+      data = c.getImageData(0, 0, W, H).data;
+    } catch {
+      return null;
+    }
+    const solid = (x, y) => data[(y * W + x) * 4 + 3] > 128;
+    const cx = Math.round(W / 2);
+    const tops = [];
+    for (let x = Math.round(W * 0.36); x <= Math.round(W * 0.64); x++) {
+      for (let y = 0; y < H; y++) if (solid(x, y)) { tops.push(y); break; }
+    }
+    tops.sort((a, b) => a - b);
+    // The 70th percentile skips antennae, leaves and single spikes.
+    const top = tops.length ? tops[Math.floor(tops.length * 0.7)] : 0;
+    let bottom = H - 1;
+    while (bottom > top && !solid(cx, bottom)) bottom--;
+    const widthAt = (y) => {
+      y = Math.max(0, Math.min(H - 1, Math.round(y)));
+      let l = cx;
+      let r = cx;
+      while (l > 0 && (solid(l - 1, y) || solid(Math.max(0, l - 2), y))) l--;
+      while (r < W - 1 && (solid(r + 1, y) || solid(Math.min(W - 1, r + 2), y))) r++;
+      return r - l;
+    };
+    const body = bottom - top;
+    const eye = eyeY != null ? eyeY * H : top + body * 0.45;
+    // Head width just above the eyes; the neckwear between mouth and feet.
+    const headRow = top + (eye - top) * 0.55;
+    const neckRow = eye + (bottom - eye) * 0.62;
+    found = {
+      top: top / H,
+      // Wide bodies (claws, swarms) would make giant hats.
+      headW: Math.min(widthAt(headRow), H * 0.5) / H,
+      neckY: neckRow / H,
+      neckW: widthAt(neckRow) / H,
+    };
+    // Cache only once the eyes are known (or there is no SVG to read).
+    if (!img.__svg || (eyes && eyes.ready)) anchorCache.set(img, found);
+    return found;
+  }
+
+  function inked(ctx, fill, lw) {
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = INK;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
+
+  function pom(ctx, x, y, r, fill, lw) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    inked(ctx, fill, lw);
+  }
+
+  const HATS = {
+    cap(ctx, S, y, lw) {
+      const r = S * 0.36;
+      ctx.beginPath();
+      ctx.ellipse(0, y, r, r * 0.78, 0, Math.PI, 0);
+      ctx.closePath();
+      inked(ctx, '#e5484d', lw);
+      ctx.beginPath();
+      ctx.ellipse(0, y - r * 0.05, r * 0.42, r * 0.5, 0, Math.PI, 0);
+      ctx.closePath();
+      inked(ctx, '#fff', lw * 0.7);
+      ctx.beginPath();
+      ctx.ellipse(r * 0.62, y, r * 0.62, r * 0.17, 0, 0, Math.PI * 2);
+      inked(ctx, '#b4232a', lw);
+    },
+    party(ctx, S, y, lw, t) {
+      ctx.save();
+      ctx.translate(0, y);
+      ctx.rotate(0.18 + Math.sin(t * 2) * 0.03);
+      const b = S * 0.22;
+      const h = S * 0.6;
+      ctx.beginPath();
+      ctx.moveTo(-b, 0);
+      ctx.lineTo(0, -h);
+      ctx.lineTo(b, 0);
+      ctx.quadraticCurveTo(0, b * 0.35, -b, 0);
+      inked(ctx, '#7c6cf2', lw);
+      ctx.save();
+      ctx.clip();
+      ctx.fillStyle = '#ffe156';
+      for (let i = 1; i < 4; i++) ctx.fillRect(-b, -h * (i / 4) - S * 0.03, b * 2, S * 0.05);
+      ctx.restore();
+      pom(ctx, 0, -h, S * 0.07, '#ff7fa3', lw * 0.8);
+      ctx.restore();
+    },
+    beanie(ctx, S, y, lw) {
+      const r = S * 0.38;
+      ctx.beginPath();
+      ctx.ellipse(0, y + r * 0.1, r, r * 0.85, 0, Math.PI, 0);
+      ctx.closePath();
+      inked(ctx, '#35d0bf', lw);
+      ctx.beginPath();
+      ctx.roundRect(-r * 1.04, y - r * 0.08, r * 2.08, r * 0.36, r * 0.12);
+      inked(ctx, '#1f9d8f', lw);
+      pom(ctx, 0, y - r * 0.85, S * 0.08, '#fff', lw * 0.8);
+    },
+    headphones(ctx, S, y, lw) {
+      const R = S * 0.5;
+      const cy = y + S * 0.38;
+      ctx.beginPath();
+      ctx.arc(0, cy, R, Math.PI * 1.08, Math.PI * 1.92);
+      ctx.lineWidth = S * 0.09;
+      ctx.strokeStyle = INK;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.lineWidth = S * 0.05;
+      ctx.strokeStyle = '#5fb3ff';
+      ctx.stroke();
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.ellipse(side * R * 0.98, cy + S * 0.02, S * 0.09, S * 0.14, 0, 0, Math.PI * 2);
+        inked(ctx, '#2a2140', lw);
+        ctx.beginPath();
+        ctx.ellipse(side * R * 0.98, cy + S * 0.02, S * 0.05, S * 0.09, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#5fb3ff';
+        ctx.fill();
+      }
+    },
+    flower(ctx, S, y, lw, t) {
+      const x = S * 0.26;
+      const fy = y + S * 0.06;
+      const r = S * 0.07;
+      ctx.save();
+      ctx.translate(x, fy);
+      ctx.rotate(Math.sin(t * 1.5) * 0.1);
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * r * 1.2, Math.sin(a) * r * 1.2, r, 0, Math.PI * 2);
+        inked(ctx, '#ffb3c8', lw * 0.7);
+      }
+      pom(ctx, 0, 0, r * 0.8, '#ffe156', lw * 0.7);
+      ctx.restore();
+    },
+    nightcap(ctx, S, y, lw, t) {
+      const r = S * 0.36;
+      const sway = Math.sin(t * 1.2) * S * 0.03;
+      ctx.beginPath();
+      ctx.moveTo(-r, y + r * 0.15);
+      ctx.quadraticCurveTo(-r * 0.8, y - r * 1.3, r * 0.4, y - r * 1.15);
+      ctx.quadraticCurveTo(r * 1.4 + sway, y - r * 1.05, r * 1.55 + sway, y - r * 0.15);
+      ctx.quadraticCurveTo(r * 1.1, y - r * 0.55, r, y + r * 0.15);
+      ctx.closePath();
+      inked(ctx, '#6f86d6', lw);
+      ctx.beginPath();
+      ctx.roundRect(-r * 1.06, y - r * 0.05, r * 2.12, r * 0.32, r * 0.14);
+      inked(ctx, '#fff', lw);
+      pom(ctx, r * 1.55 + sway, y - r * 0.1, S * 0.075, '#fff', lw * 0.8);
+    },
+    wizard(ctx, S, y, lw) {
+      const r = S * 0.5;
+      ctx.beginPath();
+      ctx.ellipse(0, y + S * 0.04, r, r * 0.2, 0, 0, Math.PI * 2);
+      inked(ctx, '#4b3cc4', lw);
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.55, y);
+      ctx.quadraticCurveTo(-r * 0.2, y - r * 0.9, r * 0.25, y - r * 1.5);
+      ctx.quadraticCurveTo(r * 0.15, y - r * 0.8, r * 0.55, y);
+      ctx.closePath();
+      inked(ctx, '#6a59e0', lw);
+      ctx.fillStyle = '#ffe156';
+      for (const [sx, sy, k] of [[-0.1, -0.45, 1], [0.15, -0.9, 0.7]]) {
+        const cx = r * sx;
+        const cy = y + r * sy;
+        const s = S * 0.045 * k;
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+          const rr = i % 2 ? s * 0.45 : s;
+          ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+    },
+    crown(ctx, S, y, lw, t) {
+      const r = S * 0.3;
+      const h = r * 0.8;
+      ctx.beginPath();
+      ctx.moveTo(-r, y + h * 0.15);
+      ctx.lineTo(-r, y - h * 0.55);
+      ctx.lineTo(-r * 0.5, y - h * 0.15);
+      ctx.lineTo(0, y - h);
+      ctx.lineTo(r * 0.5, y - h * 0.15);
+      ctx.lineTo(r, y - h * 0.55);
+      ctx.lineTo(r, y + h * 0.15);
+      ctx.closePath();
+      inked(ctx, '#ffd23f', lw);
+      for (const [x, c] of [[-r * 0.55, '#e5484d'], [0, '#5fb3ff'], [r * 0.55, '#5ccf74']]) {
+        ctx.beginPath();
+        ctx.arc(x, y - h * 0.05, S * 0.035, 0, Math.PI * 2);
+        inked(ctx, c, lw * 0.6);
+      }
+      // A glint now and then.
+      const g = t % 3.5;
+      if (g < 0.4) {
+        ctx.save();
+        ctx.globalAlpha = Math.sin((g / 0.4) * Math.PI);
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(-r * 0.7, y - h * 0.4, S * 0.03, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    },
+  };
+
+  const NECKWEAR = {
+    scarf(ctx, S, y, w, lw, t) {
+      const half = w * 0.46;
+      ctx.beginPath();
+      ctx.roundRect(-half, y - S * 0.07, half * 2, S * 0.14, S * 0.07);
+      inked(ctx, '#e5484d', lw);
+      ctx.save();
+      ctx.translate(half * 0.45, y + S * 0.03);
+      ctx.rotate(0.15 + Math.sin(t * 2) * 0.05);
+      ctx.beginPath();
+      ctx.roundRect(-S * 0.06, 0, S * 0.12, S * 0.24, S * 0.04);
+      inked(ctx, '#e5484d', lw);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(-S * 0.06, S * 0.16, S * 0.12, S * 0.03);
+      ctx.restore();
+    },
+    bowtie(ctx, S, y, w, lw) {
+      const s = S * 0.13;
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(side * s * 1.4, y - s * 0.8);
+        ctx.lineTo(side * s * 1.4, y + s * 0.8);
+        ctx.closePath();
+        inked(ctx, '#7c6cf2', lw);
+      }
+      pom(ctx, 0, y, s * 0.35, '#5a49c9', lw * 0.8);
+    },
+    bandana(ctx, S, y, w, lw) {
+      const half = w * 0.44;
+      ctx.beginPath();
+      ctx.moveTo(-half, y - S * 0.04);
+      ctx.lineTo(half, y - S * 0.04);
+      ctx.lineTo(0, y + S * 0.22);
+      ctx.closePath();
+      inked(ctx, '#5fb3ff', lw);
+      ctx.fillStyle = '#fff';
+      for (const [x, yy] of [[-0.18, 0.02], [0.18, 0.02], [0, 0.11]]) {
+        ctx.beginPath();
+        ctx.arc(S * x, y + S * yy, S * 0.018, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    },
+    medal(ctx, S, y, w, lw, t) {
+      ctx.beginPath();
+      ctx.moveTo(-S * 0.1, y - S * 0.05);
+      ctx.lineTo(0, y + S * 0.1);
+      ctx.lineTo(S * 0.1, y - S * 0.05);
+      ctx.lineWidth = S * 0.05;
+      ctx.strokeStyle = '#e5484d';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, y + S * 0.16, S * 0.075, 0, Math.PI * 2);
+      inked(ctx, '#ffd23f', lw);
+      ctx.save();
+      ctx.globalAlpha = 0.6 + Math.sin(t * 3) * 0.3;
+      ctx.fillStyle = '#fff6c2';
+      ctx.beginPath();
+      ctx.arc(-S * 0.025, y + S * 0.14, S * 0.02, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+  };
+
+  // A = { topY, headW, neckY, neckW } in the creature's local coordinates.
+  function drawWear(ctx, wear, A, t) {
+    if (!wear || !A) return;
+    const S = Math.max(10, A.headW) * 1.25;
+    const lw = Math.max(1.6, S * 0.04);
+    ctx.save();
+    ctx.lineCap = 'round';
+    if (wear.neck && NECKWEAR[wear.neck]) NECKWEAR[wear.neck](ctx, S, A.neckY, Math.max(S * 0.6, A.neckW), lw, t);
+    if (wear.head && HATS[wear.head]) HATS[wear.head](ctx, S, A.topY + S * 0.05, lw, t);
+    ctx.restore();
+  }
+
   // --- living eyes for SVG art ------------------------------------------------
   // The official art is still images, so the code-drawn face (blinks, looks,
   // happy eyes) did not reach it. Each SVG's pupils are found once (a mirrored
@@ -1223,6 +1533,7 @@
     fetch(url)
       .then((r) => r.text())
       .then((text) => {
+        entry.eyeY = eyeHeight(text);
         for (const key of EYE_KEYS) {
           const svg = variantSvg(text, key);
           if (!svg) break;
@@ -1234,6 +1545,38 @@
       })
       .catch(() => (entry.ready = true));
     return entry;
+  }
+
+  // Where the eyes sit, from 0 (top of the image) to 1 (bottom). Group
+  // transforms (matrix, translate, scale) are applied by hand: a parsed
+  // document is not rendered, so it has no layout to ask.
+  function eyeHeight(text) {
+    try {
+      const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+      const eyes = findEyes(doc);
+      if (!eyes) return null;
+      const root = doc.documentElement;
+      const vb = (root.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
+      if (vb.length !== 4 || !vb[3]) return null;
+      let y = eyes[0].cy;
+      for (let el = eyes[0].el; el && el !== root; el = el.parentNode) {
+        const tr = el.getAttribute && el.getAttribute('transform');
+        if (!tr) continue;
+        const m = tr.match(/matrix\(([^)]+)\)/);
+        const t = tr.match(/translate\(([^)]+)\)/);
+        const sc = tr.match(/scale\(([^)]+)\)/);
+        if (m) {
+          const [a, b, c, d, e, f2] = m[1].split(/[\s,]+/).map(Number);
+          y = b * eyes[0].cx + d * y + f2;
+        } else {
+          if (sc) y *= Number(sc[1].split(/[\s,]+/).pop());
+          if (t) y += Number(t[1].split(/[\s,]+/)[1] || 0);
+        }
+      }
+      return (y - vb[1]) / vb[3];
+    } catch {
+      return null;
+    }
   }
 
   // Which eyes the body language asks for.
@@ -1264,6 +1607,10 @@
     ctx.scale((a.turn == null ? 1 : a.turn) * (1 + a.squash), 1 - a.squash);
     if (a.glow > 0 || spec.stage === 'mythic') aura(ctx, spec, R, -h * 0.45, palette(spec), t, Math.max(a.glow, spec.stage === 'mythic' ? 0.6 : 0));
     ctx.drawImage(img, -w / 2, -h, w, h);
+    if (spec.wear && spec.stage !== 'egg') {
+      const an = spriteAnchor(sprite.img);
+      if (an) drawWear(ctx, spec.wear, { topY: -h + an.top * h, headW: an.headW * h, neckY: -h + an.neckY * h, neckW: an.neckW * h }, t);
+    }
     ctx.restore();
     if (a.motes) motes(ctx, a.motes, R, -h * 0.45, palette(spec), t);
     if (a.prop) prop(ctx, a.prop, R, -h * 0.45, palette(spec), t);
@@ -1374,6 +1721,8 @@
     trait(ctx, spec, R, cy, top, pal, t);
     if (spec.nocturne && stageN(spec.stage) >= 1) moon(ctx, R, top, t);
     ctx.__shine = null;
+
+    if (spec.wear && spec.stage !== 'egg') drawWear(ctx, spec.wear, { topY: top + ht * 0.08, headW: w * 1.25, neckY: cy + hb * 0.35, neckW: w * 1.7 }, t);
 
     // Arms: small nubs, raised when cheering or holding things.
     const raise = a.armsUp || a.eyes === 'happy' || a.prop === 'sign' ? -0.9 : a.prop ? -0.35 : 0.2;

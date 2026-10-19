@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Openmon Bag</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  main { padding-bottom: 48px; }
+  .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .item { display: grid; grid-template-columns: 56px 1fr; gap: 4px 12px; align-items: center; padding: 12px 14px; }
+  .item .icon { grid-row: span 3; width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--line); }
+  .item .icon svg { width: 46px; height: 46px; }
+  .item h3 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .item h3 .count { font: 600 13px var(--font-display); color: var(--muted); }
+  .item p { margin: 0; font-size: 12.5px; color: var(--muted); }
+  .item .btn { justify-self: start; margin-top: 4px; }
+  .item.holding { box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--brand) 40%, transparent); }
+  .wear-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .wear { position: relative; display: grid; gap: 2px; justify-items: center; padding: 8px 8px 12px; text-align: center; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-lg); font: inherit; color: inherit; cursor: pointer; transition: transform 0.08s ease; }
+  .wear:hover:not(.locked) { transform: translateY(-2px); border-color: var(--outline); box-shadow: var(--lift); }
+  .wear.worn { border-color: var(--outline); box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--sun) 70%, transparent); }
+  .wear.locked { cursor: default; background: var(--surface-2); }
+  .wear.locked canvas { filter: grayscale(1) brightness(0.35); opacity: 0.55; }
+  .wear canvas { width: 120px; height: 120px; }
+  .wear b { font: 600 14px var(--font-display); }
+  .wear small { font-size: 12px; color: var(--muted); }
+  .wear .tag { position: absolute; top: 8px; right: 8px; }
+  .wear .bar { width: 80%; height: 6px; margin-top: 4px; }
+  .slot-title { margin: 22px 0 10px; }
+  .empty-egg { padding: 18px; }
+</style>
+</head>
+<body class="page" data-page="bag">
+<main class="wrap">
+  <div class="hero"><div><h1 id="title"></h1><p id="sub"></p></div></div>
+  <h2 class="section-title" id="h-items"></h2>
+  <div class="items" id="items"></div>
+  <h2 class="section-title"><span id="h-wear"></span> <small id="wear-count"></small></h2>
+  <p class="muted" id="wear-sub" style="margin:-4px 0 0"></p>
+  <h3 class="slot-title display" id="h-head"></h3>
+  <div class="wear-grid" id="head"></div>
+  <h3 class="slot-title display" id="h-neck"></h3>
+  <div class="wear-grid" id="neck"></div>
+</main>
+<script src="i18n.js"></script>
+<script src="nav.js"></script>
+<script src="art.js"></script>
+<script src="motion.js"></script>
+<script>
+  const { t: tr, lang } = window.OpenmonI18n;
+  document.documentElement.lang = lang;
+  const $ = (id) => document.getElementById(id);
+  for (const [id, key] of [['title', 'bag.title'], ['sub', 'bag.sub'], ['h-items', 'bag.items'], ['h-wear', 'bag.wear'], ['wear-sub', 'bag.wearSub'], ['h-head', 'bag.head'], ['h-neck', 'bag.neck']]) $(id).textContent = tr(key);
+
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+
+  // Item icons, drawn as small SVGs in the creatures' ink style.
+  const ICONS = {
+    snack: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="#e3a35a" stroke="#2a2140" stroke-width="3"/><circle cx="15" cy="16" r="2.4" fill="#6b3f1d"/><circle cx="24" cy="14" r="2" fill="#6b3f1d"/><circle cx="23" cy="24" r="2.4" fill="#6b3f1d"/><circle cx="14" cy="25" r="1.8" fill="#6b3f1d"/></svg>',
+    candy: '<svg viewBox="0 0 40 40"><path d="M6 14 L12 20 L6 26 Z M34 14 L28 20 L34 26 Z" fill="#ff7fa3" stroke="#2a2140" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="20" cy="20" rx="10" ry="9" fill="#7c6cf2" stroke="#2a2140" stroke-width="3"/><path d="M14 17 Q20 12 26 17" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>',
+    everstone: '<svg viewBox="0 0 40 40"><path d="M9 26 Q7 14 18 9 Q31 7 33 19 Q35 31 21 32 Q11 33 9 26Z" fill="#b9b2c8" stroke="#2a2140" stroke-width="3"/><path d="M14 18 Q19 14 25 16" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/><circle cx="24" cy="25" r="2" fill="#8e86a3"/></svg>',
+  };
+
+  let pet = null;
+  const previews = [];
+
+  async function act(path, body) {
+    await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    await load();
+  }
+
+  function renderItems() {
+    const box = $('items');
+    box.textContent = '';
+    for (const id of ['snack', 'candy', 'everstone']) {
+      const n = pet.bag[id] || 0;
+      const holding = id === 'everstone' && pet.holding === 'everstone';
+      const card = el('div', `item panel${holding ? ' holding' : ''}`);
+      const icon = el('div', 'icon');
+      icon.innerHTML = ICONS[id];
+      const h = el('h3', '', tr(`item.${id}`));
+      h.append(el('span', 'count', holding ? tr('bag.holding') : `×${n}`));
+      card.append(icon, h, el('p', '', tr(`item.${id}.text`)));
+      let btn;
+      if (id === 'everstone') {
+        btn = el('button', `btn sm${holding ? ' brand' : ''}`, holding ? tr('bag.letGo') : tr('bag.hold'));
+        btn.disabled = !n && !holding;
+      } else {
+        btn = el('button', 'btn sm primary', tr('bag.use'));
+        btn.disabled = !n || pet.stage === 'egg';
+        if (pet.stage === 'egg') btn.title = tr('bag.eggNo');
+      }
+      btn.onclick = () => act('/api/use', { item: id });
+      card.append(btn);
+      box.append(card);
+    }
+  }
+
+  function specFor(wear) {
+    return { stage: pet.stage === 'egg' ? 'sprout' : pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera, nocturne: pet.nocturne, shiny: pet.shiny, wear };
+  }
+
+  function drawPreview(canvas, spec) {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = 120 * dpr;
+    canvas.height = 120 * dpr;
+    const ctx = canvas.getContext('2d');
+    const k = canvas.width / 200;
+    ctx.setTransform(k, 0, 0, k, 100 * k, 178 * k);
+    OpenmonArt.drawCreature(ctx, { ...spec, t: 1, size: 58, pose: 'idle', anim: { eyes: 'happy', mouth: 'grin' } });
+  }
+
+  function renderWear() {
+    previews.length = 0;
+    const list = pet.cosmetics || [];
+    $('wear-count').textContent = `${list.filter((c) => c.owned).length}/${list.length}`;
+    for (const slot of ['head', 'neck']) {
+      const box = $(slot);
+      box.textContent = '';
+      for (const c of list.filter((x) => x.slot === slot)) {
+        const tile = el('button', `wear${c.owned ? '' : ' locked'}${c.worn ? ' worn' : ''}`);
+        tile.type = 'button';
+        const canvas = el('canvas');
+        tile.append(canvas, el('b', '', c.owned ? tr(`wear.${c.id}`) : '???'), el('small', '', c.worn ? tr('bag.wearing') : c.owned ? tr('bag.tapToWear') : tr(`wear.${c.id}.how`)));
+        if (!c.owned && c.progress) {
+          const bar = el('div', 'bar');
+          const fill = el('i');
+          fill.style.width = `${Math.round((c.progress.have / c.progress.need) * 100)}%`;
+          bar.append(fill);
+          tile.append(bar, el('small', '', `${c.progress.have}/${c.progress.need}`));
+        }
+        if (c.worn) tile.append(el('span', 'tag chip sun', '✓'));
+        if (c.owned) tile.onclick = () => act('/api/wear', { slot, id: c.worn ? null : c.id });
+        const wear = { ...pet.wear, [slot]: c.id };
+        previews.push([canvas, specFor(wear)]);
+        box.append(tile);
+      }
+    }
+    drawAll();
+  }
+
+  function drawAll() {
+    for (const [canvas, spec] of previews) drawPreview(canvas, spec);
+  }
+
+  async function load() {
+    const s = await (await fetch('/api/state')).json();
+    pet = s.pet;
+    renderItems();
+    renderWear();
+  }
+
+  OpenmonArt.loadPack().then(load);
+  // Eye and hat anchors finish loading in the background: draw again.
+  setTimeout(drawAll, 1200);
+  setTimeout(drawAll, 3000);
+</script>
+</body>
+</html>

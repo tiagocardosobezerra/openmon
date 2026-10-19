@@ -40,6 +40,7 @@ const PAGES = [
   { path: '/card.html' },
   { path: '/name.html' },
   { path: '/playground.html' },
+  { path: '/bag.html' },
   { path: '/powers.html' },
   { path: '/powers.html?tab=shell' },
 ];

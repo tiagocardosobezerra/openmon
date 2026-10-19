@@ -114,7 +114,7 @@
     ctx.fillRect(70, 70, 470, 490);
     ctx.translate(305, 470);
     ctx.scale(2.6, 2.6);
-    const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny, progress: p.progress.ratio };
+    const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny, progress: p.progress.ratio, wear: p.wear || null };
     const anim = OpenmonMotion.poseAnim({ ...spec, pose: 'done', t: t + 3, since: 0 });
     OpenmonArt.drawCreature(ctx, { ...spec, t, size: 46, pose: 'idle', anim });
     ctx.restore();

@@ -258,3 +258,51 @@ test('three daily missions: same for everyone on a day, rewarded once', () => {
   pet.petIt(p, T0 + 999);
   assert.equal(p.xp, before);
 });
+
+test('accessories unlock by playing, are worn one per slot and survive a new generation', () => {
+  const p = pet.createPet(T0, null, () => 0.5);
+  assert.deepEqual(pet.wear(p, 'head', 'cap'), []);
+  p.achievements.hatch = T0;
+  const events = [];
+  pet.checkCosmetics(p, T0, events);
+  assert.ok(events.some((e) => e.type === 'cosmetic' && e.id === 'cap'));
+  assert.deepEqual(pet.wear(p, 'neck', 'cap'), []);
+  assert.equal(pet.wear(p, 'head', 'cap')[0].id, 'cap');
+  assert.equal(pet.view(p).wear.head, 'cap');
+  p.stage = 'mythic';
+  p.lineage = 'craft';
+  const { pet: egg } = pet.layEgg(p, T0 + 1);
+  assert.ok(egg.wardrobe.owned.cap);
+  assert.equal(egg.wardrobe.head, null);
+});
+
+test('items: missions give snacks, snacks build bond, the Everstone stops evolution', () => {
+  const p = pet.createPet(T0, null, () => 0.5);
+  pet.applySignal(p, done('craft'), {}, T0);
+  p.daily.missions = [{ id: 'pets', done: false }, { id: 'green', done: true }, { id: 'turns', done: true }];
+  for (let i = 0; i < 3; i++) pet.petIt(p, T0 + i);
+  assert.equal(p.bag.snack, 1);
+  assert.equal(p.bag.candy, 1);
+  // Eggs do not eat.
+  p.stage = 'egg';
+  assert.deepEqual(pet.useItem(p, 'snack', T0), []);
+  p.stage = 'sprout';
+  const bond = p.bond;
+  pet.useItem(p, 'snack', T0);
+  assert.equal(p.bond, bond + 2);
+  assert.equal(p.bag.snack, 0);
+  // Candy: exactly one level.
+  const lv = pet.level(p.xp);
+  pet.useItem(p, 'candy', T0);
+  assert.equal(pet.level(p.xp), lv + 1);
+  // Everstone held: enough XP, still no evolution; let go and it evolves.
+  p.bag.everstone = 1;
+  pet.useItem(p, 'everstone', T0);
+  assert.equal(p.holding, 'everstone');
+  p.xp = 500;
+  pet.applySignal(p, done('craft'), {}, T0 + 5000);
+  assert.equal(p.stage, 'sprout');
+  const ev = pet.useItem(p, 'everstone', T0 + 6000);
+  assert.equal(p.holding, null);
+  assert.ok(ev.some((e) => e.type === 'evolve'));
+});

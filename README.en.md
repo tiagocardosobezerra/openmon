@@ -96,6 +96,13 @@ XP is capped at 120 per 10 minutes, so a runaway loop cannot fast-forward your p
 - **Privacy**: tokens, passwords, API keys, Authorization headers and credentials in URLs are masked (`•••`) in bubbles, notifications and powers.
 - **Size**: small, normal or large, from the menu. Settings are saved in `~/.openmon/config.json`.
 
+## Bag: items and accessories
+
+Like Pokémon, the **Bag** keeps what you earn by playing, and all of it carries over to the next generation.
+
+- **Items**: *Snack* (+2 bond, one per mission), *Rare candy* (one level up right away, one per perfect day) and the *Everstone* (a gift at the first evolution: while it holds it, it does not evolve; let go whenever you like).
+- **12 accessories** for the head and neck: trainer cap, party hat, beanie, headphones, flower, nightcap, wizard hat, crown, scarf, bow tie, bandana and medal. Each one comes from a feat (hatching, 50 green test runs, a perfect day, reaching Mythic…), and the Bag shows what is left. They show on the pet, in the Bag and on the trainer card.
+
 ## Your pet is never lost
 
 New computer or a fresh Windows? Openmon keeps backups outside `~/.openmon`, in **Documents/Openmon Backups** (on Windows, the OneDrive Documents folder when there is one, already synced to the cloud). One file per day (the last 14) plus `latest.openmon.json`, refreshed every 10 minutes of use and at every evolution.

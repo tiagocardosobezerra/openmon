@@ -51,6 +51,7 @@
   let poseSince = 0;
   let family = null;
   let pettedAt = null;
+  let munchUntil = 0;
   let testFlash = null;
   let evolveFx = null;
   let force = null;
@@ -248,7 +249,7 @@
 
   function specOf(p) {
     if (!p) return { stage: 'egg', lineage: null, trait: null };
-    return { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera || null, nocturne: Boolean(p.nocturne), shiny: Boolean(p.shiny) && p.stage !== 'egg' };
+    return { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera || null, nocturne: Boolean(p.nocturne), shiny: Boolean(p.shiny) && p.stage !== 'egg', wear: p.wear || null };
   }
   function currentSpec() {
     return force || specOf(pet);
@@ -327,6 +328,12 @@
       acked: pose === 'attention' && live.focus && ackedFor === live.focus.since,
       hover: hovering,
     });
+    // Eating a snack or a candy: crumbs and a chewing mouth.
+    if (t < munchUntil && showPose !== 'attention') {
+      anim.prop = 'crumbs';
+      anim.mouth = 'chew';
+      anim.eyes = 'happy';
+    }
     if (reducedMotion) {
       anim.jump *= 0.3;
       anim.shake = 0;
@@ -627,6 +634,7 @@
       [quiet || null, ''],
       [pet.nocturne ? tr('card.night') : null, 'brand'],
       [pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null, ''],
+      [pet.holding === 'everstone' ? tr(pr.next && pet.xp >= 0 && pr.ratio >= 1 ? 'card.everstoneReady' : 'card.everstone') : null, 'brand'],
       [nature ? tr('card.nature', { nature }) : null, ''],
       [(pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null, ''],
     ]) if (text) chips.appendChild(el('span', `chip ${cls}`.trim(), text));
@@ -791,6 +799,27 @@
             burst('spark', 6, CX + 62, GROUND - 76, 2.4, { colors: ['#ffe156', '#fff'], gravity: 120, max: 0.8 });
             play('level');
           }
+          break;
+        case 'cosmetic':
+          pushToast(tr('toast.cosmetic', { item: tr(`wear.${e.id}`) }), tr('toast.cosmeticSub'), 5000);
+          burst('spark', 14, CX, top - 10, Math.PI * 2, { colors: ['#ffe156', '#fff', '#ff7fa3'], gravity: 60 });
+          play('level');
+          break;
+        case 'item':
+          if (e.item !== 'snack') pushToast(tr('toast.item', { item: tr(`item.${e.item}`) }), tr(`item.${e.item}.text`), 4500);
+          break;
+        case 'fed':
+          pettedAt = t;
+          munchUntil = t + 1.6;
+          for (let i = 0; i < 3; i++) spawn('heart', CX + (i - 1) * 22, top + 6, { vx: (i - 1) * 8, vy: -34, max: 1.3 });
+          if (e.item === 'candy') burst('spark', 16, CX, top, Math.PI * 2, { colors: ['#7c6cf2', '#fff', '#ffe156'], gravity: 40 });
+          play('level');
+          break;
+        case 'hold':
+          pushToast(tr(e.holding ? 'toast.hold' : 'toast.letGo'), tr(e.holding ? 'toast.holdSub' : 'toast.letGoSub'), 4500);
+          break;
+        case 'wear':
+          burst('spark', 10, CX, top - 6, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 50 });
           break;
         case 'restored':
           pushToast(tr('restore.done', { name: e.name }), tr('restore.doneSub'), 6000, 'scene');
@@ -1048,7 +1077,7 @@
   document.documentElement.lang = window.OpenmonI18n.lang;
   $('lbl-bond').textContent = tr('card.bond');
   $('lbl-powers').textContent = tr('act.powers');
-  $('lbl-share').textContent = tr('act.card');
+  $('lbl-bag').textContent = tr('act.bag');
   function openPowers() {
     if (desktop && desktop.openPowers) desktop.openPowers();
     else window.open('/powers.html', '_blank');
@@ -1059,7 +1088,7 @@
   }
   $('card-powers').addEventListener('click', openPowers);
   $('card-dex').addEventListener('click', () => openPage('dex'));
-  $('card-share').addEventListener('click', () => openPage('card'));
+  $('card-bag').addEventListener('click', () => openPage('bag'));
 
   OpenmonArt.loadPack();
   connect();
