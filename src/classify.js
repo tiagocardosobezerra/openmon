@@ -8,7 +8,6 @@
 // tool-start, tool-done, tool-fail, test-start, test-end, attention,
 // subagent-start, subagent-end, compact, api-error.
 
-const path = require('node:path');
 const { redact } = require('./redact');
 
 const FAMILIES = {
@@ -106,7 +105,8 @@ function sessionLabel(payload) {
   // The hook adds _projectDir (CLAUDE_PROJECT_DIR), which stays fixed when
   // the agent cds around or enters a worktree.
   const dir = payload._projectDir || payload.cwd;
-  if (dir) return path.basename(String(dir).replace(/[\\/]+$/, '')) || String(dir);
+  // Split on both separators: a Windows path can reach a daemon on any OS.
+  if (dir) return String(dir).replace(/[\\/]+$/, '').split(/[\\/]/).pop() || String(dir);
   if (payload.session_id) return String(payload.session_id).slice(0, 8);
   return 'agent';
 }
@@ -206,7 +206,7 @@ function codexSignal(payload) {
   return {
     agent: 'codex',
     session: `codex:${payload['thread-id'] || payload.thread_id || 'default'}`,
-    label: cwd ? path.basename(String(cwd)) : 'codex',
+    label: cwd ? String(cwd).replace(/[\\/]+$/, '').split(/[\\/]/).pop() : 'codex',
     ts: Number(payload._ts) || null,
     kind: 'turn-end',
     family: null,
