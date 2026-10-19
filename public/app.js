@@ -69,6 +69,8 @@
   const particles = [];
   let ackedFor = null;
   let restoreOffer = null;
+  // Permission requests the pet can answer (only with the setting on).
+  let permissions = [];
   // "Give it a nickname?" after hatching, until answered or for 2 minutes.
   let nicknameOffer = null;
   // The bubble you clicked (Answer / Open): it stays hidden until the next one.
@@ -580,7 +582,7 @@
   // line and, when it can jump to the agent's window, an action button.
   const BUBBLE_ICON = { attention: '!', done: '✓', error: '✕', toast: '★', setup: 'i', restore: '↺' };
   let bubbleJump = null;
-  function setBubble(cls, title, sub, { jump = null, eyebrow = null, action = null } = {}) {
+  function setBubble(cls, title, sub, { jump = null, eyebrow = null, action = null, choices = null, note = null } = {}) {
     const b = $('bubble');
     bubbleJump = jump;
     if (!cls) {
@@ -588,8 +590,13 @@
       b.dataset.key = '';
       return;
     }
-    const key = [cls, title, sub, jump, eyebrow, action].join('|');
-    if (b.dataset.key === key && !b.hidden) return;
+    const key = [cls, title, sub, jump, eyebrow, action, choices && choices.id].join('|');
+    if (b.dataset.key === key && !b.hidden) {
+      // Same bubble: only the countdown changes, so buttons stay under the cursor.
+      const n = b.querySelector('.note');
+      if (n && note) n.textContent = note;
+      return;
+    }
     b.dataset.key = key;
     const kind = cls.split(' ')[0];
     const icon = BUBBLE_ICON[kind];
@@ -605,7 +612,27 @@
     if (eyebrow) add('span', 'eyebrow', eyebrow);
     add('span', 'title', title);
     if (sub) add('small', '', sub);
-    if (jump) add('span', `btn sm act${kind === 'attention' || kind === 'restore' ? ' primary' : ''}`, action || tr('jump.open'));
+    if (choices) {
+      // Allow / Deny, right on the bubble.
+      const row = document.createElement('span');
+      row.className = 'choices';
+      for (const [act, label, style] of [['allow', tr('perm.allow'), 'primary'], ['deny', tr('perm.deny'), '']]) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `btn sm ${style}`.trim();
+        b.dataset.decide = act;
+        b.textContent = label;
+        row.appendChild(b);
+      }
+      const go = document.createElement('button');
+      go.type = 'button';
+      go.className = 'btn sm ghost';
+      go.dataset.decide = 'open';
+      go.textContent = tr('jump.open');
+      row.appendChild(go);
+      b.appendChild(row);
+      if (note) add('span', 'note', note);
+    } else if (jump) add('span', `btn sm act${kind === 'attention' || kind === 'restore' ? ' primary' : ''}`, action || tr('jump.open'));
     b.hidden = false;
   }
 
@@ -640,6 +667,11 @@
       if (waiting.length > 1) return setBubble('attention', tr('needsYou.many', { n: waiting.length }), waiting.map((s) => s.label).join(', '), answer);
       const waited = f.since ? ` · ${clock(Date.now() - f.since)}` : '';
       const long = f.since && Date.now() - f.since > LONG_WAIT_MS && ackedFor !== f.since;
+      const pending = permissions.find((p) => p.session === f.id);
+      if (pending) {
+        const left = Math.max(0, Math.ceil((pending.until - Date.now()) / 1000));
+        return setBubble('attention', tr('bubble.needsYou'), trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: tr('perm.note', { s: left }) });
+      }
       return setBubble(long ? 'attention long' : 'attention', tr('bubble.needsYou') + waited, trDetail(f.detail), { ...answer, eyebrow: f.label || tr('yourAgent') });
     }
     if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent') });
@@ -855,6 +887,7 @@
     const first = !pet;
     setupInfo = msg.setup || null;
     restoreOffer = msg.restoreOffer || null;
+    permissions = msg.permissions || [];
     // Pet size from the settings (a ?scale= in the URL wins, for OBS).
     if (!params.get('scale') && msg.config) document.documentElement.style.setProperty('--scale', String(msg.config.scale || 1));
     if (first) {
@@ -1141,7 +1174,21 @@
     const li = e.target.closest('li.jump');
     if (li) jumpTo(li.dataset.id);
   });
-  $('bubble').addEventListener('click', () => {
+  $('bubble').addEventListener('click', (e) => {
+    const decide = e.target.closest && e.target.closest('[data-decide]');
+    if (decide) {
+      const pending = live.focus && permissions.find((p) => p.session === live.focus.id);
+      if (decide.dataset.decide === 'open' || !pending) {
+        const id = bubbleJump;
+        dismissBubble();
+        return jumpTo(id);
+      }
+      post('/api/permission/decide', { id: pending.id, decision: decide.dataset.decide });
+      permissions = permissions.filter((p) => p !== pending);
+      dismissBubble();
+      if (decide.dataset.decide === 'allow') showEmote('♥', now());
+      return;
+    }
     if (!bubbleJump) return;
     if (bubbleJump === 'install') {
       desktop.installHooks();

@@ -328,3 +328,51 @@ test('a fresh install that finds a backup offers to bring the pet back', async (
     await daemon.close();
   }
 });
+
+test('answer permissions from the pet: Allow and Deny reach Claude Code; off means silence', async () => {
+  const { daemon, port } = await boot();
+  // A pet window is open (an SSE client), like on the desktop.
+  const stream = await new Promise((resolve) => http.get({ host: '127.0.0.1', port, path: '/stream' }, resolve));
+  const json = { 'Content-Type': 'application/json' };
+  const ask = { session_id: 'perm1', hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'npm publish' }, cwd: '/tmp/shop' };
+  const runPermissionHook = () =>
+    new Promise((resolve) => {
+      const child = spawn(process.execPath, [HOOK, '--openmon', '--permission'], { env: { ...process.env, OPENMON_PORT: String(port) } });
+      let out = '';
+      child.stdout.on('data', (d) => (out += d));
+      child.on('exit', (code) => resolve({ code, out }));
+      child.stdin.end(JSON.stringify(ask));
+    });
+  const pendingId = async () => {
+    for (let i = 0; i < 50; i++) {
+      const s = JSON.parse((await request(port, 'GET', '/api/state')).body);
+      if (s.permissions.length) return s.permissions[0].id;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    throw new Error('no pending permission');
+  };
+  try {
+    // Off (the default): the hook prints nothing and returns at once.
+    let r = await runPermissionHook();
+    assert.equal(r.code, 0);
+    assert.equal(r.out, '');
+
+    await request(port, 'POST', '/api/config', { body: JSON.stringify({ answerFromPet: true, answerWaitSec: 10 }), headers: json });
+    for (const decision of ['allow', 'deny']) {
+      const hook = runPermissionHook();
+      const id = await pendingId();
+      assert.match(id, /^[0-9a-f]{24}$/);
+      // A wrong id changes nothing.
+      assert.equal(JSON.parse((await request(port, 'POST', '/api/permission/decide', { body: JSON.stringify({ id: 'nope', decision }), headers: json })).body).ok, false);
+      await request(port, 'POST', '/api/permission/decide', { body: JSON.stringify({ id, decision }), headers: json });
+      r = await hook;
+      assert.equal(r.code, 0);
+      const out = JSON.parse(r.out);
+      assert.equal(out.hookSpecificOutput.hookEventName, 'PermissionRequest');
+      assert.equal(out.hookSpecificOutput.decision.behavior, decision);
+    }
+  } finally {
+    stream.destroy();
+    await daemon.close();
+  }
+});

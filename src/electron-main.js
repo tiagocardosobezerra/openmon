@@ -41,6 +41,10 @@ const PT = {
   'Settings': 'Configurações',
   'Backups': 'Cópias de segurança',
   'Walk around': 'Passear pela tela',
+  'Answer permissions from the pet': 'Responder permissões pelo pet',
+  'Turn on': 'Ligar',
+  'Answer permissions from the pet?': 'Responder permissões pelo pet?',
+  'When an agent asks for permission, the pet shows Allow and Deny. For up to {s} seconds Claude Code waits for your answer on the pet; after that it asks you as usual. You can turn this off any time.': 'Quando um agente pedir permissão, o pet mostra Permitir e Recusar. Por até {s} segundos o Claude Code espera a sua resposta no pet; depois disso ele pergunta como sempre. Dá para desligar quando quiser.',
   'Bag': 'Mochila',
   'How it works': 'Como funciona',
   'Make a copy now': 'Fazer uma cópia agora',
@@ -236,6 +240,7 @@ function menuTemplate() {
         { label: L('Sounds'), type: 'checkbox', checked: !config.muted, click: (item) => daemon.setConfig({ muted: !item.checked }) },
         { label: L('Chatter and emotes'), type: 'checkbox', checked: config.chatter, click: (item) => daemon.setConfig({ chatter: item.checked }) },
         { label: L('Walk around'), type: 'checkbox', checked: config.stroll !== false, click: (item) => daemon.setConfig({ stroll: item.checked }) },
+        { label: L('Answer permissions from the pet'), type: 'checkbox', checked: Boolean(config.answerFromPet), click: (item) => setAnswerFromPet(item.checked) },
         { label: L('Notify when an agent waits'), type: 'checkbox', checked: config.notify, click: (item) => daemon.setConfig({ notify: item.checked }) },
         {
           label: L('Start with the computer'),
@@ -277,6 +282,25 @@ function menuTemplate() {
     { type: 'separator' },
     { label: L('Quit'), click: () => app.quit() },
   ];
+}
+
+// "Answer permissions from the pet": Allow and Deny buttons on the bubble.
+// Turning it on explains what changes, and installs the permission hook if
+// this install predates it.
+async function setAnswerFromPet(on) {
+  if (on) {
+    const r = await dialog.showMessageBox({
+      type: 'question',
+      buttons: [L('Turn on'), L('Cancel')],
+      defaultId: 0,
+      cancelId: 1,
+      message: L('Answer permissions from the pet?'),
+      detail: L('When an agent asks for permission, the pet shows Allow and Deny. For up to {s} seconds Claude Code waits for your answer on the pet; after that it asks you as usual. You can turn this off any time.', { s: daemon.config().answerWaitSec || 25 }),
+    });
+    if (r.response !== 0) return refreshTray();
+    if (installer.isInstalled() && !installer.hasPermissionHook()) installer.install();
+  }
+  daemon.setConfig({ answerFromPet: on });
 }
 
 // Saves: export to a file you choose, or bring one back.

@@ -28,6 +28,11 @@ test('install keeps other settings and other tools hooks, and backs up', () => {
     assert.equal(ours.length, 1, event);
     assert.equal(ours[0].async, true);
   }
+  // Permission requests: one foreground hook that can hand back your answer.
+  const perm = s.hooks.PermissionRequest.flatMap((g) => g.hooks).filter((h) => h.command.includes(installer.MARKER));
+  assert.equal(perm.length, 1);
+  assert.equal(perm[0].async, undefined);
+  assert.match(perm[0].command, /--permission$/);
   assert.ok(fs.existsSync(backupPath));
   assert.ok(installer.isInstalled({ settingsPath: file }));
 });
@@ -44,7 +49,7 @@ test('uninstall removes only ours', () => {
   const file = tmpSettings({ hooks: { Stop: [{ hooks: [other] }] } });
   installer.install({ settingsPath: file });
   const { removed } = installer.uninstall({ settingsPath: file });
-  assert.equal(removed, installer.TOOL_EVENTS.length + installer.OTHER_EVENTS.length);
+  assert.equal(removed, installer.TOOL_EVENTS.length + installer.OTHER_EVENTS.length + 1);
   const s = JSON.parse(fs.readFileSync(file, 'utf8'));
   assert.deepEqual(s.hooks, { Stop: [{ hooks: [other] }] });
   assert.ok(!installer.isInstalled({ settingsPath: file }));

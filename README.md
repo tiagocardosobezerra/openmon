@@ -17,6 +17,7 @@ O Openmon é um pet de desktop, no espírito de Pokémon e Tamagotchi, que vive 
 ## O que ele faz por você
 
 * **Avisa quando o agente precisa de você.** Pedido de permissão ou pergunta: ele pula com uma placa, mostra o projeto e o pedido em palavras simples ("Quer permissão para rodar um comando: npm publish") e toca um som leve. Se você não olhar, chega uma notificação.
+* **Deixa você responder ali mesmo (opcional).** Ligue "Responder permissões pelo pet" nas configurações e o balão ganha **Permitir** e **Recusar**. O Claude Code espera sua resposta no pet por até 25 segundos; depois disso ele pergunta como sempre. Desligado por padrão.
 * **Leva você direto ao agente.** Um clique no pet, no balão ou na notificação traz para a frente a janela onde o agente roda: terminal, VS Code ou o app do Claude.
 * **Mostra o que está acontecendo, sem você olhar o terminal.** Martelo é editar, livro é ler, escudo é testar, luneta é web. Vários agentes ao mesmo tempo? O card lista cada um, com o que está fazendo.
 * **Resume cada tarefa.** Quando o agente termina: "shop-api terminou ✓ · 3 arquivos · 12 comandos · testes ✓ · 2m 10s".
@@ -152,6 +153,7 @@ Clique com o botão direito no pet e na engrenagem do card (ou use o ícone da b
 
 * **Modo silencioso**: 30 minutos, 1 hora ou até amanhã. Ele continua mostrando tudo, sem som.
 * **Tamanho**: pequeno, normal ou grande.
+* **Responder permissões pelo pet**: Permitir e Recusar no balão (desligado por padrão).
 * **Sons**, **Falas e emoções**, **Passear pela tela**, **Avisar quando um agente esperar**, **Iniciar com o computador**.
 * **Cópias de segurança**: fazer uma cópia agora, exportar o pet para um arquivo, trazer um pet de um arquivo, abrir a pasta.
 * **Como funciona**: uma página com o que cada pose significa e perguntas frequentes.

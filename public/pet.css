@@ -80,6 +80,9 @@ html, body {
 #bubble .eyebrow { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font: 600 11px/1.4 var(--font-display); letter-spacing: 0.02em; }
 #bubble .act { margin-top: 6px; min-height: 24px; padding: 1px 10px; font-size: 12px; pointer-events: none; }
 #bubble.jump { cursor: pointer; }
+#bubble .choices { grid-column: 2; display: flex; gap: 6px; margin-top: 7px; white-space: nowrap; }
+#bubble .choices .btn { min-height: 26px; padding: 2px 12px; font-size: 12.5px; }
+#bubble .note { grid-column: 2; margin-top: 4px; color: var(--muted); font: 600 11px var(--font-body); }
 #bubble.jump:hover .act { background: color-mix(in srgb, var(--sun) 85%, #fff); }
 #bubble.jump:active { transform: translateX(-50%) translateY(2px); box-shadow: 0 1px 0 var(--outline); }
 

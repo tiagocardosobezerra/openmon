@@ -2,21 +2,38 @@
 'use strict';
 
 // Agent hook entry point. Forwards the payload to the local Openmon
-// daemon and gets out of the way: it never prints (stdout of some Claude
-// Code hooks is added to the agent's context), never blocks and always
+// daemon and gets out of the way: it never blocks the agent and always
 // exits 0, even when the daemon is not running.
 //
 //   Claude Code: payload on stdin.
 //   Codex CLI:   `notify` passes the payload as the last argument (--codex).
+//
+// Every hook runs in the background and prints nothing, except one: the
+// permission hook (--permission) runs in the foreground so that, when you
+// turned on "Answer permissions from the pet", it can wait a few seconds
+// for your Allow or Deny on the pet and hand that decision to Claude Code.
+// With the setting off, or with no answer in time, it prints nothing and
+// Claude Code asks you as usual.
 
 const http = require('node:http');
 
 const port = Number(process.env.OPENMON_PORT) || 4747;
-const done = () => process.exit(0);
+const permissionMode = process.argv.includes('--permission');
+let finished = false;
+const done = () => {
+  finished = true;
+  process.exit(0);
+};
 let deadline = setTimeout(done, 1500);
 deadline.unref();
 
-function post(path, payload, onReply) {
+function extendDeadline(ms) {
+  clearTimeout(deadline);
+  deadline = setTimeout(done, ms);
+  deadline.unref();
+}
+
+function post(path, payload, onReply, timeout = 1000) {
   const body = Buffer.from(JSON.stringify(payload));
   const req = http.request(
     {
@@ -25,7 +42,7 @@ function post(path, payload, onReply) {
       path,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': body.length },
-      timeout: 1000,
+      timeout,
     },
     (res) => {
       const chunks = [];
@@ -33,9 +50,46 @@ function post(path, payload, onReply) {
       res.on('end', () => onReply(res.statusCode, Buffer.concat(chunks).toString('utf8')));
     },
   );
-  req.on('error', done);
+  req.on('error', () => onReply(0, ''));
   req.on('timeout', () => req.destroy());
   req.end(body);
+}
+
+const parse = (status, text) => {
+  try {
+    return status === 200 ? JSON.parse(text) : {};
+  } catch {
+    return {};
+  }
+};
+
+// Once per session: find the window this agent runs in, while our parent
+// processes are still alive, so a click on the pet can bring it forward.
+function findWindow(sessionId) {
+  const { drivers } = require('./focus');
+  const driver = drivers[process.platform];
+  if (!driver) return Promise.resolve();
+  return driver
+    .find(process.ppid)
+    .then((window) => window && new Promise((resolve) => post('/api/window', { session_id: sessionId, window }, resolve)))
+    .catch(() => {});
+}
+
+// Waits for your answer on the pet. Prints Claude Code's decision object
+// only for an explicit Allow or Deny.
+function awaitDecision(ask) {
+  return new Promise((resolve) => {
+    post('/api/permission/wait', { id: ask.id }, (status, text) => {
+      const { decision } = parse(status, text);
+      if (decision === 'allow' || decision === 'deny') {
+        const out = { behavior: decision };
+        if (decision === 'deny') out.message = 'Denied from the Openmon pet.';
+        // Exit only once the decision is fully written.
+        return process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PermissionRequest', decision: out } }), () => resolve());
+      }
+      resolve();
+    }, ask.waitMs + 1000);
+  });
 }
 
 function send(raw, extra) {
@@ -45,25 +99,20 @@ function send(raw, extra) {
   } catch {
     return done();
   }
-  post('/event', payload, (status, text) => {
-    let reply = {};
-    try {
-      if (status === 200) reply = JSON.parse(text);
-    } catch {}
-    if (!reply.findWindow) return done();
-    // Once per session: find the window this agent runs in, while our parent
-    // processes are still alive, so a click on the pet can bring it forward.
-    // The hook runs async, so this never slows the agent down.
-    clearTimeout(deadline);
-    deadline = setTimeout(done, 4500);
-    deadline.unref();
-    const { drivers } = require('./focus');
-    const driver = drivers[process.platform];
-    if (!driver) return done();
-    driver
-      .find(process.ppid)
-      .then((window) => (window ? post('/api/window', { session_id: payload.session_id, window }, done) : done()))
-      .catch(done);
+  if (permissionMode) payload._permission = true;
+  post('/event', payload, async (status, text) => {
+    const reply = parse(status, text);
+    const work = [];
+    if (reply.findWindow) {
+      extendDeadline(4500);
+      work.push(findWindow(payload.session_id));
+    }
+    if (permissionMode && reply.askPermission && reply.askPermission.id) {
+      extendDeadline(Math.max(4500, reply.askPermission.waitMs + 3000));
+      work.push(awaitDecision(reply.askPermission));
+    }
+    await Promise.all(work);
+    if (!finished) done();
   });
 }
 

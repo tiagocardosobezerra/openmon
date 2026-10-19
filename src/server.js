@@ -87,7 +87,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, quietUntil: null, scale: 1, tips: [] };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25 };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -121,6 +121,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       pet: pet.view(world.pet),
       config: publicConfig(),
       restoreOffer: restoreOffer ? restoreOffer.summary : null,
+      permissions: permissionView(),
     };
   }
 
@@ -149,6 +150,9 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   function ingestInto(target, payload) {
     const signal = classify(payload);
     if (!signal) return [];
+    if (target === real && permissions.size && payload.hook_event_name !== 'PermissionRequest') {
+      for (const p of [...permissions.values()]) if (p.session === signal.session && (signal.kind === 'tool-start' || signal.kind === 'tool-done' || signal.kind === 'tool-fail' || signal.kind === 'turn-start' || signal.kind === 'turn-end')) settlePermission(p.id, null);
+    }
     const t = now();
     if (target === real) {
       powers.record(payload, signal.label, t);
@@ -169,6 +173,44 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       pushState();
     }
     return events;
+  }
+
+  // Permission requests the pet can answer: id -> { id, session, detail, until, waiters, decision }.
+  // Only with "Answer permissions from the pet" on, and only while a pet
+  // window is open to show the buttons.
+  const permissions = new Map();
+  // Answers that arrive before the hook starts waiting are kept a moment.
+  const settled = new Map();
+
+  function askPermission(body, signal) {
+    if (!config.answerFromPet || !body._permission || !clients.size || world !== real) return null;
+    // Unguessable, so only the pet that shows the request can answer it.
+    const id = require('node:crypto').randomBytes(12).toString('hex');
+    const waitMs = (config.answerWaitSec || 25) * 1000;
+    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), detail: signal ? signal.detail : null, until: now() + waitMs, waiters: [], decision: null };
+    entry.timer = setTimeout(() => settlePermission(id, null), waitMs + 500);
+    if (entry.timer.unref) entry.timer.unref();
+    permissions.set(id, entry);
+    pushState(true);
+    return { id, waitMs };
+  }
+
+  function settlePermission(id, decision) {
+    const entry = permissions.get(id);
+    if (!entry) return false;
+    clearTimeout(entry.timer);
+    permissions.delete(id);
+    entry.decision = decision;
+    settled.set(id, decision);
+    const forget = setTimeout(() => settled.delete(id), 30_000);
+    if (forget.unref) forget.unref();
+    for (const res of entry.waiters) json(res, 200, { decision });
+    pushState(true);
+    return true;
+  }
+
+  function permissionView() {
+    return [...permissions.values()].map((p) => ({ id: p.id, session: p.session, detail: p.detail, until: p.until }));
   }
 
   // Brings the window of a waiting agent (or the given session) to the front.
@@ -372,9 +414,16 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         return readJson(req, (err, body) => {
           if (err) return res.writeHead(400).end();
           ingest(body);
+          const reply = {};
           // Once per session the hook is asked to find its agent's window.
           const sid = body && body.session_id ? String(body.session_id) : 'default';
-          if (body && body._ppid && body.hook_event_name !== 'SessionEnd' && focus.wants(sid)) return json(res, 200, { findWindow: true });
+          if (body && body._ppid && body.hook_event_name !== 'SessionEnd' && focus.wants(sid)) reply.findWindow = true;
+          // A permission request the pet may answer.
+          if (body && body.hook_event_name === 'PermissionRequest') {
+            const ask = askPermission(body, classify(body));
+            if (ask) reply.askPermission = ask;
+          }
+          if (Object.keys(reply).length) return json(res, 200, reply);
           res.writeHead(204).end();
         });
       case 'POST /api/pet':
@@ -393,6 +442,23 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (err || !body) return res.writeHead(400).end();
           focus.setWindow(body.session_id ? String(body.session_id) : 'default', body.window);
           res.writeHead(204).end();
+        });
+      // The permission hook waits here for your answer (or the timeout).
+      case 'POST /api/permission/wait':
+        return readJson(req, (err, body) => {
+          const id = !err && body ? String(body.id || '') : '';
+          if (settled.has(id)) return json(res, 200, { decision: settled.get(id) });
+          const entry = permissions.get(id);
+          if (!entry) return json(res, 200, { decision: null });
+          entry.waiters.push(res);
+          // res, not req: a request's 'close' fires as soon as its body is read.
+          res.on('close', () => (entry.waiters = entry.waiters.filter((r) => r !== res)));
+        });
+      // Your Allow or Deny, from the pet window (same-origin page only).
+      case 'POST /api/permission/decide':
+        return readJson(req, (err, body) => {
+          if (err || !body || !['allow', 'deny'].includes(body.decision)) return res.writeHead(400).end();
+          json(res, 200, { ok: settlePermission(String(body.id || ''), body.decision) });
         });
       case 'POST /api/focus':
         return readJson(req, (err, body) => {
@@ -431,6 +497,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.notify === 'boolean') patch.notify = body.notify;
           if (typeof body.chatter === 'boolean') patch.chatter = body.chatter;
           if (typeof body.stroll === 'boolean') patch.stroll = body.stroll;
+          if (typeof body.answerFromPet === 'boolean') patch.answerFromPet = body.answerFromPet;
+          if (typeof body.answerWaitSec === 'number' && body.answerWaitSec >= 5 && body.answerWaitSec <= 60) patch.answerWaitSec = Math.round(body.answerWaitSec);
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
           // One-time tips, remembered so they are never shown twice.
           if (typeof body.tipSeen === 'string' && /^[a-z-]{1,24}$/.test(body.tipSeen) && !(config.tips || []).includes(body.tipSeen)) patch.tips = [...(config.tips || []), body.tipSeen].slice(-20);

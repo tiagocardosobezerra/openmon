@@ -11,7 +11,11 @@ const path = require('node:path');
 const MARKER = '--openmon';
 // Markers of earlier names; install and uninstall clean these up too.
 const LEGACY_MARKERS = ['--bytelings'];
-const TOOL_EVENTS = ['PreToolUse', 'PostToolUse', 'PostToolUseFailure', 'PermissionRequest'];
+const TOOL_EVENTS = ['PreToolUse', 'PostToolUse', 'PostToolUseFailure'];
+// Permission requests get a foreground hook, so that (only when you turn on
+// "Answer permissions from the pet") it can hand your answer to Claude Code.
+// With the setting off it returns at once and prints nothing.
+const PERMISSION_EVENT = 'PermissionRequest';
 const OTHER_EVENTS = ['SessionStart', 'SessionEnd', 'UserPromptSubmit', 'Notification', 'Stop', 'StopFailure', 'SubagentStart', 'SubagentStop', 'PreCompact'];
 
 function defaultSettingsPath() {
@@ -70,6 +74,7 @@ function withHooks(settings, command = hookCommand()) {
   const { hooks } = strip(settings.hooks);
   const handler = { type: 'command', command, async: true, timeout: 5 };
   for (const event of TOOL_EVENTS) (hooks[event] ||= []).push({ matcher: '*', hooks: [handler] });
+  (hooks[PERMISSION_EVENT] ||= []).push({ matcher: '*', hooks: [{ type: 'command', command: `${command} --permission`, timeout: 90 }] });
   for (const event of OTHER_EVENTS) (hooks[event] ||= []).push({ hooks: [{ ...handler }] });
   return { ...settings, hooks };
 }
@@ -104,6 +109,17 @@ function uninstall({ settingsPath = defaultSettingsPath() } = {}) {
   return { settingsPath, removed };
 }
 
+// Whether the foreground permission hook is installed (older installs had
+// only background hooks).
+function hasPermissionHook({ settingsPath = defaultSettingsPath() } = {}) {
+  try {
+    const { settings } = readSettings(settingsPath);
+    return ((settings.hooks || {})[PERMISSION_EVENT] || []).some((g) => (g.hooks || []).some((h) => isOurs(h) && / --permission$/.test(h.command) && !h.async));
+  } catch {
+    return false;
+  }
+}
+
 function isInstalled({ settingsPath = defaultSettingsPath() } = {}) {
   try {
     const { settings } = readSettings(settingsPath);
@@ -113,4 +129,4 @@ function isInstalled({ settingsPath = defaultSettingsPath() } = {}) {
   }
 }
 
-module.exports = { install, uninstall, isInstalled, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS };
+module.exports = { install, uninstall, isInstalled, hasPermissionHook, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT };
