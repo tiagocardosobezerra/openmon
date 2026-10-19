@@ -149,7 +149,7 @@ test('species API serves the Opendex; shutdown is announced on the bus', async (
     const down = new Promise((resolve) => daemon.bus.once('shutdown', resolve));
     assert.equal((await request(port, 'POST', '/api/shutdown')).status, 204);
     await down;
-    // Lay-egg is refused before Mythic.
+    // Lay-egg is refused before Elder.
     assert.deepEqual(JSON.parse((await request(port, 'POST', '/api/lay-egg')).body).events, []);
   } finally {
     await daemon.close();

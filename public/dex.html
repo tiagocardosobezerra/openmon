@@ -138,7 +138,7 @@
       const known = revealAll || Boolean(dex[entry.key]);
       if (known) seen++;
       // ?shiny previews the shiny colours (dev aid, like ?all).
-      // Legendaries draw at Mythic size.
+      // Legendaries draw at Elder size.
       const spec = { stage: entry.legend ? 'mythic' : entry.stage, lineage: entry.lineage, legend: entry.legend || null, trait: null, progress: 0.3, shiny: params.has('shiny') && entry.stage !== 'egg' };
       const current = pet && pet.formKey === entry.key;
       if (current) Object.assign(spec, { trait: pet.trait, shiny: pet.shiny, chimera: pet.chimera, nocturne: pet.nocturne });

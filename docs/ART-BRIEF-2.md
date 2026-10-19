@@ -61,7 +61,7 @@ O app desenha por cima, e anima: placa "!", martelo, livro, escudo, luneta, term
 
 ### 1.1 Cinco tipos novos (15 formas)
 
-Cada tipo tem 3 formas: **Jovem** (`juvenile`), **Adulto** (`adult`) e **Mítico** (`mythic`). O Jovem é pequeno e simples; o Adulto ganha o traço marcante do tipo; o Mítico é maior, mais detalhado e tem um elemento de brilho próprio. Os nomes são sugestões: se tiver nomes melhores, proponha.
+Cada tipo tem 3 formas: **Jovem** (`juvenile`), **Adulto** (`adult`) e **Ancião** (`mythic`). O Jovem é pequeno e simples; o Adulto ganha o traço marcante do tipo; o Ancião é maior, mais detalhado e tem um elemento de brilho próprio. Os nomes são sugestões: se tiver nomes melhores, proponha.
 
 | Tipo | Vem de (trabalho do agente) | Ideia visual | Olhos (a partir do Adulto) |
 | --- | --- | --- | --- |
@@ -73,7 +73,7 @@ Cada tipo tem 3 formas: **Jovem** (`juvenile`), **Adulto** (`adult`) e **Mítico
 
 #### Paleta por tipo
 
-| Tipo | Corpo | Sombra | Barriga | Detalhe | Brilho/aura (Mítico) |
+| Tipo | Corpo | Sombra | Barriga | Detalhe | Brilho/aura (Ancião) |
 | --- | --- | --- | --- | --- | --- |
 | Escriba | `#f3ead6` | `#d9c9a6` | `#fffaf0` | tinta `#3b5bdb`, pena `#ffffff` | `#c5d3ff` |
 | Ramo | `#c7835a` | `#9c5e3b` | `#f6dcc4` | folhas `#5fd4a0`, nós `#7a4a30` | `#b8f5d6` |
@@ -184,7 +184,7 @@ Não use os logos oficiais. A marca é um **tema**, desenhado no estilo do Openm
 
 Formas que aparecem por um caminho diferente:
 
-- **Por amizade:** um Mítico alternativo para quem chega a amizade 100 antes de evoluir. Sugestão: o mesmo Mítico com um laço de fita e um coração na aura. Comece com 2 exemplos (Forja e Saber).
+- **Por amizade:** um Ancião alternativo para quem chega a amizade 100 antes de evoluir. Sugestão: o mesmo Ancião com um laço de fita e um coração na aura. Comece com 2 exemplos (Forja e Saber).
 - **Por pedra de tipo:** uma pedra para cada tipo (veja os ícones no item 2.3) que, segurada, puxa a evolução para aquele tipo. Não precisa de forma nova, só dos ícones.
 
 ### 1.4 Lendários e visuais de época (opcional, fase 2)
@@ -319,7 +319,7 @@ O app aceita entrega aos poucos: o que faltar continua com a arte atual ou gerad
 ## 4. Checklist de qualidade
 
 - [ ] Silhueta reconhecível a 64 px, mesmo preenchida de preto?
-- [ ] Jovem → Adulto → Mítico crescem claramente em tamanho e em detalhes?
+- [ ] Jovem → Adulto → Ancião crescem claramente em tamanho e em detalhes?
 - [ ] Mesmo contorno e mesmo sombreamento das 22 formas atuais?
 - [ ] Pupilas como elipses `class="k"`, espelhadas e na mesma altura (para piscar)?
 - [ ] Fundo transparente, sem sombra no chão, pés na borda de baixo?

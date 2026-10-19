@@ -8,9 +8,9 @@ This page explains the game. For what Openmon does for you and how to install it
 
 ## How it grows
 
-Everything your agent does is worth **experience (XP)**. With enough, it evolves: egg, sprout, juvenile, adult and mythic, over weeks of use. Its **type** comes from the work your agent does most:
+Everything your agent does is worth **experience (XP)**. With enough, it evolves: egg, sprout, juvenile, adult and elder, over weeks of use. Its **type** comes from the work your agent does most:
 
-| Type | Comes from | Juvenile | Adult | Mythic |
+| Type | Comes from | Juvenile | Adult | Elder |
 |---|---|---|---|---|
 | Craft | editing files | Tinkit | Forgemaw | Archsmith |
 | Lore | reading and searching | Owlet | Scrollwyrm | Oracle |
@@ -26,10 +26,10 @@ Everything your agent does is worth **experience (XP)**. With enough, it evolves
 
 Rare work counts more, so every type can win. And there is a hidden line few will find: *some say balance is the key.*
 
-* **Friendship** (0 to 100) only goes up: answer your agent quickly, pet it with a click, come back every day. The mythic stage asks for friendship 60.
+* **Friendship** (0 to 100) only goes up: answer your agent quickly, pet it with a click, come back every day. Becoming an Elder asks for friendship 60.
 * **Personality**: every egg is born Brave, Sleepy, Curious, Cheerful, Calm or Cheeky, which changes how it moves and what it says.
 * **Rarities**: 1 in 128 hatches in shiny colours, always with a glow and little stars around it; evolving late at night gives night colours. Every form has its 5 poses in shiny and night colours too.
-* **Special evolutions**: with friendship 100 at the Mythic evolution, Archsmith and Oracle grow into their **friendship form**; the hidden Chimera has its own colours for each of the 15 pairs of types.
+* **Special evolutions**: with friendship 100 at the Elder evolution, Archsmith and Oracle grow into their **friendship form**; the hidden Chimera has its own colours for each of the 15 pairs of types.
 * **Legendaries**: three, each tied to a feat. *Mergeon* appears when your first pull request is merged, *Aeonbyte* after a year of Openmon and *Zeroday* after 100 fixes. They join your Party and never evolve.
 * **Season colours** (optional): turn them on in Settings and, in February, October and December, your Openmon wears the season's colours.
 * **Focus form**: during a long request (50 actions or more) it grows inside a ring of energy until the request ends.
@@ -55,7 +55,7 @@ Every project your agent works on enough gets **its own egg**. Up to 6 travel in
 * **Bag**: *Snack* (+2 friendship), *Level candy* (one level up), *Friendship candy* (+10), *XP charm* (double experience for a day), *Mystery egg* (hatches a new member, with better shiny odds), *Steady stone* (while it holds it, it does not evolve) and 11 *Type stones* (hold one and the next evolution goes to that type).
 * **30 accessories** for the head, face and neck: cap, crown, scarf, round glasses, sunglasses, monocle, hero mask, hard hat, leaf crown, explorer hat, chef hat, ribbon bow, star tiara, pumpkin hat, Santa hat, necktie, pearl necklace, cape, little bell, little backpack and more, each unlocked by an achievement (100 commits, 50 fixes, 200 pages read…). They show on the pet, in the Bag and on the trainer card.
 * **Daily gift and streak**: a Snack per day of use, a Type stone every 3 days in a row, a Level candy every 7, an XP charm every 14 and a Mystery egg every 30.
-* **Opendex, badges and Hall of Fame**: once yours reaches mythic, retire it to the Hall of Fame and start a new generation; the Bag, Opendex and badges carry over.
+* **Opendex, badges and Hall of Fame**: once yours becomes an Elder, retire it to the Hall of Fame and start a new generation; the Bag, Opendex and badges carry over.
 
 ## Powers: tools that evolution unlocks
 
