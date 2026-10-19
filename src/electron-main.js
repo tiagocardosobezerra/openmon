@@ -53,6 +53,8 @@ const PT = {
   'When an agent asks for permission, the pet shows Allow and Deny. For up to {s} seconds Claude Code waits for your answer on the pet; after that it asks you as usual. You can turn this off any time.': 'Quando um agente pedir permissão, o pet mostra Permitir e Recusar. Por até {s} segundos o Claude Code espera a sua resposta no pet; depois disso ele pergunta como sempre. Dá para desligar quando quiser.',
   'Bag': 'Mochila',
   'More settings…': 'Mais configurações…',
+  'Settings…': 'Configurações…',
+  Pages: 'Páginas',
   'Party': 'Time',
   'How it works': 'Como funciona',
   'Make a copy now': 'Fazer uma cópia agora',
@@ -114,6 +116,8 @@ const ES_TEXT = {
   "Bag": "Mochila",
   "Party": "Equipo",
   "More settings…": "Más ajustes…",
+  "Settings…": "Ajustes…",
+  Pages: "Páginas",
   "How it works": "Cómo funciona",
   "Save a backup now": "Hacer una copia ahora",
   "Make a copy now": "Hacer una copia ahora",
@@ -282,12 +286,18 @@ function menuTemplate() {
     { label: pet ? `${pet.nickname ? `${pet.nickname} · ${pet.form}` : pet.form} · Lv ${pet.level}` : 'Openmon', enabled: false },
     { type: 'separator' },
     { label: L('Open card'), click: () => win.webContents.send('command', 'card') },
-    { label: L('Powers…'), click: openPowersWindow },
-    { label: 'Opendex', click: () => openAppWindow('dex') },
-    { label: L('Party'), click: () => openAppWindow('party') },
-    { label: L('Bag'), click: () => openAppWindow('bag') },
-    { label: L('How it works'), click: () => openAppWindow('help') },
-    { label: L('Trainer card (share)'), click: () => openAppWindow('card') },
+    {
+      label: L('Pages'),
+      submenu: [
+        { label: L('Powers…'), click: openPowersWindow },
+        { label: 'Opendex', click: () => openAppWindow('dex') },
+        { label: L('Party'), click: () => openAppWindow('party') },
+        { label: L('Bag'), click: () => openAppWindow('bag') },
+        { label: L('Trainer card (share)'), click: () => openAppWindow('card') },
+        { type: 'separator' },
+        { label: L('How it works'), click: () => openAppWindow('help') },
+      ],
+    },
     { type: 'separator' },
     {
       label: config.focus ? L('Focus until {t}', { t: until(config.focusUntil) }) : L('Focus mode'),
@@ -309,84 +319,18 @@ function menuTemplate() {
         { label: L('Turn quiet mode off'), visible: Boolean(config.quiet), click: () => daemon.setQuiet(0) },
       ],
     },
-    {
-      label: L('Size'),
-      submenu: [
-        [L('Small'), 0.8],
-        [L('Normal'), 1],
-        [L('Large'), 1.25],
-      ].map(([label, scale]) => ({ label, type: 'radio', checked: Math.abs(size - scale) < 0.01, click: () => daemon.setConfig({ scale }) })),
-    },
-    {
-      label: L('Settings'),
-      submenu: [
-        { label: L('Nickname…'), click: openNameWindow },
-        { type: 'separator' },
-        { label: L('Sounds'), type: 'checkbox', checked: !config.muted, click: (item) => daemon.setConfig({ muted: !item.checked }) },
-        { label: L('Chatter and emotes'), type: 'checkbox', checked: config.chatter, click: (item) => daemon.setConfig({ chatter: item.checked }) },
-        { label: L('Walk around'), type: 'checkbox', checked: config.stroll !== false, click: (item) => daemon.setConfig({ stroll: item.checked }) },
-        { label: L('Answer permissions from the pet'), type: 'checkbox', checked: Boolean(config.answerFromPet), click: (item) => setAnswerFromPet(item.checked) },
-        { label: L('Notify when an agent waits'), type: 'checkbox', checked: config.notify, click: (item) => daemon.setConfig({ notify: item.checked }) },
-        {
-          label: L('Start with the computer'),
-          type: 'checkbox',
-          checked: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin,
-          click: (item) => app.setLoginItemSettings({ ...LOGIN_ITEM, openAtLogin: item.checked }),
-        },
-        { type: 'separator' },
-        hooked
-          ? { label: L('Connected to Claude Code ✓'), enabled: false }
-          : {
-              label: L('Connect to Claude Code'),
-              click: () => {
-                installer.install();
-                daemon.recheckHooks();
-                refreshTray();
-              },
-            },
-        {
-          label: L('Backups'),
-          submenu: [
-            { label: L('Make a copy now'), click: () => daemon.backupNow() },
-            { label: L('Export my pet to a file…'), click: exportSave },
-            { label: L('Bring back a pet from a file…'), click: importSave },
-            { type: 'separator' },
-            { label: L('Open the copies folder'), enabled: Boolean(daemon.backupDir()), click: () => shell.openPath(daemon.backupDir()) },
-          ],
-        },
-        { label: L('More settings…'), click: () => openAppWindow('settings') },
-        { label: L('Reset position'), click: () => { const p = defaultPlace(); win.setPosition(p.x, p.y); savePlace(); } },
-      ],
-    },
-    { label: L('Play demo'), click: () => daemon.runDemo() },
+    hooked ? null : { label: L('Connect to Claude Code'), click: () => { installer.install(); daemon.recheckHooks(); refreshTray(); } },
+    { label: L('Settings…'), click: () => openAppWindow('settings') },
     {
       label: L('Retire to Hall of Fame and lay a new egg'),
       visible: Boolean(pet && pet.stage === 'mythic'),
       click: () => daemon.layEgg(),
     },
+    { type: 'separator' },
     { label: L('Show pet'), type: 'checkbox', checked: win.isVisible(), click: (item) => (item.checked ? win.showInactive() : win.hide()) },
     { type: 'separator' },
     { label: L('Quit'), click: () => app.quit() },
-  ];
-}
-
-// "Answer permissions from the pet": Allow and Deny buttons on the bubble.
-// Turning it on explains what changes, and installs the permission hook if
-// this install predates it.
-async function setAnswerFromPet(on) {
-  if (on) {
-    const r = await dialog.showMessageBox({
-      type: 'question',
-      buttons: [L('Turn on'), L('Cancel')],
-      defaultId: 0,
-      cancelId: 1,
-      message: L('Answer permissions from the pet?'),
-      detail: L('When an agent asks for permission, the pet shows Allow and Deny. For up to {s} seconds Claude Code waits for your answer on the pet; after that it asks you as usual. You can turn this off any time.', { s: daemon.config().answerWaitSec || 25 }),
-    });
-    if (r.response !== 0) return refreshTray();
-    if (installer.isInstalled() && !installer.hasPermissionHook()) installer.install();
-  }
-  daemon.setConfig({ answerFromPet: on });
+  ].filter(Boolean);
 }
 
 // Saves: export to a file you choose, or bring one back.
@@ -446,7 +390,7 @@ function openAppWindow(page = 'powers') {
     autoHideMenuBar: true,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#14101b' : '#f3eee4',
     icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.js') },
   });
   const origin = `http://127.0.0.1:${port}/`;
   powersWin.webContents.setWindowOpenHandler(({ url: target }) => {
@@ -585,6 +529,50 @@ function wireIpc() {
     }
     daemon.recheckHooks();
     refreshTray();
+  });
+  // Settings page actions that need the desktop (only from the app window).
+  ipcMain.handle('settings', async (e, cmd, arg) => {
+    if (!powersWin || powersWin.isDestroyed() || e.sender !== powersWin.webContents) return null;
+    const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled() });
+    switch (cmd) {
+      case 'info':
+        return info();
+      case 'login':
+        app.setLoginItemSettings({ ...LOGIN_ITEM, openAtLogin: Boolean(arg) });
+        return info();
+      case 'connect':
+        try {
+          installer.install();
+        } catch (err) {
+          dialog.showErrorBox('Openmon', String(err.message || err));
+        }
+        daemon.recheckHooks();
+        refreshTray();
+        return info();
+      case 'backup':
+        daemon.backupNow();
+        return true;
+      case 'export':
+        await exportSave();
+        return true;
+      case 'import':
+        await importSave();
+        return true;
+      case 'open-backups':
+        if (daemon.backupDir()) shell.openPath(daemon.backupDir());
+        return true;
+      case 'reset-position': {
+        const p = defaultPlace();
+        win.setPosition(p.x, p.y);
+        savePlace();
+        return true;
+      }
+      case 'demo':
+        daemon.runDemo();
+        return true;
+      default:
+        return null;
+    }
   });
   ipcMain.on('open-page', (_e, page) => {
     openAppWindow(page);

@@ -8,97 +8,195 @@
 <title>Openmon Settings</title>
 <link rel="stylesheet" href="ui.css">
 <style>
-  main { padding-bottom: 56px; max-width: 820px; }
-  .group { padding: 16px 18px; margin-top: 14px; }
-  .group h2 { margin: 0 0 4px; font-size: 18px; }
-  .group > p { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
-  .row { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
-  .row:first-of-type { border-top: 0; }
+  main { padding-bottom: 56px; max-width: 900px; }
+  /* Sections on the left, one section at a time on the right. */
+  .layout { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: start; margin-top: 18px; }
+  .side { position: sticky; top: 70px; display: grid; gap: 4px; }
+  .side button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border: 1.5px solid transparent; border-radius: var(--r-md); background: transparent; color: var(--muted); font: 600 14px var(--font-display); text-align: left; cursor: pointer; }
+  .side button .ico { width: 22px; text-align: center; font-size: 16px; }
+  .side button:hover { color: var(--ink); background: var(--surface-2); }
+  .side button[aria-selected="true"] { color: var(--ink); background: var(--surface); border-color: var(--outline); box-shadow: 0 2px 0 var(--outline); }
+  .pane h2 { margin: 0 0 2px; font-size: 20px; }
+  .pane > p.lead { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; }
+  .card { padding: 4px 16px; margin-bottom: 12px; }
+  .card h3 { margin: 12px 0 0; font: 600 12px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+  .card h3 + .row, .card > .row:first-child { border-top: 0; }
   .row b { font: 600 15px var(--font-display); }
   .row small { grid-column: 1; color: var(--muted); font-size: 12.5px; }
-  .row .ctl { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 8px; align-items: center; }
-  input[type=checkbox].toggle { width: 22px; height: 22px; accent-color: var(--brand); }
+  .row .ctl { grid-row: 1 / span 2; grid-column: 2; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; align-items: center; }
+  .row.sub { padding-left: 18px; border-left: 3px solid var(--line); }
+  .row.wide { grid-template-columns: 1fr; }
+  .row.wide .ctl { grid-row: auto; grid-column: 1; justify-content: flex-start; margin-top: 6px; }
+  .status { font-size: 12.5px; color: var(--muted); }
+  .status.on { color: var(--ok); font-weight: 700; }
+  /* A real switch instead of a bare checkbox. */
+  .switch { position: relative; width: 44px; height: 26px; flex: none; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--outline); transition: background 0.15s ease; pointer-events: none; }
+  .switch span::after { content: ""; position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; border-radius: 50%; background: #fffdf7; box-shadow: 0 0 0 2px var(--outline); transition: transform 0.15s ease; }
+  .switch input:checked + span { background: var(--brand); }
+  .switch input:checked + span::after { transform: translateX(18px); }
+  .switch input:focus-visible + span { box-shadow: inset 0 0 0 2px var(--outline), var(--focus); }
+  .seg.pick { display: inline-flex; padding: 3px; border-radius: 12px; background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .seg.pick button { flex: none; padding: 2px 12px; }
   select, .input { font: 500 14px var(--font-body); }
   select { min-height: 34px; padding: 4px 10px; border: var(--bw) solid var(--outline); border-radius: var(--r-sm); background: var(--surface); color: var(--ink); }
-  .input.topic { width: 240px; min-height: 34px; font-size: 14px; }
-  code.url { padding: 4px 8px; border-radius: var(--r-sm); background: var(--surface-2); }
+  .input.topic { width: 220px; min-height: 34px; font-size: 14px; }
+  code.url { padding: 4px 8px; border-radius: var(--r-sm); background: var(--surface-2); word-break: break-all; }
   .ok { color: var(--ok); font-weight: 700; } .bad { color: var(--bad); font-weight: 700; }
   kbd { margin: 0 2px; }
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: 1fr; }
+    .side { position: static; display: flex; overflow-x: auto; gap: 6px; }
+    .side button { width: auto; white-space: nowrap; }
+  }
 </style>
 </head>
 <body class="page" data-page="settings">
 <main class="wrap">
   <div class="hero"><div><h1 id="title"></h1><p id="sub"></p></div></div>
-  <section class="group panel soft" id="g-answer"></section>
-  <section class="group panel soft" id="g-calm"></section>
-  <section class="group panel soft" id="g-phone"></section>
-  <section class="group panel soft" id="g-more"></section>
+  <div class="layout">
+    <nav class="side" id="side" role="tablist"></nav>
+    <section class="pane" id="pane" role="tabpanel"></section>
+  </div>
 </main>
 <script src="i18n.js"></script>
 <script src="nav.js"></script>
 <script>
-  const { t: tr, lang } = window.OpenmonI18n;
+  const { lang } = window.OpenmonI18n;
   document.documentElement.lang = lang;
-  const pt = lang === 'pt-BR';
-  const T = pt
-    ? {
-        title: 'Configurações', sub: 'Tudo o que muda como o Openmon ajuda você. As escolhas valem na hora e ficam salvas.',
-        answer: 'Responder pelo pet', answerSub: 'Quando um agente pedir permissão, o balão mostra Permitir, Sempre permitir e Recusar.',
-        answerOn: 'Responder permissões pelo pet', answerOnSub: 'Desligado por padrão. O Claude Code espera sua resposta no pet pelo tempo abaixo; depois ele pergunta como sempre.',
-        wait: 'Tempo de espera', waitSub: 'Quantos segundos o Claude Code espera sua resposta no pet.',
-        calm: 'Calma e foco', calmSub: 'Para dias de reunião, tela compartilhada ou foco.',
-        present: 'Modo apresentação', presentSub: 'Esconde nomes de projetos e comandos em tudo o que o Openmon mostra. Use ao compartilhar a tela.',
-        breaks: 'Lembrete de pausa', breaksSub: 'Depois de muito tempo seguido de trabalho, o pet sugere uma pausa.', off: 'Desligado', min: '{n} minutos',
-        seasons: 'Cores de época', seasonsSub: 'Em fevereiro, outubro e dezembro, seu Openmon usa as cores da época (carnaval, abóbora, Natal).',
-        follow: 'Mostrar o Openmon do projeto ativo', followSub: 'O pet da tela troca para o do projeto em que o agente está trabalhando.',
-        phone: 'Avisos no celular', phoneSub: 'Opcional. Usa o ntfy (app gratuito e aberto): quando um agente espera por você, chega um aviso no celular. É o único recurso do Openmon que usa a internet, e só manda "Seu agente precisa de você".',
-        phoneOn: 'Avisar no celular', phoneOnSub: 'Instale o app ntfy no celular e assine o mesmo tópico abaixo.',
-        topic: 'Tópico', topicSub: 'Um nome difícil de adivinhar (8 a 64 letras, números, _ ou -). Quem souber o tópico pode ler os avisos.', random: 'Gerar', test: 'Testar', sent: 'Enviado ✓', failed: 'Não deu: confira o tópico e a internet.',
-        after: 'Depois de', afterSub: 'Quanto tempo o agente espera antes do aviso.', seconds: '{n} segundos', immediately: 'Na hora',
-        project: 'Incluir o nome do projeto', projectSub: 'Desligado: o aviso não diz em que projeto.',
-        more: 'Mais', moreSub: 'Atalhos e transmissão.',
-        keys: 'Atalhos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre o card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> leva ao agente que está esperando.',
-        obs: 'Pet no OBS (live)', obsSub: 'Adicione uma Fonte de Navegador no OBS com este endereço, 300 × 560. O fundo é transparente.', copy: 'Copiar', copied: 'Copiado ✓',
-      }
-    : lang === 'es'
-    ? {
-        title: 'Ajustes', sub: 'Todo lo que cambia cómo te ayuda Openmon. Las elecciones se aplican al instante y quedan guardadas.',
-        answer: 'Responder desde la mascota', answerSub: 'Cuando un agente pida permiso, el globo muestra Permitir, Permitir siempre y Rechazar.',
-        answerOn: 'Responder permisos desde la mascota', answerOnSub: 'Apagado por defecto. Claude Code espera tu respuesta en la mascota el tiempo de abajo; después pregunta como siempre.',
-        wait: 'Tiempo de espera', waitSub: 'Cuántos segundos espera Claude Code tu respuesta en la mascota.',
-        calm: 'Calma y foco', calmSub: 'Para días de reuniones, pantalla compartida o trabajo profundo.',
-        present: 'Modo presentación', presentSub: 'Oculta los nombres de proyectos y los comandos en todo lo que muestra Openmon. Úsalo al compartir pantalla.',
-        breaks: 'Recordatorio de pausa', breaksSub: 'Tras mucho tiempo seguido de trabajo, la mascota sugiere una pausa.', off: 'Apagado', min: '{n} minutos',
-        seasons: 'Colores de temporada', seasonsSub: 'En febrero, octubre y diciembre, tu Openmon usa los colores de la temporada (carnaval, calabaza, Navidad).',
-        follow: 'Mostrar el Openmon del proyecto activo', followSub: 'La mascota en pantalla cambia a la del proyecto en el que trabaja el agente.',
-        phone: 'Avisos en el celular', phoneSub: 'Opcional. Usa ntfy (una app gratuita y abierta): cuando un agente te espera, llega un aviso al celular. Es la única función de Openmon que usa internet, y solo envía "Tu agente te necesita".',
-        phoneOn: 'Avisar al celular', phoneOnSub: 'Instala la app ntfy en tu celular y suscríbete al mismo tema de abajo.',
-        topic: 'Tema', topicSub: 'Un nombre difícil de adivinar (8 a 64 letras, números, _ o -). Quien conozca el tema puede leer los avisos.', random: 'Generar', test: 'Probar', sent: 'Enviado ✓', failed: 'No funcionó: revisa el tema e internet.',
-        after: 'Después de', afterSub: 'Cuánto espera el agente antes del aviso.', seconds: '{n} segundos', immediately: 'Al instante',
-        project: 'Incluir el nombre del proyecto', projectSub: 'Apagado: el aviso no dice en qué proyecto.',
-        more: 'Más', moreSub: 'Atajos y transmisión.',
-        keys: 'Atajos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre la tarjeta · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> te lleva al agente que espera.',
-        obs: 'Mascota en OBS (directo)', obsSub: 'Agrega una Fuente de navegador en OBS con esta dirección, 300 × 560. El fondo es transparente.', copy: 'Copiar', copied: 'Copiado ✓',
-      }
-    : {
-        title: 'Settings', sub: 'Everything that changes how Openmon helps you. Choices apply right away and are saved.',
-        answer: 'Answer from the pet', answerSub: 'When an agent asks for permission, the bubble shows Allow, Always allow and Deny.',
-        answerOn: 'Answer permissions from the pet', answerOnSub: 'Off by default. Claude Code waits for your answer on the pet for the time below; after that it asks you as usual.',
-        wait: 'Waiting time', waitSub: 'How many seconds Claude Code waits for your answer on the pet.',
-        calm: 'Calm and focus', calmSub: 'For meeting days, shared screens or deep work.',
-        present: 'Presentation mode', presentSub: 'Hides project names and commands in everything Openmon shows. Use it when you share your screen.',
-        breaks: 'Break reminder', breaksSub: 'After a long stretch of work, the pet suggests a break.', off: 'Off', min: '{n} minutes',
-        seasons: 'Season colours', seasonsSub: 'In February, October and December your Openmon wears the season colours (carnival, pumpkin, Christmas).',
-        follow: 'Show the Openmon of the active project', followSub: 'The pet on screen switches to the one of the project your agent is working in.',
-        phone: 'Phone alerts', phoneSub: 'Optional. Uses ntfy (a free, open app): when an agent waits for you, your phone gets a notice. It is the only Openmon feature that uses the internet, and it only sends "Your agent needs you".',
-        phoneOn: 'Alert my phone', phoneOnSub: 'Install the ntfy app on your phone and subscribe to the same topic below.',
-        topic: 'Topic', topicSub: 'A name hard to guess (8 to 64 letters, digits, _ or -). Anyone who knows the topic can read the alerts.', random: 'Generate', test: 'Test', sent: 'Sent ✓', failed: 'It did not work: check the topic and your internet.',
-        after: 'After', afterSub: 'How long the agent waits before the alert.', seconds: '{n} seconds', immediately: 'Right away',
-        project: 'Include the project name', projectSub: 'Off: the alert does not say which project.',
-        more: 'More', moreSub: 'Shortcuts and streaming.',
-        keys: 'Keyboard shortcuts', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> opens the card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> takes you to the agent that waits.',
-        obs: 'Pet in OBS (streaming)', obsSub: 'Add a Browser Source in OBS with this address, 300 × 560. The background is transparent.', copy: 'Copy', copied: 'Copied ✓',
-      };
+  // Only in the desktop app: start with the computer, backups to files,
+  // connecting Claude Code, the pet's position, the demo.
+  const desk = window.openmonSettings || null;
+  const TEXT = {
+    'pt-BR': {
+      title: 'Configurações', sub: 'Escolha uma seção à esquerda. Tudo vale na hora e fica salvo.',
+      tabs: { pet: 'Pet', alerts: 'Avisos', focus: 'Foco e calma', phone: 'Celular', computer: 'Computador', more: 'Avançado' },
+      leads: {
+        pet: 'Como ele aparece e se comporta na tela.',
+        alerts: 'Como você fica sabendo que um agente precisa de você.',
+        focus: 'Para reuniões, tela compartilhada ou trabalho concentrado.',
+        phone: 'Opcional. Usa o ntfy (app gratuito e aberto). É o único recurso que usa a internet, e só manda "Seu agente precisa de você".',
+        computer: 'O app no seu computador: inicialização, conexão e cópias do seu pet.',
+        more: 'Atalhos e transmissão ao vivo.',
+      },
+      look: 'Aparência', behaviour: 'Comportamento', screen: 'Tela', now: 'Agora', always: 'Sempre',
+      name: 'Apelido', nameSub: 'Sem apelido, ele usa o nome da espécie.', rename: 'Mudar…',
+      size: 'Tamanho', small: 'Pequeno', normal: 'Normal', large: 'Grande',
+      language: 'Idioma', languageSub: 'Do pet, dos menus e destas páginas.',
+      sounds: 'Sons', soundsSub: 'Pequenos sons quando ele pula, evolui ou precisa de você.',
+      chatter: 'Falas e emojis', chatterSub: 'Balões curtos e reações (? ♥ ♪) quando nada importante está acontecendo.',
+      stroll: 'Passear pela tela', strollSub: 'Ele anda alguns passos quando está à toa.',
+      seasons: 'Cores de época', seasonsSub: 'Em fevereiro, outubro e dezembro, ele usa as cores da época.',
+      follow: 'Mostrar o Openmon do projeto ativo', followSub: 'O pet da tela troca para o do projeto em que o agente está trabalhando.',
+      notify: 'Notificação do sistema', notifySub: 'Quando um agente espera por você e o pet não está à vista.',
+      answerOn: 'Responder permissões pelo pet', answerOnSub: 'O balão mostra Permitir, Sempre permitir e Recusar. Desligado por padrão.',
+      wait: 'Tempo de espera', waitSub: 'Quanto o Claude Code espera sua resposta no pet; depois ele pergunta como sempre.',
+      focusMode: 'Modo foco', focusModeSub: 'Só o "precisa de você" aparece; o resto espera.', quiet: 'Modo silencioso', quietSub: 'Sem sons, falas nem notificações.',
+      until: 'até {t}', off: 'Desligado', tomorrow: 'Até amanhã', min: '{n} min', end: 'Desligar',
+      present: 'Modo apresentação', presentSub: 'Esconde nomes de projetos e comandos em tudo o que o Openmon mostra.',
+      breaks: 'Lembrete de pausa', breaksSub: 'Depois de muito tempo seguido de trabalho, ele sugere uma pausa.',
+      phoneOn: 'Avisar no celular', phoneOnSub: 'Instale o app ntfy no celular e assine o mesmo tópico abaixo.',
+      topic: 'Tópico', topicSub: 'Um nome difícil de adivinhar (8 a 64 letras, números, _ ou -). Quem souber o tópico pode ler os avisos.', random: 'Gerar', test: 'Testar', sent: 'Enviado ✓', failed: 'Não deu: confira o tópico e a internet.',
+      after: 'Avisar depois de', afterSub: 'Quanto tempo o agente espera antes do aviso.', seconds: '{n} s', immediately: 'Na hora',
+      project: 'Incluir o nome do projeto', projectSub: 'Desligado: o aviso não diz em que projeto.',
+      login: 'Iniciar com o computador', loginSub: 'Ele aparece sozinho quando você liga o computador.',
+      claude: 'Claude Code', claudeOk: 'Conectado ✓', claudeSub: 'O pet escuta os avisos que o Claude Code já manda.', connect: 'Conectar',
+      backups: 'Cópias do seu pet', backupsSub: 'Ele faz cópias sozinho em Documentos/Openmon Backups. Aqui você faz na hora ou leva para outro computador.',
+      copyNow: 'Fazer cópia agora', copied: 'Cópia feita ✓', exportFile: 'Exportar…', importFile: 'Trazer de um arquivo…', openFolder: 'Abrir pasta',
+      position: 'Posição na tela', positionSub: 'Leva o pet de volta para o canto da tela.', reset: 'Voltar ao canto',
+      demo: 'Demonstração', demoSub: 'Mostra tudo o que ele faz em um minuto.', play: 'Ver',
+      keys: 'Atalhos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre o card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> leva ao agente que está esperando.',
+      obs: 'Pet no OBS (live)', obsSub: 'Adicione uma Fonte de Navegador no OBS com este endereço, 300 × 560. O fundo é transparente.', copy: 'Copiar', copiedUrl: 'Copiado ✓',
+      desktopOnly: 'Disponível no app do Openmon.',
+    },
+    es: {
+      title: 'Ajustes', sub: 'Elige una sección a la izquierda. Todo se aplica al instante y queda guardado.',
+      tabs: { pet: 'Mascota', alerts: 'Avisos', focus: 'Foco y calma', phone: 'Celular', computer: 'Computadora', more: 'Avanzado' },
+      leads: {
+        pet: 'Cómo aparece y se comporta en la pantalla.',
+        alerts: 'Cómo te enteras de que un agente te necesita.',
+        focus: 'Para reuniones, pantalla compartida o trabajo concentrado.',
+        phone: 'Opcional. Usa ntfy (una app gratuita y abierta). Es la única función que usa internet, y solo envía "Tu agente te necesita".',
+        computer: 'La app en tu computadora: inicio, conexión y copias de tu mascota.',
+        more: 'Atajos y transmisión en directo.',
+      },
+      look: 'Apariencia', behaviour: 'Comportamiento', screen: 'Pantalla', now: 'Ahora', always: 'Siempre',
+      name: 'Apodo', nameSub: 'Sin apodo, usa el nombre de la especie.', rename: 'Cambiar…',
+      size: 'Tamaño', small: 'Pequeño', normal: 'Normal', large: 'Grande',
+      language: 'Idioma', languageSub: 'De la mascota, los menús y estas páginas.',
+      sounds: 'Sonidos', soundsSub: 'Pequeños sonidos cuando salta, evoluciona o te necesita.',
+      chatter: 'Frases y emojis', chatterSub: 'Globos cortos y reacciones (? ♥ ♪) cuando no pasa nada importante.',
+      stroll: 'Pasear por la pantalla', strollSub: 'Da unos pasos cuando no hace nada.',
+      seasons: 'Colores de temporada', seasonsSub: 'En febrero, octubre y diciembre usa los colores de la temporada.',
+      follow: 'Mostrar el Openmon del proyecto activo', followSub: 'La mascota en pantalla cambia a la del proyecto en el que trabaja el agente.',
+      notify: 'Notificación del sistema', notifySub: 'Cuando un agente te espera y la mascota no está a la vista.',
+      answerOn: 'Responder permisos desde la mascota', answerOnSub: 'El globo muestra Permitir, Permitir siempre y Rechazar. Apagado por defecto.',
+      wait: 'Tiempo de espera', waitSub: 'Cuánto espera Claude Code tu respuesta en la mascota; después pregunta como siempre.',
+      focusMode: 'Modo foco', focusModeSub: 'Solo aparece "te necesita"; lo demás espera.', quiet: 'Modo silencio', quietSub: 'Sin sonidos, frases ni notificaciones.',
+      until: 'hasta {t}', off: 'Apagado', tomorrow: 'Hasta mañana', min: '{n} min', end: 'Apagar',
+      present: 'Modo presentación', presentSub: 'Oculta los nombres de proyectos y los comandos en todo lo que muestra Openmon.',
+      breaks: 'Recordatorio de pausa', breaksSub: 'Tras mucho tiempo seguido de trabajo, sugiere una pausa.',
+      phoneOn: 'Avisar al celular', phoneOnSub: 'Instala la app ntfy en tu celular y suscríbete al mismo tema de abajo.',
+      topic: 'Tema', topicSub: 'Un nombre difícil de adivinar (8 a 64 letras, números, _ o -). Quien conozca el tema puede leer los avisos.', random: 'Generar', test: 'Probar', sent: 'Enviado ✓', failed: 'No funcionó: revisa el tema e internet.',
+      after: 'Avisar después de', afterSub: 'Cuánto espera el agente antes del aviso.', seconds: '{n} s', immediately: 'Al instante',
+      project: 'Incluir el nombre del proyecto', projectSub: 'Apagado: el aviso no dice en qué proyecto.',
+      login: 'Iniciar con la computadora', loginSub: 'Aparece solo cuando enciendes la computadora.',
+      claude: 'Claude Code', claudeOk: 'Conectado ✓', claudeSub: 'La mascota escucha los avisos que Claude Code ya envía.', connect: 'Conectar',
+      backups: 'Copias de tu mascota', backupsSub: 'Hace copias solo en Documentos/Openmon Backups. Aquí haces una al instante o la llevas a otra computadora.',
+      copyNow: 'Hacer copia ahora', copied: 'Copia hecha ✓', exportFile: 'Exportar…', importFile: 'Traer de un archivo…', openFolder: 'Abrir carpeta',
+      position: 'Posición en pantalla', positionSub: 'Lleva la mascota de vuelta a la esquina.', reset: 'Volver a la esquina',
+      demo: 'Demostración', demoSub: 'Muestra todo lo que hace en un minuto.', play: 'Ver',
+      keys: 'Atajos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre la tarjeta · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> te lleva al agente que espera.',
+      obs: 'Mascota en OBS (directo)', obsSub: 'Agrega una Fuente de navegador en OBS con esta dirección, 300 × 560. El fondo es transparente.', copy: 'Copiar', copiedUrl: 'Copiado ✓',
+      desktopOnly: 'Disponible en la app de Openmon.',
+    },
+    en: {
+      title: 'Settings', sub: 'Pick a section on the left. Everything applies right away and is saved.',
+      tabs: { pet: 'Pet', alerts: 'Alerts', focus: 'Focus and calm', phone: 'Phone', computer: 'Computer', more: 'Advanced' },
+      leads: {
+        pet: 'How it looks and behaves on screen.',
+        alerts: 'How you learn that an agent needs you.',
+        focus: 'For meetings, shared screens or deep work.',
+        phone: 'Optional. Uses ntfy (a free, open app). It is the only feature that uses the internet, and it only sends "Your agent needs you".',
+        computer: 'The app on your computer: start-up, connection and copies of your pet.',
+        more: 'Shortcuts and live streaming.',
+      },
+      look: 'Look', behaviour: 'Behaviour', screen: 'Screen', now: 'Now', always: 'Always',
+      name: 'Nickname', nameSub: 'With no nickname it goes by its species name.', rename: 'Change…',
+      size: 'Size', small: 'Small', normal: 'Normal', large: 'Large',
+      language: 'Language', languageSub: 'Of the pet, the menus and these pages.',
+      sounds: 'Sounds', soundsSub: 'Little sounds when it hops, evolves or needs you.',
+      chatter: 'Chatter and emotes', chatterSub: 'Short bubbles and reactions (? ♥ ♪) when nothing important is going on.',
+      stroll: 'Walk around', strollSub: 'It takes a few steps when it is idle.',
+      seasons: 'Season colours', seasonsSub: 'In February, October and December it wears the season colours.',
+      follow: 'Show the Openmon of the active project', followSub: 'The pet on screen switches to the one of the project your agent is working in.',
+      notify: 'System notification', notifySub: 'When an agent waits for you and the pet is out of sight.',
+      answerOn: 'Answer permissions from the pet', answerOnSub: 'The bubble shows Allow, Always allow and Deny. Off by default.',
+      wait: 'Waiting time', waitSub: 'How long Claude Code waits for your answer on the pet; after that it asks you as usual.',
+      focusMode: 'Focus mode', focusModeSub: 'Only "needs you" shows up; the rest waits.', quiet: 'Quiet mode', quietSub: 'No sounds, chatter or notifications.',
+      until: 'until {t}', off: 'Off', tomorrow: 'Until tomorrow', min: '{n} min', end: 'Turn off',
+      present: 'Presentation mode', presentSub: 'Hides project names and commands in everything Openmon shows.',
+      breaks: 'Break reminder', breaksSub: 'After a long stretch of work, it suggests a break.',
+      phoneOn: 'Alert my phone', phoneOnSub: 'Install the ntfy app on your phone and subscribe to the same topic below.',
+      topic: 'Topic', topicSub: 'A name hard to guess (8 to 64 letters, digits, _ or -). Anyone who knows the topic can read the alerts.', random: 'Generate', test: 'Test', sent: 'Sent ✓', failed: 'It did not work: check the topic and your internet.',
+      after: 'Alert after', afterSub: 'How long the agent waits before the alert.', seconds: '{n} s', immediately: 'Right away',
+      project: 'Include the project name', projectSub: 'Off: the alert does not say which project.',
+      login: 'Start with the computer', loginSub: 'It shows up on its own when you turn on your computer.',
+      claude: 'Claude Code', claudeOk: 'Connected ✓', claudeSub: 'The pet listens to the notices Claude Code already sends.', connect: 'Connect',
+      backups: 'Copies of your pet', backupsSub: 'It makes copies on its own in Documents/Openmon Backups. Here you make one now or take it to another computer.',
+      copyNow: 'Make a copy now', copied: 'Copy made ✓', exportFile: 'Export…', importFile: 'Bring back from a file…', openFolder: 'Open folder',
+      position: 'Position on screen', positionSub: 'Puts the pet back in the corner of the screen.', reset: 'Back to the corner',
+      demo: 'Demo', demoSub: 'Shows everything it does in one minute.', play: 'Play',
+      keys: 'Keyboard shortcuts', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> opens the card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> takes you to the agent that waits.',
+      obs: 'Pet in OBS (streaming)', obsSub: 'Add a Browser Source in OBS with this address, 300 × 560. The background is transparent.', copy: 'Copy', copiedUrl: 'Copied ✓',
+      desktopOnly: 'Available in the Openmon app.',
+    },
+  };
+  const T = TEXT[lang] || TEXT.en;
+  const SECTIONS = [['pet', '🐣'], ['alerts', '🔔'], ['focus', '🎧'], ['phone', '📱'], ['computer', '💻'], ['more', '⚙']];
+
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => {
     const e = document.createElement(tag);
@@ -107,93 +205,223 @@
     return e;
   };
   const fill = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k]);
+  const clock = (ms) => new Date(ms).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
   $('title').textContent = T.title;
   $('sub').textContent = T.sub;
   let config = {};
+  let pet = null;
+  let desktop = null;
+  let tab = SECTIONS.some(([id]) => id === location.hash.slice(1)) ? location.hash.slice(1) : 'pet';
 
-  async function save(patch) {
+  async function save(patch, redraw = false) {
     config = await (await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) })).json();
+    if (redraw) render();
   }
 
-  function row(title, sub, control, html = false) {
-    const r = el('div', 'row');
+  // --- building blocks ------------------------------------------------------
+  function row(title, sub, control, { html = false, cls = '' } = {}) {
+    const r = el('div', `row ${cls}`.trim());
     const small = el('small');
     if (html) small.innerHTML = sub;
-    else small.textContent = sub;
+    else small.textContent = sub || '';
     const ctl = el('div', 'ctl');
-    if (control) ctl.append(...[].concat(control));
+    if (control) ctl.append(...[].concat(control).filter(Boolean));
     r.append(el('b', '', title), ctl, small);
     return r;
   }
-  function toggle(key, onChange) {
-    const c = el('input', 'toggle');
+  function toggle(key, { invert = false, redraw = false, onChange = null } = {}) {
+    const wrap = el('label', 'switch');
+    const c = el('input');
     c.type = 'checkbox';
-    c.checked = Boolean(config[key]);
-    c.onchange = () => (onChange ? onChange(c.checked) : save({ [key]: c.checked }));
+    c.checked = invert ? !config[key] : Boolean(config[key]);
+    c.setAttribute('role', 'switch');
+    c.onchange = () => (onChange ? onChange(c.checked) : save({ [key]: invert ? !c.checked : c.checked }, redraw));
+    wrap.append(c, el('span'));
+    return wrap;
+  }
+  // A few choices side by side (instead of a drop-down).
+  function pick(options, current, onPick) {
+    const box = el('div', 'seg pick');
+    box.setAttribute('role', 'radiogroup');
+    for (const [value, label] of options) {
+      const b = el('button', '', label);
+      b.type = 'button';
+      b.setAttribute('aria-selected', String(value === current));
+      b.onclick = () => onPick(value);
+      box.append(b);
+    }
+    return box;
+  }
+  function card(title, rows) {
+    const c = el('div', 'card panel soft');
+    if (title) c.append(el('h3', '', title));
+    c.append(...rows.filter(Boolean));
     return c;
   }
-  function select(key, options, value) {
-    const sel = el('select');
-    for (const [v, label] of options) {
-      const o = el('option', '', label);
-      o.value = String(v);
-      if (Number(v) === Number(value)) o.selected = true;
-      sel.append(o);
-    }
-    sel.onchange = () => save({ [key]: Number(sel.value) });
-    return sel;
+  function btn(label, onClick, cls = 'btn sm') {
+    const b = el('button', cls, label);
+    b.type = 'button';
+    b.onclick = () => onClick(b);
+    return b;
   }
-  function group(id, title, sub, rows) {
-    const g = $(id);
-    g.textContent = '';
-    g.append(el('h2', '', title), el('p', '', sub), ...rows);
-  }
+
+  // --- sections ------------------------------------------------------------
+  const VIEWS = {
+    pet() {
+      const scale = config.scale || 1;
+      const rename = btn(T.rename, () => (desk ? desk.openName() : window.open('/name.html', '_blank', 'width=340,height=170')));
+      return [
+        card(T.look, [
+          row(T.name, pet && pet.nickname ? `${pet.nickname} · ${pet.form}` : T.nameSub, rename),
+          row(T.size, '', pick([[0.8, T.small], [1, T.normal], [1.25, T.large]], [0.8, 1, 1.25].find((s) => Math.abs(s - scale) < 0.01), (v) => save({ scale: v }, true))),
+          row(T.seasons, T.seasonsSub, toggle('seasons')),
+          row(T.language, T.languageSub, pick([['pt-BR', 'Português'], ['en', 'English'], ['es', 'Español']], lang, (v) => save({ lang: v }).then(() => location.replace(`?lang=${v}#${tab}`)))),
+        ]),
+        card(T.behaviour, [
+          row(T.sounds, T.soundsSub, toggle('muted', { invert: true })),
+          row(T.chatter, T.chatterSub, toggle('chatter')),
+          row(T.stroll, T.strollSub, toggle('stroll')),
+          row(T.follow, T.followSub, toggle('followProject')),
+        ]),
+      ];
+    },
+    alerts() {
+      return [
+        card(null, [
+          row(T.notify, T.notifySub, toggle('notify')),
+          row(T.answerOn, T.answerOnSub, toggle('answerFromPet', { redraw: true })),
+          config.answerFromPet ? row(T.wait, T.waitSub, pick([10, 25, 40, 60].map((n) => [n, fill(T.seconds, { n })]), config.answerWaitSec || 25, (v) => save({ answerWaitSec: v }, true)), { cls: 'sub' }) : null,
+        ]),
+      ];
+    },
+    focus() {
+      const status = (on, until) => el('span', `status${on ? ' on' : ''}`, on ? fill(T.until, { t: clock(until) }) : T.off);
+      const timer = (key, on, options) => [status(on, config[`${key}Until`]), ...options.map(([n, label]) => btn(label, () => save({ [`${key}Minutes`]: n }, true))), on ? btn(T.end, () => save({ [`${key}Minutes`]: 0 }, true), 'btn sm ghost') : null];
+      const tomorrow = () => {
+        const d = new Date();
+        d.setHours(24 + 8, 0, 0, 0);
+        return Math.ceil((d - Date.now()) / 60000);
+      };
+      return [
+        card(T.now, [
+          row(T.focusMode, T.focusModeSub, timer('focus', config.focus, [[25, fill(T.min, { n: 25 })], [50, fill(T.min, { n: 50 })], [90, fill(T.min, { n: 90 })]])),
+          row(T.quiet, T.quietSub, timer('quiet', config.quiet, [[30, fill(T.min, { n: 30 })], [60, fill(T.min, { n: 60 })], [tomorrow(), T.tomorrow]])),
+        ]),
+        card(T.always, [
+          row(T.present, T.presentSub, toggle('present')),
+          row(T.breaks, T.breaksSub, pick([[0, T.off], [50, fill(T.min, { n: 50 })], [90, fill(T.min, { n: 90 })]], config.breakEvery || 0, (v) => save({ breakEvery: v }, true))),
+        ]),
+      ];
+    },
+    phone() {
+      const rows = [row(T.phoneOn, T.phoneOnSub, toggle('phoneAlerts', { redraw: true }))];
+      if (config.phoneAlerts) {
+        const topic = el('input', 'input topic');
+        topic.value = config.phoneTopic || '';
+        topic.placeholder = 'openmon-…';
+        topic.onchange = () => save({ phoneTopic: topic.value.trim() });
+        const gen = btn(T.random, () => {
+          const bytes = crypto.getRandomValues(new Uint8Array(9));
+          topic.value = `openmon-${[...bytes].map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 14)}`;
+          save({ phoneTopic: topic.value });
+        });
+        const result = el('span');
+        const test = btn(T.test, async () => {
+          await save({ phoneTopic: topic.value.trim() });
+          const r = await (await fetch('/api/phone/test', { method: 'POST' })).json();
+          result.className = r.ok ? 'ok' : 'bad';
+          result.textContent = r.ok ? T.sent : T.failed;
+        }, 'btn sm primary');
+        rows.push(
+          row(T.topic, T.topicSub, [topic, gen, test, result], { cls: 'sub wide' }),
+          row(T.after, T.afterSub, pick([[0, T.immediately], [30, fill(T.seconds, { n: 30 })], [60, fill(T.seconds, { n: 60 })], [180, fill(T.seconds, { n: 180 })]], config.phoneAfterSec ?? 60, (v) => save({ phoneAfterSec: v }, true)), { cls: 'sub' }),
+          row(T.project, T.projectSub, toggle('phoneProject'), { cls: 'sub' }),
+        );
+      }
+      return [card(null, rows)];
+    },
+    computer() {
+      if (!desk || !desktop) return [card(null, [row(T.tabs.computer, T.desktopOnly, null)])];
+      const login = el('label', 'switch');
+      const c = el('input');
+      c.type = 'checkbox';
+      c.checked = desktop.loginItem;
+      c.onchange = () => desk.call('login', c.checked);
+      login.append(c, el('span'));
+      const claude = desktop.hooked ? el('span', 'status on', T.claudeOk) : btn(T.connect, async () => {
+        desktop = await desk.call('connect');
+        render();
+      }, 'btn sm primary');
+      return [
+        card(null, [
+          row(T.login, T.loginSub, login),
+          row(T.claude, T.claudeSub, claude),
+          row(T.position, T.positionSub, btn(T.reset, () => desk.call('reset-position'))),
+        ]),
+        card(T.backups, [
+          row('', T.backupsSub, [
+            btn(T.copyNow, async (b) => {
+              await desk.call('backup');
+              b.textContent = T.copied;
+            }, 'btn sm primary'),
+            btn(T.exportFile, () => desk.call('export')),
+            btn(T.importFile, () => desk.call('import')),
+            btn(T.openFolder, () => desk.call('open-backups'), 'btn sm ghost'),
+          ], { cls: 'wide' }),
+        ]),
+      ];
+    },
+    more() {
+      const url = `${location.origin}/?scale=1&quiet`;
+      const copy = btn(T.copy, (b) => navigator.clipboard.writeText(url).then(() => (b.textContent = T.copiedUrl)));
+      return [
+        card(null, [
+          row(T.keys, T.keysSub, null, { html: true }),
+          row(T.obs, T.obsSub, [el('code', 'url', url), copy], { cls: 'wide' }),
+          desk ? row(T.demo, T.demoSub, btn(T.play, () => desk.call('demo'))) : null,
+        ]),
+      ];
+    },
+  };
 
   function render() {
-    group('g-answer', T.answer, T.answerSub, [
-      row(T.answerOn, T.answerOnSub, toggle('answerFromPet')),
-      row(T.wait, T.waitSub, select('answerWaitSec', [10, 15, 25, 40, 60].map((n) => [n, fill(T.seconds, { n })]), config.answerWaitSec || 25)),
-    ]);
-    group('g-calm', T.calm, T.calmSub, [
-      row(T.present, T.presentSub, toggle('present')),
-      row(T.breaks, T.breaksSub, select('breakEvery', [[0, T.off], [50, fill(T.min, { n: 50 })], [90, fill(T.min, { n: 90 })]], config.breakEvery || 0)),
-      row(T.follow, T.followSub, toggle('followProject')),
-      row(T.seasons, T.seasonsSub, toggle('seasons')),
-    ]);
-    const topic = el('input', 'input topic');
-    topic.value = config.phoneTopic || '';
-    topic.placeholder = 'openmon-…';
-    topic.onchange = () => save({ phoneTopic: topic.value.trim() });
-    const gen = el('button', 'btn sm', T.random);
-    gen.onclick = () => {
-      const bytes = crypto.getRandomValues(new Uint8Array(9));
-      topic.value = `openmon-${[...bytes].map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 14)}`;
-      save({ phoneTopic: topic.value });
-    };
-    const result = el('span');
-    const test = el('button', 'btn sm primary', T.test);
-    test.onclick = async () => {
-      await save({ phoneTopic: topic.value.trim() });
-      const r = await (await fetch('/api/phone/test', { method: 'POST' })).json();
-      result.className = r.ok ? 'ok' : 'bad';
-      result.textContent = r.ok ? T.sent : T.failed;
-    };
-    group('g-phone', T.phone, T.phoneSub, [
-      row(T.phoneOn, T.phoneOnSub, toggle('phoneAlerts')),
-      row(T.topic, T.topicSub, [topic, gen, test, result]),
-      row(T.after, T.afterSub, select('phoneAfterSec', [[0, T.immediately], [30, fill(T.seconds, { n: 30 })], [60, fill(T.seconds, { n: 60 })], [180, fill(T.seconds, { n: 180 })]], config.phoneAfterSec ?? 60)),
-      row(T.project, T.projectSub, toggle('phoneProject')),
-    ]);
-    const url = `${location.origin}/?scale=1&quiet`;
-    const copy = el('button', 'btn sm', T.copy);
-    copy.onclick = () => navigator.clipboard.writeText(url).then(() => (copy.textContent = T.copied));
-    group('g-more', T.more, T.moreSub, [row(T.keys, T.keysSub, null, true), row(T.obs, T.obsSub, [el('code', 'url', url), copy])]);
+    const side = $('side');
+    side.textContent = '';
+    for (const [id, icon] of SECTIONS) {
+      const b = el('button');
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(id === tab));
+      b.append(el('span', 'ico', icon), el('span', '', T.tabs[id]));
+      b.onclick = () => {
+        tab = id;
+        history.replaceState(null, '', `#${id}`);
+        render();
+      };
+      side.append(b);
+    }
+    const pane = $('pane');
+    pane.textContent = '';
+    pane.append(el('h2', '', T.tabs[tab]), el('p', 'lead', T.leads[tab]), ...VIEWS[tab]());
   }
 
-  fetch('/api/state').then((r) => r.json()).then((s) => {
+  Promise.all([
+    fetch('/api/state').then((r) => r.json()),
+    desk ? desk.call('info').catch(() => null) : null,
+  ]).then(([s, d]) => {
     config = s.config || {};
+    pet = s.pet || null;
+    desktop = d;
     render();
   });
+  // Focus and quiet count down; keep their times fresh.
+  setInterval(() => {
+    if (tab !== 'focus') return;
+    fetch('/api/state').then((r) => r.json()).then((s) => {
+      config = s.config || config;
+      render();
+    });
+  }, 30000);
 </script>
 </body>
 </html>

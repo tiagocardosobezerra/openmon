@@ -21,21 +21,22 @@ const os = require('node:os');
 const { app, BrowserWindow } = require('electron');
 
 const BRAND = path.join(__dirname, '..', 'assets', 'brand');
-// One icon everywhere: the cracked egg (icon.svg). The macOS tray needs a
-// black "template" silhouette, which the OS tints.
+// The designer's sizes: the app icon is the egg on a purple tile; below
+// 48 px the symbol becomes the simple silhouette (tray, favicons). The macOS
+// tray needs a black "template" silhouette, which the OS tints.
 const OUTPUTS = [
-  ['icon.svg', 'tray.png', 16],
-  ['icon.svg', 'tray@2x.png', 32],
-  ['icon.svg', 'trayTemplate.png', 16, 'silhouette'],
-  ['icon.svg', 'trayTemplate@2x.png', 32, 'silhouette'],
-  ['icon.svg', 'favicon-16.png', 16],
-  ['icon.svg', 'favicon-32.png', 32],
+  ['source/tray-16.svg', 'tray.png', 16],
+  ['source/tray-32.svg', 'tray@2x.png', 32],
+  ['source/tray-16.svg', 'trayTemplate.png', 16, 'silhouette'],
+  ['source/tray-32.svg', 'trayTemplate@2x.png', 32, 'silhouette'],
+  ['source/favicon-16.svg', 'favicon-16.png', 16],
+  ['source/favicon-32.svg', 'favicon-32.png', 32],
   ['icon.svg', 'favicon-48.png', 48],
-  ['icon.svg', 'app-icon-256.png', 256],
-  ['icon.svg', 'app-icon-1024.png', 1024],
+  ['app-icon.svg', 'app-icon-256.png', 256],
+  ['app-icon.svg', 'app-icon-1024.png', 1024],
   ['logo-mark.svg', 'logo-mark-1024.png', 1024],
-  ['icon.svg', 'tray-alert.png', 16, 'alert'],
-  ['icon.svg', 'tray-alert@2x.png', 32, 'alert'],
+  ['source/tray-16.svg', 'tray-alert.png', 16, 'alert'],
+  ['source/tray-32.svg', 'tray-alert@2x.png', 32, 'alert'],
 ];
 
 app.disableHardwareAcceleration();
