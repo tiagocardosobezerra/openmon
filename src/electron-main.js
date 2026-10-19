@@ -42,6 +42,7 @@ const PT = {
   'Backups': 'Backups',
   'Walk around': 'Passear pela tela',
   'Bag': 'Mochila',
+  'How it works': 'Como funciona',
   'Save a backup now': 'Salvar um backup agora',
   'Export save…': 'Exportar save…',
   'Import save…': 'Importar save…',
@@ -206,6 +207,7 @@ function menuTemplate() {
     { label: L('Powers…'), click: openPowersWindow },
     { label: 'Opendex', click: () => openAppWindow('dex') },
     { label: L('Bag'), click: () => openAppWindow('bag') },
+    { label: L('How it works'), click: () => openAppWindow('help') },
     { label: L('Trainer card (share)'), click: () => openAppWindow('card') },
     { type: 'separator' },
     {
@@ -316,7 +318,7 @@ function applyScale(scale) {
 let powersWin = null;
 // One app window for Powers, Opendex and the trainer card; the top bar
 // moves between them.
-const APP_PAGES = new Set(['powers', 'dex', 'bag', 'card']);
+const APP_PAGES = new Set(['powers', 'dex', 'bag', 'card', 'help']);
 function openAppWindow(page = 'powers') {
   if (!APP_PAGES.has(page)) page = 'powers';
   const url = `http://127.0.0.1:${port}/${page}.html`;

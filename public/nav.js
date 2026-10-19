@@ -21,6 +21,7 @@
     ['dex', '/dex.html', 'Opendex'],
     ['bag', '/bag.html', tr('act.bag')],
     ['card', '/card.html', tr('nav.card')],
+    ['help', '/help.html', tr('nav.help')],
   ]) {
     const a = document.createElement('a');
     a.href = href;

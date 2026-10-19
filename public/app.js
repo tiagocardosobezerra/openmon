@@ -740,7 +740,10 @@
     ]) if (text) chips.appendChild(el('span', `chip ${cls}`.trim(), text));
 
     $('xp-bar').style.width = `${Math.round(pr.ratio * 100)}%`;
-    $('xp-text').textContent = !pr.next ? tr('card.max') : pr.needsBond && pr.xpToGo === 0 ? tr('card.needsBond', { n: pr.bondNeeded }) : tr(pet.stage === 'egg' ? 'card.hatchesIn' : 'card.toEvolve', { n: pr.xpToGo });
+    $('xp-text').textContent = !pr.next ? tr('card.max') : pr.needsBond && pr.xpToGo === 0 ? tr('card.needsBond', { n: pr.bondNeeded }) : tr(pet.stage === 'egg' ? 'card.hatchesIn' : 'card.toEvolve', { n: pr.xpToGo.toLocaleString(window.OpenmonI18n.lang) });
+    // What the two bars mean, for anyone new to games.
+    $('xp-bar').parentElement.parentElement.title = tr('meter.xp.help');
+    $('bond-bar').parentElement.parentElement.title = tr('meter.bond.help');
     $('bond-bar').style.width = `${pet.bond}%`;
     $('bond-text').textContent = `${pet.bond}/100`;
 
