@@ -75,6 +75,8 @@ const SHOTS = [
   { name: 'dex', path: '/dex.html', w: 1000, h: 1250 },
   { name: 'powers', path: '/powers.html', w: 1000, h: 1000 },
   { name: 'help', path: '/help.html', w: 1000, h: 900 },
+  { name: 'party', path: '/party.html', w: 1000, h: 1000 },
+  { name: 'settings', path: '/settings.html', w: 1000, h: 800 },
 ];
 
 async function shot(port, s, lang) {
