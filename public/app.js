@@ -624,7 +624,9 @@
       // Allow / Deny, right on the bubble.
       const row = document.createElement('span');
       row.className = 'choices';
-      for (const [act, label, style] of [['allow', tr('perm.allow'), 'primary'], ['deny', tr('perm.deny'), '']]) {
+      const options = [['allow', tr('perm.allow'), 'primary'], ['deny', tr('perm.deny'), '']];
+      if (choices.canAlways) options.splice(1, 0, ['always', tr('perm.always'), '']);
+      for (const [act, label, style] of options) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = `btn sm ${style}`.trim();
@@ -842,6 +844,19 @@
       const detail = x.state === 'attention' ? trDetail(x.detail) || tr('session.needsYou') : x.state === 'working' ? trDetail(x.detail) || tr('session.working') : tr(x.state === 'done' ? 'session.done' : 'session.idle');
       li.append(el('i', 'dot'), el('b', '', x.label), el('span', '', detail), el('em', 'go', demo ? '' : x.state === 'attention' ? tr('session.go') : '↗'));
       list.appendChild(li);
+      // A permission the pet can answer: Allow / Deny on the row itself.
+      const req = permissions.find((p) => p.session === x.id);
+      if (req) {
+        const row = el('li', 'perm-row');
+        for (const [act, label, style] of [['allow', tr('perm.allow'), 'primary'], ...(req.canAlways ? [['always', tr('perm.always'), '']] : []), ['deny', tr('perm.deny'), '']]) {
+          const b = el('button', `btn sm ${style}`.trim(), label);
+          b.type = 'button';
+          b.dataset.perm = req.id;
+          b.dataset.decision = act;
+          row.appendChild(b);
+        }
+        list.appendChild(row);
+      }
     }
 
     // Today.
@@ -1243,6 +1258,13 @@
   $('stats').addEventListener('mouseleave', () => statInfo(null));
 
   $('sessions').addEventListener('click', (e) => {
+    const answer = e.target.closest && e.target.closest('[data-perm]');
+    if (answer) {
+      post('/api/permission/decide', { id: answer.dataset.perm, decision: answer.dataset.decision });
+      permissions = permissions.filter((p) => p.id !== answer.dataset.perm);
+      renderCard();
+      return;
+    }
     const li = e.target.closest('li.jump');
     if (li) jumpTo(li.dataset.id);
   });

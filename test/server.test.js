@@ -376,3 +376,33 @@ test('answer permissions from the pet: Allow and Deny reach Claude Code; off mea
     await daemon.close();
   }
 });
+
+test('"Always allow" hands back Claude Code\'s own suggested rule', async () => {
+  const { daemon, port } = await boot();
+  const stream = await new Promise((resolve) => http.get({ host: '127.0.0.1', port, path: '/stream' }, resolve));
+  const json = { 'Content-Type': 'application/json' };
+  const suggestion = { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' };
+  try {
+    await request(port, 'POST', '/api/config', { body: JSON.stringify({ answerFromPet: true, answerWaitSec: 10 }), headers: json });
+    const hook = new Promise((resolve) => {
+      const child = spawn(process.execPath, [HOOK, '--openmon', '--permission'], { env: { ...process.env, OPENMON_PORT: String(port) } });
+      let out = '';
+      child.stdout.on('data', (d) => (out += d));
+      child.on('exit', () => resolve(out));
+      child.stdin.end(JSON.stringify({ session_id: 'al1', hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'npm test' }, permission_suggestions: [suggestion], cwd: '/tmp/x' }));
+    });
+    let p = null;
+    for (let i = 0; i < 50 && !p; i++) {
+      p = JSON.parse((await request(port, 'GET', '/api/state')).body).permissions[0] || null;
+      if (!p) await new Promise((r) => setTimeout(r, 50));
+    }
+    assert.equal(p.canAlways, true);
+    await request(port, 'POST', '/api/permission/decide', { body: JSON.stringify({ id: p.id, decision: 'always' }), headers: json });
+    const out = JSON.parse(await hook);
+    assert.equal(out.hookSpecificOutput.decision.behavior, 'allow');
+    assert.deepEqual(out.hookSpecificOutput.decision.updatedPermissions, [suggestion]);
+  } finally {
+    stream.destroy();
+    await daemon.close();
+  }
+});

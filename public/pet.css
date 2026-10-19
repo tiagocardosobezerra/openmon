@@ -200,6 +200,8 @@ html, body {
 #sessions li.attention span { color: var(--sun-ink); font-weight: 650; }
 #sessions li .go { color: var(--muted); font: 700 11px var(--font-display); opacity: 0; }
 #sessions li.jump:hover .go, #sessions li.attention .go { opacity: 1; }
+#sessions li.perm-row { display: flex; gap: 6px; justify-content: flex-end; background: none; min-height: 0; padding: 0 2px 4px; }
+#sessions li.perm-row .btn { min-height: 24px; padding: 1px 10px; font-size: 12px; }
 #sessions li.empty { display: block; background: none; color: var(--muted); text-align: center; padding: 18px 0; white-space: normal; }
 @keyframes blink { 50% { opacity: 0.45; } }
 

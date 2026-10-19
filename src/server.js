@@ -218,7 +218,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // Unguessable, so only the pet that shows the request can answer it.
     const id = require('node:crypto').randomBytes(12).toString('hex');
     const waitMs = (config.answerWaitSec || 25) * 1000;
-    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), detail: signal ? signal.detail : null, until: now() + waitMs, waiters: [], decision: null };
+    // Claude Code's own suggestions ("allow this from now on") make the
+    // "Always allow" button possible.
+    const suggestions = Array.isArray(body.permission_suggestions) && body.permission_suggestions.length ? body.permission_suggestions : null;
+    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), label: signal ? signal.label : null, detail: signal ? signal.detail : null, until: now() + waitMs, waiters: [], decision: null, suggestions };
     entry.timer = setTimeout(() => settlePermission(id, null), waitMs + 500);
     if (entry.timer.unref) entry.timer.unref();
     permissions.set(id, entry);
@@ -232,16 +235,17 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     clearTimeout(entry.timer);
     permissions.delete(id);
     entry.decision = decision;
-    settled.set(id, decision);
     const forget = setTimeout(() => settled.delete(id), 30_000);
     if (forget.unref) forget.unref();
-    for (const res of entry.waiters) json(res, 200, { decision });
+    const reply = decision === 'always' ? { decision: 'allow', updatedPermissions: entry.suggestions || [] } : { decision };
+    settled.set(id, reply);
+    for (const res of entry.waiters) json(res, 200, reply);
     pushState(true);
     return true;
   }
 
   function permissionView() {
-    return [...permissions.values()].map((p) => ({ id: p.id, session: p.session, detail: p.detail, until: p.until }));
+    return [...permissions.values()].map((p) => ({ id: p.id, session: p.session, label: p.label, detail: p.detail, until: p.until, canAlways: Boolean(p.suggestions) }));
   }
 
   // Brings the window of a waiting agent (or the given session) to the front.
@@ -491,7 +495,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'POST /api/permission/wait':
         return readJson(req, (err, body) => {
           const id = !err && body ? String(body.id || '') : '';
-          if (settled.has(id)) return json(res, 200, { decision: settled.get(id) });
+          if (settled.has(id)) return json(res, 200, settled.get(id));
           const entry = permissions.get(id);
           if (!entry) return json(res, 200, { decision: null });
           entry.waiters.push(res);
@@ -501,7 +505,9 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       // Your Allow or Deny, from the pet window (same-origin page only).
       case 'POST /api/permission/decide':
         return readJson(req, (err, body) => {
-          if (err || !body || !['allow', 'deny'].includes(body.decision)) return res.writeHead(400).end();
+          if (err || !body || !['allow', 'deny', 'always'].includes(body.decision)) return res.writeHead(400).end();
+          const pendingEntry = permissions.get(String(body.id || ''));
+          if (body.decision === 'always' && pendingEntry && !pendingEntry.suggestions) return json(res, 200, { ok: false });
           json(res, 200, { ok: settlePermission(String(body.id || ''), body.decision) });
         });
       case 'POST /api/focus':

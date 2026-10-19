@@ -239,6 +239,18 @@
     ].filter(Boolean);
     return `${dayLabel(e.day, { weekday: 'long', day: 'numeric', month: 'short' })} · ${bits.join(' · ')}${projects ? ` · ${projects}` : ''}`;
   }
+  function standupText(days) {
+    const line = (e) => {
+      if (!e || (!e.tools && !e.turns)) return tr('standup.quiet');
+      const projects = Object.entries(e.projects || {}).sort((a, b) => b[1] - a[1]).map(([p]) => p).slice(0, 4).join(', ');
+      const tests = (e.green || 0) + (e.red || 0);
+      return [projects ? tr('standup.projects', { p: projects }) : null, tr('journal.turns', { n: e.turns || 0 }), tr('journal.tools', { n: e.tools }), tests ? tr('standup.tests', { g: e.green || 0, t: tests }) : null].filter(Boolean).join(' · ');
+    };
+    const today = days[days.length - 1];
+    const yesterday = [...days.slice(0, -1)].reverse().find((e) => e.tools || e.turns);
+    return `${tr('standup.yesterday')}: ${line(yesterday)}\n${tr('standup.today')}: ${line(today)}`;
+  }
+
   function renderJournal() {
     const box = $('journal');
     box.textContent = '';
@@ -292,7 +304,10 @@
       h('div', {}, h('b', {}, dur(sum('waitMs'))), h('small', {}, tr('journal.weekWait'))),
       h('div', { title: tr('today.tokensHelp') }, h('b', {}, new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 }).format(sum('tokens'))), h('small', {}, tr('journal.weekTokens'))),
       h('div', {}, h('b', { style: 'font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, top ? top[0] : '–'), h('small', {}, tr('journal.weekTop'))));
-    box.append(head, chart, labels, legend, detail, totals);
+    // A ready-to-paste update for your daily stand-up.
+    const standup = h('button', { class: 'btn sm', style: 'margin-top:10px' }, tr('standup.copy'));
+    standup.onclick = () => navigator.clipboard.writeText(standupText(days)).then(() => (standup.textContent = tr('standup.copied')));
+    box.append(head, chart, labels, legend, detail, totals, standup);
   }
 
   function render() {

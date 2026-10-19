@@ -80,10 +80,12 @@ function findWindow(sessionId) {
 function awaitDecision(ask) {
   return new Promise((resolve) => {
     post('/api/permission/wait', { id: ask.id }, (status, text) => {
-      const { decision } = parse(status, text);
+      const { decision, updatedPermissions } = parse(status, text);
       if (decision === 'allow' || decision === 'deny') {
         const out = { behavior: decision };
         if (decision === 'deny') out.message = 'Denied from the Openmon pet.';
+        // "Always allow": Claude Code's own suggested rule, applied.
+        if (decision === 'allow' && Array.isArray(updatedPermissions) && updatedPermissions.length) out.updatedPermissions = updatedPermissions;
         // Exit only once the decision is fully written.
         return process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PermissionRequest', decision: out } }), () => resolve());
       }
