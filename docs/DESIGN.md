@@ -86,11 +86,11 @@ Bond unlocks the final stage and cosmetic reactions (hearts, small gifts).
 | Sprout | 30 XP (inside your first real session) | — |
 | Juvenile | 400 XP (about a day) | Top stat at that moment |
 | Adult | 3 000 XP (about a week) | Top stat at that moment (a lineage switch is possible) |
-| Mythic | 15 000 XP and bond ≥ 60 (about a month) | Top stat, plus the second stat as a trait |
+| Elder | 15 000 XP and bond ≥ 60 (about a month) | Top stat, plus the second stat as a trait |
 
 Six lineages times three evolved stages give 18 forms, plus egg and sprout. The second-highest stat adds a visible trait (an accessory) from Adult on, so two Craft pets rarely look the same.
 
-| Lineage (top stat) | Juvenile | Adult | Mythic |
+| Lineage (top stat) | Juvenile | Adult | Elder |
 | --- | --- | --- | --- |
 | Craft | Tinkit | Forgemaw | Archsmith |
 | Lore | Owlet | Scrollwyrm | Oracle |
@@ -118,8 +118,8 @@ Small, honest milestones: first hatch, first green test, 100 green test runs, 1 
 | Natures | creature games | Six natures that change idle behaviour and chatter |
 | Species cries | creature games | A synthesised call per lineage, deeper as it grows |
 | "What? X is evolving!" scene | creature games | Dim, flicker, reveal, fanfare, cry, dex entry |
-| Friendship-gated evolution | creature games | Mythic needs bond 60 |
-| Rebirth into a new egg | virtual pets | Retire at Mythic to the Hall of Fame; the egg inherits 10% of the stats |
+| Friendship-gated evolution | creature games | Elder needs bond 60 |
+| Rebirth into a new egg | virtual pets | Retire an Elder to the Hall of Fame; the egg inherits 10% of the stats |
 
 What we deliberately did not borrow: death, sickness, care mistakes that punish you, and anything random you can pay for.
 

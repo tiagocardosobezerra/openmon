@@ -151,7 +151,7 @@ function L(text, vars = {}) {
 }
 
 const WIN_W = 300;
-// Tall enough for the stats card above a mythic; clicks pass through the
+// Tall enough for the stats card above an Elder; clicks pass through the
 // empty part, so the extra height costs nothing.
 const WIN_H = 560;
 const NOTIFY_AFTER_MS = 20_000;

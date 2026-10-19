@@ -551,7 +551,7 @@
         }
         break;
       case 'swarm': {
-        // Buddies clinging to the hive, more at Mythic.
+        // Buddies clinging to the hive, more at Elder.
         const spots = n >= 3 ? [[-1.35, 0.55], [1.35, 0.55], [-1.25, -0.9], [1.25, -0.9]] : [[-1.3, 0.6], [1.3, 0.6]];
         spots.forEach(([fx, fy], i) => {
           const bob = Math.sin(t * 3 + i * 1.3) * R * 0.05;
@@ -2077,7 +2077,7 @@
     ellipse(ctx, -w * 0.35, cy - ht * 0.55, w * 0.25, ht * 0.18, -0.5);
     ctx.fillStyle = '#fff';
     ctx.fill();
-    // Mythic circuit / pattern lines.
+    // Elder circuit / pattern lines.
     if (spec.stage === 'mythic') {
       ctx.globalAlpha = 0.35 + Math.sin(t * 3) * 0.15;
       ctx.strokeStyle = pal.glow;

@@ -61,16 +61,16 @@
       <button class="primary" data-evolve="sprout" data-t="hatch">Hatch (scene)</button>
       <button class="primary" data-evolve="juvenile">→ Juvenile</button>
       <button class="primary" data-evolve="adult">→ Adult</button>
-      <button class="primary" data-evolve="mythic">→ Mythic</button>
+      <button class="primary" data-evolve="mythic">→ Elder</button>
     </div>
     <div class="row">
       <button data-form="juvenile" data-t="instJ">Instant Juvenile</button>
       <button data-form="adult" data-t="instA">Instant Adult</button>
-      <button data-form="mythic" data-t="instM">Instant Mythic</button>
+      <button data-form="mythic" data-t="instM">Instant Elder</button>
       <button data-act="reset" data-t="reset">New egg</button>
       <button data-act="layEgg" data-t="hall">Hall of Fame + egg</button>
     </div>
-    <p class="hint" data-t="evoHint">Scene buttons play the real evolution (dim, flicker, fanfare, cry, Opendex entry). Mythic and Hall of Fame need the pet at Adult/Mythic first.</p>
+    <p class="hint" data-t="evoHint">Scene buttons play the real evolution (dim, flicker, fanfare, cry, Opendex entry). Elder and Hall of Fame need the pet at Adult/Elder first.</p>
   </section>
 
   <section>
@@ -136,8 +136,8 @@
 <script>
   const PT = {
     sub: 'Um pet de teste com save próprio. Seu pet de verdade não é afetado.',
-    evo: 'Evolução', hatch: 'Chocar (cena)', instJ: 'Jovem instantâneo', instA: 'Adulto instantâneo', instM: 'Mítico instantâneo', reset: 'Novo ovo', hall: 'Hall da Fama + ovo',
-    evoHint: 'Os botões de cena tocam a evolução real (escurece, pisca, fanfarra, grito, registro na Opendex). Mítico e Hall da Fama pedem o pet em Adulto/Mítico antes.',
+    evo: 'Evolução', hatch: 'Chocar (cena)', instJ: 'Jovem instantâneo', instA: 'Adulto instantâneo', instM: 'Ancião instantâneo', reset: 'Novo ovo', hall: 'Hall da Fama + ovo',
+    evoHint: 'Os botões de cena tocam a evolução real (escurece, pisca, fanfarra, grito, registro na Opendex). Ancião e Hall da Fama pedem o pet em Adulto/Ancião antes.',
     agent: 'Estados do agente', think: 'Pensando', testRun: 'Rodar testes', testPass: 'Testes passam', testFail: 'Testes falham', toolFail: 'Ferramenta falha',
     subs: '3 subagentes', needs: 'Precisa de você', needs2: '2º agente precisa', done: 'Terminou', endAll: 'Encerrar sessões',
     agentHint: 'Clique no pet enquanto ele espera para dizer "vi". Depois de 5 minutos parado, ele dorme.',

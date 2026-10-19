@@ -145,7 +145,7 @@ function topStats(stats) {
 }
 
 // Levels: Lv 9 near the first evolution, Lv 25 at Adult,
-// Lv 55 at Mythic, Lv 100 at 49,005 XP.
+// Lv 55 at Elder, Lv 100 at 49,005 XP.
 const MAX_LEVEL = 100;
 function level(xp) {
   return Math.min(MAX_LEVEL, Math.floor(Math.sqrt(Math.max(0, xp) / 5)) + 1);
@@ -585,7 +585,7 @@ function evolve(pet, now, events) {
       // Evolving between midnight and 5 am gives the Nocturne colouring,
       // decided again at every evolution (a time-of-day evolution).
       pet.nocturne = new Date(now).getHours() < 5;
-      // Full friendship when it becomes Mythic: the friendship form.
+      // Full friendship when it becomes an Elder: the friendship form.
       pet.friend = next.id === 'mythic' && pet.bond >= BOND_MAX && FRIEND_FORMS.includes(pet.lineage);
       if (pet.friend) unlock(pet, 'friendship', now, events);
       // Regional form: raised mostly on one language (60% of 50+ files).
@@ -748,7 +748,7 @@ function petIt(pet, now) {
   return events;
 }
 
-// Post-game: a Mythic pet retires to the Hall of Fame and leaves an egg.
+// Post-game: an Elder retires to the Hall of Fame and leaves an egg.
 // The Opendex, achievements and Hall of Fame carry over, and the egg
 // inherits a tenth of its parent's stats, so the next one starts leaning
 // the same way unless your work changes.

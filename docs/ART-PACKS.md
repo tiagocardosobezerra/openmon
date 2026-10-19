@@ -15,7 +15,7 @@ Put the images in `~/.openmon/art/` (run `openmon art` to print the exact folder
 | `<form>` | `egg`, `sprout`, `<lineage>-<stage>` or a legendary (`mergeon`, `aeonbyte`, `zeroday`): lineages `craft`, `lore`, `shell`, `test`, `roam`, `swarm`, `docs`, `git`, `debug`, `data`, `style`, `chimera`; stages `juvenile`, `adult`, `mythic` (Chimera has only `adult` and `mythic`) |
 | `.shiny` | optional, the rare colour variant |
 | `.night` | optional, the Nocturne colours |
-| `.<variant>` | optional: `.friend` (the friendship Mythic), `.craft-lore` and the other 14 pairs on `chimera-adult`, `.region-<js\|py\|rs\|go\|jvm\|cs>` |
+| `.<variant>` | optional: `.friend` (the friendship Elder), `.craft-lore` and the other 14 pairs on `chimera-adult`, `.region-<js\|py\|rs\|go\|jvm\|cs>` |
 | `@<pose>` | optional: `sleep`, `working`, `attention`, `error`, `done` |
 
 Examples: `craft-adult.png`, `craft-adult.shiny.png`, `craft-adult@sleep.png`, `chimera-mythic.svg`.
@@ -33,7 +33,7 @@ Accessories are SVGs in `public/wear/<id>.svg`, each in its own frame: a hat's b
 ## Drawing guidelines
 
 - Transparent background, the creature centred horizontally, feet on the bottom edge.
-- Any size; 512 px tall is a good master. The pet scales it to the stage's height (eggs and sprouts are smaller than mythics).
+- Any size; 512 px tall is a good master. The pet scales it to the stage's height (eggs and sprouts are smaller than elders).
 - A dark outline (about 2–3 % of the height) keeps it readable on any wallpaper.
 - Motion is added for you: breathing, hops, squash and stretch, the spin, shaking on errors. Props (the "!" sign, hammer, book, shield…) and particles are drawn on top. Leave a little room on the right for the sign.
 - Pose images are where the personality goes: closed eyes for `sleep`, a surprised face for `attention`, a grin for `done`.
