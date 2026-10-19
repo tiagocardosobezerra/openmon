@@ -25,6 +25,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # The pet windows in the real app (not on Linux: no desktop there).
+      - run: npm run e2e
+        if: runner.os != 'Linux'
       - run: node tools/dist.js --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
