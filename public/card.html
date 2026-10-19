@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Trainer card</title>
+<style>
+  :root { --bg: #f4efe6; --ink: #2a2140; --muted: #6d6680; --card: #fffdf8; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #16121d; --ink: #f3eefc; --muted: #a49cb8; --card: #211b2c; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, Segoe UI, sans-serif; display: grid; place-items: center; padding: 24px 16px; }
+  main { width: min(960px, 100%); text-align: center; }
+  canvas { width: 100%; height: auto; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); display: block; }
+  .actions { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  button { font: inherit; font-weight: 700; padding: 8px 16px; border: 2px solid var(--ink); border-radius: 12px; background: var(--card); color: var(--ink); cursor: pointer; }
+  #msg { color: var(--muted); min-height: 1.5em; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="card" width="1200" height="630"></canvas>
+  <div class="actions">
+    <button id="save"></button>
+    <button id="copy"></button>
+  </div>
+  <div id="msg"></div>
+</main>
+<script src="i18n.js"></script>
+<script src="art.js"></script>
+<script src="motion.js"></script>
+<script>
+  const canvas = document.getElementById('card');
+  const ctx = canvas.getContext('2d');
+  const INK = OpenmonArt.INK;
+  const { t: tr, lang } = window.OpenmonI18n;
+  document.documentElement.lang = lang;
+  document.getElementById('save').textContent = tr('card.save');
+  document.getElementById('copy').textContent = tr('card.copy');
+  let data = null;
+  const logo = new Image();
+  logo.src = '/brand/logo-full.svg';
+  let species = null;
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+  }
+
+  function radar(cx, cy, r, values, labels, color) {
+    const n = values.length;
+    const pt = (i, k) => [cx + Math.cos(-Math.PI / 2 + (i * 2 * Math.PI) / n) * r * k, cy + Math.sin(-Math.PI / 2 + (i * 2 * Math.PI) / n) * r * k];
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(42,33,64,0.18)';
+    for (const k of [0.33, 0.66, 1]) {
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) ctx[i ? 'lineTo' : 'moveTo'](...pt(i, k));
+      ctx.closePath();
+      ctx.stroke();
+    }
+    const max = Math.max(0.0001, ...values);
+    ctx.beginPath();
+    values.forEach((v, i) => ctx[i ? 'lineTo' : 'moveTo'](...pt(i, 0.12 + 0.88 * (v / max))));
+    ctx.closePath();
+    ctx.fillStyle = color + 'aa';
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+    ctx.font = '700 20px system-ui, sans-serif';
+    ctx.fillStyle = INK;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    labels.forEach((l, i) => ctx.fillText(l, ...pt(i, 1.22)));
+  }
+
+  function render(t) {
+    const p = data.pet;
+    const key = p.stage === 'sprout' || !p.lineage ? 'sprout' : p.lineage;
+    const pal = (p.shiny && p.stage !== 'egg' && OpenmonArt.SHINY[key]) || OpenmonArt.PALETTES[key] || OpenmonArt.PALETTES.sprout;
+    // Background.
+    const g = ctx.createLinearGradient(0, 0, 1200, 630);
+    g.addColorStop(0, pal.glow);
+    g.addColorStop(1, pal.body);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 1200, 630);
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#fff';
+    for (let i = 0; i < 14; i++) {
+      ctx.beginPath();
+      ctx.arc((i * 173) % 1200, (i * 97) % 630, 30 + (i % 4) * 22, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Card.
+    roundRect(40, 40, 1120, 550, 34);
+    ctx.fillStyle = '#fffdf7';
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+
+    // Pet stage.
+    ctx.save();
+    roundRect(70, 70, 470, 490, 26);
+    ctx.clip();
+    const sg = ctx.createRadialGradient(305, 330, 40, 305, 330, 320);
+    sg.addColorStop(0, '#ffffff');
+    sg.addColorStop(1, pal.belly);
+    ctx.fillStyle = sg;
+    ctx.fillRect(70, 70, 470, 490);
+    ctx.translate(305, 470);
+    ctx.scale(2.6, 2.6);
+    const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny, progress: p.progress.ratio };
+    const anim = OpenmonMotion.poseAnim({ ...spec, pose: 'done', t: t + 3, since: 0 });
+    OpenmonArt.drawCreature(ctx, { ...spec, t, size: 46, pose: 'idle', anim });
+    ctx.restore();
+    roundRect(70, 70, 470, 490, 26);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+
+    // Text.
+    const days = Math.max(1, Math.ceil((Date.now() - p.bornAt) / 86400000));
+    const nature = species.natures[p.nature] ? species.natures[p.nature].label : '';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#6d6680';
+    ctx.font = '700 22px system-ui, sans-serif';
+    ctx.fillText(`#${String(p.dexNo).padStart(3, '0')} · LV ${p.level || 1} · GEN ${p.generation || 1} · ${p.stage.toUpperCase()}${p.shiny && p.stage !== 'egg' ? ' · SHINY' : ''}`, 580, 115);
+    ctx.fillStyle = INK;
+    ctx.font = '900 64px system-ui, sans-serif';
+    ctx.fillText(p.name + (p.shiny ? ' ★' : ''), 578, 182);
+    ctx.font = '600 30px system-ui, sans-serif';
+    ctx.fillText(p.form, 580, 224);
+    ctx.fillStyle = '#6d6680';
+    ctx.font = '500 22px system-ui, sans-serif';
+    ctx.fillText(tr('card.meta', { nature, days: days > 1 ? tr('card.days', { n: days }) : tr('card.day'), bond: p.bond }), 580, 260);
+
+    radar(760, 425, 98, species.stats.map((s) => p.affinity[s] || 0), species.stats.map((s) => species.statLabels[s]), pal.body);
+
+    const seen = Object.keys(p.dex || {}).length;
+    const facts = [
+      [p.counters.tools.toLocaleString(lang), tr('card.toolCalls')],
+      [p.counters.testsGreen.toLocaleString(lang), tr('card.greenRuns')],
+      [`${seen}/${species.dex.length}`, 'Opendex'],
+      [String(Object.keys(p.achievements || {}).length), tr('card.badges')],
+    ];
+    facts.forEach(([v, l], i) => {
+      const x = 970;
+      const y = 320 + i * 62;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = INK;
+      ctx.font = '800 30px system-ui, sans-serif';
+      ctx.fillText(v, x, y);
+      ctx.fillStyle = '#6d6680';
+      ctx.font = '600 17px system-ui, sans-serif';
+      ctx.fillText(l, x, y + 22);
+    });
+
+    ctx.fillStyle = '#6d6680';
+    ctx.font = '600 18px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    if (logo.complete && logo.naturalWidth) {
+      const lh = 28;
+      const lw = (logo.naturalWidth / logo.naturalHeight) * lh;
+      ctx.drawImage(logo, 1130 - lw, 542, lw, lh);
+      ctx.fillText(tr('card.footer').replace(/^openmon · /, ''), 1130 - lw - 14, 563);
+    } else ctx.fillText(tr('card.footer'), 1130, 570);
+  }
+
+  async function main() {
+    [species, data] = await Promise.all([fetch(`/api/species?lang=${lang}`).then((r) => r.json()), fetch('/api/state').then((r) => r.json())]);
+    const loop = (ms) => {
+      render(ms / 1000);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
+  const msg = (text) => (document.getElementById('msg').textContent = text);
+  document.getElementById('save').addEventListener('click', () => {
+    canvas.toBlob((blob) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${(data.pet.name || 'openmon').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-card.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      msg(tr('card.saved'));
+    });
+  });
+  document.getElementById('copy').addEventListener('click', () => {
+    canvas.toBlob(async (blob) => {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        msg(tr('card.copied'));
+      } catch {
+        msg(tr('card.copyFail'));
+      }
+    });
+  });
+  OpenmonArt.loadPack().then(main).catch(() => msg(tr('card.start')));
+</script>
+</body>
+</html>

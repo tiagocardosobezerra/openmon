@@ -1,0 +1,236 @@
+'use strict';
+
+// Lineage powers: useful views of what the agent did, kept per session from
+// the raw hook payloads. Each lineage unlocks one view:
+//
+//   Craft  Forge log     files edited, edits and lines added/removed
+//   Lore   Reading list  files read, searches made
+//   Shell  Command log   commands run, ok or failed, how long they took
+//   Test   Test tracker  test runs, pass/fail, the failing summary line
+//   Roam   Travel log    pages fetched, searches, MCP tools used
+//   Swarm  Hive view     subagents, running or done, how long they took
+//
+// Everything stays in memory on 127.0.0.1; nothing is written to disk.
+
+const path = require('node:path');
+const { judgeTestOutput, responseText, isTestCommand } = require('./classify');
+const { redact } = require('./redact');
+
+const MAX_ITEMS = 60;
+const MAX_SESSIONS = 6;
+const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
+
+function lines(text) {
+  if (typeof text !== 'string' || !text) return 0;
+  return text.split('\n').length;
+}
+
+function short(text, n = 160) {
+  // Secrets are masked before anything is cut or shown.
+  const s = redact(String(text || '').split('\n')[0].trim());
+  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+}
+
+// The line of test output worth showing ("3 failed, 12 passed").
+function testSummary(text) {
+  const tail = text.split('\n').slice(-60);
+  const hit = tail.reverse().find((l) => /\b\d+\s+(passed|failed|failing|passing)\b|test result:|^(ok|FAIL)\b|Tests?:/i.test(l));
+  return hit ? short(hit, 120) : null;
+}
+
+function newTurn(now) {
+  return { startedAt: now, endedAt: null, files: {}, edits: 0, reads: 0, commands: 0, failed: 0, green: 0, red: 0, web: 0, agents: 0 };
+}
+
+function push(list, item) {
+  list.unshift(item);
+  if (list.length > MAX_ITEMS) list.length = MAX_ITEMS;
+}
+
+function createPowers() {
+  const sessions = new Map();
+
+  function session(payload, label, now) {
+    const id = payload.session_id || payload.session || 'default';
+    let s = sessions.get(id);
+    if (!s) {
+      s = { id, label, startedAt: now, lastAt: now, ended: false, files: {}, reads: {}, searches: [], commands: [], tests: [], web: [], agents: {}, turn: null };
+      sessions.set(id, s);
+      // Keep the most recent sessions only.
+      if (sessions.size > MAX_SESSIONS) {
+        const oldest = [...sessions.values()].sort((a, b) => a.lastAt - b.lastAt)[0];
+        sessions.delete(oldest.id);
+      }
+    }
+    s.lastAt = now;
+    if (label) s.label = label;
+    return s;
+  }
+
+  // payload: raw Claude Code hook payload. label: session label from classify.
+  function record(payload, label, now) {
+    if (!payload || !payload.hook_event_name) return;
+    const event = payload.hook_event_name;
+    const s = session(payload, label, now);
+    const tool = payload.tool_name;
+    const input = payload.tool_input || {};
+
+    if (event === 'SessionEnd') {
+      s.ended = true;
+      return;
+    }
+    // One turn = from your prompt to the agent's stop.
+    if (event === 'UserPromptSubmit') {
+      s.turn = newTurn(now);
+      return;
+    }
+    if (event === 'Stop') {
+      if (s.turn) s.turn.endedAt = now;
+      return;
+    }
+    if (!s.turn || s.turn.endedAt) s.turn = newTurn(now);
+    const turn = s.turn;
+    if (event === 'SubagentStart' && payload.agent_id) {
+      s.agents[payload.agent_id] = { type: payload.agent_type || 'agent', startedAt: now, endedAt: null };
+      turn.agents++;
+      return;
+    }
+    if (event === 'SubagentStop' && payload.agent_id) {
+      const a = s.agents[payload.agent_id] || (s.agents[payload.agent_id] = { type: payload.agent_type || 'agent', startedAt: now });
+      a.endedAt = now;
+      return;
+    }
+    const done = event === 'PostToolUse';
+    const failed = event === 'PostToolUseFailure';
+    if (!done && !failed) return;
+    const ms = Number(payload.duration_ms) || null;
+
+    if (['Edit', 'MultiEdit', 'Write', 'NotebookEdit'].includes(tool)) {
+      const file = input.file_path || input.notebook_path;
+      if (!file) return;
+      const f = s.files[file] || (s.files[file] = { file, name: path.basename(file), edits: 0, added: 0, removed: 0, lastAt: now });
+      f.edits++;
+      turn.edits++;
+      turn.files[file] = true;
+      f.lastAt = now;
+      if (tool === 'Write') f.added += lines(input.content);
+      else if (tool === 'MultiEdit' && Array.isArray(input.edits)) {
+        for (const e of input.edits) {
+          f.added += lines(e.new_string);
+          f.removed += lines(e.old_string);
+        }
+      } else {
+        f.added += lines(input.new_string || input.new_source);
+        f.removed += lines(input.old_string);
+      }
+      if (failed) f.failed = (f.failed || 0) + 1;
+      return;
+    }
+    if (tool === 'Read' || tool === 'NotebookRead') {
+      const file = input.file_path || input.notebook_path;
+      if (!file) return;
+      const r = s.reads[file] || (s.reads[file] = { file, name: path.basename(file), count: 0, lastAt: now });
+      r.count++;
+      r.lastAt = now;
+      turn.reads++;
+      return;
+    }
+    if (tool === 'Grep' || tool === 'Glob') {
+      push(s.searches, { tool, pattern: short(input.pattern, 80), where: input.path ? path.basename(input.path) : null, at: now });
+      return;
+    }
+    if (SHELL_TOOLS.has(tool)) {
+      const cmd = short(input.command, 200);
+      if (isTestCommand(input.command)) {
+        const text = responseText(payload.tool_response);
+        const passed = failed ? false : judgeTestOutput(text);
+        push(s.tests, { command: cmd, passed, summary: testSummary(text), ms, at: now });
+        if (passed === true) turn.green++;
+        else if (passed === false) turn.red++;
+      }
+      turn.commands++;
+      if (failed) turn.failed++;
+      push(s.commands, { command: cmd, ok: !failed, ms, at: now });
+      return;
+    }
+    if (tool === 'WebFetch' || tool === 'WebSearch') {
+      push(s.web, { kind: tool === 'WebFetch' ? 'page' : 'search', target: short(input.url || input.query, 160), at: now });
+      turn.web++;
+      return;
+    }
+    if (typeof tool === 'string' && tool.startsWith('mcp__')) {
+      const [, server, name] = tool.split('__');
+      push(s.web, { kind: 'mcp', target: `${server} · ${name || ''}`.trim(), at: now });
+      turn.web++;
+    }
+  }
+
+  // Numbers for the "done" bubble: what the agent's last turn did.
+  function recap(id) {
+    const s = sessions.get(id);
+    if (!s || !s.turn) return null;
+    const t = s.turn;
+    return {
+      files: Object.keys(t.files).length,
+      edits: t.edits,
+      reads: t.reads,
+      commands: t.commands,
+      failed: t.failed,
+      green: t.green,
+      red: t.red,
+      web: t.web,
+      agents: t.agents,
+      ms: (t.endedAt || s.lastAt) - t.startedAt,
+      done: Boolean(t.endedAt),
+    };
+  }
+
+  // Views for the powers panel, newest session first.
+  function view() {
+    return [...sessions.values()]
+      .sort((a, b) => b.lastAt - a.lastAt)
+      .map((s) => {
+        const tests = s.tests;
+        let streak = 0;
+        for (const t of tests) {
+          if (t.passed !== true) break;
+          streak++;
+        }
+        const lastGreen = tests.find((t) => t.passed === true);
+        return {
+          id: s.id,
+          label: s.label,
+          lastTurn: recap(s.id),
+          startedAt: s.startedAt,
+          lastAt: s.lastAt,
+          ended: s.ended,
+          craft: Object.values(s.files).sort((a, b) => b.lastAt - a.lastAt),
+          lore: { reads: Object.values(s.reads).sort((a, b) => b.lastAt - a.lastAt), searches: s.searches },
+          shell: s.commands,
+          test: { runs: tests, streak, lastGreenAt: lastGreen ? lastGreen.at : null },
+          roam: s.web,
+          swarm: Object.entries(s.agents)
+            .map(([id, a]) => ({ id, ...a }))
+            .sort((a, b) => b.startedAt - a.startedAt),
+        };
+      });
+  }
+
+  return { record, view, recap, size: () => sessions.size };
+}
+
+// Which powers a pet has: every lineage it has ever grown into (the Opendex
+// remembers across generations), plus both halves of a current Chimera.
+const POWER_ORDER = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
+
+function unlockedPowers(pet) {
+  const have = new Set();
+  for (const key of Object.keys(pet.dex || {})) {
+    const lineage = key.split('-')[0];
+    if (POWER_ORDER.includes(lineage)) have.add(lineage);
+  }
+  for (const l of pet.chimera || []) have.add(l);
+  return POWER_ORDER.filter((p) => have.has(p));
+}
+
+module.exports = { createPowers, unlockedPowers, testSummary, POWER_ORDER };

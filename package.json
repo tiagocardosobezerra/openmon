@@ -1,0 +1,44 @@
+{
+  "name": "openmon",
+  "version": "0.1.0",
+  "description": "A desktop pet that grows from the work your AI coding agent does, and tells you when the agent needs you.",
+  "license": "MIT",
+  "bin": {
+    "openmon": "bin/openmon.js"
+  },
+  "main": "src/electron-main.js",
+  "files": [
+    "bin",
+    "src",
+    "public",
+    "docs",
+    "art",
+    "assets"
+  ],
+  "scripts": {
+    "start": "node bin/openmon.js start --foreground",
+    "serve": "node bin/openmon.js serve",
+    "demo": "node bin/openmon.js demo",
+    "test": "node --test \"test/*.test.js\"",
+    "smoke": "node test/smoke.js",
+    "brand": "node tools/build-brand.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "electron": "^33.0.0"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "ai-agent",
+    "hooks",
+    "desktop-pet",
+    "tamagotchi",
+    "virtual-pet"
+  ],
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
+}

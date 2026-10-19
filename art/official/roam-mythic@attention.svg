@@ -1,0 +1,25 @@
+<svg width="1147" height="1024" class="cr" viewBox="-4.2 11.8 208.5 186.2" aria-label="Wayfarer" xmlns="http://www.w3.org/2000/svg"><style>.cr { display: block; width: 100%; height: 100%; overflow: visible; }
+.cr .o { stroke: rgb(42, 33, 64); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+.z70 .o { stroke-width: 8.6; }
+.z72 .o { stroke-width: 8.3; }
+.z86 .o { stroke-width: 7; }
+.cr .o.m { stroke-width: 4.5; }
+.cr .o.thin { stroke-width: 3.5; }
+.cr .ln { fill: none; }
+.cr .k { fill: rgb(42, 33, 64); }
+.cr .w { fill: rgb(255, 255, 255); }
+.cr .ck { fill: rgb(255, 127, 159); opacity: 0.55; }
+.cr .hl { fill: rgb(255, 255, 255); opacity: 0.7; }
+.cr .tl { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cr .tl.ink { stroke: rgb(42, 33, 64); }
+.cr .w18 { stroke-width: 18; }
+.cr .w16 { stroke-width: 16; }
+.cr .w14 { stroke-width: 14; }
+.cr .w12 { stroke-width: 12; }
+.cr .w10 { stroke-width: 10; }
+.cr .w9 { stroke-width: 9; }
+.cr .w8 { stroke-width: 8; }
+.cr .w6 { stroke-width: 6; }
+.cr .w4 { stroke-width: 4; }
+.cr .hx { stroke-width: 3; stroke-linejoin: round; }
+.cr .cir { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }</style><path class="o thin" fill="#ffe156" d="M30 28 Q30 38 40 38 Q30 38 30 48 Q30 38 20 38 Q30 38 30 28Z"></path><path class="o thin" fill="#ffe156" d="M172 22 Q172 30 180 30 Q172 30 172 38 Q172 30 164 30 Q172 30 172 22Z"></path><path class="o thin" fill="#ffe156" d="M20 168 Q20 175 27 175 Q20 175 20 182 Q20 175 13 175 Q20 175 20 168Z"></path><path class="o" fill="#3d88d8" d="M146 160 C166 156 184 160 194 148 C192 172 178 190 150 182Z"></path><path class="o" fill="#5fb3ff" d="M100 40 C106 20 124 14 138 20 C126 26 116 36 108 50Z"></path><path class="o" fill="#fff" d="M46 112 C10 64 0 92 2 118 C4 146 28 158 48 146Z"></path><path class="o" fill="#fff" d="M154 112 C190 64 200 92 198 118 C196 146 172 158 152 146Z"></path><path class="o ln m" d="M12 110 Q26 118 42 116 M10 130 Q26 136 44 132"></path><path class="o ln m" d="M188 110 Q174 118 158 116 M190 130 Q174 136 156 132"></path><ellipse class="o" fill="#3d88d8" cx="82" cy="186" rx="17" ry="9"></ellipse><ellipse class="o" fill="#3d88d8" cx="118" cy="186" rx="17" ry="9"></ellipse><path fill="#3d88d8" d="M100 36 C120 74 158 102 158 140 C158 170 132 186 100 186 C68 186 42 170 42 140 C42 102 80 74 100 36Z"></path><path fill="#5fb3ff" transform="matrix(.9 0 0 .9 8.6 11)" d="M100 36 C120 74 158 102 158 140 C158 170 132 186 100 186 C68 186 42 170 42 140 C42 102 80 74 100 36Z"></path><ellipse fill="#e0f1ff" cx="100" cy="172" rx="34" ry="12"></ellipse><path class="o ln" d="M100 36 C120 74 158 102 158 140 C158 170 132 186 100 186 C68 186 42 170 42 140 C42 102 80 74 100 36Z"></path><path class="o" fill="#ff8a5c" d="M44 144 C76 160 124 160 156 144 L157 156 C124 174 76 174 43 156Z"></path><path class="o" fill="#ff8a5c" d="M122 164 L138 190 L120 186 L110 168Z"></path><ellipse class="hl" cx="82" cy="84" rx="5" ry="11" transform="rotate(30 82 84)"></ellipse><g transform="translate(82 124) scale(1.25) translate(-82 -124)"><ellipse class="k" cx="82" cy="124" rx="11" ry="14"></ellipse><ellipse fill="#8fd0ff" cx="82" cy="130" rx="7" ry="6"></ellipse><path class="w" d="M79 109 L81 114 L86 116 L81 118 L79 123 L77 118 L72 116 L77 114Z"></path></g><g transform="translate(118 124) scale(1.25) translate(-118 -124)"><ellipse class="k" cx="118" cy="124" rx="11" ry="14"></ellipse><ellipse fill="#8fd0ff" cx="118" cy="130" rx="7" ry="6"></ellipse><path class="w" d="M115 109 L117 114 L122 116 L117 118 L115 123 L113 118 L108 116 L113 114Z"></path></g><ellipse class="ck" cx="62" cy="142" rx="8" ry="5"></ellipse><ellipse class="ck" cx="138" cy="142" rx="8" ry="5"></ellipse><ellipse class="o m" fill="#c2556f" cx="100" cy="146.2" rx="4.5" ry="5.32"></ellipse><path class="o ln" d="M72.18181818181819 101.1590909090909 Q82 94.61363636363636 91.81818181818181 101.1590909090909"></path><path class="o ln" d="M108.18181818181819 101.1590909090909 Q118 94.61363636363636 127.81818181818181 101.1590909090909"></path></svg>

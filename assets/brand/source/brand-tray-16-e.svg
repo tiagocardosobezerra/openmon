@@ -1,0 +1,7 @@
+<svg width="1024" height="1024" class="cr" viewBox="0 0 16 16" aria-label="Favicon 16 px" xmlns="http://www.w3.org/2000/svg"><style>.cr { display: block; width: 100%; height: 100%; overflow: visible; }
+.cr .o { stroke: rgb(42, 33, 64); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+.cr .o.thin { stroke-width: 3.5; }
+.cr .o.g { stroke-width: 9; }
+.cr .ln { fill: none; }
+.cr .k { fill: rgb(42, 33, 64); }
+.cr .w { fill: rgb(255, 255, 255); }</style><path fill="#2a2140" d="M3 5.6 C3.8 3 5.8 1.2 8 1.2 C10.2 1.2 12.2 3 13 5.6 L11.6 4.8 L10.2 5.8 L8.8 4.8 L7.4 5.8 L6 4.8 L4.6 5.8Z"></path><circle fill="#2a2140" cx="6" cy="7.6" r="1.1"></circle><circle fill="#2a2140" cx="10" cy="7.6" r="1.1"></circle><path fill="#2a2140" d="M2 9.6 L3.6 8.8 L5.2 9.8 L6.8 8.8 L8.4 9.8 L10 8.8 L11.6 9.8 L14 9 C14 13 11.4 15 8 15 C4.6 15 2 13 2 9.6Z"></path></svg>

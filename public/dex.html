@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Opendex</title>
+<style>
+  :root { --bg: #f4efe6; --card: #fffdf8; --ink: #2a2140; --muted: #6d6680; --line: #e6dfd1; --accent: #e5484d; --unseen: #e9e3d8; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #16121d; --card: #211b2c; --ink: #f3eefc; --muted: #a49cb8; --line: #352d45; --unseen: #2a2337; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, Segoe UI, sans-serif; }
+  header { background: var(--accent); color: #fff; padding: 22px 16px 18px; border-bottom: 4px solid var(--ink); }
+  header div, main { max-width: 1060px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 30px; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+  h1 .mark { width: 46px; height: 46px; margin: -6px 0 -6px -4px; filter: drop-shadow(0 2px 0 rgba(0,0,0,0.25)); }
+  h1 .lens { width: 26px; height: 26px; border-radius: 50%; background: #8fd3ff; border: 3px solid #fff; box-shadow: 0 0 0 3px var(--ink); }
+  header p { margin: 4px 0 0; opacity: 0.92; }
+  .count { font-variant-numeric: tabular-nums; font-weight: 800; }
+  main { padding: 20px 16px 60px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 28px 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .cell { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 8px 8px 10px; text-align: center; cursor: pointer; position: relative; font: inherit; color: inherit; }
+  .cell:hover, .cell:focus-visible { border-color: var(--ink); outline: none; }
+  .cell.current { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .cell.unseen { background: var(--unseen); }
+  .no { position: absolute; left: 10px; top: 8px; font-size: 12px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .moon { position: absolute; right: 10px; bottom: 8px; font-size: 14px; color: #6f86d6; }
+  .you { position: absolute; right: 8px; top: 7px; font-size: 10px; font-weight: 800; background: var(--accent); color: #fff; border-radius: 99px; padding: 1px 7px; }
+  canvas { width: 100%; aspect-ratio: 1; display: block; }
+  .name { font-weight: 750; }
+  .sub { font-size: 12px; color: var(--muted); }
+  dialog { border: 3px solid var(--ink); border-radius: 18px; padding: 0; width: min(440px, calc(100vw - 32px)); background: var(--card); color: var(--ink); box-shadow: 0 6px 0 var(--ink); }
+  dialog::backdrop { background: rgba(20, 14, 30, 0.55); }
+  .detail { padding: 16px 18px 18px; }
+  .detail canvas { width: 220px; margin: 0 auto; }
+  .detail h3 { margin: 4px 0 2px; font-size: 22px; }
+  .detail .text { margin: 10px 0 14px; }
+  .detail button { font: inherit; font-weight: 700; padding: 6px 14px; border: 2px solid var(--ink); border-radius: 10px; background: var(--card); color: var(--ink); cursor: pointer; }
+  .hof { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .hof div { background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .empty { color: var(--muted); }
+  .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .badge { display: flex; gap: 10px; align-items: center; background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 9px 12px; }
+  .badge .medal { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; background: #ffe156; border: 2.5px solid var(--ink); }
+  .badge.locked { opacity: 0.55; }
+  .badge.locked .medal { background: var(--unseen); }
+  .badge b { display: block; }
+  .badge small { color: var(--muted); }
+</style>
+</head>
+<body>
+<header><div>
+  <h1><img class="mark" src="/brand/logo-mark.svg" alt=""> Opendex</h1>
+  <p id="seen"></p>
+</div></header>
+<main>
+  <h2 id="h-forms">Forms</h2>
+  <div class="grid" id="grid"></div>
+  <h2><span id="h-badges">Badges</span> <span class="count" id="badge-count"></span></h2>
+  <div class="badges" id="badges"></div>
+  <h2 id="h-hall">Hall of Fame</h2>
+  <div class="hof" id="hof"></div>
+</main>
+<dialog id="detail"><div class="detail">
+  <canvas id="big"></canvas>
+  <div class="sub" id="d-no"></div>
+  <h3 id="d-name"></h3>
+  <div class="sub" id="d-meta"></div>
+  <p class="text" id="d-text"></p>
+  <button id="d-close"></button>
+</div></dialog>
+<script src="i18n.js"></script>
+<script src="art.js"></script>
+<script src="motion.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const revealAll = params.has('all');
+  const cells = [];
+  let open = null;
+  const { t: tr, lang } = window.OpenmonI18n;
+  const WORK = (lineage) => tr(`work.${lineage}`);
+  let labels = {};
+  const lineageName = (l) => (l === 'chimera' ? 'Chimera' : labels[l] || l);
+  document.documentElement.lang = lang;
+  for (const [id, key] of [['h-forms', 'dex.forms'], ['h-badges', 'dex.badges'], ['h-hall', 'dex.hall'], ['d-close', 'dex.close']]) document.getElementById(id).textContent = tr(key);
+
+  function pad(n) { return `#${String(n).padStart(3, '0')}`; }
+
+  function draw(canvas, spec, t, silhouette) {
+    const dpr = window.devicePixelRatio || 1;
+    const size = canvas.clientWidth;
+    if (!size) return;
+    if (canvas.width !== Math.round(size * dpr)) {
+      canvas.width = Math.round(size * dpr);
+      canvas.height = Math.round(size * dpr);
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const k = canvas.width / 200;
+    ctx.setTransform(k, 0, 0, k, 100 * k, 168 * k);
+    const anim = OpenmonMotion.poseAnim({ ...spec, pose: silhouette ? 'sleep' : 'idle', t, since: 0 });
+    OpenmonArt.drawCreature(ctx, { ...spec, t, size: 44, pose: 'idle', anim, plain: silhouette });
+    if (silhouette) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink');
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  async function main() {
+    const [species, state] = await Promise.all([fetch(`/api/species?lang=${lang}`).then((r) => r.json()), fetch('/api/state').then((r) => r.json()).catch(() => null)]);
+    const pet = state && !state.demo ? state.pet : null;
+    labels = species.statLabels || {};
+    const dex = (pet && pet.dex) || {};
+    const grid = document.getElementById('grid');
+    let seen = 0;
+    for (const entry of species.dex) {
+      const known = revealAll || Boolean(dex[entry.key]);
+      if (known) seen++;
+      // ?shiny previews the shiny colours (dev aid, like ?all).
+      const spec = { stage: entry.stage, lineage: entry.lineage, trait: null, progress: 0.3, shiny: params.has('shiny') && entry.stage !== 'egg' };
+      const current = pet && pet.formKey === entry.key;
+      if (current) Object.assign(spec, { trait: pet.trait, shiny: pet.shiny, chimera: pet.chimera, nocturne: pet.nocturne });
+      if (params.has('night') && entry.stage !== 'egg' && entry.stage !== 'sprout') spec.nocturne = true;
+      const night = pet && pet.seenNight && pet.seenNight[entry.key];
+      const el = document.createElement('button');
+      el.className = `cell${known ? '' : ' unseen'}${current ? ' current' : ''}`;
+      el.innerHTML = `<span class="no">${pad(entry.no)}</span>${current ? `<span class="you">${tr('dex.you')}</span>` : ''}${night ? `<span class="moon" title="${tr('dex.nightSeen')}">☾</span>` : ''}<canvas></canvas><div class="name"></div><div class="sub"></div>`;
+      el.querySelector('.name').textContent = known ? entry.name : '???';
+      el.querySelector('.sub').textContent = known ? (entry.lineage ? `${lineageName(entry.lineage)} · ${tr(`stage.${entry.stage}`)}` : tr(`stage.${entry.stage}`)) : entry.hidden ? tr('dex.hiddenForm') : entry.lineage ? tr('dex.growsFrom', { work: WORK(entry.lineage) }) : '';
+      el.addEventListener('click', () => show(entry, spec, known));
+      grid.appendChild(el);
+      cells.push({ canvas: el.querySelector('canvas'), spec, known, offset: entry.no * 0.7 });
+    }
+    document.getElementById('seen').textContent = tr('dex.seen', { n: seen, total: species.dex.length });
+
+    const earned = (pet && pet.achievements) || {};
+    const badges = document.getElementById('badges');
+    let got = 0;
+    for (const [id, a] of Object.entries(species.achievements)) {
+      const have = Boolean(earned[id]);
+      if (have) got++;
+      const d = document.createElement('div');
+      d.className = `badge${have ? '' : ' locked'}`;
+      const medal = document.createElement('span');
+      medal.className = 'medal';
+      medal.textContent = have ? '★' : '?';
+      const text = document.createElement('div');
+      const title = document.createElement('b');
+      title.textContent = !have && a.secret ? '???' : a.title;
+      const sub = document.createElement('small');
+      sub.textContent = have ? `${a.text} ${new Date(earned[id]).toLocaleDateString()}` : a.secret ? tr('dex.secret') : a.text;
+      text.append(title, sub);
+      d.append(medal, text);
+      badges.appendChild(d);
+    }
+    document.getElementById('badge-count').textContent = `${got}/${Object.keys(species.achievements).length}`;
+
+    const hof = document.getElementById('hof');
+    const fame = (pet && pet.hallOfFame) || [];
+    if (!fame.length) {
+      const p = document.createElement('p');
+      p.className = 'empty';
+      p.textContent = tr('dex.hallEmpty');
+      hof.appendChild(p);
+    }
+    for (const f of fame) {
+      const d = document.createElement('div');
+      d.textContent = tr('dex.hallEntry', { gen: f.generation, name: f.name, form: f.form }) + (f.shiny ? ' ★' : '');
+      hof.appendChild(d);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function show(entry, spec, known) {
+    open = { spec, known };
+    document.getElementById('d-no').textContent = pad(entry.no);
+    document.getElementById('d-name').textContent = known ? entry.name : '???';
+    document.getElementById('d-meta').textContent = entry.lineage ? tr('dex.lineage', { lineage: lineageName(entry.lineage), stage: tr(`stage.${entry.stage}`) }) : tr(`stage.${entry.stage}`);
+    document.getElementById('d-text').textContent = known ? entry.text : entry.hidden ? tr('dex.hiddenText') : entry.lineage ? tr('dex.unseenText', { work: WORK(entry.lineage) }) : tr('dex.unseen');
+    document.getElementById('detail').showModal();
+  }
+  document.getElementById('d-close').addEventListener('click', () => document.getElementById('detail').close());
+  document.getElementById('detail').addEventListener('close', () => (open = null));
+
+  function frame(ms) {
+    const t = ms / 1000;
+    for (const c of cells) draw(c.canvas, c.spec, t + c.offset, !c.known);
+    if (open) draw(document.getElementById('big'), open.spec, t, !open.known);
+    requestAnimationFrame(frame);
+  }
+  OpenmonArt.loadPack().then(main);
+</script>
+</body>
+</html>

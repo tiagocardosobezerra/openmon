@@ -1,0 +1,25 @@
+<svg width="1060" height="1024" class="cr" viewBox="-4.0 -2.0 208.0 201.0" aria-label="Archsmith" xmlns="http://www.w3.org/2000/svg"><style>.cr { display: block; width: 100%; height: 100%; overflow: visible; }
+.cr .o { stroke: rgb(42, 33, 64); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+.z70 .o { stroke-width: 8.6; }
+.z72 .o { stroke-width: 8.3; }
+.z86 .o { stroke-width: 7; }
+.cr .o.m { stroke-width: 4.5; }
+.cr .o.thin { stroke-width: 3.5; }
+.cr .ln { fill: none; }
+.cr .k { fill: rgb(42, 33, 64); }
+.cr .w { fill: rgb(255, 255, 255); }
+.cr .ck { fill: rgb(255, 127, 159); opacity: 0.55; }
+.cr .hl { fill: rgb(255, 255, 255); opacity: 0.7; }
+.cr .tl { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cr .tl.ink { stroke: rgb(42, 33, 64); }
+.cr .w18 { stroke-width: 18; }
+.cr .w16 { stroke-width: 16; }
+.cr .w14 { stroke-width: 14; }
+.cr .w12 { stroke-width: 12; }
+.cr .w10 { stroke-width: 10; }
+.cr .w9 { stroke-width: 9; }
+.cr .w8 { stroke-width: 8; }
+.cr .w6 { stroke-width: 6; }
+.cr .w4 { stroke-width: 4; }
+.cr .hx { stroke-width: 3; stroke-linejoin: round; }
+.cr .cir { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }</style><path class="tl ink w14" d="M156 172 C184 172 192 152 186 132"></path><path class="tl w6" stroke="#d9762b" d="M156 172 C184 172 192 152 186 132"></path><path class="o" fill="#d9762b" d="M186 112 L198 130 L186 140 L174 130Z"></path><path class="o" fill="#7a5440" d="M68 62 C46 50 36 26 46 10 C54 28 70 38 88 50Z"></path><path class="o" fill="#7a5440" d="M132 62 C154 50 164 26 154 10 C146 28 130 38 112 50Z"></path><path class="o" fill="#ffe066" d="M80 22 C87 30 90 37 87 44 C84 49 76 49 73 44 C70 37 73 30 80 22Z"></path><path class="o" fill="#ffe066" d="M120 22 C127 30 130 37 127 44 C124 49 116 49 113 44 C110 37 113 30 120 22Z"></path><path class="o" fill="#ffe066" d="M100 4 C110 16 114 26 110 36 C106 44 94 44 90 36 C86 26 90 16 100 4Z"></path><ellipse class="o" fill="#d9762b" cx="76" cy="185" rx="20" ry="11"></ellipse><ellipse class="o" fill="#d9762b" cx="124" cy="185" rx="20" ry="11"></ellipse><ellipse class="o" fill="#ff9f43" cx="26" cy="144" rx="14" ry="18" transform="rotate(30 26 144)"></ellipse><ellipse class="o" fill="#ff9f43" cx="174" cy="144" rx="14" ry="18" transform="rotate(-30 174 144)"></ellipse><path fill="#d9762b" d="M100 46 C154 46 178 92 178 134 C178 172 146 186 100 186 C54 186 22 172 22 134 C22 92 46 46 100 46Z"></path><path fill="#ff9f43" transform="matrix(.9 0 0 .9 8.6 9.8)" d="M100 46 C154 46 178 92 178 134 C178 172 146 186 100 186 C54 186 22 172 22 134 C22 92 46 46 100 46Z"></path><ellipse fill="#ffe2bd" cx="100" cy="162" rx="48" ry="20"></ellipse><path class="cir" stroke="#ffe066" d="M36 138 L50 138 L58 148 L68 148"></path><path class="cir" stroke="#ffe066" d="M164 138 L150 138 L142 148 L132 148"></path><circle fill="#ffe066" cx="68" cy="148" r="4"></circle><circle fill="#ffe066" cx="132" cy="148" r="4"></circle><path class="o ln" d="M100 46 C154 46 178 92 178 134 C178 172 146 186 100 186 C54 186 22 172 22 134 C22 92 46 46 100 46Z"></path><path class="o ln m" d="M34 88 C64 72 136 72 166 88"></path><circle class="o" fill="#9aa3b5" cx="80" cy="78" r="15"></circle><circle class="o m" fill="#fff3b0" cx="80" cy="78" r="8"></circle><circle class="o" fill="#9aa3b5" cx="120" cy="78" r="15"></circle><circle class="o m" fill="#fff3b0" cx="120" cy="78" r="8"></circle><path class="o ln" d="M95 78 L105 78"></path><path class="o ln" d="M70.9090909090909 121.63636363636364 L80 110.72727272727273 L89.0909090909091 121.63636363636364"></path><path class="o ln" d="M110.9090909090909 121.63636363636364 L120 110.72727272727273 L129.0909090909091 121.63636363636364"></path><path fill="#ff9f43" d="M62 98 L98 98 L98 113 L64 105Z"></path><path fill="#ff9f43" d="M138 98 L102 98 L102 113 L136 105Z"></path><ellipse class="ck" cx="58" cy="140" rx="10" ry="6"></ellipse><ellipse class="ck" cx="142" cy="140" rx="10" ry="6"></ellipse><path class="o m" fill="#c2556f" d="M88.18181818181819 140.86363636363637 Q100 159.04545454545453 111.81818181818181 140.86363636363637Z"></path></svg>

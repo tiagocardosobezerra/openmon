@@ -1,0 +1,25 @@
+<svg width="1031" height="1024" class="cr" viewBox="34.2 67.6 131.6 130.7" aria-label="Tinkit" xmlns="http://www.w3.org/2000/svg"><style>.cr { display: block; width: 100%; height: 100%; overflow: visible; }
+.cr .o { stroke: rgb(42, 33, 64); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+.z70 .o { stroke-width: 8.6; }
+.z72 .o { stroke-width: 8.3; }
+.z86 .o { stroke-width: 7; }
+.cr .o.m { stroke-width: 4.5; }
+.cr .o.thin { stroke-width: 3.5; }
+.cr .ln { fill: none; }
+.cr .k { fill: rgb(42, 33, 64); }
+.cr .w { fill: rgb(255, 255, 255); }
+.cr .ck { fill: rgb(255, 127, 159); opacity: 0.55; }
+.cr .hl { fill: rgb(255, 255, 255); opacity: 0.7; }
+.cr .tl { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cr .tl.ink { stroke: rgb(42, 33, 64); }
+.cr .w18 { stroke-width: 18; }
+.cr .w16 { stroke-width: 16; }
+.cr .w14 { stroke-width: 14; }
+.cr .w12 { stroke-width: 12; }
+.cr .w10 { stroke-width: 10; }
+.cr .w9 { stroke-width: 9; }
+.cr .w8 { stroke-width: 8; }
+.cr .w6 { stroke-width: 6; }
+.cr .w4 { stroke-width: 4; }
+.cr .hx { stroke-width: 3; stroke-linejoin: round; }
+.cr .cir { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }</style><g class="z72" transform="matrix(.72 0 0 .72 28 54.88)"><path class="o" fill="#463c5c" d="M72 64 C62 48 62 34 68 26 C76 40 84 50 90 58Z"></path><path class="o" fill="#463c5c" d="M128 64 C138 48 138 34 132 26 C124 40 116 50 110 58Z"></path><ellipse class="o" fill="#664755" cx="78" cy="185" rx="18" ry="10"></ellipse><ellipse class="o" fill="#664755" cx="122" cy="185" rx="18" ry="10"></ellipse><ellipse class="o" fill="#73555d" cx="34" cy="146" rx="11" ry="15" transform="rotate(30 34 146)"></ellipse><ellipse class="o" fill="#73555d" cx="166" cy="146" rx="11" ry="15" transform="rotate(-30 166 146)"></ellipse><path fill="#664755" d="M100 52 C148 52 170 94 170 134 C170 170 140 186 100 186 C60 186 30 170 30 134 C30 94 52 52 100 52Z"></path><path fill="#73555d" transform="matrix(.9 0 0 .9 8.6 9.8)" d="M100 52 C148 52 170 94 170 134 C170 170 140 186 100 186 C60 186 30 170 30 134 C30 94 52 52 100 52Z"></path><ellipse fill="#d9d8eb" cx="100" cy="160" rx="42" ry="22"></ellipse><path class="o ln" d="M100 52 C148 52 170 94 170 134 C170 170 140 186 100 186 C60 186 30 170 30 134 C30 94 52 52 100 52Z"></path><ellipse class="" cx="68" cy="80" rx="13" ry="7" transform="rotate(-35 68 80)" fill="#a9dcff" opacity=".8"></ellipse><ellipse fill="#fff" cx="80" cy="114" rx="13.5" ry="16.5"></ellipse><ellipse class="k" cx="80" cy="114" rx="11" ry="14"></ellipse><circle class="" cx="76" cy="108" r="5" fill="#a9dcff"></circle><circle class="" cx="84" cy="120" r="2" fill="#a9dcff"></circle><ellipse fill="#fff" cx="120" cy="114" rx="13.5" ry="16.5"></ellipse><ellipse class="k" cx="120" cy="114" rx="11" ry="14"></ellipse><circle class="" cx="116" cy="108" r="5" fill="#a9dcff"></circle><circle class="" cx="124" cy="120" r="2" fill="#a9dcff"></circle><ellipse class="ck" cx="60" cy="138" rx="10" ry="6"></ellipse><ellipse class="ck" cx="140" cy="138" rx="10" ry="6"></ellipse><path class="o ln m" d="M93 140 Q100 147 107 140"></path><path class="o thin" style="stroke-width:2.4" fill="#ffe156" d="M106 86 A12 12 0 1 0 106 110 A16 16 0 0 1 106 86Z" transform="translate(100.0 77.6) scale(1.18) translate(-100 -98)"></path></g></svg>

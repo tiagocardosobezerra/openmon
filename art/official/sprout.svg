@@ -1,0 +1,25 @@
+<svg width="1089" height="1024" class="cr" viewBox="35.9 77.7 128.2 120.6" aria-label="Sprout" xmlns="http://www.w3.org/2000/svg"><style>.cr { display: block; width: 100%; height: 100%; overflow: visible; }
+.cr .o { stroke: rgb(42, 33, 64); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+.z70 .o { stroke-width: 8.6; }
+.z72 .o { stroke-width: 8.3; }
+.z86 .o { stroke-width: 7; }
+.cr .o.m { stroke-width: 4.5; }
+.cr .o.thin { stroke-width: 3.5; }
+.cr .ln { fill: none; }
+.cr .k { fill: rgb(42, 33, 64); }
+.cr .w { fill: rgb(255, 255, 255); }
+.cr .ck { fill: rgb(255, 127, 159); opacity: 0.55; }
+.cr .hl { fill: rgb(255, 255, 255); opacity: 0.7; }
+.cr .tl { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cr .tl.ink { stroke: rgb(42, 33, 64); }
+.cr .w18 { stroke-width: 18; }
+.cr .w16 { stroke-width: 16; }
+.cr .w14 { stroke-width: 14; }
+.cr .w12 { stroke-width: 12; }
+.cr .w10 { stroke-width: 10; }
+.cr .w9 { stroke-width: 9; }
+.cr .w8 { stroke-width: 8; }
+.cr .w6 { stroke-width: 6; }
+.cr .w4 { stroke-width: 4; }
+.cr .hx { stroke-width: 3; stroke-linejoin: round; }
+.cr .cir { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }</style><g class="z70" transform="matrix(.7 0 0 .7 30 58.8)"><path class="o ln" d="M100 76 L100 54"></path><path class="o" fill="#78c86b" d="M100 56 C88 40 70 40 62 48 C70 62 90 64 100 56Z"></path><path class="o" fill="#78c86b" d="M100 54 C110 34 132 32 140 40 C132 56 112 60 100 54Z"></path><ellipse class="o" fill="#dcc59c" cx="78" cy="185" rx="18" ry="10"></ellipse><ellipse class="o" fill="#dcc59c" cx="122" cy="185" rx="18" ry="10"></ellipse><ellipse class="o" fill="#f6e7c9" cx="34" cy="150" rx="11" ry="15" transform="rotate(30 34 150)"></ellipse><ellipse class="o" fill="#f6e7c9" cx="166" cy="150" rx="11" ry="15" transform="rotate(-30 166 150)"></ellipse><path fill="#dcc59c" d="M100 72 C146 72 170 104 170 138 C170 170 140 186 100 186 C60 186 30 170 30 138 C30 104 54 72 100 72Z"></path><path fill="#f6e7c9" transform="matrix(.9 0 0 .9 8.6 9.8)" d="M100 72 C146 72 170 104 170 138 C170 170 140 186 100 186 C60 186 30 170 30 138 C30 104 54 72 100 72Z"></path><ellipse fill="#fff8ea" cx="100" cy="162" rx="40" ry="20"></ellipse><path class="o ln" d="M100 72 C146 72 170 104 170 138 C170 170 140 186 100 186 C60 186 30 170 30 138 C30 104 54 72 100 72Z"></path><ellipse class="hl" cx="70" cy="94" rx="13" ry="7" transform="rotate(-25 70 94)"></ellipse><ellipse class="k" cx="78" cy="128" rx="10" ry="12"></ellipse><circle class="w" cx="75" cy="123" r="4"></circle><circle class="w" cx="81" cy="133" r="2"></circle><ellipse class="k" cx="122" cy="128" rx="10" ry="12"></ellipse><circle class="w" cx="119" cy="123" r="4"></circle><circle class="w" cx="125" cy="133" r="2"></circle><ellipse class="ck" cx="58" cy="148" rx="10" ry="6"></ellipse><ellipse class="ck" cx="142" cy="148" rx="10" ry="6"></ellipse><path class="o ln m" d="M92 148 Q100 156 108 148"></path></g></svg>

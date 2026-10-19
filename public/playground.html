@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Openmon Playground</title>
+<style>
+  :root { --bg: #f4efe6; --card: #fffdf8; --ink: #2a2140; --muted: #6d6680; --line: #e6dfd1; --accent: #7c6cf2; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #16121d; --card: #211b2c; --ink: #f3eefc; --muted: #a49cb8; --line: #352d45; --accent: #a89bff; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 14px 16px 12px; background: var(--accent); color: #fff; border-bottom: 3px solid var(--ink); position: sticky; top: 0; z-index: 2; }
+  header b { font-size: 18px; }
+  header p { margin: 2px 0 0; opacity: 0.9; font-size: 12.5px; }
+  #status { margin-top: 6px; font-size: 12.5px; font-weight: 700; background: rgba(0,0,0,0.18); border-radius: 8px; padding: 4px 8px; }
+  main { padding: 12px 16px 40px; max-width: 560px; margin: 0 auto; }
+  section { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 12px; margin: 12px 0; }
+  h2 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+  button, select { font: inherit; font-weight: 650; font-size: 13px; padding: 6px 10px; border: 2px solid var(--ink); border-radius: 10px; background: var(--card); color: var(--ink); cursor: pointer; }
+  button:hover { background: var(--bg); }
+  button.primary { background: #ffe156; color: #2a2140; }
+  button:active { transform: translateY(1px); }
+  label { display: inline-flex; gap: 5px; align-items: center; font-weight: 600; }
+  input[type=range] { width: 160px; }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+  #chimera-pair[hidden] { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <b>Openmon Playground</b>
+  <p id="sub">A sandbox pet with its own save. Your real pet is not touched.</p>
+  <div id="status">…</div>
+</header>
+<main>
+  <section>
+    <h2 data-t="evo">Evolution</h2>
+    <div class="row">
+      <select id="lineage" aria-label="Lineage">
+        <option value="craft">Craft</option><option value="lore">Lore</option><option value="shell">Shell</option>
+        <option value="test">Test</option><option value="roam">Roam</option><option value="swarm">Swarm</option>
+        <option value="chimera">Chimera (hidden)</option>
+      </select>
+      <select id="trait" aria-label="Trait">
+        <option value="">Trait: none</option><option value="craft">Trait: Craft</option><option value="lore">Trait: Lore</option>
+        <option value="shell">Trait: Shell</option><option value="test">Trait: Test</option><option value="roam">Trait: Roam</option><option value="swarm">Trait: Swarm</option>
+      </select>
+      <span id="chimera-pair" hidden>
+        <select id="ch-a" aria-label="Chimera first half"><option>craft</option><option>lore</option><option>shell</option><option>test</option><option>roam</option><option>swarm</option></select>
+        <select id="ch-b" aria-label="Chimera second half"><option>test</option><option>craft</option><option>lore</option><option>shell</option><option>roam</option><option>swarm</option></select>
+      </span>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="shiny"> Shiny</label>
+      <label><input type="checkbox" id="nocturne"> Nocturne</label>
+    </div>
+    <div class="row">
+      <button class="primary" data-evolve="sprout" data-t="hatch">Hatch (scene)</button>
+      <button class="primary" data-evolve="juvenile">→ Juvenile</button>
+      <button class="primary" data-evolve="adult">→ Adult</button>
+      <button class="primary" data-evolve="mythic">→ Mythic</button>
+    </div>
+    <div class="row">
+      <button data-form="juvenile" data-t="instJ">Instant Juvenile</button>
+      <button data-form="adult" data-t="instA">Instant Adult</button>
+      <button data-form="mythic" data-t="instM">Instant Mythic</button>
+      <button data-act="reset" data-t="reset">New egg</button>
+      <button data-act="layEgg" data-t="hall">Hall of Fame + egg</button>
+    </div>
+    <p class="hint" data-t="evoHint">Scene buttons play the real evolution (dim, flicker, fanfare, cry, Opendex entry). Mythic and Hall of Fame need the pet at Adult/Mythic first.</p>
+  </section>
+
+  <section>
+    <h2 data-t="agent">Agent states</h2>
+    <div class="row">
+      <button data-sig='{"kind":"turn-start"}' data-t="think">Thinking</button>
+      <button data-sig='{"kind":"tool-start","family":"craft","detail":"Edit auth.js"}'>Edit</button>
+      <button data-sig='{"kind":"tool-start","family":"lore","detail":"Read README.md"}'>Read</button>
+      <button data-sig='{"kind":"tool-start","family":"shell","detail":"Bash: git status"}'>Shell</button>
+      <button data-sig='{"kind":"tool-start","family":"roam","detail":"WebSearch openmon"}'>Web</button>
+      <button data-sig='{"kind":"compact"}'>Compact</button>
+    </div>
+    <div class="row">
+      <button data-sig='{"kind":"test-start","family":"test","detail":"Bash: npm test"}' data-t="testRun">Test run</button>
+      <button data-sig='{"kind":"test-end","family":"test","passed":true}' data-t="testPass">Tests pass</button>
+      <button data-sig='{"kind":"test-end","family":"test","passed":false}' data-t="testFail">Tests fail</button>
+      <button data-sig='{"kind":"tool-fail","family":"shell","detail":"Bash: exit 1"}' data-t="toolFail">Tool fails</button>
+    </div>
+    <div class="row">
+      <button data-act="subagents" data-t="subs">3 subagents</button>
+      <button data-sig='{"kind":"attention","reason":"permission","detail":"Allow Bash: rm -rf ./dist && npm run build?"}' class="primary" data-t="needs">Needs you</button>
+      <button data-sig='{"kind":"attention","reason":"permission","detail":"Allow Edit config.json?","session":"other-project"}' data-t="needs2">2nd agent needs you</button>
+      <button data-sig='{"kind":"turn-end"}' data-t="done">Done</button>
+      <button data-act="endAll" data-t="endAll">End sessions</button>
+    </div>
+    <p class="hint" data-t="agentHint">Click the pet while it waits to say "seen". After 5 quiet minutes it falls asleep.</p>
+  </section>
+
+  <section>
+    <h2 data-t="petSec">Pet</h2>
+    <div class="row">
+      <button data-act="pet" data-t="petIt">Pet it</button>
+      <button data-act="level" data-t="level">Level up</button>
+      <button data-act="demo" data-t="demo">Play demo</button>
+    </div>
+    <div class="row">
+      <label><span data-t="nature">Nature</span>
+        <select id="nature"><option>brave</option><option>sleepy</option><option>curious</option><option>cheerful</option><option>calm</option><option>cheeky</option></select>
+      </label>
+      <label><span data-t="bond">Bond</span> <input type="range" id="bond" min="0" max="100"> <b id="bond-v"></b></label>
+    </div>
+    <div class="row">
+      <select id="badge" aria-label="Badge"></select>
+      <button data-act="badge" data-t="badge">Show badge</button>
+    </div>
+    <div class="row">
+      <button data-act="work" data-t="work">Agent work burst</button>
+      <button data-act="unlockAll" data-t="unlockAll">Unlock all powers</button>
+      <button data-open="powers.html" data-t="powers">Powers</button>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-t="more">Language and pages</h2>
+    <div class="row">
+      <button data-lang="en">English</button>
+      <button data-lang="pt-BR">Português</button>
+      <button data-open="dex.html">Opendex</button>
+      <button data-open="card.html" data-t="card">Trainer card</button>
+    </div>
+  </section>
+</main>
+<script>
+  const PT = {
+    sub: 'Um pet de teste com save próprio. Seu pet de verdade não é afetado.',
+    evo: 'Evolução', hatch: 'Chocar (cena)', instJ: 'Jovem instantâneo', instA: 'Adulto instantâneo', instM: 'Mítico instantâneo', reset: 'Novo ovo', hall: 'Hall da Fama + ovo',
+    evoHint: 'Os botões de cena tocam a evolução real (escurece, pisca, fanfarra, grito, registro na Opendex). Mítico e Hall da Fama pedem o pet em Adulto/Mítico antes.',
+    agent: 'Estados do agente', think: 'Pensando', testRun: 'Rodar testes', testPass: 'Testes passam', testFail: 'Testes falham', toolFail: 'Ferramenta falha',
+    subs: '3 subagentes', needs: 'Precisa de você', needs2: '2º agente precisa', done: 'Terminou', endAll: 'Encerrar sessões',
+    agentHint: 'Clique no pet enquanto ele espera para dizer "vi". Depois de 5 minutos parado, ele dorme.',
+    petSec: 'Pet', petIt: 'Fazer carinho', level: 'Subir nível', demo: 'Ver demonstração', nature: 'Natureza', bond: 'Laço', badge: 'Mostrar insígnia',
+    more: 'Idioma e páginas', card: 'Cartão de treinador', work: 'Rajada de trabalho do agente', unlockAll: 'Desbloquear todos os poderes', powers: 'Poderes',
+  };
+  const pt = /^pt/i.test(navigator.language);
+  if (pt) {
+    document.documentElement.lang = 'pt-BR';
+    document.getElementById('sub').textContent = PT.sub;
+    for (const el of document.querySelectorAll('[data-t]')) if (PT[el.dataset.t]) el.textContent = PT[el.dataset.t];
+  }
+
+  const $ = (id) => document.getElementById(id);
+  const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) }).then((r) => (r.ok ? r.json().catch(() => ({})) : Promise.reject(r.status)));
+  const dev = (action, body) => post(`/api/dev/${action}`, body).catch(() => setStatus(pt ? 'Ação indisponível: abra com "openmon playground".' : 'Not available: start with "openmon playground".'));
+
+  function choice() {
+    const lineage = $('lineage').value;
+    const body = { shiny: $('shiny').checked, nocturne: $('nocturne').checked, trait: $('trait').value || null };
+    if (lineage === 'chimera') body.chimera = [$('ch-a').value, $('ch-b').value];
+    else body.lineage = lineage;
+    return body;
+  }
+  $('lineage').addEventListener('change', () => ($('chimera-pair').hidden = $('lineage').value !== 'chimera'));
+
+  let subN = 0;
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.evolve) {
+      const stage = b.dataset.evolve;
+      if (stage === 'sprout') dev('nearHatch', { shiny: $('shiny').checked }).then(() => dev('signal', { kind: 'turn-end' }));
+      else dev('evolve', { stage, ...choice() });
+    }
+    if (b.dataset.form) {
+      const c = choice();
+      if (c.chimera && b.dataset.form === 'juvenile') delete c.chimera;
+      dev('form', { stage: b.dataset.form, ...c, lineage: c.lineage || 'craft' });
+    }
+    if (b.dataset.sig) dev('signal', JSON.parse(b.dataset.sig));
+    if (b.dataset.lang) dev('lang', { lang: b.dataset.lang });
+    if (b.dataset.open) window.open(b.dataset.open, '_blank');
+    switch (b.dataset.act) {
+      case 'reset': dev('reset', { shiny: $('shiny').checked }); break;
+      case 'layEgg': post('/api/lay-egg'); break;
+      case 'pet': post('/api/pet'); break;
+      case 'level': dev('level'); break;
+      case 'demo': post('/api/demo'); break;
+      case 'badge': dev('achievement', { id: $('badge').value }); break;
+      case 'work': dev('work'); break;
+      case 'unlockAll': dev('unlockAll'); break;
+      case 'subagents':
+        dev('signal', { kind: 'turn-start' });
+        for (let i = 0; i < 3; i++) dev('signal', { kind: 'subagent-start', agentId: `sub${++subN}`, detail: 'Explore' });
+        setTimeout(() => { for (let i = 0; i < 3; i++) dev('signal', { kind: 'subagent-end', agentId: `sub${subN - i}` }); }, 8000);
+        break;
+      case 'endAll':
+        for (const s of ['playground', 'other-project']) dev('signal', { kind: 'session-end', session: s });
+        break;
+      default: break;
+    }
+  });
+  $('nature').addEventListener('change', () => dev('nature', { nature: $('nature').value }));
+  $('bond').addEventListener('change', () => dev('bond', { bond: Number($('bond').value) }));
+
+  function setStatus(text) { $('status').textContent = text; }
+  const es = new EventSource('/stream');
+  es.onmessage = (m) => {
+    const msg = JSON.parse(m.data);
+    if (msg.type !== 'state') return;
+    const p = msg.pet;
+    setStatus(`${p.name} · ${p.form}${p.shiny ? ' ★' : ''}${p.nocturne ? ' ☾' : ''} · Lv ${p.level} · ${p.stage} · bond ${p.bond} · ${p.nature} · ${msg.live.pose}`);
+    $('bond').value = p.bond;
+    $('bond-v').textContent = p.bond;
+    $('nature').value = p.nature;
+  };
+  fetch('/api/species' + (pt ? '?lang=pt-BR' : '')).then((r) => r.json()).then((s) => {
+    for (const [id, a] of Object.entries(s.achievements)) {
+      const o = document.createElement('option');
+      o.value = id;
+      o.textContent = a.title;
+      $('badge').appendChild(o);
+    }
+  });
+</script>
+</body>
+</html>
