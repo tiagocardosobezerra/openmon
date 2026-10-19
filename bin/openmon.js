@@ -127,7 +127,7 @@ async function main() {
       try {
         electron = require('electron');
       } catch {
-        console.error('Electron is missing. Run "npm install" in the openmon folder, or use "openmon serve".');
+        console.error('Electron is missing and could not be downloaded. Check your connection and try again, or use "openmon serve".');
         process.exit(1);
       }
       if (flag('foreground')) return supervise(electron, true);
@@ -181,7 +181,7 @@ async function main() {
       try {
         electron = require('electron');
       } catch {
-        console.error('Electron is missing. Run "npm install", or use "openmon playground --serve".');
+        console.error('Electron is missing and could not be downloaded. Check your connection and try again, or use "openmon playground --serve".');
         process.exit(1);
       }
       const main = path.join(__dirname, '..', 'src', 'electron-main.js');

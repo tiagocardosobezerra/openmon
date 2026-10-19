@@ -4,8 +4,8 @@
 
 **Tu agente de IA trabaja. Una criatura en la esquina de la pantalla muestra lo que está haciendo, te avisa cuando te necesita y crece con cada tarea.**
 
-![Node.js 20+](https://img.shields.io/badge/node.js-20%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white)
-![Electron](https://img.shields.io/badge/electron-33-47848F?style=flat-square&logo=electron&logoColor=white)
+![Node.js 22.12+](https://img.shields.io/badge/node.js-22.12%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white)
+![Electron](https://img.shields.io/badge/electron-44-47848F?style=flat-square&logo=electron&logoColor=white)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-hooks%20oficiales-D97757?style=flat-square&logo=anthropic&logoColor=white)
 ![100% local](https://img.shields.io/badge/datos-100%25%20locales-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/licencia-MIT-blue?style=flat-square)
@@ -67,7 +67,7 @@ npm install
 npm link
 ```
 
-`npm link` crea el comando `openmon`. npm 11 puede pedirte aprobar el script de instalación de Electron: `npm install-scripts approve electron`.
+`npm link` crea el comando `openmon`. La primera vez que la mascota se abre, Electron descarga su propio programa (unos 100 MB).
 
 ### 2. Conéctalo a Claude Code
 

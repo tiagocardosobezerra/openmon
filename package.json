@@ -31,10 +31,10 @@
     "dist:dir": "node tools/dist.js --dir"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22.12"
   },
   "dependencies": {
-    "electron": "^33.0.0"
+    "electron": "^44.9.0"
   },
   "keywords": [
     "claude-code",
@@ -46,9 +46,6 @@
     "ai-agents",
     "electron"
   ],
-  "allowScripts": {
-    "electron@33.4.11": true
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tiagocardosobezerra/openmon.git"
@@ -58,7 +55,7 @@
     "url": "https://github.com/tiagocardosobezerra/openmon/issues"
   },
   "devDependencies": {
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "dev.openmon.app",
