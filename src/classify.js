@@ -259,7 +259,7 @@ function genericSignal(payload) {
 }
 
 // Throwaway folders (system temp, an app's scratch workspace) are not
-// projects: their work feeds your first pet and never earns an egg.
+// projects: their work feeds the main pet on screen and never earns an egg.
 function isScratchDir(dir) {
   if (!dir) return false;
   const p = String(dir).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();

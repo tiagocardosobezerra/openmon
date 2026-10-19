@@ -9,9 +9,9 @@
 // belongs to one creature (level, type, nickname, worn accessories, its
 // project) is kept per pet.
 //
-// Each project (the folder an agent works in) feeds its own pet. A project
-// with no pet yet feeds your first one (project: null) until it has seen
-// enough work to earn an egg of its own.
+// Each project (the folder an agent works in) feeds its own pet while that pet
+// is in the Party. Everything else feeds the main pet on screen, and a project
+// earns an egg of its own after enough work.
 
 const crypto = require('node:crypto');
 const pet = require('./pet');
@@ -75,18 +75,17 @@ function split(root, member, merged) {
   }
 }
 
-// The project a signal's work belongs to; null feeds your first pet.
+// The project a signal's work belongs to; null feeds the main pet on screen.
 function projectOf(signal) {
   return signal.scratch ? null : signal.label || null;
 }
 
-// Which pet a project's work feeds.
+// Which pet a project's work feeds: the project's own pet while it is in the
+// Party; anything else (no project, a project without a pet, a pet resting
+// in the Box) feeds the main pet on screen. Pets in the Box do not train.
 function petFor(root, project) {
-  if (root.project === project) return root;
-  const own = root.others.find((m) => m.project === project);
-  if (own) return own;
-  if (root.project === null) return root;
-  return root.others.find((m) => m.project === null) || root;
+  if (project === null || root.project === project) return root;
+  return root.others.find((m) => m.project === project && m.place === 'party') || root;
 }
 
 // Applies a hook signal to the right pet. Returns events; events about a pet

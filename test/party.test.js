@@ -149,3 +149,25 @@ test('a mystery egg hatches into a new member with better shiny odds', () => {
   assert.equal(egg.shiny, true);
   assert.deepEqual(egg.worn, { head: null, face: null, neck: null });
 });
+
+test('work without its own pet feeds the main pet on screen, even a mystery egg; the Box does not train', () => {
+  const p = fresh();
+  // A project earns its egg, then that egg goes to the Box.
+  for (let i = 0; i < party.EGG_AFTER_ACTIONS; i++) party.applySignal(p, tool('web'), {}, T0 + i * 60_000);
+  const webEgg = p.others[0];
+  assert.ok(party.move(p, webEgg.id, 'box'));
+  const before = webEgg.xp;
+  const rootBefore = p.xp;
+  party.applySignal(p, tool('web'), {}, T0 + 20 * 60 * 60_000);
+  assert.equal(webEgg.xp, before);
+  assert.ok(p.xp > rootBefore);
+
+  // A mystery egg made the main pet grows from general work.
+  party.hatchMystery(p, T0, () => 0.9);
+  const mystery = p.others.find((m) => String(m.project).startsWith('mystery:'));
+  const q = party.setActive(p, mystery.id);
+  const xp0 = q.xp;
+  party.applySignal(q, tool('scratch-2026-01-02-ab12cd', { scratch: true }), {}, T0 + 30 * 60 * 60_000);
+  party.applySignal(q, tool(null), {}, T0 + 31 * 60 * 60_000);
+  assert.ok(q.xp > xp0);
+});
