@@ -83,6 +83,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   const bus = new EventEmitter();
   const powers = createPowers();
   const usage = createUsage();
+  const lastEventOf = new Map();
   const clients = new Set();
   // A brand-new pet file: if a backup exists, offer to bring that pet back.
   const freshInstall = Boolean(store.file) && !fs.existsSync(store.file);
@@ -168,6 +169,13 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const events = target === real ? party.applySignal(real.pet, signal, ctx, t) : pet.applySignal(target.pet, signal, ctx, t);
     if (target === real) followProject(signal, t, events);
     if (target === real) events.push(...target.sessions.takeNotices());
+    // Agent time per project: the gap since this session's previous event.
+    if (target === real && signal.label) {
+      const last = lastEventOf.get(signal.session);
+      lastEventOf.set(signal.session, t);
+      if (last && t - last < 5 * 60 * 1000) events.push(...pet.addAgentTime(real.pet, signal.label, t - last, t));
+      if (lastEventOf.size > 200) lastEventOf.delete(lastEventOf.keys().next().value);
+    }
     if (target === real && (signal.kind === 'turn-end' || signal.kind === 'session-end') && payload.transcript_path) {
       const delta = usage.read(String(payload.transcript_path));
       if (delta) events.push(...pet.addTokens(real.pet, delta, t));

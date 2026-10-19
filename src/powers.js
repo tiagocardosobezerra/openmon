@@ -17,6 +17,8 @@ const { judgeTestOutput, responseText, isTestCommand } = require('./classify');
 const { redact } = require('./redact');
 
 const MAX_ITEMS = 60;
+// The session timeline keeps the last 300 steps.
+const MAX_TIMELINE = 300;
 const MAX_SESSIONS = 6;
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
 
@@ -47,6 +49,30 @@ function push(list, item) {
   if (list.length > MAX_ITEMS) list.length = MAX_ITEMS;
 }
 
+// One line of the timeline: what happened, on what, and whether it worked.
+// Prompts are never stored; only that you asked something.
+function timelineStep(event, tool, input, payload) {
+  const target = input.command || input.file_path || input.notebook_path || input.pattern || input.url || input.query || input.description || '';
+  switch (event) {
+    case 'UserPromptSubmit':
+      return { kind: 'prompt' };
+    case 'Stop':
+      return { kind: 'stop' };
+    case 'PermissionRequest':
+      return { kind: 'ask', tool, target: short(target, 120) };
+    case 'PostToolUse':
+      return { kind: 'tool', tool, target: short(target, 120), ok: true, ms: Number(payload.duration_ms) || null };
+    case 'PostToolUseFailure':
+      return { kind: 'tool', tool, target: short(target, 120), ok: false, ms: Number(payload.duration_ms) || null };
+    case 'SubagentStart':
+      return { kind: 'agent', target: short(payload.agent_type || 'agent', 60) };
+    case 'PreCompact':
+      return { kind: 'compact' };
+    default:
+      return null;
+  }
+}
+
 function createPowers() {
   const sessions = new Map();
 
@@ -54,7 +80,7 @@ function createPowers() {
     const id = payload.session_id || payload.session || 'default';
     let s = sessions.get(id);
     if (!s) {
-      s = { id, label, startedAt: now, lastAt: now, ended: false, files: {}, reads: {}, searches: [], commands: [], tests: [], web: [], agents: {}, turn: null };
+      s = { id, label, startedAt: now, lastAt: now, ended: false, files: {}, reads: {}, searches: [], commands: [], tests: [], web: [], agents: {}, turn: null, timeline: [] };
       sessions.set(id, s);
       // Keep the most recent sessions only.
       if (sessions.size > MAX_SESSIONS) {
@@ -78,6 +104,12 @@ function createPowers() {
     if (event === 'SessionEnd') {
       s.ended = true;
       return;
+    }
+    // The timeline: every step of the session, in order, in plain data.
+    const step = timelineStep(event, tool, input, payload);
+    if (step) {
+      s.timeline.push({ at: now, ...step });
+      if (s.timeline.length > MAX_TIMELINE) s.timeline.splice(0, s.timeline.length - MAX_TIMELINE);
     }
     // One turn = from your prompt to the agent's stop.
     if (event === 'UserPromptSubmit') {
@@ -209,6 +241,7 @@ function createPowers() {
           shell: s.commands,
           test: { runs: tests, streak, lastGreenAt: lastGreen ? lastGreen.at : null },
           roam: s.web,
+          timeline: s.timeline,
           swarm: Object.entries(s.agents)
             .map(([id, a]) => ({ id, ...a }))
             .sort((a, b) => b.startedAt - a.startedAt),

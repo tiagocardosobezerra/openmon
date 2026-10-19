@@ -171,6 +171,9 @@ function createSessions() {
       case 'test-end':
         s.turnTools++;
         s.inFlight = null;
+        // Red, then green again: worth a cheer.
+        if (signal.passed === true && s.lastTestRed) notices.push({ type: 'tests-fixed', session: s.id, label: s.label });
+        if (signal.passed === true || signal.passed === false) s.lastTestRed = signal.passed === false;
         if (signal.passed === false) s.error = { since: t, detail: 'Tests failed' };
         break;
       case 'subagent-start':

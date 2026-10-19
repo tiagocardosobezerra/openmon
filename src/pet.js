@@ -238,6 +238,17 @@ function checkCosmetics(pet, now, events) {
   }
 }
 
+// Time your agents spent working, per project: the gaps between a
+// session's events, when shorter than 5 minutes.
+function addAgentTime(pet, project, ms, now) {
+  const events = [];
+  rollDay(pet, now, events);
+  if (!project || !(ms > 0)) return events;
+  pet.daily.agentMs = pet.daily.agentMs || {};
+  pet.daily.agentMs[project] = (pet.daily.agentMs[project] || 0) + Math.min(ms, 5 * 60 * 1000);
+  return events;
+}
+
 // Tokens your agents used (read from Claude Code's conversation files).
 function addTokens(pet, delta, now) {
   const events = [];
@@ -323,6 +334,7 @@ function journalEntry(d) {
     waits: d.waits || 0,
     fastestMs: d.fastestMs ?? null,
     tokens: d.tokens || 0,
+    agentMs: { ...(d.agentMs || {}) },
     families: { ...(d.families || {}) },
     projects: { ...(d.projects || {}) },
   };
@@ -640,6 +652,7 @@ module.exports = {
   wear,
   useItem,
   addTokens,
+  addAgentTime,
   checkCosmetics,
   missionsFor,
   dayKey,

@@ -1054,6 +1054,10 @@
         case 'switched':
           pushToast(tr('party.switched', { project: e.project }), '', 3000);
           break;
+        case 'tests-fixed':
+          pushToast(tr('fixed.title'), e.label, 4500, 'done');
+          burst('confetti', 14, petCX(), GROUND - 80, 2, { colors: ['#5ccf74', '#fff', '#ffe156'], gravity: 260 });
+          break;
         case 'loop':
           pushToast(tr('loop.title', { n: e.n }), `${e.label} · ${trDetail(e.detail)}`, 9000, 'notice');
           play('attention');

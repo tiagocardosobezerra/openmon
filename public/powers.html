@@ -35,6 +35,15 @@
   .totals div { padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); }
   .totals b { display: block; font: 600 20px var(--font-display); font-variant-numeric: tabular-nums; }
   .totals small { color: var(--muted); font-size: 11.5px; }
+  .timeline { margin-top: 12px; padding: 14px 16px; }
+  .tl-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .tl-head h3 { margin: 0; font-size: 16px; }
+  .tl-head .input { flex: 1; min-width: 200px; max-width: 360px; min-height: 34px; font: 500 14px var(--font-body); }
+  #timeline { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow-y: auto; }
+  #timeline li { display: grid; grid-template-columns: 64px 18px 1fr auto; gap: 8px; align-items: baseline; padding: 4px 6px; border-top: 1px solid var(--line); font-size: 13px; }
+  #timeline li.prompt { background: var(--surface-2); font-weight: 650; }
+  #timeline li time { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+  #timeline li .who { color: var(--muted); font-size: 12px; }
   .tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 22px; }
   .tab { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px 8px; border: var(--bw) solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--ink); cursor: pointer; transition: transform 0.08s ease; }
   .tab:hover { transform: translateY(-2px); border-color: var(--c); }
@@ -68,6 +77,10 @@
   <section class="journal panel soft" id="journal"></section>
   <div class="tabs" id="tabs"></div>
   <section class="panel panel-body" id="panel"></section>
+  <section class="panel soft timeline" id="timeline-box">
+    <div class="tl-head"><h3 id="h-timeline"></h3><input class="input" id="search" type="search" autocomplete="off"></div>
+    <ol id="timeline"></ol>
+  </section>
 </main>
 <script src="i18n.js"></script>
 <script src="nav.js"></script>
@@ -307,12 +320,59 @@
     // A ready-to-paste update for your daily stand-up.
     const standup = h('button', { class: 'btn sm', style: 'margin-top:10px' }, tr('standup.copy'));
     standup.onclick = () => navigator.clipboard.writeText(standupText(days)).then(() => (standup.textContent = tr('standup.copied')));
-    box.append(head, chart, labels, legend, detail, totals, standup);
+    const csv = h('button', { class: 'btn sm', style: 'margin:10px 0 0 8px' }, tr('csv.button'));
+    csv.title = tr('csv.help');
+    csv.onclick = () => {
+      const blob = new Blob([`\ufeff${hoursCsv(data.journal)}`], { type: 'text/csv' });
+      const a = h('a', { href: URL.createObjectURL(blob), download: 'openmon-hours.csv' });
+      document.body.append(a);
+      a.click();
+      a.remove();
+    };
+    box.append(head, chart, labels, legend, detail, totals, standup, csv);
+  }
+
+  // Timeline of the selected session, or a search across every session.
+  const TL_ICON = { prompt: '💬', stop: '✓', ask: '!', agent: '✦', compact: '⋯' };
+  function renderTimeline() {
+    $('h-timeline').textContent = tr('timeline.title');
+    $('search').placeholder = tr('timeline.search');
+    const q = $('search').value.trim().toLowerCase();
+    const list = $('timeline');
+    list.textContent = '';
+    let items = [];
+    if (q) {
+      for (const s of data.sessions) for (const it of s.timeline || []) if ((it.target || '').toLowerCase().includes(q) || (it.tool || '').toLowerCase().includes(q)) items.push({ ...it, session: s.label });
+      items.sort((a, b) => b.at - a.at);
+    } else {
+      const s = data.sessions.find((x) => x.id === selected);
+      items = s ? [...(s.timeline || [])].reverse() : [];
+    }
+    if (!items.length) return list.append(h('li', { class: 'empty' }, q ? tr('timeline.none') : tr('powers.nothing')));
+    for (const it of items.slice(0, 300)) {
+      const icon = it.kind === 'tool' ? (it.ok ? '✓' : '✗') : TL_ICON[it.kind] || '•';
+      const text = it.kind === 'prompt' ? tr('timeline.prompt') : it.kind === 'stop' ? tr('timeline.stop') : it.kind === 'ask' ? tr('timeline.ask', { what: `${it.tool || ''} ${it.target || ''}`.trim() }) : it.kind === 'agent' ? tr('timeline.agent', { what: it.target }) : it.kind === 'compact' ? tr('timeline.compact') : `${it.tool}  ${it.target || ''}`;
+      list.append(h('li', { class: it.kind }, h('time', {}, new Date(it.at).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit', second: '2-digit' })), h('span', { class: it.ok === false ? 'bad' : '' }, icon), h('code', {}, text), h('span', { class: 'who' }, it.session || (it.ms ? dur(it.ms) : ''))));
+    }
+  }
+
+  // Agent hours per project, as a CSV for timesheets.
+  function hoursCsv(journal) {
+    const rows = [[tr('csv.date'), tr('csv.project'), tr('csv.hours'), tr('csv.actions')]];
+    for (const e of journal || []) {
+      const total = Object.values(e.projects || {}).reduce((a, b) => a + b, 0) || 1;
+      for (const [project, ms] of Object.entries(e.agentMs || {})) {
+        const actions = Math.round(((e.projects || {})[project] || 0));
+        rows.push([e.day, project, (ms / 3600000).toFixed(2), actions || Math.round(e.tools * ((e.projects || {})[project] || 0) / total)]);
+      }
+    }
+    return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
   }
 
   function render() {
     if (!data) return;
     renderJournal();
+    renderTimeline();
     renderWait();
     renderSessions();
     renderTabs();
@@ -335,6 +395,7 @@
   };
   // The waiting timer ticks every second.
   setInterval(() => data && renderWait(), 1000);
+  $('search').addEventListener('input', () => data && renderTimeline());
   refresh();
 </script>
 </body>
