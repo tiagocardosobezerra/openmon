@@ -1,0 +1,177 @@
+'use strict';
+
+// Party and Box: one Openmon per project, like a Pokémon party.
+//
+// pet.json is still the pet on screen (the "active" one). Its `others`
+// array holds the rest of your Openmons. Everything that belongs to you as a
+// trainer (Opendex, badges, Bag, owned accessories, journal, missions,
+// streak, counters) lives on the active pet and is shared; everything that
+// belongs to one creature (level, type, nickname, worn accessories, its
+// project) is kept per pet.
+//
+// Each project (the folder an agent works in) feeds its own pet. A project
+// with no pet yet feeds your first one (project: null) until it has seen
+// enough work to earn an egg of its own.
+
+const crypto = require('node:crypto');
+const pet = require('./pet');
+
+const PARTY_SIZE = 6;
+// Real work in a project before it earns its own egg: one-off folders never do.
+const EGG_AFTER_ACTIONS = 60;
+const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region'];
+
+const newId = () => crypto.randomBytes(6).toString('hex');
+
+// Fills in party fields on an old single-pet save. Nothing is lost.
+function ensure(root) {
+  if (!root.id) root.id = newId();
+  if (root.project === undefined) root.project = null;
+  if (!root.place) root.place = 'party';
+  if (!Array.isArray(root.others)) root.others = [];
+  if (!root.projects || typeof root.projects !== 'object') root.projects = {};
+  for (const m of root.others) {
+    if (!m.id) m.id = newId();
+    if (!m.place) m.place = 'party';
+    if (!m.worn) m.worn = { head: null, neck: null };
+  }
+  return root;
+}
+
+// The member's own fields, taken from a full pet object.
+function own(full) {
+  const out = {};
+  for (const k of PER_PET) if (full[k] !== undefined) out[k] = full[k];
+  out.worn = { head: (full.wardrobe && full.wardrobe.head) || null, neck: (full.wardrobe && full.wardrobe.neck) || null };
+  return out;
+}
+
+// A full pet object for `member`, with the trainer's shared state from root.
+function merge(root, member) {
+  const shared = { ...root };
+  delete shared.others;
+  for (const k of PER_PET) delete shared[k];
+  return {
+    ...shared,
+    ...member,
+    wardrobe: { owned: root.wardrobe.owned, head: (member.worn && member.worn.head) || null, neck: (member.worn && member.worn.neck) || null },
+  };
+}
+
+// Writes a merged object back: shared parts to root, own parts to member.
+function split(root, member, merged) {
+  for (const [k, v] of Object.entries(merged)) {
+    if (k === 'others' || k === 'worn') continue;
+    if (PER_PET.includes(k)) member[k] = v;
+    else if (k === 'wardrobe') {
+      root.wardrobe.owned = v.owned;
+      member.worn = { head: v.head || null, neck: v.neck || null };
+    } else root[k] = v;
+  }
+}
+
+// Which pet a project's work feeds.
+function petFor(root, project) {
+  if (root.project === project) return root;
+  const own = root.others.find((m) => m.project === project);
+  if (own) return own;
+  if (root.project === null) return root;
+  return root.others.find((m) => m.project === null) || root;
+}
+
+// Applies a hook signal to the right pet. Returns events; events about a pet
+// that is not on screen carry `petId` and `project`.
+function applySignal(root, signal, ctx, now) {
+  ensure(root);
+  const target = petFor(root, signal.label || null);
+  let events;
+  if (target === root) events = pet.applySignal(root, signal, ctx, now);
+  else {
+    const merged = merge(root, target);
+    events = pet.applySignal(merged, signal, ctx, now);
+    split(root, target, merged);
+    for (const e of events) {
+      if (['evolve', 'level', 'xp', 'bond', 'tests'].includes(e.type)) {
+        e.petId = target.id;
+        e.project = target.project;
+        e.petName = pet.displayName(merged);
+      }
+    }
+  }
+  events.push(...countProject(root, signal, now));
+  return events;
+}
+
+// Counts real work per project; enough of it earns that project an egg.
+function countProject(root, signal, now) {
+  const label = signal.label;
+  if (!label || !['tool-done', 'tool-fail', 'test-end'].includes(signal.kind)) return [];
+  const seen = (root.projects[label] = (root.projects[label] || 0) + 1);
+  if (seen < EGG_AFTER_ACTIONS || root.project === label || root.others.some((m) => m.project === label)) return [];
+  const egg = own(pet.createPet(now));
+  egg.id = newId();
+  egg.project = label;
+  egg.place = partyCount(root) < PARTY_SIZE ? 'party' : 'box';
+  egg.worn = { head: null, neck: null };
+  root.others.push(egg);
+  root.dex.egg = root.dex.egg || now;
+  return [{ type: 'project-egg', project: label, petId: egg.id, place: egg.place }];
+}
+
+function partyCount(root) {
+  return (root.place === 'party' ? 1 : 0) + root.others.filter((m) => m.place === 'party').length;
+}
+
+// Puts another pet on screen. Returns the new root (the old one joins others).
+function setActive(root, id) {
+  ensure(root);
+  const member = root.others.find((m) => m.id === id);
+  if (!member) return root;
+  const next = merge(root, member);
+  next.place = 'party';
+  next.others = [...root.others.filter((m) => m !== member), own(root)];
+  if (member.place === 'box') {
+    // It comes out of the Box; if the party is full, the old one goes in.
+    if (partyCount(next) > PARTY_SIZE) next.others[next.others.length - 1].place = 'box';
+  }
+  return next;
+}
+
+// Moves a pet (not the one on screen) between the Party and the Box.
+function move(root, id, place) {
+  ensure(root);
+  const member = root.others.find((m) => m.id === id);
+  if (!member || (place !== 'party' && place !== 'box')) return false;
+  if (place === 'party' && member.place !== 'party' && partyCount(root) >= PARTY_SIZE) return false;
+  member.place = place;
+  return true;
+}
+
+function renameMember(root, id, name) {
+  ensure(root);
+  if (root.id === id) return pet.rename(root, name);
+  const member = root.others.find((m) => m.id === id);
+  if (!member) return [];
+  const merged = merge(root, member);
+  const events = pet.rename(merged, name);
+  member.name = merged.name;
+  return events;
+}
+
+// What the Party page shows for every pet.
+function view(root) {
+  ensure(root);
+  const summary = (full, active) => {
+    const v = pet.view(full);
+    return { id: full.id, active, place: full.place || 'party', project: full.project ?? null, name: v.name, nickname: v.nickname, form: v.form, formKey: v.formKey, stage: v.stage, lineage: v.lineage, trait: v.trait, chimera: v.chimera, level: v.level, shiny: v.shiny, nocturne: v.nocturne, region: full.region || null, wear: v.wear, progress: v.progress.ratio, xp: v.xp };
+  };
+  const list = [summary(root, true), ...root.others.map((m) => summary(merge(root, m), false))];
+  const projects = Object.entries(root.projects || {})
+    .filter(([label]) => !list.some((p) => p.project === label))
+    .map(([label, actions]) => ({ project: label, actions, needed: EGG_AFTER_ACTIONS }))
+    .sort((a, b) => b.actions - a.actions)
+    .slice(0, 6);
+  return { size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
+}
+
+module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, PARTY_SIZE, EGG_AFTER_ACTIONS };

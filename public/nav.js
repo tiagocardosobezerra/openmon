@@ -19,6 +19,7 @@
   for (const [id, href, label] of [
     ['powers', '/powers.html', tr('act.powers')],
     ['dex', '/dex.html', 'Opendex'],
+    ['party', '/party.html', tr('act.party')],
     ['bag', '/bag.html', tr('act.bag')],
     ['card', '/card.html', tr('nav.card')],
     ['help', '/help.html', tr('nav.help')],

@@ -260,7 +260,7 @@
 
   function specOf(p) {
     if (!p) return { stage: 'egg', lineage: null, trait: null };
-    return { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera || null, nocturne: Boolean(p.nocturne), shiny: Boolean(p.shiny) && p.stage !== 'egg', wear: p.wear || null };
+    return { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera || null, nocturne: Boolean(p.nocturne), shiny: Boolean(p.shiny) && p.stage !== 'egg', wear: p.wear || null, region: p.region || null };
   }
   function currentSpec() {
     return force || specOf(pet);
@@ -771,6 +771,8 @@
       [pet.nocturne ? tr('card.night') : null, 'brand'],
       [pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null, ''],
       [pet.holding === 'everstone' ? tr(pr.next && pet.xp >= 0 && pr.ratio >= 1 ? 'card.everstoneReady' : 'card.everstone') : null, 'brand'],
+      [pet.project ? tr('party.project', { project: pet.project }) : null, 'brand'],
+      [pet.region ? tr('region.chip', { region: tr(`region.${pet.region}`) }) : null, ''],
       [nature ? tr('card.nature', { nature }) : null, ''],
       [(pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null, ''],
     ]) if (text) chips.appendChild(el('span', `chip ${cls}`.trim(), text));
@@ -916,7 +918,13 @@
     renderAll();
   }
 
-  function onEvents(events) {
+  function onEvents(all) {
+    // Another pet of your party (its project's work): a toast, no scene.
+    const others = all.filter((e) => e.petId && pet && e.petId !== pet.id);
+    for (const e of others) {
+      if (e.type === 'evolve') pushToast(tr('party.evolved', { name: e.petName || e.from, form: e.to }), tr('party.project', { project: e.project }), 5000);
+    }
+    const events = all.filter((e) => !others.includes(e));
     const t = now();
     const stage = currentSpec().stage;
     const top = headY(stage);
@@ -976,6 +984,13 @@
           break;
         case 'daily-gift':
           setTimeout(() => pushToast(tr('gift.title'), e.streak > 1 ? tr('gift.streak', { n: e.streak }) : tr('gift.sub'), 5000), 2500);
+          break;
+        case 'project-egg':
+          pushToast(tr('party.newEgg', { project: e.project }), tr(e.place === 'box' ? 'party.newEggBox' : 'party.newEggSub'), 6000);
+          play('level');
+          break;
+        case 'switched':
+          pushToast(tr('party.switched', { project: e.project }), '', 3000);
           break;
         case 'restored':
           pushToast(tr('restore.done', { name: e.name }), tr('restore.doneSub'), 6000, 'scene');

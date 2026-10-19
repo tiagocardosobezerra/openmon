@@ -1525,14 +1525,21 @@
   const EYE_KEYS = ['blink', 'happy'];
   for (const x of [-1, 0, 1]) for (const y of [-1, 0, 1]) if (x || y) EYE_KEYS.push(`look${x}${y}`);
 
-  function eyeVariants(url) {
-    let entry = eyeCache.get(url);
+  function eyeVariants(url, region = null) {
+    const cacheKey = region ? `${url}|${region}` : url;
+    let entry = eyeCache.get(cacheKey);
     if (entry) return entry;
     entry = { ready: false, imgs: {} };
-    eyeCache.set(url, entry);
+    eyeCache.set(cacheKey, entry);
     fetch(url)
       .then((r) => r.text())
-      .then((text) => {
+      .then((raw) => {
+        const text = region ? regionSvg(raw, region) : raw;
+        if (region) {
+          const base = new Image();
+          base.onload = () => (entry.base = base);
+          base.src = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
+        }
         entry.eyeY = eyeHeight(text);
         for (const key of EYE_KEYS) {
           const svg = variantSvg(text, key);
@@ -1587,6 +1594,119 @@
     }
   }
 
+  // --- regional forms ------------------------------------------------------------
+  // A pet raised mostly on one language gets that region's colours (body and
+  // shadow of its type swapped) and a small mark on its belly.
+  const TYPE_COLORS = {
+    craft: ['#ff9f43', '#d9762b'], lore: ['#9381f2', '#6c5bcf'], shell: ['#35d0bf', '#1fa496'], test: ['#74cc63', '#4e9f42'],
+    roam: ['#5fb3ff', '#3d88d8'], swarm: ['#ff80b8', '#e0579b'], chimera: ['#b9a6ff', '#8b74e6'], sprout: ['#f6e7c9', '#dcc59c'],
+  };
+  const REGIONS = {
+    js: { body: '#ffd75e', shadow: '#e0b23a', mark: '#3178c6' },
+    py: { body: '#5b8fd6', shadow: '#3e6cad', mark: '#ffd34d' },
+    rs: { body: '#c8693c', shadow: '#9a4a26', mark: '#4fb3a0' },
+    go: { body: '#5fd0e0', shadow: '#38a6b8', mark: '#ffffff' },
+    jvm: { body: '#8b5e3c', shadow: '#664229', mark: '#f2c14e' },
+    cs: { body: '#8a6ad6', shadow: '#6648b5', mark: '#e8dcff' },
+  };
+
+  function regionSvg(text, region) {
+    const r = REGIONS[region];
+    if (!r) return text;
+    let out = text;
+    for (const [body, shadow] of Object.values(TYPE_COLORS)) {
+      out = out.replace(new RegExp(body, 'gi'), r.body).replace(new RegExp(shadow, 'gi'), r.shadow);
+    }
+    return out;
+  }
+
+  function drawMark(ctx, region, x, y, S) {
+    const r = REGIONS[region];
+    if (!r) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.lineWidth = Math.max(1.4, S * 0.03);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = INK;
+    ctx.fillStyle = r.mark;
+    const k = S * 0.14;
+    switch (region) {
+      case 'js':
+        ctx.font = `800 ${Math.round(k * 2.2)}px Fredoka, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = Math.max(2, S * 0.035);
+        ctx.strokeText('{ }', 0, 0);
+        ctx.fillText('{ }', 0, 0);
+        break;
+      case 'py':
+        for (const dx of [-1.3, 0, 1.3]) {
+          ctx.beginPath();
+          ctx.moveTo(dx * k, -k * 0.8);
+          ctx.lineTo(dx * k + k * 0.55, 0);
+          ctx.lineTo(dx * k, k * 0.8);
+          ctx.lineTo(dx * k - k * 0.55, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+        break;
+      case 'rs':
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const a = (i / 10) * Math.PI * 2;
+          const rr = i % 2 ? k * 0.95 : k * 1.3;
+          ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, k * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = INK;
+        ctx.fill();
+        break;
+      case 'go':
+        ctx.strokeStyle = r.mark;
+        ctx.lineWidth = Math.max(2, S * 0.04);
+        for (const [dy, w] of [[-0.7, 1.6], [0, 2.2], [0.7, 1.3]]) {
+          ctx.beginPath();
+          ctx.moveTo(-k * w * 0.5, dy * k);
+          ctx.lineTo(k * w * 0.5, dy * k);
+          ctx.stroke();
+        }
+        break;
+      case 'jvm':
+        ctx.beginPath();
+        ctx.ellipse(0, 0, k * 0.8, k * 1.15, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-k * 0.3, -k * 0.75);
+        ctx.quadraticCurveTo(k * 0.3, 0, -k * 0.1, k * 0.8);
+        ctx.stroke();
+        break;
+      case 'cs':
+        ctx.strokeStyle = r.mark;
+        ctx.lineWidth = Math.max(2, S * 0.035);
+        for (const d of [-0.4, 0.4]) {
+          ctx.beginPath();
+          ctx.moveTo(d * k - k * 0.15, -k);
+          ctx.lineTo(d * k + k * 0.15, k);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(-k, d * k);
+          ctx.lineTo(k, d * k);
+          ctx.stroke();
+        }
+        break;
+      default:
+        break;
+    }
+    ctx.restore();
+  }
+
   // Which eyes the body language asks for.
   function eyeKey(a) {
     if (a.eyes === 'blink' || a.eyes === 'closed') return 'blink';
@@ -1596,16 +1716,19 @@
     return x || y ? `look${x}${y}` : null;
   }
 
-  function livingImage(img, a) {
+  function livingImage(img, a, region = null) {
     if (!img.__svg) return img;
+    const entry = eyeVariants(img.__svg, region);
+    const base = region ? entry.base || img : img;
     const key = eyeKey(a);
-    if (!key) return img;
-    const entry = eyeVariants(img.__svg);
-    return entry.imgs[key] || img;
+    if (!key) return base;
+    return entry.imgs[key] || base;
   }
 
   function drawSprite(ctx, sprite, spec, a, R, t) {
-    const base = livingImage(sprite.img, a);
+    // Regional colours only on the normal colouring (shiny and night win).
+    const region = spec.region && REGIONS[spec.region] && !spec.shiny && !sprite.night && !spec.nocturne ? spec.region : null;
+    const base = livingImage(sprite.img, a, region);
     const img = spec.nocturne && !sprite.night ? nightTint(base) : base;
     const h = heightOf(spec.stage, spec.size || 48) * ((packInfo && packInfo.scale) || 1);
     const w = ((sprite.img.naturalWidth || 1) / Math.max(1, sprite.img.naturalHeight || 1)) * h;
@@ -1615,6 +1738,10 @@
     ctx.scale((a.turn == null ? 1 : a.turn) * (1 + a.squash), 1 - a.squash);
     if (a.glow > 0 || spec.stage === 'mythic') aura(ctx, spec, R, -h * 0.45, palette(spec), t, Math.max(a.glow, spec.stage === 'mythic' ? 0.6 : 0));
     ctx.drawImage(img, -w / 2, -h, w, h);
+    if (region && spec.stage !== 'egg' && spec.stage !== 'sprout') {
+      const an = spriteAnchor(sprite.img);
+      if (an) drawMark(ctx, region, 0, -h + an.neckY * h + h * 0.03, an.headW * h);
+    }
     if (spec.wear && spec.stage !== 'egg') {
       const an = spriteAnchor(sprite.img);
       if (an) drawWear(ctx, spec.wear, { topY: -h + an.top * h, headW: an.headW * h, neckY: -h + an.neckY * h, neckW: an.neckW * h }, t);
@@ -1758,5 +1885,5 @@
     return stage === 'egg' ? R * 2.5 : R * 2.4;
   }
 
-  window.OpenmonArt = { drawCreature, heightOf, loadPack, eyeVariants, PALETTES, SHINY, INK };
+  window.OpenmonArt = { drawCreature, heightOf, loadPack, eyeVariants, PALETTES, SHINY, INK, REGIONS };
 })();

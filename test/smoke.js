@@ -41,6 +41,7 @@ const PAGES = [
   { path: '/name.html' },
   { path: '/playground.html' },
   { path: '/bag.html' },
+  { path: '/party.html' },
   { path: '/help.html' },
   { path: '/powers.html' },
   { path: '/powers.html?tab=shell' },

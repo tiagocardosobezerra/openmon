@@ -123,6 +123,22 @@ function describeTool(name, input = {}) {
   return short ? `${name} ${short}` : name || 'tool';
 }
 
+// The language of the file a tool touched, for regional forms.
+const LANGS = {
+  js: ['js', 'jsx', 'mjs', 'cjs', 'ts', 'tsx', 'vue', 'svelte'],
+  py: ['py', 'pyi', 'ipynb'],
+  rs: ['rs'],
+  go: ['go'],
+  jvm: ['java', 'kt', 'kts', 'scala', 'groovy'],
+  cs: ['cs', 'fs', 'vb', 'razor', 'cshtml'],
+};
+const EXT_LANG = Object.fromEntries(Object.entries(LANGS).flatMap(([lang, exts]) => exts.map((e) => [e, lang])));
+function fileLang(input) {
+  const file = input.file_path || input.notebook_path || input.path || '';
+  const m = /\.([a-z0-9]+)$/i.exec(String(file));
+  return m ? EXT_LANG[m[1].toLowerCase()] || null : null;
+}
+
 function claudeSignal(payload) {
   const tool = payload.tool_name || null;
   const input = payload.tool_input || {};
@@ -137,6 +153,7 @@ function claudeSignal(payload) {
     family: testing ? 'test' : toolFamily(tool),
     // Set when the event comes from inside a subagent; null for the main agent.
     agentId: payload.agent_id || null,
+    lang: fileLang(input),
   };
 
   switch (payload.hook_event_name) {
@@ -211,4 +228,5 @@ function classify(payload) {
   return null;
 }
 
-module.exports = { classify, toolFamily, isTestCommand, judgeTestOutput, responseText, FAMILIES };
+module.exports = {
+  fileLang, classify, toolFamily, isTestCommand, judgeTestOutput, responseText, FAMILIES };

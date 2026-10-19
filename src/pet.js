@@ -178,6 +178,11 @@ function view(pet) {
     bag: pet.bag,
     holding: pet.holding,
     streak: pet.streak || { days: 0, best: 0 },
+    region: pet.region || null,
+    langs: pet.langs || {},
+    dexRegions: pet.dexRegions || {},
+    project: pet.project ?? null,
+    id: pet.id || null,
     journal: [...(pet.journal || []), journalEntry(pet.daily)].filter((e) => e.day),
   };
 }
@@ -403,6 +408,16 @@ function unlock(pet, id, now, events) {
   events.push({ type: 'achievement', id, ...ACHIEVEMENTS[id] });
 }
 
+const REGION_MIN = 50;
+const REGION_SHARE = 0.6;
+function regionOf(langs) {
+  const entries = Object.entries(langs || {});
+  const total = entries.reduce((a, [, n]) => a + n, 0);
+  if (total < REGION_MIN) return null;
+  const [lang, n] = entries.sort((a, b) => b[1] - a[1])[0];
+  return n / total >= REGION_SHARE ? lang : null;
+}
+
 function evolve(pet, now, events) {
   for (;;) {
     const next = nextStage(pet);
@@ -426,6 +441,9 @@ function evolve(pet, now, events) {
       // Evolving between midnight and 5 am gives the Nocturne colouring,
       // decided again at every evolution (Pokémon-style time evolution).
       pet.nocturne = new Date(now).getHours() < 5;
+      // Regional form: raised mostly on one language (60% of 50+ files).
+      pet.region = regionOf(pet.langs);
+      if (pet.region) pet.dexRegions = { ...(pet.dexRegions || {}), [`${formKey(pet.stage, pet.lineage)}.${pet.region}`]: now };
       if (pet.nocturne) {
         pet.seenNight = { ...(pet.seenNight || {}), [formKey(pet.stage, pet.lineage)]: now };
         unlock(pet, 'nocturne', now, events);
@@ -436,7 +454,7 @@ function evolve(pet, now, events) {
     const key = formKey(pet.stage, pet.lineage);
     const firstTime = !pet.dex[key];
     if (firstTime) pet.dex[key] = now;
-    events.push({ type: 'evolve', from, to: form(pet), stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, nocturne: Boolean(pet.nocturne), shiny: pet.shiny, newDex: firstTime });
+    events.push({ type: 'evolve', from, to: form(pet), stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, nocturne: Boolean(pet.nocturne), shiny: pet.shiny, region: pet.region || null, newDex: firstTime });
     if (pet.stage === 'sprout') unlock(pet, 'hatch', now, events);
     if (pet.stage === 'sprout' && pet.shiny) unlock(pet, 'shiny', now, events);
     if (pet.stage === 'juvenile') {
@@ -489,6 +507,7 @@ function applySignal(pet, signal, ctx = {}, now) {
         pet.daily.edits = (pet.daily.edits || 0) + 1;
       }
       if (signal.family && pet.stats[signal.family] != null) pet.stats[signal.family]++;
+      if (signal.lang) pet.langs = { ...(pet.langs || {}), [signal.lang]: ((pet.langs || {})[signal.lang] || 0) + 1 };
       countWork(pet, signal);
       addXp(pet, XP.tool, now, events);
       break;
@@ -602,6 +621,7 @@ module.exports = {
   level,
   xpForLevel,
   displayName,
+  regionOf,
   wear,
   useItem,
   checkCosmetics,

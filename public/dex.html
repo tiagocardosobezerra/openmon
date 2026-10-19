@@ -64,6 +64,9 @@
   <h2 class="section-title" id="h-types">Types</h2>
   <p class="muted" id="types-sub" style="margin:-4px 0 12px"></p>
   <div class="types" id="types"></div>
+  <h2 class="section-title"><span id="h-regions"></span> <small id="regions-count"></small></h2>
+  <p class="muted" id="regions-sub" style="margin:-4px 0 12px"></p>
+  <div class="types" id="regions"></div>
   <h2 class="section-title" id="h-forms">Forms</h2>
   <div class="grid" id="grid"></div>
   <h2 class="section-title"><span id="h-hall">Hall of Fame</span></h2>
@@ -150,6 +153,7 @@
       cells.push({ canvas: el.querySelector('canvas'), spec, known, offset: entry.no * 0.7 });
     }
     renderTypes(species, dex);
+    renderRegions((pet && pet.dexRegions) || {});
     document.getElementById('seen').textContent = `${seen}/${species.dex.length}`;
     document.getElementById('seen-label').textContent = tr('dex.seenShort');
     document.getElementById('seen-bar').style.width = `${Math.round((seen / species.dex.length) * 100)}%`;
@@ -257,6 +261,31 @@
     box.append(hidden);
   }
 
+  // Regional forms: same creature, another accent, from the language of the
+  // project it grew up in.
+  function renderRegions(seen) {
+    document.getElementById('h-regions').textContent = tr('dex.regions');
+    document.getElementById('regions-sub').textContent = tr('dex.regionsSub');
+    const keys = Object.keys(seen);
+    document.getElementById('regions-count').textContent = `${keys.length}`;
+    const box = document.getElementById('regions');
+    for (const region of ['js', 'py', 'rs', 'go', 'jvm', 'cs']) {
+      const mine = keys.filter((k) => k.endsWith(`.${region}`));
+      const card = el('div', 'type');
+      card.style.setProperty('--c', OpenmonArt.REGIONS[region].body);
+      const canvas = el('canvas');
+      canvas.style.cssText = 'grid-row: span 3; width: 72px; height: 72px; align-self: center';
+      const h = el('h3');
+      const chip = el('span', 'type-chip', tr(`region.${region}`));
+      chip.style.setProperty('--c', OpenmonArt.REGIONS[region].body);
+      h.append(chip);
+      card.append(canvas, h, el('p', '', tr(`dex.region.${region}`)), el('p', 'flavor', mine.length ? tr('dex.regionSeen', { n: mine.length }) : tr('dex.regionNone')));
+      box.append(card);
+      regionCanvases.push([canvas, { stage: 'juvenile', lineage: 'craft', region, progress: 0.3 }, !mine.length && !revealAll]);
+    }
+  }
+  const regionCanvases = [];
+
   function show(entry, spec, known) {
     open = { spec, known };
     const types = document.getElementById('d-types');
@@ -286,6 +315,7 @@
     const t = ms / 1000;
     for (const c of cells) draw(c.canvas, c.spec, t + c.offset, !c.known);
     if (open) draw(document.getElementById('big'), open.spec, t, !open.known);
+    for (const [c, spec, hidden] of regionCanvases) draw(c, spec, t, hidden);
     requestAnimationFrame(frame);
   }
   OpenmonArt.loadPack().then(main);

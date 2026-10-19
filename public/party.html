@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Openmon Party</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  main { padding-bottom: 56px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .mon { position: relative; display: grid; justify-items: center; gap: 2px; padding: 10px 12px 14px; text-align: center; }
+  .mon.active { box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--sun) 70%, transparent); }
+  .mon canvas { width: 150px; height: 150px; }
+  .mon .name { font: 600 17px var(--font-display); }
+  .mon .meta { font-size: 12.5px; color: var(--muted); }
+  .mon .proj { margin-top: 4px; }
+  .mon .tag { position: absolute; top: 10px; left: 10px; }
+  .mon .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
+  .mon .bar { width: 80%; height: 6px; margin-top: 4px; }
+  .empty-slot { display: grid; place-items: center; min-height: 250px; border: 2px dashed var(--line); border-radius: var(--r-lg); color: var(--muted); text-align: center; padding: 16px; font-size: 13px; }
+  .upcoming { display: grid; gap: 6px; max-width: 640px; }
+  .upcoming div { display: grid; grid-template-columns: 1fr 160px auto; gap: 10px; align-items: center; padding: 8px 12px; border-radius: var(--r-md); background: var(--surface); border: var(--bw) solid var(--line); }
+  .switch { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .switch input { width: 18px; height: 18px; accent-color: var(--brand); }
+</style>
+</head>
+<body class="page" data-page="party">
+<main class="wrap">
+  <div class="hero"><div><h1 id="title"></h1><p id="sub"></p>
+    <label class="switch"><input type="checkbox" id="follow"><span id="follow-label"></span></label>
+  </div></div>
+  <h2 class="section-title"><span id="h-party"></span> <small id="party-count"></small></h2>
+  <div class="grid" id="party"></div>
+  <h2 class="section-title" id="h-upcoming"></h2>
+  <p class="muted" id="upcoming-sub" style="margin:-4px 0 10px"></p>
+  <div class="upcoming" id="upcoming"></div>
+  <h2 class="section-title"><span id="h-box"></span> <small id="box-count"></small></h2>
+  <div class="grid" id="box"></div>
+</main>
+<script src="i18n.js"></script>
+<script src="nav.js"></script>
+<script src="art.js"></script>
+<script src="motion.js"></script>
+<script>
+  const { t: tr, lang } = window.OpenmonI18n;
+  document.documentElement.lang = lang;
+  const $ = (id) => document.getElementById(id);
+  for (const [id, key] of [['title', 'party.title'], ['sub', 'party.sub'], ['h-party', 'party.party'], ['h-box', 'party.box'], ['h-upcoming', 'party.upcoming'], ['upcoming-sub', 'party.upcomingSub'], ['follow-label', 'party.follow']]) $(id).textContent = tr(key);
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const canvases = [];
+  let data = null;
+
+  async function post(path, body) {
+    await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    await load();
+  }
+
+  function card(p, size) {
+    const c = el('div', `mon panel${p.active ? ' active' : ''}`);
+    const canvas = el('canvas');
+    canvases.push([canvas, p]);
+    const region = p.region ? ` · ${tr(`region.${p.region}`)}` : '';
+    c.append(canvas, el('span', 'name', p.shiny && p.stage !== 'egg' ? `${p.name} ★` : p.name), el('span', 'meta', `${tr('card.level', { n: p.level })} · ${p.form}${region}`));
+    c.append(el('span', 'chip proj', p.project ? tr('party.project', { project: p.project }) : tr('party.general')));
+    const bar = el('div', 'bar');
+    const fill = el('i');
+    fill.style.width = `${Math.round((p.progress || 0) * 100)}%`;
+    bar.append(fill);
+    c.append(bar);
+    if (p.active) c.append(el('span', 'tag chip sun', tr('party.onScreen')));
+    const actions = el('div', 'actions');
+    if (!p.active) {
+      const show = el('button', 'btn sm primary', tr('party.show'));
+      show.onclick = () => post('/api/party/active', { id: p.id });
+      actions.append(show);
+      const move = el('button', 'btn sm', p.place === 'box' ? tr('party.toParty') : tr('party.toBox'));
+      move.onclick = () => post('/api/party/move', { id: p.id, place: p.place === 'box' ? 'party' : 'box' });
+      if (p.place === 'box' && data.members.length >= size) {
+        move.disabled = true;
+        move.title = tr('party.full');
+      }
+      actions.append(move);
+    }
+    const rename = el('button', 'btn sm ghost', tr('party.rename'));
+    rename.onclick = () => {
+      const name = window.prompt(tr('name.q'), p.nickname || '');
+      if (name !== null) post('/api/party/rename', { id: p.id, name });
+    };
+    actions.append(rename);
+    c.append(actions);
+    return c;
+  }
+
+  function render() {
+    canvases.length = 0;
+    const party = $('party');
+    party.textContent = '';
+    for (const p of data.members) party.append(card(p, data.size));
+    for (let i = data.members.length; i < data.size; i++) party.append(el('div', 'empty-slot', tr('party.emptySlot')));
+    $('party-count').textContent = `${data.members.length}/${data.size}`;
+    const box = $('box');
+    box.textContent = '';
+    if (!data.box.length) box.append(el('p', 'muted', tr('party.boxEmpty')));
+    for (const p of data.box) box.append(card(p, data.size));
+    $('box-count').textContent = data.box.length ? String(data.box.length) : '';
+    const up = $('upcoming');
+    up.textContent = '';
+    if (!data.upcoming.length) up.append(el('p', 'muted', tr('party.noUpcoming')));
+    for (const u of data.upcoming) {
+      const row = el('div');
+      const bar = el('div', 'bar');
+      const fill = el('i');
+      fill.style.width = `${Math.min(100, Math.round((u.actions / u.needed) * 100))}%`;
+      bar.append(fill);
+      row.append(el('b', '', u.project), bar, el('small', 'muted', `${Math.min(u.actions, u.needed)}/${u.needed}`));
+      up.append(row);
+    }
+    drawAll();
+  }
+
+  function drawAll() {
+    const dpr = window.devicePixelRatio || 1;
+    for (const [canvas, p] of canvases) {
+      canvas.width = 150 * dpr;
+      canvas.height = 150 * dpr;
+      const ctx = canvas.getContext('2d');
+      const k = canvas.width / 200;
+      ctx.setTransform(k, 0, 0, k, 100 * k, 182 * k);
+      const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny && p.stage !== 'egg', wear: p.wear, region: p.region };
+      OpenmonArt.drawCreature(ctx, { ...spec, t: 1, size: 56, pose: 'idle', anim: { eyes: 'happy', mouth: 'grin' } });
+    }
+  }
+
+  async function load() {
+    const s = await (await fetch('/api/state')).json();
+    data = s.party;
+    $('follow').checked = Boolean(s.config && s.config.followProject);
+    if (data) render();
+  }
+  $('follow').addEventListener('change', (e) => post('/api/config', { followProject: e.target.checked }));
+  OpenmonArt.loadPack().then(load);
+  setTimeout(drawAll, 1500);
+  setTimeout(drawAll, 3500);
+</script>
+</body>
+</html>

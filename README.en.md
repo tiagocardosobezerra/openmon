@@ -120,6 +120,12 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 </tr>
 </table>
 
+## One Openmon per project
+
+Every project your agent works on enough gets **its own egg**. Up to 6 travel in your **Party**; the rest wait in the **Box**, like a Pokémon PC. Each one grows only from its project's work, while the Bag, Opendex and badges belong to you as a trainer and count for all of them. On the **Party** page you pick who is on screen, or turn on "Show the Openmon of the project your agent is working in".
+
+**Regional forms**: an Openmon raised mostly on one language evolves into that region's colours with a small mark: *Brace* (JavaScript/TypeScript), *Serpent* (Python), *Rust*, *Current* (Go), *Bean* (Java/Kotlin) and *Sharp* (C#/.NET). The Opendex records the ones you have seen.
+
 ## Something every day
 
 * **Missions**: three a day, like "answer your agent within 30 s, 3 times" or "3 green test runs". Each gives experience, friendship and a Snack.

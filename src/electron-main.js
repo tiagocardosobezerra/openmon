@@ -46,6 +46,7 @@ const PT = {
   'Answer permissions from the pet?': 'Responder permissões pelo pet?',
   'When an agent asks for permission, the pet shows Allow and Deny. For up to {s} seconds Claude Code waits for your answer on the pet; after that it asks you as usual. You can turn this off any time.': 'Quando um agente pedir permissão, o pet mostra Permitir e Recusar. Por até {s} segundos o Claude Code espera a sua resposta no pet; depois disso ele pergunta como sempre. Dá para desligar quando quiser.',
   'Bag': 'Mochila',
+  'Party': 'Time',
   'How it works': 'Como funciona',
   'Make a copy now': 'Fazer uma cópia agora',
   'Export my pet to a file…': 'Exportar meu pet para um arquivo…',
@@ -210,6 +211,7 @@ function menuTemplate() {
     { label: L('Open card'), click: () => win.webContents.send('command', 'card') },
     { label: L('Powers…'), click: openPowersWindow },
     { label: 'Opendex', click: () => openAppWindow('dex') },
+    { label: L('Party'), click: () => openAppWindow('party') },
     { label: L('Bag'), click: () => openAppWindow('bag') },
     { label: L('How it works'), click: () => openAppWindow('help') },
     { label: L('Trainer card (share)'), click: () => openAppWindow('card') },
@@ -342,7 +344,7 @@ function applyScale(scale) {
 let powersWin = null;
 // One app window for Powers, Opendex and the trainer card; the top bar
 // moves between them.
-const APP_PAGES = new Set(['powers', 'dex', 'bag', 'card', 'help']);
+const APP_PAGES = new Set(['powers', 'dex', 'party', 'bag', 'card', 'help']);
 function openAppWindow(page = 'powers') {
   if (!APP_PAGES.has(page)) page = 'powers';
   const url = `http://127.0.0.1:${port}/${page}.html`;

@@ -18,6 +18,7 @@ const installer = require('./install');
 const { localizeSpecies } = require('./i18n');
 const { createPlayground } = require('./playground');
 const { createFocus } = require('./focus');
+const party = require('./party');
 const { createBackups, unwrap } = require('./backup');
 const { createPowers, unlockedPowers } = require('./powers');
 
@@ -83,11 +84,11 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   const clients = new Set();
   // A brand-new pet file: if a backup exists, offer to bring that pet back.
   const freshInstall = Boolean(store.file) && !fs.existsSync(store.file);
-  const real = createWorld(store.load());
+  const real = createWorld(party.ensure(store.load()));
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25 };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25 };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -119,6 +120,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       setup: setup(),
       live,
       pet: pet.view(world.pet),
+      party: world === real ? party.view(real.pet) : null,
       config: publicConfig(),
       restoreOffer: restoreOffer ? restoreOffer.summary : null,
       permissions: permissionView(),
@@ -159,10 +161,32 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       if (signal.kind === 'session-end') focus.forget(signal.session);
     }
     const ctx = target.sessions.apply(signal, t);
-    const events = pet.applySignal(target.pet, signal, ctx, t);
+    // The real pet routes work to the pet of each project (Party); the demo
+    // pet is a single egg.
+    const events = target === real ? party.applySignal(real.pet, signal, ctx, t) : pet.applySignal(target.pet, signal, ctx, t);
+    if (target === real) followProject(signal, t, events);
     if (target === real) persist(events.some((e) => e.type === 'evolve'));
     log(`${signal.kind.padEnd(14)} ${signal.label}${signal.detail ? ` · ${signal.detail}` : ''}`);
     return events;
+  }
+
+  // "Show the pet of the project your agent is working in": switches the pet
+  // on screen to that project's own pet (at most every 20 s).
+  let lastFollow = 0;
+  function followProject(signal, t, events) {
+    if (!config.followProject || signal.kind !== 'tool-start' || t - lastFollow < 20_000) return;
+    const target = party.petFor(real.pet, signal.label || null);
+    if (target === real.pet || target.place !== 'party') return;
+    real.pet = party.setActive(real.pet, target.id);
+    lastFollow = t;
+    events.push({ type: 'switched', project: target.project });
+  }
+
+  function partyAction(fn) {
+    const result = fn();
+    persist(true);
+    pushState(true);
+    return result;
   }
 
   // Real agent events always reach the real pet, even while a demo plays.
@@ -247,9 +271,12 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   }
 
   function layEgg() {
-    const { pet: egg, events } = pet.layEgg(real.pet, now());
+    const old = real.pet;
+    const { pet: egg, events } = pet.layEgg(old, now());
     if (!events.length) return events;
-    real.pet = egg;
+    // The new egg takes the retired pet's place: same project, same party.
+    Object.assign(egg, { project: old.project ?? null, place: 'party', others: old.others || [], projects: old.projects || {}, journal: old.journal, streak: old.streak, gifts: old.gifts, dexRegions: old.dexRegions });
+    real.pet = party.ensure(egg);
     persist(true);
     pushEvents(events);
     pushState(true);
@@ -478,6 +505,19 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         return readJson(req, (err, body) => (err ? res.writeHead(400).end() : json(res, 200, { events: change((p) => pet.wear(p, body.slot, body.id ?? null)) })));
       case 'POST /api/use':
         return readJson(req, (err, body) => (err ? res.writeHead(400).end() : json(res, 200, { events: change((p) => pet.useItem(p, String(body.item || ''), now())) })));
+      case 'POST /api/party/active':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          json(res, 200, { ok: partyAction(() => {
+            const before = real.pet.id;
+            real.pet = party.setActive(real.pet, String(body.id || ''));
+            return real.pet.id !== before;
+          }) });
+        });
+      case 'POST /api/party/move':
+        return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { ok: partyAction(() => party.move(real.pet, String(body.id || ''), body.place)) })));
+      case 'POST /api/party/rename':
+        return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { events: partyAction(() => party.renameMember(real.pet, String(body.id || ''), body.name)) })));
       case 'POST /api/lay-egg':
         return json(res, 200, { events: layEgg() });
       case 'POST /api/shutdown':
@@ -497,6 +537,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.notify === 'boolean') patch.notify = body.notify;
           if (typeof body.chatter === 'boolean') patch.chatter = body.chatter;
           if (typeof body.stroll === 'boolean') patch.stroll = body.stroll;
+          if (typeof body.followProject === 'boolean') patch.followProject = body.followProject;
           if (typeof body.answerFromPet === 'boolean') patch.answerFromPet = body.answerFromPet;
           if (typeof body.answerWaitSec === 'number' && body.answerWaitSec >= 5 && body.answerWaitSec <= 60) patch.answerWaitSec = Math.round(body.answerWaitSec);
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
