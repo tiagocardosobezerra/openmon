@@ -49,11 +49,13 @@ test('accessories and items: one file each', () => {
   for (const id of Object.keys(species.ITEMS)) if (!['snack', 'candy', 'everstone'].includes(id)) assert.ok(items.has(`${id}.svg`), id);
 });
 
-test('the English README animations match the designer\'s Portuguese ones', () => {
-  const { translate, FILES } = require('../tools/build-banner');
+test('the English and Spanish README animations match the designer\'s Portuguese ones', () => {
+  const { translate, FILES, LANGS } = require('../tools/build-banner');
   const lf = (s) => s.replace(/\r\n/g, '\n');
   for (const name of Object.keys(FILES)) {
-    const en = fs.readFileSync(path.join(__dirname, '..', 'assets', name.replace(/\.svg$/, '.en.svg')), 'utf8');
-    assert.equal(lf(en), lf(translate(name)), name);
+    for (const lang of LANGS) {
+      const copy = fs.readFileSync(path.join(__dirname, '..', 'assets', name.replace(/\.svg$/, `.${lang}.svg`)), 'utf8');
+      assert.equal(lf(copy), lf(translate(name, lang)), `${name} ${lang}`);
+    }
   }
 });

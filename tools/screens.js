@@ -2,9 +2,10 @@
 
 // Screenshots for the README: a demo pet (adult, accessories, a full bag,
 // two weeks of journal, two agents, one waiting) on a throwaway daemon,
-// captured from real windows in English and Portuguese.
+// captured from real windows in Portuguese, English and Spanish.
 //
 //   node tools/screens.js        (relaunches itself inside Electron)
+//   node tools/screens.js es     only the languages named
 //
 // Writes docs/screens/<name>.<lang>.png.
 
@@ -12,7 +13,7 @@ const path = require('node:path');
 
 if (!process.versions.electron) {
   const { spawnSync } = require('node:child_process');
-  const result = spawnSync(require('electron'), [__filename], { stdio: 'inherit' });
+  const result = spawnSync(require('electron'), [__filename, ...process.argv.slice(2)], { stdio: 'inherit' });
   process.exit(result.status === null ? 1 : result.status);
 }
 
@@ -123,7 +124,8 @@ app.whenReady().then(async () => {
   daemon.ingest({ session_id: 's-api', hook_event_name: 'UserPromptSubmit', prompt: 'ship it', cwd: '/work/shop-api' });
   daemon.ingest({ session_id: 's-api', hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'npm publish' }, cwd: '/work/shop-api' });
   try {
-    for (const lang of ['pt-BR', 'en']) {
+    const asked = process.argv.filter((a) => ['pt-BR', 'en', 'es'].includes(a));
+    for (const lang of asked.length ? asked : ['pt-BR', 'en', 'es']) {
       for (const s of SHOTS) {
         const size = await shot(port, s, lang);
         console.log(`${s.name}.${lang}.png ${size.width}x${size.height}`);

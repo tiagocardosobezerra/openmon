@@ -1,6 +1,6 @@
 # Openmon
 
-**Português** | [English](README.en.md)
+**Português** | [English](README.en.md) | [Español](README.es.md)
 
 **Seu agente de IA trabalha. Um bichinho no canto da tela mostra o que ele está fazendo, avisa quando ele precisa de você e cresce com cada tarefa.**
 
@@ -136,7 +136,7 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 
 ## Um Openmon por projeto
 
-Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. Até 6 andam no **Time**; os outros esperam na **Caixa**, com 12 papéis de parede para escolher. Até 3 podem ficar na tela ao mesmo tempo: no Time, use "Também na tela"; cada um mostra o que o agente do seu projeto está fazendo. Cada um cresce só com o trabalho do seu projeto, e a Mochila, a Opendex e as insígnias são suas, de treinador, e valem para todos. Na página **Time** você escolhe quem fica na tela, ou liga "Mostrar o Openmon do projeto em que o agente está trabalhando".
+Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. Até 6 andam no **Time**; os outros esperam na **Caixa**, com 12 papéis de parede para escolher. Até 3 podem ficar na tela ao mesmo tempo: no Time, use "Também na tela"; cada um mostra o que o agente do seu projeto está fazendo. Cada um cresce só com o trabalho do seu projeto, e a Mochila, a Opendex e as insígnias são suas, de treinador, e valem para todos. Na página **Time** você escolhe quem fica na tela, ou liga "Mostrar o Openmon do projeto em que o agente está trabalhando". Pastas temporárias (a pasta temporária do sistema ou a área de rascunho de um app) não contam como projeto: o trabalho nelas vai para o seu primeiro Openmon.
 
 **Formas regionais**: um Openmon criado principalmente numa linguagem evolui com as cores daquela região e uma pequena marca: *Chaves* (JavaScript/TypeScript), *Serpente* (Python), *Ferrugem* (Rust), *Correnteza* (Go), *Grão* (Java/Kotlin) e *Sustenido* (C#/.NET). A Opendex registra as que você viu.
 

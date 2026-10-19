@@ -1,6 +1,6 @@
 # Openmon
 
-[Português](README.md) | **English**
+[Português](README.md) | **English** | [Español](README.es.md)
 
 **Your AI agent works. A little creature in the corner of your screen shows what it is doing, tells you when it needs you, and grows with every task.**
 
@@ -136,7 +136,7 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 
 ## One Openmon per project
 
-Every project your agent works on enough gets **its own egg**. Up to 6 travel in your **Party**; the rest wait in the **Box**, with 12 wallpapers to pick from. Up to 3 can be on screen at once: on the Party page, use "Also on screen"; each one shows what its own project's agent is doing. Each one grows only from its project's work, while the Bag, Opendex and badges belong to you as a trainer and count for all of them. On the **Party** page you pick who is on screen, or turn on "Show the Openmon of the project your agent is working in".
+Every project your agent works on enough gets **its own egg**. Up to 6 travel in your **Party**; the rest wait in the **Box**, with 12 wallpapers to pick from. Up to 3 can be on screen at once: on the Party page, use "Also on screen"; each one shows what its own project's agent is doing. Each one grows only from its project's work, while the Bag, Opendex and badges belong to you as a trainer and count for all of them. On the **Party** page you pick who is on screen, or turn on "Show the Openmon of the project your agent is working in". Temporary folders (the system temp folder or an app's scratch workspace) are not projects: their work feeds your first Openmon.
 
 **Regional forms**: an Openmon raised mostly on one language evolves into that region's colours with a small mark: *Brace* (JavaScript/TypeScript), *Serpent* (Python), *Rust*, *Current* (Go), *Bean* (Java/Kotlin) and *Sharp* (C#/.NET). The Opendex records the ones you have seen.
 
