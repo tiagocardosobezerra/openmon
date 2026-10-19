@@ -1,6 +1,6 @@
 {
   "name": "openmon",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "A desktop pet that grows from the work your AI coding agent does, and tells you when it needs you.",
   "license": "MIT",
   "bin": {
