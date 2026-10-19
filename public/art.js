@@ -1130,34 +1130,41 @@
   // optional ".shiny" and "@pose" parts ("craft-adult.shiny@sleep.png"),
   // replace the procedural body. Props, particles and motion still apply.
 
-  const sprites = {};
+  // The pack's file list comes first; each image loads the first time a
+  // draw asks for it, so a page fetches only the art it shows. Until then
+  // get() returns null and the creature is drawn in code for a frame or two.
+  const files = new Map(); // name -> file
+  const sprites = new Map(); // name -> loaded Image, or null while loading
   let packInfo = null;
   let tints = { forms: {}, seasons: {} };
 
   function loadPack() {
     return fetch('/art/index.json')
       .then((r) => r.json())
-      .then(({ files, pack, tints: t }) => {
+      .then(({ files: list, pack, tints: t }) => {
         packInfo = pack;
         if (t) tints = { forms: t.forms || {}, seasons: t.seasons || {} };
-        return Promise.all(
-          (files || []).map(
-            (file) =>
-              new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                  const name = file.replace(/.(png|svg|webp)$/, '');
-                  sprites[name] = img;
-                  if (file.endsWith('.svg')) img.__svg = `/art/${encodeURIComponent(file)}`;
-                  resolve();
-                };
-                img.onerror = resolve;
-                img.src = `/art/${encodeURIComponent(file)}`;
-              }),
-          ),
-        );
+        for (const file of list || []) files.set(file.replace(/.(png|svg|webp)$/, ''), file);
       })
       .catch(() => {});
+  }
+
+  const has = (name) => files.has(name);
+
+  // A file that fails to load leaves the list, so the next draw falls back.
+  function get(name) {
+    if (sprites.has(name)) return sprites.get(name);
+    const file = files.get(name);
+    if (!file) return null;
+    sprites.set(name, null);
+    const img = new Image();
+    img.onload = () => {
+      if (file.endsWith('.svg')) img.__svg = `/art/${encodeURIComponent(file)}`;
+      sprites.set(name, img);
+    };
+    img.onerror = () => files.delete(name);
+    img.src = `/art/${encodeURIComponent(file)}`;
+    return null;
   }
 
   const CLASSIC = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
@@ -1172,10 +1179,10 @@
   function colourOf(spec, key) {
     if (spec.nocturne) return 'night';
     if (spec.shiny) return 'shiny';
-    if (spec.friend && (sprites[`${key}.friend`] || (tints.forms[key] || {}).friend)) return 'friend';
+    if (spec.friend && (has(`${key}.friend`) || (tints.forms[key] || {}).friend)) return 'friend';
     if (key === 'chimera-adult' && Array.isArray(spec.chimera) && spec.chimera.length === 2) {
       const pair = [...spec.chimera].sort((a, b) => CLASSIC.indexOf(a) - CLASSIC.indexOf(b)).join('-');
-      if (sprites[`${key}.${pair}`]) return pair;
+      if (has(`${key}.${pair}`)) return pair;
     }
     return null;
   }
@@ -1187,31 +1194,36 @@
     const key = spriteKey(spec);
     const pose = spec.pose && spec.pose !== 'idle' ? `@${spec.pose}` : '';
     const v = colourOf(spec, key);
+    // Choose by the file list, then load only the image chosen.
+    const pick = (name, extra) => {
+      const img = get(name);
+      return img ? { img, night: false, ...extra } : null;
+    };
     if (v) {
-      const exact = sprites[`${key}.${v}${pose}`];
-      if (exact) return { img: exact, night: v === 'night' };
+      const exact = `${key}.${v}${pose}`;
+      if (has(exact)) return pick(exact, { night: v === 'night' });
       const tint = (tints.forms[key] || {})[v];
-      if (pose && sprites[key + pose] && tint) return { img: sprites[key + pose], night: v === 'night', tint: `form:${key}:${v}` };
-      const still = sprites[`${key}.${v}`];
-      if (still) return { img: still, night: v === 'night' };
+      if (pose && has(key + pose) && tint) return pick(key + pose, { night: v === 'night', tint: `form:${key}:${v}` });
+      const still = `${key}.${v}`;
+      if (has(still)) return pick(still, { night: v === 'night' });
       // A pack without night art: shiny colours if it has them, then the
       // normal image tinted at draw time.
       if (v === 'night' && spec.shiny) {
-        const shiny = sprites[`${key}.shiny${pose}`] || sprites[`${key}.shiny`];
-        if (shiny) return { img: shiny, night: false };
+        const shiny = [`${key}.shiny${pose}`, `${key}.shiny`].find(has);
+        if (shiny) return pick(shiny);
       }
     }
-    const img = sprites[key + pose] || sprites[key] || null;
-    if (!img) return null;
-    if (v === 'night' || v === 'shiny') return { img, night: false };
+    const base = [key + pose, key].find(has);
+    if (!base) return null;
+    if (v === 'night' || v === 'shiny') return pick(base);
     // Regions and seasons recolour the normal colouring only.
     if (spec.region && !v) {
-      const regional = sprites[`${key}.region-${spec.region}${pose}`] || (!pose && sprites[`${key}.region-${spec.region}`]);
-      if (regional) return { img: regional, night: false, regional: true };
-      return { img, night: false, region: spec.region };
+      const regional = [`${key}.region-${spec.region}${pose}`, !pose && `${key}.region-${spec.region}`].find((n) => n && has(n));
+      if (regional) return pick(regional, { regional: true });
+      return pick(base, { region: spec.region });
     }
-    if (spec.season && !v && tints.seasons[spec.season] && spec.stage !== 'egg') return { img, night: false, tint: `season:${spec.season}:${spec.legend ? '' : spec.lineage || 'sprout'}` };
-    return { img, night: false };
+    if (spec.season && !v && tints.seasons[spec.season] && spec.stage !== 'egg') return pick(base, { tint: `season:${spec.season}:${spec.legend ? '' : spec.lineage || 'sprout'}` });
+    return pick(base);
   }
 
   // Nocturne for packs without night art: the sprite pulled toward midnight blue.
@@ -1845,10 +1857,10 @@
     const an = spriteAnchor(sprite.img);
     if (!an) return;
     const entry = sprite.img.__svg ? eyeVariants(sprite.img.__svg, region) : null;
-    const mark = sprites[`mark-${region}`];
-    if (mark) {
-      // Wait for the eye line (the SVG loads once, then every frame has it).
-      if (!entry || entry.eyeY == null) return;
+    if (has(`mark-${region}`)) {
+      const mark = get(`mark-${region}`);
+      // Wait for the mark and the eye line (each loads once, then every frame has it).
+      if (!mark || !entry || entry.eyeY == null) return;
       const S = Math.max(8, an.headW * h * 0.24);
       const y = -h + entry.eyeY * h - S * 1.05;
       ctx.drawImage(mark, -S / 2, y - S / 2, S, S);
@@ -1966,7 +1978,7 @@
   // Where accessories sit, from the form's idle image: its eyes are open,
   // so glasses stay on while it sleeps. Same frame as every pose of the form.
   function wearAnchors(sprite, spec, w, h) {
-    const still = sprites[spriteKey(spec)] || sprite.img;
+    const still = get(spriteKey(spec)) || sprite.img;
     const an = spriteAnchor(still);
     if (!an) return null;
     const eyes = still.__svg ? eyeVariants(still.__svg) : null;
