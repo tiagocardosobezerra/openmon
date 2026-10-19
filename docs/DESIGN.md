@@ -105,21 +105,21 @@ Evolution is an event: the pet glows, shakes, flashes and reveals the new form, 
 
 Small, honest milestones: first hatch, first green test, 100 green test runs, 1 000 edits, an agent that ran 50 tools in one turn, five agents at once, a night owl session, "quick hands" (10 fast answers in one day). Each one shows a toast once and lives on the profile.
 
-### What we borrowed from Pokémon and Digimon
+### Classic game ideas we use
 
-| Idea | Source | In Openmon |
+| Idea | Genre | In Openmon |
 | --- | --- | --- |
-| Branching evolution decided by how you raise it | Digimon | Lineage from weighted stat affinity, re-checked at every stage |
-| Silhouettes for unseen entries, numbered dex | Pokémon | Opendex #001–#022 with field notes and badges |
-| Levels | Pokémon | Lv 1–100, square-root curve |
-| Hidden forms, rumours | Pokémon (Mew) | Chimera and Paragon, only on a near-perfect tie between two kinds of work |
-| Pre-digivolution glow | Digimon | Pulse at 90% of the way to the next stage |
-| Shiny variants | Pokémon | 1 in 128, decided at birth, revealed at hatch |
-| Natures | Pokémon | Six natures that change idle behaviour and chatter |
-| Species cries | Pokémon | A synthesised call per lineage, deeper as it grows |
-| "What? X is evolving!" scene | Pokémon | Dim, flicker, reveal, fanfare, cry, dex entry |
-| Friendship-gated evolution | Pokémon | Mythic needs bond 60 |
-| Rebirth into a new egg | Digimon | Retire at Mythic to the Hall of Fame; the egg inherits 10% of the stats |
+| Branching evolution decided by how you raise it | virtual pets | Lineage from weighted stat affinity, re-checked at every stage |
+| Silhouettes for unseen entries, numbered dex | creature games | Opendex #001–#022 with field notes and badges |
+| Levels | creature games | Lv 1–100, square-root curve |
+| Hidden forms, rumours | creature games | Chimera and Paragon, only on a near-perfect tie between two kinds of work |
+| A glow before evolving | virtual pets | Pulse at 90% of the way to the next stage |
+| Shiny variants | creature games | 1 in 128, decided at birth, revealed at hatch |
+| Natures | creature games | Six natures that change idle behaviour and chatter |
+| Species cries | creature games | A synthesised call per lineage, deeper as it grows |
+| "What? X is evolving!" scene | creature games | Dim, flicker, reveal, fanfare, cry, dex entry |
+| Friendship-gated evolution | creature games | Mythic needs bond 60 |
+| Rebirth into a new egg | virtual pets | Retire at Mythic to the Hall of Fame; the egg inherits 10% of the stats |
 
 What we deliberately did not borrow: death, sickness, care mistakes that punish you, and anything random you can pay for.
 

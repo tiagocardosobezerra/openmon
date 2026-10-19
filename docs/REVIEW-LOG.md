@@ -8,7 +8,7 @@ Each cycle looks at the product through one lens (game design, character appeal,
 - A new user sees a silent egg and no explanation. Nothing says what feeds it or how long it takes. Most people would close it in a minute.
 - If the hooks are not installed, the egg sleeps forever and gives no hint why. This is the most likely failure, and it was invisible.
 - Clicking the egg did nothing visible except hearts. In every pet game, the egg reacts when you touch it.
-- After hatching we told people to run `openmon name <name>` in a terminal. Pokémon asks for the nickname right there. Our window cannot take keyboard focus, so there was no way to do it in place.
+- After hatching we told people to run `openmon name <name>` in a terminal. Creature games ask for the nickname right there. Our window cannot take keyboard focus, so there was no way to do it in place.
 - The hover card said "30 to go": to go where?
 
 **Shipped**
@@ -24,7 +24,7 @@ Each cycle looks at the product through one lens (game design, character appeal,
 ## Cycle 2: character appeal
 
 **Critique**
-- Every one of the 18 forms had the same face: same eyes, same mouth. Pokémon and Digimon sell species through faces. Ours were recolours with hats.
+- Every one of the 18 forms had the same face: same eyes, same mouth. Creature games sell species through faces. Ours were recolours with hats.
 - No eyebrows, so "error", "needs you" and "working" all read the same at 40 px.
 - The pet ignored you. It never looked at your cursor, even while you hovered it.
 - Idle was a loop of breathing. Real virtual pets have small surprise acts that make you smile.
@@ -47,13 +47,13 @@ The project is now **Openmon**, and its field guide is the **Opendex**. "Open" s
 ## Cycle 3: game feel
 
 **Critique**
-- Progress was one abstract bar per stage. Between evolutions (hundreds or thousands of XP) nothing ticked up. Pokémon players expect a level number that keeps moving.
-- Nothing warned that an evolution was close, so it landed out of nowhere. Digimon builds tension before a digivolution.
+- Progress was one abstract bar per stage. Between evolutions (hundreds or thousands of XP) nothing ticked up. Players of creature games expect a level number that keeps moving.
+- Nothing warned that an evolution was close, so it landed out of nowhere. Good virtual pets build tension before an evolution.
 - Players could not tell which way their pet was heading, so the stat system was invisible.
 - I shipped a renderer bug in this cycle (a variable used before it was declared) that blanked the hover card. The front end has no automated test; browser checks after every cycle are mandatory.
 
 **Shipped**
-- Levels 1–100 on a Pokémon-like curve: about Lv 9 at the first evolution, Lv 25 at Adult, Lv 55 at Mythic, Lv 100 at 49,005 XP. Every level-up shows a gold "Lv 12!" with a jingle.
+- Levels 1–100 on a gentle curve: about Lv 9 at the first evolution, Lv 25 at Adult, Lv 55 at Mythic, Lv 100 at 49,005 XP. Every level-up shows a gold "Lv 12!" with a jingle.
 - At 90% of the way to the next stage, the pet pulses with light (the egg rocks harder), and the card says "Ready to evolve soon!" or "About to hatch!".
 - The card says which stat it is leaning towards, without spoiling the form.
 
@@ -85,7 +85,7 @@ The project is now **Openmon**, and its field guide is the **Opendex**. "Open" s
 ## Cycle 5: meta-game
 
 **Critique**
-- Every form was predictable from the stats. No secret, so nothing for players to trade tips about. Pokémon spreads through rumours ("Mew is under the truck").
+- Every form was predictable from the stats. No secret, so nothing for players to trade tips about. Creature games spread through rumours.
 - Badges only ever appeared as a toast for four seconds. You could not see what you had earned or what was left.
 - The Opendex had 20 entries you could fill in a month and then forget.
 
@@ -186,16 +186,16 @@ The project is now **Openmon**, and its field guide is the **Opendex**. "Open" s
 - One UI kit (`public/ui.css`: tokens, light and dark, Fredoka) and one top bar for every page. The card opens with a right-click and stays until closed; tabs (Agents, Today, Stats); Powers, Opendex and Bag one click away; a gear for the settings.
 - Click to answer: the pet, its bubble, a session row and the OS notification bring the agent's window (terminal, VS Code, the Claude app) to the front. The hook finds that window once per session by walking up its process tree (`src/focus.js`).
 - Bubbles look like the card (icon, session name, title, detail, action) and hide once you act on them. Pages open in one app window, in front of other apps.
-- Pets go by their species name until you give a nickname, like Pokémon. The Opendex has a type chart and entries with how to get each form; stats explain how to train them.
+- Pets go by their species name until you give a nickname. The Opendex has a type chart and entries with how to get each form; stats explain how to train them.
 
 # Round 4: ten cycles as a game, UI and UX reviewer
 
 1. **The art is alive.** The SVG art ignored blinks and glances (the face was code-only). Eye variants (closed, happy, eight look directions) are now generated from each SVG's own pupils; idle breathing, sway, glances and a wiggle.
 2. **Backups.** A formatted PC meant a new egg. Snapshots go to Documents/Openmon Backups (OneDrive-synced on Windows): daily files for 14 days plus `latest`, every 10 minutes of use and at every evolution. A fresh install offers to bring the pet back; a declined offer keeps the found pet aside. Export, import and CLI commands.
 3. **Accessories.** 12 hats and neckwear unlocked by feats, kept across generations, drawn in ink style and placed from each sprite's outline and eye line.
-4. **Items and the Bag.** Snacks (+2 bond, one per mission), Rare candy (one level, one per perfect day), the Everstone (stops evolving). A Bag page with previews on your own pet.
+4. **Items and the Bag.** Snacks (+2 bond, one per mission), Level candy (one level, one per perfect day), the Steady stone (stops evolving). A Bag page with previews on your own pet.
 5. **Reactions.** It strolls a few steps when idle and shows emotes (? ♥ ♪ … !?) in character when the cursor rests near it, after a turn and after a snack.
-6. **Pokémon moments.** A nickname prompt at hatch, a daily gift, streaks with a candy every 7 days.
+6. **Classic moments.** A nickname prompt at hatch, a daily gift, streaks with a candy every 7 days.
 7. **Journal.** One line per day for 60 days: work by kind, projects, tests, turns, waits. A 14-day chart on the Powers page with a week in numbers.
 8. **First run.** Connect Claude Code from the pet's own bubble; two tips shown once (right-click for the card, click the sign to jump to the agent).
 9. **Polish.** Visible keyboard focus, window titles in your language, a "Walk around" switch, emotes follow Chatter and quiet mode.

@@ -195,7 +195,7 @@ const COSMETICS = {
 
 const WEAR_SLOTS = ['head', 'face', 'neck'];
 
-// Items in the bag. Snacks, candies and charms are used up; the Everstone
+// Items in the bag. Snacks, candies and charms are used up; the Steady stone
 // and the type stones are held. A held stone is spent at the next
 // evolution, which then goes to the stone's type.
 const ITEMS = {

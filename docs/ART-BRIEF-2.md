@@ -25,7 +25,7 @@ Um pet de desktop que vive no canto da tela e cresce com o trabalho de um agente
 - Olhos grandes e brilhantes, bochechas `#ff7f9f` a 55%, bracinhos curtos, dois pezinhos ovais.
 - Vista frontal levemente 3/4, como um sticker.
 - **Regra de ouro:** cada forma reconhecível **só pela silhueta, a 64 px**. A evolução muda o formato do corpo, não só a cor.
-- **Criaturas originais.** Nada que lembre um Pokémon ou Digimon específico, nem Pokébola. Nada de **logos reais** (Python, Rust, Go, Git, GitHub, Java etc.): são marcas registradas. Sugira o tema, não copie o símbolo.
+- **Criaturas originais.** Nada que lembre criaturas de outras franquias, nem bolas de captura. Nada de **logos reais** (Python, Rust, Go, Git, GitHub, Java etc.): são marcas registradas. Sugira o tema, não copie o símbolo.
 
 ### Bloco de estilo
 
@@ -37,7 +37,7 @@ flat cel shading with one soft highlight, big shiny eyes, rosy cheeks, tiny stub
 front three-quarter view, full body, centered, feet touching the bottom edge, sticker style,
 clean vector look, transparent background, no text, no shadow on the ground, no background,
 consistent with a cute desktop pet game, readable at small sizes
---no pokeball, pokemon, logo, text, watermark, background, realistic, 3D render
+--no capture ball, franchise characters, logo, text, watermark, background, realistic, 3D render
 ```
 
 ### Regra técnica que faz os olhos piscarem (importante)
@@ -162,7 +162,7 @@ Para cada forma nova, entregue também a **shiny** (mesma forma, outra cor; prop
 
 ### 1.2 Formas regionais (pela linguagem do projeto)
 
-Um pet criado num projeto principalmente em uma linguagem ganha uma **forma regional**: a mesma forma, com outra paleta e uma **marca** pequena que lembra a linguagem. É como as formas regionais do Pokémon: mesmo bicho, sotaque diferente.
+Um pet criado num projeto principalmente em uma linguagem ganha uma **forma regional**: a mesma forma, com outra paleta e uma **marca** pequena que lembra a linguagem. Mesmo bicho, sotaque diferente.
 
 Não use os logos oficiais. A marca é um **tema**, desenhado no estilo do Openmon.
 
@@ -182,7 +182,7 @@ Não use os logos oficiais. A marca é um **tema**, desenhado no estilo do Openm
 
 ### 1.3 Evoluções alternativas (opcional, fase 2)
 
-Formas que aparecem por um caminho diferente, como no Pokémon:
+Formas que aparecem por um caminho diferente:
 
 - **Por amizade:** um Mítico alternativo para quem chega a amizade 100 antes de evoluir. Sugestão: o mesmo Mítico com um laço de fita e um coração na aura. Comece com 2 exemplos (Forja e Saber).
 - **Por pedra de tipo:** uma pedra para cada tipo (veja os ícones no item 2.3) que, segurada, puxa a evolução para aquele tipo. Não precisa de forma nova, só dos ícones.
@@ -211,13 +211,13 @@ Quando o agente faz mais de 50 ações seguidas, o pet fica gigante e brilhante 
 
 ### 2.1 Time e Caixa
 
-Cada projeto pode ter o seu Openmon. Até **6** ficam no **Time** (aparecem no app); os outros ficam na **Caixa**, como no PC do Pokémon. Preciso de:
+Cada projeto pode ter o seu Openmon. Até **6** ficam no **Time** (aparecem no app); os outros ficam na **Caixa**. Preciso de:
 
 | Peça | Especificação |
 | --- | --- |
 | **Fundo da Caixa** | 12 papéis de parede para as caixas, 960 × 540 px, chapados e calmos (céu, floresta, praia, deserto, neve, noite, oficina, biblioteca, laboratório, cidade, jardim, espaço). Pouco contraste, porque os mons ficam por cima |
 | **Ícone de Time** | um ícone para a aba Time e outro para a aba Caixa, 24 × 24 e 48 × 48, no estilo dos ícones do app (traço grosso `#2a2140`) |
-| **Lugar vazio** | o espaço de um membro que falta no Time: um ninho ou uma almofadinha (nada de Pokébola), 128 × 128 |
+| **Lugar vazio** | o espaço de um membro que falta no Time: um ninho ou uma almofadinha (nada de bola de captura), 128 × 128 |
 | **Selo de projeto** | uma plaquinha com espaço para o nome do projeto, que aparece embaixo de cada mon, 160 × 40, com área de texto livre |
 
 As miniaturas dos mons (ícones de 64 px) o app gera a partir da arte principal.
@@ -256,7 +256,7 @@ Os 12 acessórios atuais são desenhados em código (boné, chapéu de festa, go
 
 ### 2.3 Ícones de itens (14)
 
-Mesmo estilo dos três ícones atuais (Biscoito, Bala rara, Pedra eterna): objeto simples, contorno grosso, 1 brilho. **SVG, desenhado em 40 × 40 unidades**, legível a 24 px.
+Mesmo estilo dos três ícones atuais (Biscoito, Bala de nível, Pedra firme): objeto simples, contorno grosso, 1 brilho. **SVG, desenhado em 40 × 40 unidades**, legível a 24 px.
 
 | Item | Ideia |
 | --- | --- |
@@ -323,7 +323,7 @@ O app aceita entrega aos poucos: o que faltar continua com a arte atual ou gerad
 - [ ] Mesmo contorno e mesmo sombreamento das 22 formas atuais?
 - [ ] Pupilas como elipses `class="k"`, espelhadas e na mesma altura (para piscar)?
 - [ ] Fundo transparente, sem sombra no chão, pés na borda de baixo?
-- [ ] Nenhum logo real de linguagem ou empresa, nada que lembre um Pokémon específico?
+- [ ] Nenhum logo real de linguagem ou empresa, nada que lembre criaturas de outras franquias?
 - [ ] Acessórios no ponto de encaixe certo (0,0) e na escala de 100 unidades?
 - [ ] Ícones legíveis a 24 px?
 

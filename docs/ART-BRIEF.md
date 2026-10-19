@@ -13,7 +13,7 @@ Quando a arte ficar pronta, ela entra no app sem mexer no código. Os formatos e
 
 ## 1. Direção de arte (vale para tudo)
 
-**Conceito.** Monstrinhos colecionáveis que vivem na área de trabalho e crescem com o trabalho de um agente de IA. Visual de "mascote de app fofo" com alma de criatura de RPG. São criaturas **originais**: nada de Pokébola, de cores ou formas de Pokémon específicos, nem de logo parecido com o deles.
+**Conceito.** Monstrinhos colecionáveis que vivem na área de trabalho e crescem com o trabalho de um agente de IA. Visual de "mascote de app fofo" com alma de criatura de RPG. São criaturas **originais**: nada de bolas de captura, nem cores, formas ou logos que lembrem criaturas de outras franquias.
 
 **Estilo.**
 
@@ -36,7 +36,7 @@ flat cel shading with one soft highlight, big shiny eyes, rosy cheeks, tiny stub
 front three-quarter view, full body, centered, feet touching the bottom edge, sticker style,
 clean vector look, transparent background, no text, no shadow on the ground, no background,
 consistent with a cute desktop pet game, readable at small sizes
---no pokeball, pokemon, text, watermark, background, realistic, 3D render
+--no capture ball, franchise characters, text, watermark, background, realistic, 3D render
 ```
 
 ### Paleta por linhagem
@@ -106,7 +106,7 @@ logo mark for "Openmon", a cute egg-shaped letter O cracking open at the top, a 
 with big shiny eyes peeking out of the crack, the crack forms a small ">_" code prompt shape,
 flat vector, thick rounded dark outline #2a2140, colors #7c6cf2 purple, #ffe156 yellow, #fffdf7 cream,
 simple geometric shapes, works at 16x16 pixels, centered, transparent background, no text,
-app icon quality, friendly, playful, original --no pokeball, gradient, 3D, realistic
+app icon quality, friendly, playful, original --no capture ball, gradient, 3D, realistic
 ```
 
 ### Prompt: logotipo completo (símbolo + nome)
@@ -117,7 +117,7 @@ O Ideogram e o GPT Image escrevem texto melhor que os outros.
 horizontal logo "Openmon", the first letter O is a cute cracked egg with a tiny purple creature peeking out,
 rest of the word in a heavy rounded friendly font similar to Fredoka Bold, letters in dark ink #2a2140,
 small yellow #ffe156 spark accents, flat vector, clean, generous spacing, transparent background,
-playful developer tool brand, original creature-collector feel --no pokeball, pokemon font, gradient, 3D
+playful developer tool brand, original creature-collector feel --no capture ball, franchise fonts, gradient, 3D
 ```
 
 ### Prompt: ícone do app (fundo quadrado arredondado)
@@ -359,7 +359,7 @@ Só aparece quando dois tipos de trabalho empatam.
 - [ ] Contorno com a mesma espessura em todas as 22 formas?
 - [ ] Fundo 100% transparente, sem sombra no chão e sem borda branca de recorte?
 - [ ] Pés tocando a base da imagem?
-- [ ] Nada que lembre um Pokémon ou Digimon específico?
+- [ ] Nada que lembre criaturas de outras franquias?
 - [ ] As shiny são a mesma forma, só com outra cor?
 - [ ] Os olhos seguem o estilo da linhagem a partir do Adult?
 

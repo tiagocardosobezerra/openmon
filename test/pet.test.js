@@ -168,7 +168,7 @@ test('a mythic pet can retire and lay an egg that keeps the dex', () => {
   assert.equal(events[0].type, 'new-egg');
 });
 
-test('levels follow a Pokémon-like curve and announce themselves', () => {
+test('levels follow a gentle curve and announce themselves', () => {
   assert.equal(pet.level(0), 1);
   assert.equal(pet.level(400), 9);
   assert.equal(pet.level(3000), 25);
@@ -276,7 +276,7 @@ test('accessories unlock by playing, are worn one per slot and survive a new gen
   assert.equal(egg.wardrobe.head, null);
 });
 
-test('items: missions give snacks, snacks build bond, the Everstone stops evolution', () => {
+test('items: missions give snacks, snacks build bond, the Steady stone stops evolution', () => {
   const p = pet.createPet(T0, null, () => 0.5);
   pet.applySignal(p, done('craft'), {}, T0);
   p.daily.missions = [{ id: 'pets', done: false }, { id: 'green', done: true }, { id: 'turns', done: true }];
@@ -295,7 +295,7 @@ test('items: missions give snacks, snacks build bond, the Everstone stops evolut
   const lv = pet.level(p.xp);
   pet.useItem(p, 'candy', T0);
   assert.equal(pet.level(p.xp), lv + 1);
-  // Everstone held: enough XP, still no evolution; let go and it evolves.
+  // Steady stone held: enough XP, still no evolution; let go and it evolves.
   p.bag.everstone = 1;
   pet.useItem(p, 'everstone', T0);
   assert.equal(p.holding, 'everstone');

@@ -1,6 +1,6 @@
 'use strict';
 
-// Party and Box: one Openmon per project, like a Pokémon party.
+// Party and Box: one Openmon per project, a team you collect.
 //
 // pet.json is still the pet on screen (the "active" one). Its `others`
 // array holds the rest of your Openmons. Everything that belongs to you as a

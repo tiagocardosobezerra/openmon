@@ -63,7 +63,7 @@ function seeded(seed) {
 }
 
 // Until the player names it, an Openmon is simply called "Openmon".
-// Like Pokémon: without a nickname the pet goes by its species name, which
+// Without a nickname the pet goes by its species name, which
 // changes as it evolves. pet.name holds the nickname, or null.
 const DEFAULT_NAME = null;
 // Old default names nobody chose: "Byte" (before the rename), "Openmon".
@@ -144,7 +144,7 @@ function topStats(stats) {
   return [...STATS].sort((x, y) => a[y] - a[x] || STATS.indexOf(x) - STATS.indexOf(y));
 }
 
-// Levels, Pokémon-style: Lv 9 near the first evolution, Lv 25 at Adult,
+// Levels: Lv 9 near the first evolution, Lv 25 at Adult,
 // Lv 55 at Mythic, Lv 100 at 49,005 XP.
 const MAX_LEVEL = 100;
 function level(xp) {
@@ -300,7 +300,7 @@ function cosmeticsView(pet) {
 }
 
 function checkCosmetics(pet, now, events) {
-  // Pets that evolved before the Bag existed still get their Everstone.
+  // Pets that evolved before the Bag existed still get their Steady stone.
   if (!pet.gifts) pet.gifts = {};
   if (!pet.gifts.everstone && stageIndex(pet.stage) >= stageIndex('juvenile')) {
     pet.gifts.everstone = now;
@@ -349,13 +349,13 @@ function wear(pet, slot, id) {
   return [{ type: 'wear', slot, id: id || null }];
 }
 
-// Use an item from the bag. Snack: +2 bond. Candy: one level up. Everstone:
+// Use an item from the bag. Snack: +2 bond. Candy: one level up. Steady stone:
 // hold it to stop evolving (hold again to let go).
 function useItem(pet, item, now) {
   const events = [];
   if (!ITEMS[item]) return events;
   rollDay(pet, now, events);
-  // Held items: the Everstone and the type stones. One at a time.
+  // Held items: the Steady stone and the type stones. One at a time.
   if (ITEMS[item].use === 'hold') {
     if (pet.holding !== item && !pet.bag[item]) return [];
     pet.holding = pet.holding === item ? null : item;
@@ -583,7 +583,7 @@ function evolve(pet, now, events) {
         pet.trait = grown ? ranked[1] : null;
       }
       // Evolving between midnight and 5 am gives the Nocturne colouring,
-      // decided again at every evolution (Pokémon-style time evolution).
+      // decided again at every evolution (a time-of-day evolution).
       pet.nocturne = new Date(now).getHours() < 5;
       // Full friendship when it becomes Mythic: the friendship form.
       pet.friend = next.id === 'mythic' && pet.bond >= BOND_MAX && FRIEND_FORMS.includes(pet.lineage);

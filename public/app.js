@@ -372,7 +372,7 @@
       anim.turn = 1;
     }
     if (evolveFx) anim.glow = 1;
-    // About to evolve: a soft pulse, like a Digimon about to digivolve.
+    // About to evolve: a soft pulse, so the moment does not come out of nowhere.
     else if (pet && pet.progress && pet.progress.ratio >= 0.9 && pet.progress.next && !pet.progress.needsBond) {
       if (spec.stage === 'egg') anim.tilt += Math.sin(t * 9) * 0.04;
       else anim.glow = Math.max(anim.glow, 0.3 + Math.sin(t * 3) * 0.2);

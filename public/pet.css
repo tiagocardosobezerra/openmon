@@ -180,9 +180,15 @@ html, body {
 .card-form { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 12px; color: var(--muted); }
 .card-form > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+/* Long project names stay on one line. */
+.card-chips .chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card-chips:empty { display: none; }
 .meters { display: grid; gap: 5px; }
 
+/* The tab is the part that gives way: when the card is taller than the
+   room above the pet, the tab scrolls and the buttons stay inside. */
+#card > * { flex-shrink: 0; }
+#card > .tab-body { flex: 1 1 auto; min-height: 56px; }
 .tab-body { min-height: 96px; overflow-y: auto; scrollbar-width: thin; margin: 0 -4px; padding: 0 4px; }
 
 /* Agents tab: one row per session; click a row to jump to its window. */

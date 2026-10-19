@@ -79,17 +79,27 @@ const SHOTS = [
   { name: 'settings', path: '/settings.html', w: 1000, h: 800 },
 ];
 
+// Pages are drawn at twice their size (like a high-density screen), so the
+// README shows them sharp; the README sets the display width. The window
+// may be taller than the screen: it is never shown, only captured.
+const SCALE = 2;
+
 async function shot(port, s, lang) {
+  const sep = s.path.includes('?') ? '&' : '?';
   const win = new BrowserWindow({
     show: false,
-    width: s.w,
-    height: s.h,
+    width: s.w * SCALE,
+    height: s.h * SCALE,
     useContentSize: true,
+    enableLargerThanScreen: true,
     backgroundColor: '#14101b',
-    webPreferences: { backgroundThrottling: false, offscreen: true },
+    webPreferences: { backgroundThrottling: false, offscreen: true, zoomFactor: SCALE },
   });
-  const sep = s.path.includes('?') ? '&' : '?';
+  // The OS clamps a new window to the screen; the size set afterwards sticks.
+  win.setContentSize(s.w * SCALE, s.h * SCALE);
   await win.loadURL(`http://127.0.0.1:${port}${s.path}${sep}lang=${lang}&quiet`);
+  // No scrollbar in a picture.
+  await win.webContents.insertCSS('html { scrollbar-width: none; } ::-webkit-scrollbar { display: none; }');
   // Let fonts, art, eye variants and anchors settle.
   await new Promise((r) => setTimeout(r, 3500));
   const img = await win.webContents.capturePage();
