@@ -60,6 +60,8 @@
   let setupInfo = null;
   let live = { pose: 'sleep', sessions: [], counts: {}, focus: null };
   let pet = null;
+  // How many Openmons the team has (a companion always has company).
+  let teamSize = companionId ? 2 : 1;
   let config = { muted: false };
   let demo = false;
   let connected = false;
@@ -849,7 +851,8 @@
       [pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null, ''],
       [pet.holding === 'everstone' ? tr(pr.next && pet.xp >= 0 && pr.ratio >= 1 ? 'card.everstoneReady' : 'card.everstone') : null, 'brand'],
       // Legendaries and mystery eggs have no project of their own.
-      [pet.legend ? tr('party.legendTag') : pet.project && /^mystery:/.test(pet.project) ? tr('party.mysteryTag') : pet.project ? tr('party.project', { project: pet.project }) : null, 'brand'],
+      // With a team, every card names its project (the first Openmon has none).
+      [pet.legend ? tr('party.legendTag') : pet.project && /^mystery:/.test(pet.project) ? tr('party.mysteryTag') : pet.project ? tr('party.project', { project: pet.project }) : teamSize > 1 ? tr('party.general') : null, 'brand'],
       [pet.region ? tr('region.chip', { region: tr(`region.${pet.region}`) }) : null, ''],
       [nature ? tr('card.nature', { nature }) : null, ''],
       [(pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null, ''],
@@ -1040,6 +1043,7 @@
     config = msg.config || config;
     if (wasFocus && !config.focus && config.focusUntil && Date.now() >= config.focusUntil - 1000) pushToast(tr('focus.done'), tr('focus.doneSub'), 8000, 'scene');
     pet = msg.pet;
+    teamSize = msg.party ? msg.party.members.length + msg.party.box.length : 1;
     const nextFamily = live.family || (live.focus && live.focus.family) || null;
     if (live.pose !== pose) {
       pose = live.pose;

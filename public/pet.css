@@ -188,7 +188,10 @@ html, body {
 /* The tab is the part that gives way: when the card is taller than the
    room above the pet, the tab scrolls and the buttons stay inside. */
 #card > * { flex-shrink: 0; }
-#card > .tab-body { flex: 1 1 auto; min-height: 56px; }
+/* Every Openmon's card has the same shape: two rows of chips and a tab area
+   of one fixed height (it scrolls), so two cards side by side match. */
+#card > .tab-body { flex: 0 1 128px; height: 128px; min-height: 56px; }
+#card > .card-chips { height: 50px; overflow: hidden; align-content: flex-start; }
 .tab-body { min-height: 96px; overflow-y: auto; scrollbar-width: thin; margin: 0 -4px; padding: 0 4px; }
 
 /* Agents tab: one row per session; click a row to jump to its window. */
