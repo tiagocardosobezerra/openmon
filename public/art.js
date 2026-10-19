@@ -1097,7 +1097,9 @@
               new Promise((resolve) => {
                 const img = new Image();
                 img.onload = () => {
-                  sprites[file.replace(/.(png|svg|webp)$/, '')] = img;
+                  const name = file.replace(/.(png|svg|webp)$/, '');
+                  sprites[name] = img;
+                  if (file.endsWith('.svg')) img.__svg = `/art/${encodeURIComponent(file)}`;
                   resolve();
                 };
                 img.onerror = resolve;
@@ -1142,8 +1144,118 @@
     return tintCanvas;
   }
 
+  // --- living eyes for SVG art ------------------------------------------------
+  // The official art is still images, so the code-drawn face (blinks, looks,
+  // happy eyes) did not reach it. Each SVG's pupils are found once (a mirrored
+  // pair of ink ellipses with their highlights), and variants are generated
+  // from the SVG itself: closed, happy and eight look directions.
+  const eyeCache = new Map(); // svg url -> { ready, imgs: { key: Image } }
+
+  function num(el, name) {
+    const v = el.getAttribute(name);
+    return v == null ? null : Number(v);
+  }
+
+  function findEyes(doc) {
+    const ks = [...doc.querySelectorAll('ellipse.k, circle.k')]
+      .map((el) => ({ el, cx: num(el, 'cx'), cy: num(el, 'cy'), rx: num(el, 'rx') ?? num(el, 'r'), ry: num(el, 'ry') ?? num(el, 'r') }))
+      .filter((k) => k.cx != null && k.rx >= 3);
+    // The biggest mirrored pair wins (antennae and spots are smaller).
+    let pair = null;
+    for (const l of ks) for (const r of ks) {
+      if (l.cx < 100 && r.cx > 100 && Math.abs(l.cx + r.cx - 200) < 8 && Math.abs(l.cy - r.cy) < 5) {
+        if (!pair || l.rx + r.rx > pair[0].rx + pair[1].rx) pair = [l, r];
+      }
+    }
+    if (!pair) return null;
+    // Pupil parts (ink, highlights) move when it looks around; a white
+    // sclera around the pupil stays put and only goes away when it closes.
+    return pair.map((p) => {
+      const near = (el) => {
+        const cx = num(el, 'cx');
+        const cy = num(el, 'cy');
+        return cx != null && Math.abs(cx - p.cx) <= Math.max(p.rx, 4) * 1.25 && Math.abs(cy - p.cy) <= Math.max(p.ry, 4) * 1.25;
+      };
+      const round = [...p.el.parentNode.children].filter((el) => /^(ellipse|circle)$/.test(el.tagName) && near(el));
+      const parts = round.filter((el) => /\b(k|w)\b/.test(el.getAttribute('class') || ''));
+      const whites = round.filter((el) => !parts.includes(el) && /^(#fff(fff)?|white)$/i.test(el.getAttribute('fill') || ''));
+      const size = Math.max(p.rx, ...whites.map((el) => num(el, 'rx') ?? num(el, 'r') ?? 0));
+      return { ...p, parts, whites, size };
+    });
+  }
+
+  function lid(doc, eye, d) {
+    const path = doc.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', 'o ln');
+    path.setAttribute('d', d);
+    const tr = eye.el.getAttribute('transform');
+    if (tr) path.setAttribute('transform', tr);
+    eye.el.parentNode.insertBefore(path, eye.el);
+    for (const el of [...eye.parts, ...eye.whites]) el.remove();
+  }
+
+  function variantSvg(text, key) {
+    const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    const eyes = findEyes(doc);
+    if (!eyes) return null;
+    for (const e of eyes) {
+      const w = Math.max(e.size, 5) * 1.1;
+      if (key === 'blink') lid(doc, e, `M${e.cx - w} ${e.cy} Q${e.cx} ${e.cy + e.ry * 0.45} ${e.cx + w} ${e.cy}`);
+      else if (key === 'happy') lid(doc, e, `M${e.cx - w} ${e.cy + e.ry * 0.25} Q${e.cx} ${e.cy - e.ry * 0.95} ${e.cx + w} ${e.cy + e.ry * 0.25}`);
+      else {
+        const [, x, y] = key.match(/^look(-?\d)(-?\d)$/);
+        const dx = Number(x) * Math.max(e.rx, 4) * 0.32;
+        const dy = Number(y) * Math.max(e.ry, 4) * 0.22;
+        for (const el of e.parts) el.setAttribute('transform', `translate(${dx} ${dy}) ${el.getAttribute('transform') || ''}`.trim());
+      }
+    }
+    return new XMLSerializer().serializeToString(doc);
+  }
+
+  const EYE_KEYS = ['blink', 'happy'];
+  for (const x of [-1, 0, 1]) for (const y of [-1, 0, 1]) if (x || y) EYE_KEYS.push(`look${x}${y}`);
+
+  function eyeVariants(url) {
+    let entry = eyeCache.get(url);
+    if (entry) return entry;
+    entry = { ready: false, imgs: {} };
+    eyeCache.set(url, entry);
+    fetch(url)
+      .then((r) => r.text())
+      .then((text) => {
+        for (const key of EYE_KEYS) {
+          const svg = variantSvg(text, key);
+          if (!svg) break;
+          const img = new Image();
+          img.onload = () => (entry.imgs[key] = img);
+          img.src = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+        }
+        entry.ready = true;
+      })
+      .catch(() => (entry.ready = true));
+    return entry;
+  }
+
+  // Which eyes the body language asks for.
+  function eyeKey(a) {
+    if (a.eyes === 'blink' || a.eyes === 'closed') return 'blink';
+    if (a.eyes === 'happy' || a.eyes === 'wink') return 'happy';
+    const x = a.lookX > 0.35 ? 1 : a.lookX < -0.35 ? -1 : 0;
+    const y = a.lookY > 0.45 ? 1 : a.lookY < -0.45 ? -1 : 0;
+    return x || y ? `look${x}${y}` : null;
+  }
+
+  function livingImage(img, a) {
+    if (!img.__svg) return img;
+    const key = eyeKey(a);
+    if (!key) return img;
+    const entry = eyeVariants(img.__svg);
+    return entry.imgs[key] || img;
+  }
+
   function drawSprite(ctx, sprite, spec, a, R, t) {
-    const img = spec.nocturne && !sprite.night ? nightTint(sprite.img) : sprite.img;
+    const base = livingImage(sprite.img, a);
+    const img = spec.nocturne && !sprite.night ? nightTint(base) : base;
     const h = heightOf(spec.stage, spec.size || 48) * ((packInfo && packInfo.scale) || 1);
     const w = ((sprite.img.naturalWidth || 1) / Math.max(1, sprite.img.naturalHeight || 1)) * h;
     ctx.save();
@@ -1289,5 +1401,5 @@
     return stage === 'egg' ? R * 2.5 : R * 2.4;
   }
 
-  window.OpenmonArt = { drawCreature, heightOf, loadPack, PALETTES, SHINY, INK };
+  window.OpenmonArt = { drawCreature, heightOf, loadPack, eyeVariants, PALETTES, SHINY, INK };
 })();

@@ -30,7 +30,8 @@
   function poseAnim(s) {
     const t = s.t;
     const age = t - (s.since || 0);
-    const blink = t % 4.3 < 0.13 || (t + 1.7) % 9.1 < 0.12;
+    // A blink every few seconds, sometimes a quick double blink.
+    const blink = t % 4.3 < 0.13 || (t + 1.7) % 9.1 < 0.12 || ((t + 1.7) % 9.1 > 0.24 && (t + 1.7) % 9.1 < 0.34);
     const a = { bob: 0, squash: 0, jump: 0, shake: 0, tilt: 0, lookX: 0, lookY: 0, eyes: 'open', mouth: 'smile', prop: null, glow: 0, motes: 0 };
 
     switch (s.pose) {
@@ -106,10 +107,14 @@
         // rolled at birth changes the rhythm.
         const n = NATURE_IDLE[s.nature] || NATURE_IDLE.calm;
         const ts = t * n.speed;
-        a.bob = Math.sin(ts * 2) * 1.4 + (n.bounce ? -Math.abs(Math.sin(ts * 4)) * 2.5 : 0);
-        a.squash = Math.sin(ts * 2) * 0.02;
-        a.lookX = Math.sin(ts * 0.55 * n.look) * 0.7 * n.look;
-        a.lookY = Math.sin(ts * 0.33 * n.look) * 0.3;
+        // Breathing you can see, and a slow sway from side to side.
+        a.bob = Math.sin(ts * 2) * 1.8 + (n.bounce ? -Math.abs(Math.sin(ts * 4)) * 2.5 : 0);
+        a.squash = Math.sin(ts * 2) * 0.035;
+        a.tilt = Math.sin(ts * 0.7) * 0.03;
+        // Looks around in glances (left, back, up, back) rather than a slow drift.
+        const g = (ts * n.look) % 12;
+        a.lookX = g < 2 ? -0.9 : g > 5 && g < 7 ? 0.9 : 0;
+        a.lookY = g > 9 && g < 10.5 ? -0.8 : 0;
         const cycle = t % n.hopEvery;
         if (cycle < 0.5) a.jump = hop(cycle / 0.5) * n.hop;
         if (blink) a.eyes = 'blink';
@@ -129,6 +134,11 @@
           a.eyes = 'closed';
           a.mouth = 'open';
           a.armsUp = true;
+        }
+        const wiggle = (t + 5) % 17;
+        if (wiggle < 0.6) {
+          a.tilt = Math.sin(wiggle * 30) * 0.09 * (1 - wiggle / 0.6);
+          a.eyes = 'happy';
         }
         const spin = (t + 13) % 43;
         if (spin < 0.9) {
