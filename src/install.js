@@ -129,4 +129,58 @@ function isInstalled({ settingsPath = defaultSettingsPath() } = {}) {
   }
 }
 
-module.exports = { install, uninstall, isInstalled, hasPermissionHook, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT };
+// --- other agents -------------------------------------------------------------
+
+function geminiSettingsPath() {
+  return path.join(os.homedir(), '.gemini', 'settings.json');
+}
+
+function cursorHooksPath() {
+  return path.join(os.homedir(), '.cursor', 'hooks.json');
+}
+
+const GEMINI_HOOK_EVENTS = ['BeforeTool', 'AfterTool', 'BeforeAgent', 'AfterAgent', 'SessionStart', 'SessionEnd', 'Notification', 'PreCompress'];
+// Not preToolUse or subagentStart: there Cursor treats a hook's answer as
+// a permission decision.
+const CURSOR_HOOK_EVENTS = ['sessionStart', 'sessionEnd', 'postToolUse', 'postToolUseFailure', 'beforeSubmitPrompt', 'stop', 'subagentStop', 'preCompact'];
+
+function installGemini({ settingsPath = geminiSettingsPath() } = {}) {
+  const { settings, existed } = readSettings(settingsPath);
+  if (existed) fs.copyFileSync(settingsPath, `${settingsPath}.openmon-backup`);
+  const { hooks } = strip(settings.hooks);
+  const command = `${hookCommand()} --gemini`;
+  for (const event of GEMINI_HOOK_EVENTS) (hooks[event] ||= []).push({ matcher: '*', hooks: [{ name: 'openmon', type: 'command', command, timeout: 3000 }] });
+  write(settingsPath, { ...settings, hooks });
+  return { settingsPath, backupPath: existed ? `${settingsPath}.openmon-backup` : null };
+}
+
+function installCursor({ settingsPath = cursorHooksPath() } = {}) {
+  const { settings, existed } = readSettings(settingsPath);
+  if (existed) fs.copyFileSync(settingsPath, `${settingsPath}.openmon-backup`);
+  const hooks = {};
+  for (const [event, list] of Object.entries(settings.hooks || {})) hooks[event] = (Array.isArray(list) ? list : []).filter((h) => !isOurs(h));
+  const command = `${hookCommand()} --cursor`;
+  for (const event of CURSOR_HOOK_EVENTS) (hooks[event] ||= []).push({ command, timeout: 3 });
+  write(settingsPath, { version: settings.version || 1, ...settings, hooks });
+  return { settingsPath, backupPath: existed ? `${settingsPath}.openmon-backup` : null };
+}
+
+function uninstallCursor({ settingsPath = cursorHooksPath() } = {}) {
+  const { settings, existed } = readSettings(settingsPath);
+  if (!existed) return { settingsPath, removed: 0 };
+  let removed = 0;
+  const hooks = {};
+  for (const [event, list] of Object.entries(settings.hooks || {})) {
+    const kept = (Array.isArray(list) ? list : []).filter((h) => !isOurs(h));
+    removed += (Array.isArray(list) ? list.length : 0) - kept.length;
+    if (kept.length) hooks[event] = kept;
+  }
+  write(settingsPath, { ...settings, hooks });
+  return { settingsPath, removed };
+}
+
+function aiderLine() {
+  return `aider --notifications --notifications-command "${hookCommand()} --aider"`;
+}
+
+module.exports = { installGemini, installCursor, uninstallCursor, geminiSettingsPath, cursorHooksPath, aiderLine, GEMINI_HOOK_EVENTS, CURSOR_HOOK_EVENTS, install, uninstall, isInstalled, hasPermissionHook, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT };

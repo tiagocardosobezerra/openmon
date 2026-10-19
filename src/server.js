@@ -20,6 +20,7 @@ const { createPlayground } = require('./playground');
 const { createFocus } = require('./focus');
 const party = require('./party');
 const { createUsage } = require('./usage');
+const adapters = require('./adapters');
 const { createBackups, unwrap } = require('./backup');
 const { createPowers, unlockedPowers } = require('./powers');
 
@@ -533,8 +534,11 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
     switch (route) {
       case 'POST /event':
-        return readJson(req, (err, body) => {
+        return readJson(req, (err, raw) => {
           if (err) return res.writeHead(400).end();
+          // Gemini CLI, Cursor and Aider payloads become Claude Code's shape.
+          const body = adapters.normalize(raw);
+          if (!body) return res.writeHead(204).end();
           ingest(body);
           const reply = {};
           // Once per session the hook is asked to find its agent's window.

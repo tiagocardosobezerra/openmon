@@ -144,7 +144,7 @@ function claudeSignal(payload) {
   const input = payload.tool_input || {};
   const testing = SHELL_TOOLS.has(tool) && isTestCommand(input.command);
   const base = {
-    agent: 'claude',
+    agent: payload._agent || 'claude',
     session: payload.session_id || 'default',
     label: sessionLabel(payload),
     ts: Number(payload._ts) || null,

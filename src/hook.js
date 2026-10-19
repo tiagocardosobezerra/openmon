@@ -19,9 +19,18 @@ const http = require('node:http');
 
 const port = Number(process.env.OPENMON_PORT) || 4747;
 const permissionMode = process.argv.includes('--permission');
+// Gemini CLI and Cursor wait for their hooks and read stdout as JSON: answer
+// fast, print an empty object (never a decision), skip the window lookup.
+const syncAgent = process.argv.includes('--gemini') ? 'gemini' : process.argv.includes('--cursor') ? 'cursor' : null;
 let finished = false;
+let event = null;
 const done = () => {
+  if (finished) return;
   finished = true;
+  if (syncAgent) {
+    const { reply } = require('./adapters');
+    return process.stdout.write(reply(syncAgent, event), () => process.exit(0));
+  }
   process.exit(0);
 };
 let deadline = setTimeout(done, 1500);
@@ -102,10 +111,15 @@ function send(raw, extra) {
     return done();
   }
   if (permissionMode) payload._permission = true;
+  event = payload.hook_event_name || null;
+  if (syncAgent) {
+    payload._agent = syncAgent;
+    if (!payload.cwd && process.env.GEMINI_CWD) payload.cwd = process.env.GEMINI_CWD;
+  }
   post('/event', payload, async (status, text) => {
     const reply = parse(status, text);
     const work = [];
-    if (reply.findWindow) {
+    if (reply.findWindow && !syncAgent) {
       extendDeadline(4500);
       work.push(findWindow(payload.session_id));
     }
@@ -124,9 +138,14 @@ function send(raw, extra) {
 // editor, app) and bring it to the front when the agent needs you.
 const extra = { _ts: Math.round(performance.timeOrigin), _ppid: process.ppid };
 if (process.env.CLAUDE_PROJECT_DIR) extra._projectDir = process.env.CLAUDE_PROJECT_DIR;
+else if (process.env.GEMINI_PROJECT_DIR) extra._projectDir = process.env.GEMINI_PROJECT_DIR;
+else if (process.env.CURSOR_PROJECT_DIR) extra._projectDir = process.env.CURSOR_PROJECT_DIR;
 
 if (process.argv.includes('--codex')) {
   send(process.argv[process.argv.length - 1], { ...extra, _agent: 'codex' });
+} else if (process.argv.includes('--aider')) {
+  // Aider's --notifications-command: no payload, just "waiting for you".
+  send(JSON.stringify({ cwd: process.cwd() }), { ...extra, _agent: 'aider' });
 } else {
   const chunks = [];
   process.stdin.on('data', (chunk) => chunks.push(chunk));

@@ -37,6 +37,7 @@ const HELP = `
   openmon autostart on|off|status   open the pet when you log in
   openmon serve        daemon only; open ${base}/ in a browser or add it to OBS
   openmon codex        print the line that connects Codex CLI
+  openmon install --agent gemini|cursor|aider   connect Gemini CLI, Cursor or Aider
   openmon status       is the daemon running? are hooks installed?
   openmon uninstall    remove our hooks (your pet is kept in ~/.openmon)
 
@@ -248,6 +249,14 @@ async function main() {
     }
 
     case 'install': {
+      const agent = option('agent');
+      if (agent === 'aider') return console.log(`Start Aider with:\n\n  ${installer.aiderLine()}\n`);
+      if (agent === 'gemini' || agent === 'cursor') {
+        const r = agent === 'gemini' ? installer.installGemini() : installer.installCursor();
+        console.log(`Hooks added to ${r.settingsPath}`);
+        if (r.backupPath) console.log(`Backup: ${r.backupPath}`);
+        return console.log(agent === 'gemini' ? 'New Gemini CLI sessions will feed your Openmon.' : 'Cursor agent chats will feed your Openmon (Cursor reloads hooks by itself).');
+      }
       const result = installer.install({ settingsPath: option('settings') });
       console.log(`Hooks added to ${result.settingsPath}`);
       if (result.backupPath) console.log(`Backup: ${result.backupPath}`);
@@ -287,6 +296,14 @@ async function main() {
     }
 
     case 'uninstall': {
+      if (option('agent') === 'gemini') {
+        const r = installer.uninstall({ settingsPath: installer.geminiSettingsPath() });
+        return console.log(r.removed ? `Removed ${r.removed} Openmon hooks from ${r.settingsPath}.` : 'No Openmon hooks found for Gemini CLI.');
+      }
+      if (option('agent') === 'cursor') {
+        const r = installer.uninstallCursor();
+        return console.log(r.removed ? `Removed ${r.removed} Openmon hooks from ${r.settingsPath}.` : 'No Openmon hooks found for Cursor.');
+      }
       const result = installer.uninstall({ settingsPath: option('settings') });
       return console.log(result.removed ? `Removed ${result.removed} hooks from ${result.settingsPath}. Your pet is kept.` : 'No Openmon hooks found.');
     }
