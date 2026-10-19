@@ -617,7 +617,15 @@ function syncCompanions(state) {
     // To the left of the main pet, unless it was moved before.
     const [mx, my] = win.getPosition();
     const [mw, mh] = win.getSize();
-    const place = saved[id] || { x: mx - Math.round(mw * 0.55) * (i + 1), y: my };
+    // To the left of the main pet (to the right when there is no room),
+    // and always on a connected screen, even if it was moved there before
+    // a monitor was unplugged.
+    const step = Math.round(mw * 0.55) * (i + 1);
+    const area = screen.getDisplayNearestPoint({ x: mx + mw / 2, y: my + mh / 2 }).workArea;
+    const onScreen = (p) => p.x + mw * 0.4 >= area.x && p.x + mw * 0.6 <= area.x + area.width && p.y + mh * 0.5 >= area.y && p.y + mh <= area.y + area.height + 40;
+    let place = saved[id];
+    if (!place || !onScreen(place)) place = { x: mx - step, y: my };
+    if (!onScreen(place)) place = { x: mx + step, y: my };
     const w = petWindow(place, { width: mw, height: mh });
     w.__companion = id;
     if (!win.isVisible()) w.once('ready-to-show', () => w.hide());
@@ -681,6 +689,13 @@ function wireIpc() {
         const p = defaultPlace();
         win.setPosition(p.x, p.y);
         savePlace();
+        // The companions line up again to the left of the main pet.
+        try {
+          fs.unlinkSync(companionPlacesFile());
+        } catch {}
+        [...companionWins.values()].forEach((w, i) => {
+          if (!w.isDestroyed()) w.setPosition(p.x - Math.round(win.getSize()[0] * 0.55) * (i + 1), p.y);
+        });
         return true;
       }
       case 'demo':
