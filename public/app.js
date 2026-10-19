@@ -39,6 +39,12 @@
   const SIZE = 46;
   const STAGE_SCALE = { egg: 0.78, sprout: 0.66, juvenile: 0.82, adult: 1, mythic: 1.08 };
   const now = () => performance.now() / 1000;
+  // The pet strolls a little when it has nothing to do; petX is how far
+  // from the middle it is right now.
+  let petX = 0;
+  let walkTo = 0;
+  let nextStroll = 12;
+  const petCX = () => CX + petX;
   const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let setupInfo = null;
@@ -280,15 +286,15 @@
       } else if (e < 3.6) {
         if (!evolveFx.revealed) {
           evolveFx.revealed = true;
-          burst('spark', 18, CX, GROUND - 60, Math.PI * 2, { colors: ['#fff', '#ffe156', '#c7baff'], gravity: 60 });
-          burst('confetti', 26, CX, GROUND - 70, 2.2, { colors: CONFETTI, gravity: 260 });
+          burst('spark', 18, petCX(), GROUND - 60, Math.PI * 2, { colors: ['#fff', '#ffe156', '#c7baff'], gravity: 60 });
+          burst('confetti', 26, petCX(), GROUND - 70, 2.2, { colors: CONFETTI, gravity: 260 });
           play('evolve');
           setTimeout(() => play('cry'), 650);
           const name = pet ? pet.name : 'Your Openmon';
           const dexLine = evolveFx.newDex && pet ? tr('scene.newDex', { no: String(pet.dexNo).padStart(3, '0') }) : '';
           toast = null;
           if (evolveFx.toStage === 'sprout') {
-            if (evolveFx.shiny) burst('spark', 24, CX, GROUND - 50, Math.PI * 2, { colors: ['#fffbe0', '#ffe156'], gravity: 40, max: 1.8 });
+            if (evolveFx.shiny) burst('spark', 24, petCX(), GROUND - 50, Math.PI * 2, { colors: ['#fffbe0', '#ffe156'], gravity: 40, max: 1.8 });
             pushToast(evolveFx.shiny ? tr('scene.shiny', { form: evolveFx.toName }) : tr('scene.hatched', { name }), tr(evolveFx.shiny ? 'scene.shiny.sub' : 'scene.hatched.sub'), 5500, 'scene');
           } else {
             pushToast(tr('scene.evolved', { name, form: evolveFx.toName }), evolveFx.to.nocturne ? tr('scene.night') : dexLine || (evolveFx.toStage === 'mythic' ? tr('scene.legend') : tr('scene.evolved.sub', { stage: tr(`stage.${evolveFx.toStage}`) })), 5000, 'scene');
@@ -346,9 +352,16 @@
       else anim.glow = Math.max(anim.glow, 0.3 + Math.sin(t * 3) * 0.2);
     }
 
+    const walking = Math.abs(walkTo - petX) > 0.5 && !evolveFx;
+    if (walking && !reducedMotion) {
+      anim.turn = walkTo > petX ? 1 : -1;
+      anim.jump = Math.max(anim.jump || 0, Math.abs(Math.sin(t * 9)) * 3.5);
+      anim.lookX = anim.turn * 0.9;
+      anim.tilt = Math.sin(t * 9) * 0.04;
+    }
     if (silhouette <= 0) {
       ctx.save();
-      ctx.translate(CX, GROUND);
+      ctx.translate(petCX(), GROUND);
       OpenmonArt.drawCreature(ctx, { ...spec, t, size: SIZE, pose: showPose, anim });
       ctx.restore();
       return;
@@ -375,16 +388,83 @@
     ctx.restore();
   }
 
+  let emote = null;
+  let nearSince = null;
+  let lastEmote = 0;
+  function showEmote(glyph, t, ms = 1800) {
+    if (evolveFx || toast) return;
+    emote = { glyph, at: t, until: t + ms / 1000 };
+    lastEmote = t;
+  }
+  const NATURE_EMOTE = { curious: '?', cheerful: '♥', brave: '♥', calm: '♪', sleepy: '…', cheeky: '!?' };
+
+  function drawEmote(t) {
+    if (!emote || t > emote.until || hovering) {
+      emote = null;
+      return;
+    }
+    const stage = currentSpec().stage;
+    const k = Math.min(1, (t - emote.at) / 0.18);
+    const fade = Math.min(1, (emote.until - t) / 0.3);
+    const x = petCX() + radius(stage) * 0.95;
+    const y = headY(stage) - 4 - (1 - k) * 6;
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.translate(x, y);
+    ctx.scale(0.6 + 0.4 * k, 0.6 + 0.4 * k);
+    ctx.beginPath();
+    ctx.roundRect(-14, -24, 28, 22, 9);
+    ctx.moveTo(-6, -2);
+    ctx.lineTo(-10, 6);
+    ctx.lineTo(1, -2);
+    ctx.fillStyle = '#fffdf7';
+    ctx.fill();
+    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = '#2a2140';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.fillStyle = emote.glyph === '♥' ? '#ff5d8f' : '#2a2140';
+    ctx.font = '700 14px Fredoka, "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emote.glyph, 0, -12.5);
+    ctx.restore();
+  }
+
+  // Strolling and moods, decided a few times a second.
+  function life(t, dt) {
+    const idle = pose === 'idle' && !hovering && !down && !evolveFx && !(toast && toast.style === 'scene');
+    if (!idle) walkTo = 0;
+    else if (t > nextStroll && !reducedMotion) {
+      // A few steps to one side, a rest, then maybe back.
+      walkTo = Math.abs(walkTo) > 10 && Math.random() < 0.5 ? 0 : (Math.random() < 0.5 ? -1 : 1) * (14 + Math.random() * 16);
+      nextStroll = t + 14 + Math.random() * 18;
+    }
+    const speed = idle ? 16 : 60;
+    const step = Math.sign(walkTo - petX) * Math.min(Math.abs(walkTo - petX), speed * dt);
+    if (step) {
+      petX += step;
+      document.documentElement.style.setProperty('--pet-x', `${petX.toFixed(1)}px`);
+    }
+    // The cursor resting near it: it reacts in character.
+    const near = cursor && Date.now() - cursor.at < 1500 && Math.hypot(cursor.x, cursor.y) < 1.3;
+    if (!near || pose !== 'idle') nearSince = null;
+    else if (nearSince == null) nearSince = t;
+    else if (t - nearSince > 2.2 && t - lastEmote > 18) showEmote(NATURE_EMOTE[pet && pet.nature] || '♪', t);
+    // Humming now and then while idle.
+    if (pose === 'idle' && t - lastEmote > 45 && Math.random() < dt / 30) showEmote(pet && pet.nature === 'sleepy' ? '…' : '♪', t);
+  }
+
   function ambient(t) {
     const stage = currentSpec().stage;
     const R = radius(stage);
     if (pose === 'sleep' && t - lastZ > 1.4) {
       lastZ = t;
-      spawn('z', CX + R * 0.7, headY(stage) + 10, { vx: 10, vy: -16, max: 2.2 });
+      spawn('z', petCX() + R * 0.7, headY(stage) + 10, { vx: 10, vy: -16, max: 2.2 });
     }
     if (pose === 'working' && family === 'craft' && stage !== 'egg' && Math.sin(t * 9) > 0.97 && t - lastSpark > 0.4) {
       lastSpark = t;
-      burst('spark', 3, CX + R * 1.3, GROUND - R * 0.3, 1.6, { max: 0.5, gravity: 300 });
+      burst('spark', 3, petCX() + R * 1.3, GROUND - R * 0.3, 1.6, { max: 0.5, gravity: 300 });
     }
   }
 
@@ -394,7 +474,7 @@
   // nothing when the window is hidden.
   function targetFps(t) {
     if (document.hidden) return 0;
-    if (evolveFx || particles.length || down || hovering || toast) return 60;
+    if (evolveFx || particles.length || down || hovering || toast || emote || Math.abs(walkTo - petX) > 0.5) return 60;
     if (pose === 'attention' || pose === 'working' || pose === 'error') return 60;
     if (pose === 'done' && t - poseSince < 4) return 60;
     if (pose === 'sleep') return 12;
@@ -418,16 +498,18 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    life(t, dt);
     ambient(t);
     drawPet(t, dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawParticles(dt);
+    drawEmote(t);
     if (toast && Date.now() > toast.until) nextToast();
     const f = live.focus;
     if (pose === 'attention' && f && f.since && ackedFor !== f.since && Date.now() - f.since > LONG_WAIT_MS && renudged !== f.since) {
       renudged = f.since;
       play('attention');
-      burst('spark', 10, CX, GROUND - 90, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 80 });
+      burst('spark', 10, petCX(), GROUND - 90, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 80 });
     }
     // Time-based bubble rules (the 90 s "done") need a gentle re-check.
     if (t - lastUiCheck > 1) {
@@ -728,7 +810,8 @@
     const stage = currentSpec().stage;
     if (evolveFx) return;
     if (next === 'done') {
-      burst('confetti', 18, CX, headY(stage) + 10, 1.8, { colors: CONFETTI, gravity: 260 });
+      setTimeout(() => pose === 'done' && showEmote('♪', now()), 3000);
+      burst('confetti', 18, petCX(), headY(stage) + 10, 1.8, { colors: CONFETTI, gravity: 260 });
       play('done');
     } else if (next === 'attention') {
       // One chime per 20 s at most, however many prompts arrive.
@@ -737,7 +820,7 @@
         play('attention');
       }
     } else if (next === 'error') {
-      spawn('sweat', CX + radius(stage) * 0.75, headY(stage) + 18, { vx: 6, vy: 12, max: 1.4 });
+      spawn('sweat', petCX() + radius(stage) * 0.75, headY(stage) + 18, { vx: 6, vy: 12, max: 1.4 });
     }
   }
 
@@ -790,40 +873,41 @@
         case 'petted':
           petted = true;
           pettedAt = t;
-          for (let i = 0; i < 3; i++) spawn('heart', CX + (i - 1) * 22, top + 6, { vx: (i - 1) * 8, vy: -34, max: 1.3 });
+          for (let i = 0; i < 3; i++) spawn('heart', petCX() + (i - 1) * 22, top + 6, { vx: (i - 1) * 8, vy: -34, max: 1.3 });
           play('cry');
           break;
         case 'level':
           if (!evolve) {
-            spawn('text', CX + 62, GROUND - 70, { text: `Lv ${e.level}!`, vy: -18, max: 1.6, sizePx: 15, color: '#d18b00' });
-            burst('spark', 6, CX + 62, GROUND - 76, 2.4, { colors: ['#ffe156', '#fff'], gravity: 120, max: 0.8 });
+            spawn('text', petCX() + 62, GROUND - 70, { text: `Lv ${e.level}!`, vy: -18, max: 1.6, sizePx: 15, color: '#d18b00' });
+            burst('spark', 6, petCX() + 62, GROUND - 76, 2.4, { colors: ['#ffe156', '#fff'], gravity: 120, max: 0.8 });
             play('level');
           }
           break;
         case 'cosmetic':
           pushToast(tr('toast.cosmetic', { item: tr(`wear.${e.id}`) }), tr('toast.cosmeticSub'), 5000);
-          burst('spark', 14, CX, top - 10, Math.PI * 2, { colors: ['#ffe156', '#fff', '#ff7fa3'], gravity: 60 });
+          burst('spark', 14, petCX(), top - 10, Math.PI * 2, { colors: ['#ffe156', '#fff', '#ff7fa3'], gravity: 60 });
           play('level');
           break;
         case 'item':
           if (e.item !== 'snack') pushToast(tr('toast.item', { item: tr(`item.${e.item}`) }), tr(`item.${e.item}.text`), 4500);
           break;
         case 'fed':
+          setTimeout(() => showEmote('♥', now()), 1700);
           pettedAt = t;
           munchUntil = t + 1.6;
-          for (let i = 0; i < 3; i++) spawn('heart', CX + (i - 1) * 22, top + 6, { vx: (i - 1) * 8, vy: -34, max: 1.3 });
-          if (e.item === 'candy') burst('spark', 16, CX, top, Math.PI * 2, { colors: ['#7c6cf2', '#fff', '#ffe156'], gravity: 40 });
+          for (let i = 0; i < 3; i++) spawn('heart', petCX() + (i - 1) * 22, top + 6, { vx: (i - 1) * 8, vy: -34, max: 1.3 });
+          if (e.item === 'candy') burst('spark', 16, petCX(), top, Math.PI * 2, { colors: ['#7c6cf2', '#fff', '#ffe156'], gravity: 40 });
           play('level');
           break;
         case 'hold':
           pushToast(tr(e.holding ? 'toast.hold' : 'toast.letGo'), tr(e.holding ? 'toast.holdSub' : 'toast.letGoSub'), 4500);
           break;
         case 'wear':
-          burst('spark', 10, CX, top - 6, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 50 });
+          burst('spark', 10, petCX(), top - 6, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 50 });
           break;
         case 'restored':
           pushToast(tr('restore.done', { name: e.name }), tr('restore.doneSub'), 6000, 'scene');
-          burst('confetti', 26, CX, GROUND - 80, 2.2, { colors: CONFETTI, gravity: 260 });
+          burst('confetti', 26, petCX(), GROUND - 80, 2.2, { colors: CONFETTI, gravity: 260 });
           play('level');
           break;
         case 'mission':
@@ -832,7 +916,7 @@
           break;
         case 'missions-all':
           pushToast(tr('missions.perfect'), `+${e.xp} XP`, 5000, 'scene');
-          burst('confetti', 22, CX, GROUND - 80, 2.2, { colors: CONFETTI, gravity: 260 });
+          burst('confetti', 22, petCX(), GROUND - 80, 2.2, { colors: CONFETTI, gravity: 260 });
           break;
         case 'new-egg':
           pushToast(tr('scene.hall', { name: e.retired.name, form: e.retired.form }), tr('scene.hall.sub', { gen: e.generation }), 6000, 'scene');
@@ -843,7 +927,7 @@
         case 'tests':
           testFlash = { at: t, passed: e.passed };
           if (e.passed) {
-            burst('spark', 10, CX, top + 20, 2.6, { colors: ['#74cc63', '#c3ffa8', '#fff'], gravity: 120 });
+            burst('spark', 10, petCX(), top + 20, 2.6, { colors: ['#74cc63', '#c3ffa8', '#fff'], gravity: 120 });
             play('green');
           }
           break;
@@ -852,7 +936,7 @@
           else pushToast(`🏆 ${e.title}`, e.text);
           break;
         case 'bond':
-          if (!petted) spawn('heart', CX + 30, top + 4, { vy: -26, max: 1.2 });
+          if (!petted) spawn('heart', petCX() + 30, top + 4, { vy: -26, max: 1.2 });
           break;
         default:
           break;
@@ -863,7 +947,7 @@
       pendingXp += xp;
       if (!xpTimer) {
         xpTimer = setTimeout(() => {
-          if (!evolveFx) spawn('text', CX - 78, GROUND - 40, { text: `+${pendingXp} XP`, vy: -22, max: 1.2, sizePx: pendingXp >= 5 ? 14 : 12 });
+          if (!evolveFx) spawn('text', petCX() - 78, GROUND - 40, { text: `+${pendingXp} XP`, vy: -22, max: 1.2, sizePx: pendingXp >= 5 ? 14 : 12 });
           pendingXp = 0;
           xpTimer = null;
         }, 1200);
@@ -897,7 +981,7 @@
     const R = radius(stage);
     const h = OpenmonArt.heightOf(stage, SIZE);
     const cy = GROUND - h / 2;
-    return ((x - CX) / (R * 1.45)) ** 2 + ((y - cy) / (h / 2 + 8)) ** 2 <= 1;
+    return ((x - petCX()) / (R * 1.45)) ** 2 + ((y - cy) / (h / 2 + 8)) ** 2 <= 1;
   }
 
   function localPoint(e) {

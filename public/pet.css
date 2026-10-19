@@ -41,7 +41,7 @@ html, body {
 #bubble {
   position: absolute;
   z-index: 2;
-  left: 50%;
+  left: calc(50% + var(--pet-x, 0px));
   transform: translateX(-50%);
   bottom: var(--bubble-bottom, 190px);
   display: grid;
