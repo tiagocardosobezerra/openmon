@@ -51,6 +51,10 @@ Openmon is a desktop pet, in the spirit of Pokémon and Tamagotchi, that lives i
 
 ## Start in 3 steps
 
+**Easiest:** download the installer from [Releases](https://github.com/tiagocardosobezerra/openmon/releases/latest) (Windows `.exe`, macOS `.dmg` for Apple Silicon, Linux `.AppImage`), open Openmon and click **Connect** on the egg's bubble. The agent notices run with [Node.js](https://nodejs.org), which Claude Code users already have. The installers are not signed yet: on Windows, click "More info → Run anyway"; on macOS, right-click the app and choose "Open".
+
+**From source:**
+
 You need [Node.js](https://nodejs.org) 20 or newer and [Claude Code](https://claude.com/claude-code).
 
 ### 1. Install
