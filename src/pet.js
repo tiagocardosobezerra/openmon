@@ -220,6 +220,12 @@ function cosmeticsView(pet) {
 }
 
 function checkCosmetics(pet, now, events) {
+  // Pets that evolved before the Bag existed still get their Everstone.
+  if (!pet.gifts) pet.gifts = {};
+  if (!pet.gifts.everstone && stageIndex(pet.stage) >= stageIndex('juvenile')) {
+    pet.gifts.everstone = now;
+    if (!pet.bag.everstone && pet.holding !== 'everstone') giveItem(pet, 'everstone', 1, events);
+  }
   for (const [id, ok] of Object.entries(UNLOCKS)) {
     if (pet.wardrobe.owned[id] || !ok(pet)) continue;
     pet.wardrobe.owned[id] = now;
@@ -435,7 +441,11 @@ function evolve(pet, now, events) {
     if (pet.stage === 'sprout' && pet.shiny) unlock(pet, 'shiny', now, events);
     if (pet.stage === 'juvenile') {
       unlock(pet, 'first-evolution', now, events);
-      if (!pet.bag.everstone && pet.holding !== 'everstone') giveItem(pet, 'everstone', 1, events);
+      if (!pet.gifts) pet.gifts = {};
+      if (!pet.gifts.everstone) {
+        pet.gifts.everstone = now;
+        if (!pet.bag.everstone && pet.holding !== 'everstone') giveItem(pet, 'everstone', 1, events);
+      }
     }
     if (pet.stage === 'mythic') unlock(pet, 'mythic', now, events);
     if (pet.lineage === 'chimera') unlock(pet, 'hidden', now, events);
