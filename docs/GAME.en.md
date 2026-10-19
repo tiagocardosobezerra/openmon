@@ -1,0 +1,80 @@
+# The Openmon game
+
+[Português](GAME.md) | **English** | [Español](GAME.es.md)
+
+Openmon is a desktop pet, in the spirit of creature-collecting games and virtual pets, that lives in the corner of your screen while Claude Code works. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps holding a sign when the agent **needs you**. Click it and the agent's window comes to the front, ready for you to approve or reply. Over the days, the egg hatches, grows and evolves into one of 40 forms, decided by the kind of work your agent does most.
+
+This page explains the game. For what Openmon does for you and how to install it, see the [README](../README.en.md).
+
+## How it grows
+
+Everything your agent does is worth **experience (XP)**. With enough, it evolves: egg, sprout, juvenile, adult and mythic, over weeks of use. Its **type** comes from the work your agent does most:
+
+| Type | Comes from | Juvenile | Adult | Mythic |
+|---|---|---|---|---|
+| Craft | editing files | Tinkit | Forgemaw | Archsmith |
+| Lore | reading and searching | Owlet | Scrollwyrm | Oracle |
+| Shell | running commands | Sparkle | Voltcrab | Kernel |
+| Test | running tests | Shellby | Bastion | Aegis |
+| Roam | the web and MCP tools | Wisp | Skyfin | Wayfarer |
+| Swarm | calling other agents | Mote | Hivekin | Legion |
+| Docs | writing documentation (.md, .rst, .txt) | Inkling | Quillmane | Archivist |
+| Git | git and gh commands | Twiglet | Branchoak | Mergewood |
+| Debug | fixing what failed | Mitey | Beetlock | Bugbane |
+| Data | data: SQL, CSV, notebooks, databases | Cubit | Prismora | Datanaut |
+| Style | stylesheets (.css, .scss) | Dabbit | Palettail | Chromancer |
+
+Rare work counts more, so every type can win. And there is a hidden line few will find: *some say balance is the key.*
+
+* **Friendship** (0 to 100) only goes up: answer your agent quickly, pet it with a click, come back every day. The mythic stage asks for friendship 60.
+* **Personality**: every egg is born Brave, Sleepy, Curious, Cheerful, Calm or Cheeky, which changes how it moves and what it says.
+* **Rarities**: 1 in 128 hatches in shiny colours, always with a glow and little stars around it; evolving late at night gives night colours. Every form has its 5 poses in shiny and night colours too.
+* **Special evolutions**: with friendship 100 at the Mythic evolution, Archsmith and Oracle grow into their **friendship form**; the hidden Chimera has its own colours for each of the 15 pairs of types.
+* **Legendaries**: three, each tied to a feat. *Mergeon* appears when your first pull request is merged, *Aeonbyte* after a year of Openmon and *Zeroday* after 100 fixes. They join your Party and never evolve.
+* **Season colours** (optional): turn them on in Settings and, in February, October and December, your Openmon wears the season's colours.
+* **Focus form**: during a long request (50 actions or more) it grows inside a ring of energy until the request ends.
+* **Nickname**: without one it goes by its species name. When it hatches, it asks whether you want to give it one.
+* It never dies, never gets sick and never loses what it earned.
+
+<table>
+<tr>
+<td width="50%"><img src="screens/dex.en.png" alt="The Opendex with types and forms"><br><sub><b>Opendex</b>: the types, how to get each one and the 40 forms</sub></td>
+<td width="50%"><img src="screens/bag.en.png" alt="The Bag with items and accessories"><br><sub><b>Bag</b>: items and accessories to wear</sub></td>
+</tr>
+</table>
+
+## One Openmon per project
+
+Every project your agent works on enough gets **its own egg**. Up to 6 travel in your **Party**; the rest wait in the **Box**, with 12 wallpapers to pick from. Up to 3 can be on screen at once: on the Party page, use "Also on screen"; each one shows what its own project's agent is doing. Each one grows only from its project's work, while the Bag, Opendex and badges belong to you as a trainer and count for all of them. On the **Party** page you pick who is on screen, or turn on "Show the Openmon of the project your agent is working in". Temporary folders (the system temp folder or an app's scratch workspace) are not projects: their work feeds your first Openmon.
+
+**Regional forms**: an Openmon raised mostly on one language evolves into that region's colours with a small mark: *Brace* (JavaScript/TypeScript), *Serpent* (Python), *Rust*, *Current* (Go), *Bean* (Java/Kotlin) and *Sharp* (C#/.NET). The Opendex records the ones you have seen.
+
+## Something every day
+
+* **Missions**: three a day, like "answer your agent within 30 s, 3 times" or "3 green test runs". Each gives experience, friendship and a Snack.
+* **Bag**: *Snack* (+2 friendship), *Level candy* (one level up), *Friendship candy* (+10), *XP charm* (double experience for a day), *Mystery egg* (hatches a new member, with better shiny odds), *Steady stone* (while it holds it, it does not evolve) and 11 *Type stones* (hold one and the next evolution goes to that type).
+* **30 accessories** for the head, face and neck: cap, crown, scarf, round glasses, sunglasses, monocle, hero mask, hard hat, leaf crown, explorer hat, chef hat, ribbon bow, star tiara, pumpkin hat, Santa hat, necktie, pearl necklace, cape, little bell, little backpack and more, each unlocked by an achievement (100 commits, 50 fixes, 200 pages read…). They show on the pet, in the Bag and on the trainer card.
+* **Daily gift and streak**: a Snack per day of use, a Type stone every 3 days in a row, a Level candy every 7, an XP charm every 14 and a Mystery egg every 30.
+* **Opendex, badges and Hall of Fame**: once yours reaches mythic, retire it to the Hall of Fame and start a new generation; the Bag, Opendex and badges carry over.
+
+## Powers: tools that evolution unlocks
+
+Each type your Openmon evolves into unlocks, for good, a useful panel about your agent's sessions:
+
+| Power | Type | Shows |
+|---|---|---|
+| Forge log | Craft | every file changed, how many times, lines added and removed |
+| Reading list | Lore | what the agent read and searched before acting |
+| Command log | Shell | every command, whether it worked, how long it took, with a copy button |
+| Test tracker | Test | every test run and the green streak |
+| Travel log | Roam | pages opened, web searches and MCP tools |
+| Hive view | Swarm | the helper agents, which still run and how long they took |
+| Docs log | Docs | every document written, lines in and out |
+| Branch log | Git | every git and gh command, and how many commits |
+| Fix log | Debug | what failed and worked again, in how many tries and how long |
+| Data log | Data | data files read or changed and every database command |
+| Style log | Style | every stylesheet changed, lines in and out |
+
+For everyone: the **Journal** of the last 14 days and the **waiting counter**, how long your agents waited for you today.
+
+<img width="100%" alt="Powers, with the journal of the last 14 days" src="screens/powers.en.png" />
