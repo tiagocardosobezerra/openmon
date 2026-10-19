@@ -243,7 +243,7 @@
 <text x="128" y="120" class="f" font-size="32" font-weight="600" fill="#fffdf7">Archsmith</text>
 <g><rect x="309.0" y="96.0" width="95.2" height="31.0" rx="15.5" fill="#ffe156" stroke="#2a2140" stroke-width="2"/><text x="356.6" y="116.9" text-anchor="middle" class="f" font-size="15" font-weight="600" fill="#2a2140">Nível 60</text></g>
 <text x="128" y="160" class="s" font-size="15" font-weight="700" fill="#8d84b0">#005</text>
-<g><rect x="172.0" y="142.0" width="75.0" height="26.0" rx="13.0" fill="#3a2f5c" stroke="#3a2f5c" stroke-width="2"/><text x="209.5" y="160.0" text-anchor="middle" class="f" font-size="14" font-weight="600" fill="#d9d2ff">mítico</text></g>
+<g><rect x="172.0" y="142.0" width="75.0" height="26.0" rx="13.0" fill="#3a2f5c" stroke="#3a2f5c" stroke-width="2"/><text x="209.5" y="160.0" text-anchor="middle" class="f" font-size="14" font-weight="600" fill="#d9d2ff">ancião</text></g>
 <text x="664" y="200" text-anchor="end" class="s" font-size="15" font-weight="700" fill="#b9b0dc">forma final ✦</text>
 </g>
 <text x="128" y="200" class="s" font-size="15" font-weight="800" fill="#d9d2ff">XP</text>

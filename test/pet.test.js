@@ -37,7 +37,7 @@ test('the top stat decides the lineage, the second the trait', () => {
   assert.equal(pet.form(p), 'Scrollwyrm');
 });
 
-test('mythic needs bond as well as XP', () => {
+test('becoming an Elder needs bond as well as XP', () => {
   const p = pet.createPet(T0);
   Object.assign(p, { xp: 20000, stage: 'adult', lineage: 'test', bond: 10 });
   feed(p, done('test'), 1);
@@ -154,7 +154,7 @@ test('evolving fills the Opendex and flags new entries', () => {
   assert.equal(pet.view(p).dexNo, 2);
 });
 
-test('a mythic pet can retire and lay an egg that keeps the dex', () => {
+test('an Elder can retire and lay an egg that keeps the dex', () => {
   const p = pet.createPet(T0, 'Byte', () => 0.5);
   Object.assign(p, { stage: 'mythic', lineage: 'test', xp: 16000, stats: { craft: 100, lore: 0, shell: 0, test: 900, roam: 0, swarm: 0 } });
   p.dex['test-mythic'] = T0;
@@ -376,7 +376,7 @@ test('a held type stone decides the next evolution and is spent', () => {
   assert.ok(events.some((e) => e.type === 'stone-used'));
 });
 
-test('full friendship at the Mythic evolution gives the friendship form', () => {
+test('full friendship at the Elder evolution gives the friendship form', () => {
   const p = pet.createPet(T0);
   Object.assign(p, { stage: 'adult', lineage: 'craft', xp: 14999, bond: 100 });
   p.stats.craft = 5000;

@@ -41,7 +41,7 @@ const FILES = {
       ['Nível 60', 'Level 60', 'Nivel 60'],
       ['jovem', 'juvenile', 'joven'],
       ['adulto', 'adult', 'adulto'],
-      ['mítico', 'mythic', 'mítico'],
+      ['ancião', 'elder', 'anciano'],
       ['rumo a Forgemaw', 'next: Forgemaw', 'hacia Forgemaw'],
       ['rumo a Archsmith', 'next: Archsmith', 'hacia Archsmith'],
       ['forma final ✦', 'final form ✦', 'forma final ✦'],

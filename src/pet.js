@@ -145,7 +145,7 @@ function topStats(stats) {
 }
 
 // Levels: Lv 9 near the first evolution, Lv 25 at Adult,
-// Lv 55 at Mythic, Lv 100 at 49,005 XP.
+// Lv 55 at Elder, Lv 100 at 49,005 XP.
 const MAX_LEVEL = 100;
 function level(xp) {
   return Math.min(MAX_LEVEL, Math.floor(Math.sqrt(Math.max(0, xp) / 5)) + 1);
@@ -364,7 +364,7 @@ function useItem(pet, item, now, reserved = 0) {
   // Held items: the Steady stone and the type stones. One at a time.
   if (ITEMS[item].use === 'hold') {
     // Letting go always works; taking one needs a free one in the Bag and a
-    // pet that can still evolve (not a legendary, not a Mythic).
+    // pet that can still evolve (not a legendary, not an Elder).
     if (pet.holding !== item && ((pet.bag[item] || 0) - reserved <= 0 || !nextStage(pet))) return [];
     pet.holding = pet.holding === item ? null : item;
     events.push({ type: 'hold', item, holding: pet.holding });
@@ -601,7 +601,7 @@ function evolve(pet, now, events) {
       // Evolving between midnight and 5 am gives the Nocturne colouring,
       // decided again at every evolution (a time-of-day evolution).
       pet.nocturne = new Date(now).getHours() < 5;
-      // Full friendship when it becomes Mythic: the friendship form.
+      // Full friendship when it becomes an Elder: the friendship form.
       pet.friend = next.id === 'mythic' && pet.bond >= BOND_MAX && FRIEND_FORMS.includes(pet.lineage);
       if (pet.friend) unlock(pet, 'friendship', now, events);
       // Regional form: raised mostly on one language (60% of 50+ files).
@@ -764,12 +764,12 @@ function petIt(pet, now) {
   return events;
 }
 
-// Post-game: a Mythic pet retires to the Hall of Fame and leaves an egg.
+// Post-game: an Elder retires to the Hall of Fame and leaves an egg.
 // The Opendex, achievements and Hall of Fame carry over, and the egg
 // inherits a tenth of its parent's stats, so the next one starts leaning
 // the same way unless your work changes. Everything that belongs to you as
 // a trainer (today's missions, streak, journal, active charm) carries on.
-// Legendaries are Mythic but never retire: each one only comes once.
+// Legendaries are at the Elder stage but never retire: each one only comes once.
 function layEgg(pet, now, rng = Math.random) {
   if (pet.stage !== 'mythic' || pet.legend) return { pet, events: [] };
   const retired = { name: displayName(pet), form: form(pet), lineage: pet.lineage, shiny: pet.shiny, nature: pet.nature, generation: pet.generation, bornAt: pet.bornAt, retiredAt: now };

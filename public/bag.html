@@ -113,7 +113,7 @@
     let btn;
     if (HELD(id)) {
       btn = el('button', `btn sm${holding ? ' brand' : ''}`, holding ? tr('bag.letGo') : tr('bag.hold'));
-      // Legendaries and Mythics never evolve again, so they hold nothing.
+      // Legendaries and Elders never evolve again, so they hold nothing.
       const final = pet.legend || pet.stage === 'mythic';
       btn.disabled = !holding && (!n || final);
       if (!holding && final) btn.title = tr('bag.noEvolve');

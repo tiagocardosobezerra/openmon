@@ -149,12 +149,12 @@ const ACHIEVEMENTS = {
   'night-owl': { title: 'Night owl', text: 'Your agent worked between midnight and 5 am.' },
   'quick-hands': { title: 'Quick hands', text: 'Answered your agent quickly 10 times in one day.' },
   'best-friends': { title: 'Best friends', text: 'Friendship reached 100.' },
-  mythic: { title: 'Legend', text: 'Reached the Mythic stage.' },
+  mythic: { title: 'Elder', text: 'Became an Elder.' },
   shiny: { title: 'Shiny!', text: 'A one-in-128 shiny Openmon hatched.' },
   hidden: { title: "Who's that Openmon?", text: 'Found a hidden form.', secret: true },
   nocturne: { title: 'Born of the night', text: 'Evolved between midnight and 5 am, into its Nocturne colours.', secret: true },
   legend: { title: 'Legendary', text: 'A legendary Openmon joined your team.' },
-  friendship: { title: 'Bond of friendship', text: 'Evolved into a Mythic with full friendship.', secret: true },
+  friendship: { title: 'Bond of friendship', text: 'Became an Elder with full friendship.', secret: true },
 };
 
 // Accessories: earned by playing, kept forever (across generations), worn
@@ -208,7 +208,7 @@ const ITEMS = {
 };
 for (const t of STATS) ITEMS[`stone-${t}`] = { use: 'hold', stone: t };
 
-// Mythic forms that grow differently when friendship is full (100) at the
+// Elder forms that grow differently when friendship is full (100) at the
 // moment of evolving. Lineages without friendship art keep the usual form.
 const FRIEND_FORMS = ['craft', 'lore'];
 

@@ -198,15 +198,15 @@ test('type stone: wins over the hidden Chimera', () => {
 });
 
 test('nothing to hold for a pet that no longer evolves', () => {
-  const mythic = mk({ stage: 'mythic', lineage: 'craft', xp: 15000, bag: { 'stone-lore': 1, everstone: 1 } });
-  assert.deepEqual(pet.useItem(mythic, 'stone-lore', T0), []);
-  assert.deepEqual(pet.useItem(mythic, 'everstone', T0), []);
+  const elder = mk({ stage: 'mythic', lineage: 'craft', xp: 15000, bag: { 'stone-lore': 1, everstone: 1 } });
+  assert.deepEqual(pet.useItem(elder, 'stone-lore', T0), []);
+  assert.deepEqual(pet.useItem(elder, 'everstone', T0), []);
   const legend = mk({ stage: 'mythic', legend: 'zeroday', bag: { 'stone-lore': 1 } });
   assert.deepEqual(pet.useItem(legend, 'stone-lore', T0), []);
   // One already held can always be let go.
-  mythic.holding = 'everstone';
-  pet.useItem(mythic, 'everstone', T0);
-  assert.equal(mythic.holding, null);
+  elder.holding = 'everstone';
+  pet.useItem(elder, 'everstone', T0);
+  assert.equal(elder.holding, null);
 });
 
 test('the Bag is shared: a stone another member holds is not free', () => {
@@ -421,7 +421,7 @@ test('the counters behind accessories and legendaries grow from real agent work'
 // --- evolution paths ---------------------------------------------------------
 
 for (const s of STATS) {
-  test(`lineage ${s}: juvenile, adult and mythic from ${s} work`, () => {
+  test(`lineage ${s}: juvenile, adult and elder from ${s} work`, () => {
     const p = mk({ stage: 'sprout' });
     p.stats[s] = 100;
     for (const stage of ['juvenile', 'adult', 'mythic']) {
@@ -445,7 +445,7 @@ test('the type is decided again at every evolution', () => {
   assert.equal(p.trait, 'craft');
 });
 
-test('hidden Chimera: adult and mythic only from an almost exact tie; it can drift away', () => {
+test('hidden Chimera: adult and elder only from an almost exact tie; it can drift away', () => {
   const p = mk({ stage: 'juvenile', lineage: 'craft' });
   Object.assign(p.stats, { craft: 100, lore: 200 });
   step(p);
@@ -468,7 +468,7 @@ test('hidden Chimera: adult and mythic only from an almost exact tie; it can dri
   assert.equal(species.CHIMERA_MIN, 0.2);
 });
 
-test('friendship forms: only Craft and Lore, only with friendship 100 at the Mythic evolution', () => {
+test('friendship forms: only Craft and Lore, only with friendship 100 at the Elder evolution', () => {
   for (const s of STATS) {
     const p = mk({ stage: 'adult', lineage: s, bond: 100 });
     p.stats[s] = 100;
@@ -508,7 +508,7 @@ test('regional forms: 60% of 50+ files in one language at the evolution', () => 
   assert.equal(p.region, null, 'no language reaches 60%');
 });
 
-test('legendaries: each joins once from its feat, at Mythic, and never grows', () => {
+test('legendaries: each joins once from its feat, at the Elder stage, and never evolves', () => {
   const root = party.ensure(mk());
   root.counters.fixes = 100;
   root.counters.merges = 1;
@@ -603,7 +603,7 @@ test('Party and Box: 6 in the Party; a pet taken out of a full Box swaps with th
   assert.ok(v.box.some((m) => m.id === root.id), 'the old main pet went to the Box');
 });
 
-test('retiring: a Mythic leaves an egg; trainer things carry on; a legendary never retires', () => {
+test('retiring: an Elder leaves an egg; trainer things carry on; a legendary never retires', () => {
   const p = mk({ stage: 'mythic', lineage: 'lore', xp: 16000, bag: { everstone: 1, snack: 4 }, holding: 'everstone', charmUntil: T0 + DAY });
   p.stats.lore = 900;
   p.streak = { days: 12, best: 20 };

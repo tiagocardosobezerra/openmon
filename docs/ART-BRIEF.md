@@ -147,7 +147,7 @@ solid dark #2a2140 silhouette on transparent background, designed for 16x16 syst
 2. Para cada forma, use o Sprout como imagem de referência de estilo, monte o prompt da forma e cole o bloco de estilo no fim.
 3. Mantenha a mesma *seed* ou o mesmo *style reference* em tudo.
 4. Gere a forma normal primeiro. Depois peça a **shiny** e a **Nocturne** com "same character, recolor to…", usando a imagem normal como referência.
-5. Revise as silhuetas lado a lado: Juvenile → Adult → Mythic precisam crescer em tamanho e em detalhes.
+5. Revise as silhuetas lado a lado: Juvenile → Adult → Elder precisam crescer em tamanho e em detalhes.
 
 ### Molde de prompt
 
@@ -355,7 +355,7 @@ Só aparece quando dois tipos de trabalho empatam.
 ## 4. Checklist de qualidade (seja crítico)
 
 - [ ] Silhueta reconhecível a 64 px, mesmo preenchida de preto?
-- [ ] Juvenile → Adult → Mythic crescem claramente em tamanho e em detalhes?
+- [ ] Juvenile → Adult → Elder crescem claramente em tamanho e em detalhes?
 - [ ] Contorno com a mesma espessura em todas as 22 formas?
 - [ ] Fundo 100% transparente, sem sombra no chão e sem borda branca de recorte?
 - [ ] Pés tocando a base da imagem?

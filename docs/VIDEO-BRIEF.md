@@ -99,7 +99,7 @@ Mostra, em 6 cenas, o que é o Openmon: um bichinho no canto da tela que acompan
 
 * Uma grade da **Opendex** aparece (inspiração: `telas/dex.*.png`), formas acendendo da silhueta para a cor, rápido.
 * Destaques, um por vez (1,5 s cada):
-  * um **shiny** com halo dourado e estrelinhas (`craft-adult.shiny.svg` + o brilho, ver nota abaixo)
+  * um **shiny** com estrelinhas em volta (sem halo) (`craft-adult.shiny.svg` + o brilho, ver nota abaixo)
   * um **noturno** com a lua (`roam-adult.night.svg`)
   * um **lendário** (`mergeon.svg`)
   * o **Time**: três Openmons lado a lado no canto da tela (`craft-mythic`, `docs-adult`, `git-juvenile`)

@@ -101,9 +101,9 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 
 ## Cómo crece
 
-Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evoluciona: huevo, brote, joven, adulto y mítico, en semanas de uso. Su **tipo** viene del trabajo que más hace el agente:
+Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evoluciona: huevo, brote, joven, adulto y anciano, en semanas de uso. Su **tipo** viene del trabajo que más hace el agente:
 
-| Tipo | Viene de | Joven | Adulto | Mítico |
+| Tipo | Viene de | Joven | Adulto | Anciano |
 |---|---|---|---|---|
 | Forja | editar archivos | Tinkit | Forgemaw | Archsmith |
 | Saber | leer y buscar | Owlet | Scrollwyrm | Oracle |
@@ -119,10 +119,10 @@ Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evolucio
 
 El trabajo raro vale más, así que cualquier tipo puede ganar. Y hay un linaje escondido que poca gente va a encontrar: *dicen que el secreto es el equilibrio.*
 
-* **Amistad** (0 a 100) solo sube: responde rápido al agente, acaríciala con un clic, vuelve todos los días. La etapa mítica pide amistad 60.
+* **Amistad** (0 a 100) solo sube: responde rápido al agente, acaríciala con un clic, vuelve todos los días. Llegar a Anciano pide amistad 60.
 * **Personalidad**: cada huevo nace Valiente, Dormilona, Curiosa, Alegre, Tranquila o Pícara, lo que cambia cómo se mueve y lo que dice.
 * **Rarezas**: 1 de cada 128 nace con colores brillantes (shiny), siempre con brillo y estrellitas alrededor; quien evoluciona de madrugada gana colores nocturnos. Cada forma tiene las 5 poses también en shiny y nocturna.
-* **Evoluciones especiales**: con amistad 100 en la evolución mítica, Archsmith y Oracle crecen en la **forma de la amistad**; la Chimera escondida tiene colores propios para cada uno de los 15 pares de tipos.
+* **Evoluciones especiales**: con amistad 100 en la evolución a Anciano, Archsmith y Oracle crecen en la **forma de la amistad**; la Chimera escondida tiene colores propios para cada uno de los 15 pares de tipos.
 * **Legendarios**: tres, cada uno ligado a una hazaña. *Mergeon* aparece con tu primer pull request aceptado, *Aeonbyte* después de un año de Openmon y *Zeroday* después de 100 arreglos. Entran en tu Equipo y nunca evolucionan.
 * **Colores de temporada** (opcional): actívalos en la Configuración y, en febrero, octubre y diciembre, Openmon usa los colores de la época.
 * **Forma de foco**: en un pedido largo (50 acciones o más), crece dentro de un anillo de energía hasta que el pedido termina.
@@ -148,7 +148,7 @@ Cada proyecto en el que el agente trabaja bastante gana **su propio huevo**. Has
 * **Mochila**: *Galleta* (+2 de amistad), *Caramelo de nivel* (sube un nivel), *Dulce de amistad* (+10), *Amuleto de XP* (experiencia doble por un día), *Huevo misterioso* (eclosiona un nuevo miembro, con más probabilidad de shiny), *Piedra firme* (mientras la sostiene, no evoluciona) y 11 *Piedras de tipo* (sostén una y la próxima evolución va hacia ese tipo).
 * **30 accesorios** en la cabeza, la cara y el cuello: gorra, corona, bufanda, gafas redondas y de sol, monóculo, máscara de héroe, casco de obra, corona de hojas, sombrero de explorador, gorro de chef, lazo, tiara de estrellas, sombrero de calabaza, gorro de Navidad, corbata, collar de perlas, capa, cascabel, mochilita y otros, cada uno ganado con un logro (100 commits, 50 arreglos, 200 páginas leídas…). Aparecen en la mascota, en la Mochila y en la tarjeta de entrenador.
 * **Regalo del día y racha**: una Galleta por día de uso, una Piedra de tipo cada 3 días seguidos, un Caramelo de nivel cada 7, un Amuleto de XP cada 14 y un Huevo misterioso cada 30.
-* **Opendex, insignias y Salón de la Fama**: cuando el tuyo llega a mítico, retíralo al Salón de la Fama y empieza una nueva generación; la Mochila, la Opendex y las insignias se quedan.
+* **Opendex, insignias y Salón de la Fama**: cuando el tuyo llega a Anciano, retíralo al Salón de la Fama y empieza una nueva generación; la Mochila, la Opendex y las insignias se quedan.
 
 ## Poderes: utilidades que libera la evolución
 
