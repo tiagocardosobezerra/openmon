@@ -979,6 +979,7 @@
       setTimeout(() => pose === 'done' && showEmote('♪', now()), 3000);
       burst('confetti', 18, petCX(), headY(stage) + 10, 1.8, { colors: CONFETTI, gravity: 260 });
       play('done');
+      tip('rightclick', tr('tip.rightclick'), tr('tip.rightclick.sub'), 15_000);
     } else if (next === 'attention') {
       tip('jump', tr('tip.jump'), tr('tip.jump.sub'), 6000);
       // One chime per 20 s at most, however many prompts arrive.
@@ -1030,9 +1031,10 @@
       } else if (msg.pet.stage === 'egg' && msg.pet.counters.tools === 0 && (!msg.setup || msg.setup.hooks)) {
         setTimeout(() => pushToast(tr('intro'), tr('intro.sub'), 7000, 'say'), 1500);
       } else setTimeout(() => chatter('greet'), 2500);
-      // Teach the right-click once, after the hello.
+      // Teach the right-click once, after the hello. Not connected yet: the
+      // Connect bubble comes first, and the tip waits for the first finished task.
       config = msg.config || config;
-      tip('rightclick', tr('tip.rightclick'), tr('tip.rightclick.sub'), 10_000);
+      if (!msg.setup || msg.setup.hooks) tip('rightclick', tr('tip.rightclick'), tr('tip.rightclick.sub'), 10_000);
     }
     if (msg.demo && !demo) pushToast(tr('demo'), tr('demo.sub'), 3000);
     demo = msg.demo;
@@ -1182,6 +1184,8 @@
           pushToast(tr('cloud.conflict'), tr('cloud.conflictSub'), 9000, 'notice');
           break;
         case 'mission':
+          // An egg's first minutes are about the agent; missions speak up once it hatches.
+          if (pet && pet.stage === 'egg') break;
           pushToast(tr('mission.doneTitle'), `${tr(`mission.${e.id}`, { n: e.target })} · +${e.xp} XP`, 4500);
           play('level');
           break;

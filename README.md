@@ -12,15 +12,28 @@
 
 <img width="100%" alt="Animação do Openmon: um ovo choca no canto da tela, o bichinho lê, martela e testa junto com o agente de IA, pula com uma placa quando precisa de você e evolui com o trabalho. Seu agente trabalha. Seu Openmon cresce." src="assets/openmon-banner.svg" />
 
-O Openmon é um pet de desktop, no espírito dos jogos de criaturas e dos bichinhos virtuais, que vive no canto da tela enquanto o Claude Code trabalha. Ele lê quando o agente lê, martela quando o agente edita, levanta um escudo quando os testes rodam e pula segurando uma placa quando o agente **precisa de você**. Um clique nele e a janela do agente vem para a frente, pronta para você aprovar ou responder. Com os dias, o ovo choca, cresce e evolui para uma de 40 formas, decidida pelo tipo de trabalho que o seu agente mais faz.
-
 ## O que ele faz por você
 
 * **Avisa quando o agente precisa de você.** Pedido de permissão ou pergunta: ele pula com uma placa, mostra o projeto e o pedido em palavras simples ("Quer permissão para rodar um comando: npm publish") e toca um som leve. Se você não olhar, chega uma notificação.
-* **Deixa você responder ali mesmo (opcional).** Ligue "Responder permissões pelo pet" nas configurações e o balão ganha **Permitir** e **Recusar**. O Claude Code espera sua resposta no pet por até 25 segundos; depois disso ele pergunta como sempre. Desligado por padrão.
-* **Leva você direto ao agente.** Um clique no pet, no balão ou na notificação traz para a frente a janela onde o agente roda: terminal, VS Code ou o app do Claude.
-* **Mostra o que está acontecendo, sem você olhar o terminal.** Martelo é editar, livro é ler, escudo é testar, luneta é web. Vários agentes ao mesmo tempo? O card lista cada um, com o que está fazendo.
+* **Leva você até o agente com um clique.** Um clique no pet, no balão ou na notificação traz para a frente a janela onde o agente roda: terminal, VS Code ou o app do Claude.
 * **Resume cada tarefa.** Quando o agente termina: "shop-api terminou ✓ · 3 arquivos · 12 comandos · testes ✓ · 2m 10s".
+
+## Instale em 3 passos
+
+1. Baixe o instalador em [Releases](https://github.com/tiagocardosobezerra/openmon/releases/latest): Windows `.exe`, macOS `.dmg` (Apple Silicon) ou Linux `.AppImage`.
+2. Abra o Openmon e clique em **Conectar** no balão do ovo. Isso liga o Claude Code.
+3. Abra uma conversa nova no Claude Code e trabalhe normalmente. O ovo choca durante a sua primeira sessão.
+
+Os avisos do agente rodam com o [Node.js](https://nodejs.org), que quem usa o Claude Code já tem. Os instaladores ainda não são assinados: no Windows, clique em "Mais informações → Executar assim mesmo"; no macOS, clique com o botão direito no app e em "Abrir". Prefere pelo código? Veja [Instalar pelo código](#instalar-pelo-código).
+
+**Privacidade:** tudo fica no seu computador, sem conta e sem internet; o aviso no celular e o GitHub são opcionais.
+
+Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 40 formas conforme o trabalho do agente. Tipos, itens, acessórios, formas regionais, lendários, poderes e missões estão em [docs/GAME.md](docs/GAME.md).
+
+## Mais do que ele faz
+
+* **Deixa você responder ali mesmo (opcional).** Ligue "Responder permissões pelo pet" nas configurações e o balão ganha **Permitir** e **Recusar**. O Claude Code espera sua resposta no pet por até 25 segundos; depois disso ele pergunta como sempre. Desligado por padrão.
+* **Mostra o que está acontecendo, sem você olhar o terminal.** Martelo é editar, livro é ler, escudo é testar, luneta é web. Vários agentes ao mesmo tempo? O card lista cada um, com o que está fazendo.
 * **Guarda um diário.** O que seus agentes fizeram em cada dia, por tipo de trabalho e por projeto, e quanto tempo esperaram por você.
 * **Não atrapalha e não sai do seu computador.** Os cliques passam através da janela, ele nunca bloqueia nem atrasa o agente, não usa internet nem conta (a não ser que você ligue o aviso no celular ou o GitHub), e senhas e chaves aparecem escondidas (`•••`).
 * **Não se perde.** Ele faz cópias em Documentos/Openmon Backups. Formatou o PC? Numa instalação nova ele pergunta se você quer trazê-lo de volta.
@@ -50,11 +63,7 @@ O Openmon é um pet de desktop, no espírito dos jogos de criaturas e dos bichin
 | Faz careta | Algo falhou, como um teste |
 | Dorme | Nada acontece há alguns minutos |
 
-## Comece em 3 passos
-
-**Jeito mais fácil:** baixe o instalador em [Releases](https://github.com/tiagocardosobezerra/openmon/releases/latest) (Windows `.exe`, macOS `.dmg` para Apple Silicon, Linux `.AppImage`), abra o Openmon e clique em **Conectar** no balão do ovo. Os avisos do agente rodam com o [Node.js](https://nodejs.org), que quem usa o Claude Code já tem. Os instaladores ainda não são assinados: no Windows, clique em "Mais informações → Executar assim mesmo"; no macOS, clique com o botão direito no app e em "Abrir".
-
-**Pelo código:**
+## Instalar pelo código
 
 Você precisa do [Node.js](https://nodejs.org) 20 ou mais novo e do [Claude Code](https://claude.com/claude-code).
 
@@ -98,79 +107,6 @@ O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa n
 | `openmon install --agent gemini\|cursor\|opencode\|aider` | Liga o Openmon no Gemini CLI, Cursor, OpenCode ou Aider |
 | `openmon autostart on\|off` | Abre o pet quando você liga o computador |
 | `openmon stats` / `openmon status` | O pet no terminal / se está tudo ligado |
-
-## Como ele cresce
-
-Cada coisa que o agente faz vale **experiência (XP)**. Com o bastante, ele evolui: ovo, bebê, jovem, adulto e ancião, em semanas de uso. O **tipo** dele vem do trabalho que o agente mais faz:
-
-| Tipo | Vem de | Jovem | Adulto | Ancião |
-|---|---|---|---|---|
-| Forja | editar arquivos | Tinkit | Forgemaw | Archsmith |
-| Saber | ler e buscar | Owlet | Scrollwyrm | Oracle |
-| Terminal | rodar comandos | Sparkle | Voltcrab | Kernel |
-| Teste | rodar testes | Shellby | Bastion | Aegis |
-| Viagem | web e ferramentas MCP | Wisp | Skyfin | Wayfarer |
-| Enxame | chamar outros agentes | Mote | Hivekin | Legion |
-| Escriba | escrever documentação (.md, .rst, .txt) | Inkling | Quillmane | Archivist |
-| Ramo | comandos git e gh | Twiglet | Branchoak | Mergewood |
-| Caçador | consertar o que falhou | Mitey | Beetlock | Bugbane |
-| Cristal | dados: SQL, CSV, notebooks, bancos | Cubit | Prismora | Datanaut |
-| Pincel | folhas de estilo (.css, .scss) | Dabbit | Palettail | Chromancer |
-
-Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem escondida que pouca gente vai achar: *dizem que o segredo é o equilíbrio.*
-
-* **Amizade** (0 a 100) só sobe: responda rápido ao agente, faça carinho com um clique, volte todo dia. Virar Ancião pede amizade 60.
-* **Personalidade**: cada ovo nasce Corajoso, Sonolento, Curioso, Alegre, Calmo ou Atrevido, o que muda como ele se mexe e o que ele fala.
-* **Raridades**: 1 em 128 nasce com cores brilhantes (shiny), sempre com brilho e estrelinhas em volta; quem evolui de madrugada ganha cores noturnas. Cada forma tem as 5 poses também em shiny e noturna.
-* **Evoluções especiais**: com amizade 100 na evolução para Ancião, Archsmith e Oracle crescem na **forma da amizade**; a hidden Chimera tem cores próprias para cada um dos 15 pares de tipos.
-* **Lendários**: três, cada um ligado a um feito. *Mergeon* aparece no seu primeiro pull request aceito, *Aeonbyte* depois de um ano de Openmon e *Zeroday* depois de 100 consertos. Eles entram no seu Time e nunca evoluem.
-* **Cores de época** (opcional): ligue nas Configurações e, em fevereiro, outubro e dezembro, o Openmon usa as cores da época.
-* **Forma de foco**: num pedido longo (50 ações ou mais), ele cresce dentro de um anel de energia até o pedido acabar.
-* **Apelido**: sem apelido ele usa o nome da espécie. Ao chocar, ele pergunta se você quer dar um.
-* Ele nunca morre, nunca adoece e nunca perde o que conquistou.
-
-<table>
-<tr>
-<td width="50%"><img src="docs/screens/dex.pt-BR.png" alt="A Opendex com os tipos e as formas"><br><sub><b>Opendex</b>: os tipos, como cada um se conquista e as 40 formas</sub></td>
-<td width="50%"><img src="docs/screens/bag.pt-BR.png" alt="A Mochila com itens e acessórios"><br><sub><b>Mochila</b>: itens e acessórios para usar</sub></td>
-</tr>
-</table>
-
-## Um Openmon por projeto
-
-Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. Até 6 andam no **Time**; os outros esperam na **Caixa**, com 12 papéis de parede para escolher. Até 3 podem ficar na tela ao mesmo tempo: no Time, use "Também na tela"; cada um mostra o que o agente do seu projeto está fazendo. Cada um cresce só com o trabalho do seu projeto, e a Mochila, a Opendex e as insígnias são suas, de treinador, e valem para todos. Na página **Time** você escolhe quem fica na tela, ou liga "Mostrar o Openmon do projeto em que o agente está trabalhando". Pastas temporárias (a pasta temporária do sistema ou a área de rascunho de um app) não contam como projeto. Todo trabalho sem um Openmon próprio no Time (pasta temporária, projeto novo, pet descansando na Caixa) treina o **Openmon principal**, o da tela: para treinar um ovo, faça dele o principal. Na Caixa, eles descansam e não ganham XP.
-
-**Formas regionais**: um Openmon criado principalmente numa linguagem evolui com as cores daquela região e uma pequena marca: *Chaves* (JavaScript/TypeScript), *Serpente* (Python), *Ferrugem* (Rust), *Correnteza* (Go), *Grão* (Java/Kotlin) e *Sustenido* (C#/.NET). A Opendex registra as que você viu.
-
-## Todo dia tem algo
-
-* **Missões**: três por dia, como "responder ao agente em até 30 s, 3 vezes" ou "3 rodadas de testes verdes". Cada uma dá experiência, amizade e um Biscoito.
-* **Mochila**: *Biscoito* (+2 de amizade), *Bala de nível* (sobe um nível), *Doce de amizade* (+10), *Amuleto de XP* (experiência em dobro por um dia), *Ovo misterioso* (choca um novo membro, com mais chance de shiny), *Pedra firme* (enquanto ele segura, não evolui) e 11 *Pedras de tipo* (segure uma e a próxima evolução vai para aquele tipo).
-* **30 acessórios** na cabeça, no rosto e no pescoço: boné, coroa, cachecol, óculos redondos e escuros, monóculo, máscara de herói, capacete de obra, coroa de folhas, chapéu de explorador, gorro de chef, laço, tiara de estrelas, chapéu de abóbora, gorro de Natal, gravata, colar de pérolas, capa, sininho, mochilinha e outros, cada um liberado por uma conquista (100 commits, 50 consertos, 200 páginas lidas…). Aparecem no pet, na Mochila e no cartão de treinador.
-* **Presente do dia e sequência**: um Biscoito por dia de uso, uma Pedra de tipo a cada 3 dias seguidos, uma Bala de nível a cada 7, um Amuleto de XP a cada 14 e um Ovo misterioso a cada 30.
-* **Opendex, insígnias e Hall da Fama**: quando o seu chega a Ancião, aposente-o no Hall da Fama e comece uma nova geração; a Mochila, a Opendex e as insígnias continuam.
-
-## Poderes: utilidades que a evolução libera
-
-Cada tipo em que seu Openmon evolui libera, para sempre, um painel útil sobre as sessões do agente:
-
-| Poder | Tipo | Mostra |
-|---|---|---|
-| Diário da forja | Forja | cada arquivo alterado, quantas vezes, linhas que entraram e saíram |
-| Lista de leitura | Saber | o que o agente leu e buscou antes de agir |
-| Diário de comandos | Terminal | cada comando, se deu certo, quanto tempo levou, com botão de copiar |
-| Placar de testes | Teste | cada rodada de testes e a sequência de verdes |
-| Diário de viagem | Viagem | páginas abertas, buscas na web e ferramentas MCP |
-| Visão da colmeia | Enxame | os agentes ajudantes, quais ainda rodam e quanto levaram |
-| Diário do escriba | Escriba | cada documento escrito, linhas que entraram e saíram |
-| Diário dos ramos | Ramo | cada comando git e gh, e quantos commits |
-| Diário de consertos | Caçador | o que falhou e voltou a funcionar, em quantas tentativas e quanto tempo |
-| Diário de dados | Cristal | arquivos de dados lidos ou mudados e cada comando de banco |
-| Diário de estilos | Pincel | cada folha de estilo alterada, linhas que entraram e saíram |
-
-Para todo mundo: o **Diário** dos últimos 14 dias e o **contador de espera**, quanto tempo seus agentes esperaram por você hoje.
-
-<img width="100%" alt="Os Poderes, com o diário dos últimos 14 dias" src="docs/screens/powers.pt-BR.png" />
 
 ## Utilidades do dia a dia
 
