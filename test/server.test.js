@@ -440,6 +440,11 @@ test('companions: other team members on screen, never the main one; seasons off 
     assert.deepEqual(cfg.companions, [other.id]);
     const state = JSON.parse((await request(port, 'GET', '/api/state')).body);
     assert.equal(state.companions[other.id].name, 'Egg');
+    // Petting it raises its own friendship, not the main pet's.
+    const before = state.pet.bond;
+    const petted = JSON.parse((await request(port, 'POST', '/api/pet', { body: JSON.stringify({ id: other.id }) })).body).events;
+    assert.ok(petted.every((e) => e.petId === other.id));
+    assert.equal(JSON.parse((await request(port, 'GET', '/api/state')).body).pet.bond, before);
     // Putting it on screen as the main pet removes it from the companions.
     await request(port, 'POST', '/api/party/active', { body: JSON.stringify({ id: other.id }) });
     assert.deepEqual(JSON.parse((await request(port, 'GET', '/api/state')).body).config.companions, []);

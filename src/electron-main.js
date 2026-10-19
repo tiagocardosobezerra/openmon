@@ -341,7 +341,7 @@ function menuTemplate() {
       click: () => daemon.layEgg(),
     },
     { type: 'separator' },
-    { label: L('Show pet'), type: 'checkbox', checked: win.isVisible(), click: (item) => (item.checked ? win.showInactive() : win.hide()) },
+    { label: L('Show pet'), type: 'checkbox', checked: win.isVisible(), click: (item) => showPets(item.checked) },
     { type: 'separator' },
     { label: L('Quit'), click: () => app.quit() },
   ].filter(Boolean);
@@ -556,8 +556,24 @@ function companionUrl(id) {
   const base = petUrl();
   return `${base}${base.includes('?') ? '&' : '?'}companion=${encodeURIComponent(id)}`;
 }
+function showPets(on) {
+  for (const w of [win, ...companionWins.values()]) {
+    if (!w || w.isDestroyed()) continue;
+    if (on) w.showInactive();
+    else w.hide();
+  }
+}
+
 function syncCompanions(state) {
   if (!win || win.isDestroyed()) return;
+  // Same size as the main pet (Settings → Size), growing from the bottom-right.
+  const [mw0, mh0] = win.getSize();
+  for (const w of companionWins.values()) {
+    if (w.isDestroyed()) continue;
+    const [x, y] = w.getPosition();
+    const [cw, ch] = w.getSize();
+    if (cw !== mw0 || ch !== mh0) w.setBounds({ x: x + cw - mw0, y: y + ch - mh0, width: mw0, height: mh0 });
+  }
   const wanted = ((state.config && state.config.companions) || []).filter((id) => state.companions && state.companions[id]);
   for (const [id, w] of companionWins) {
     if (!wanted.includes(id)) {
@@ -574,6 +590,7 @@ function syncCompanions(state) {
     const place = saved[id] || { x: mx - Math.round(mw * 0.55) * (i + 1), y: my };
     const w = petWindow(place, { width: mw, height: mh });
     w.__companion = id;
+    if (!win.isVisible()) w.once('ready-to-show', () => w.hide());
     w.loadURL(companionUrl(id));
     w.on('closed', () => companionWins.delete(id));
     companionWins.set(id, w);
@@ -744,7 +761,7 @@ app.whenReady().then(async () => {
   applyScale(daemon.config().scale || 1);
   latest = daemon.state();
   tray = new Tray(brandTrayIcon() || trayIcon());
-  tray.on('click', () => (win.isVisible() ? win.webContents.send('command', 'card') : win.showInactive()));
+  tray.on('click', () => (win.isVisible() ? win.webContents.send('command', 'card') : showPets(true)));
   refreshTray();
   tray.on('right-click', () => tray.popUpContextMenu(Menu.buildFromTemplate(menuTemplate())));
   // Light or dark taskbar: the egg follows when the theme changes.
@@ -755,7 +772,7 @@ app.whenReady().then(async () => {
   if (capturePath) win.webContents.once('did-finish-load', capture);
 });
 
-app.on('second-instance', () => win && win.showInactive());
+app.on('second-instance', () => win && showPets(true));
 app.on('window-all-closed', (e) => e.preventDefault());
 app.on('before-quit', () => {
   logError('quit requested');

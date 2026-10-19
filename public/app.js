@@ -848,7 +848,8 @@
       [pet.nocturne ? tr('card.night') : null, 'brand'],
       [pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null, ''],
       [pet.holding === 'everstone' ? tr(pr.next && pet.xp >= 0 && pr.ratio >= 1 ? 'card.everstoneReady' : 'card.everstone') : null, 'brand'],
-      [pet.project ? tr('party.project', { project: pet.project }) : null, 'brand'],
+      // Legendaries and mystery eggs have no project of their own.
+      [pet.legend ? tr('party.legendTag') : pet.project && /^mystery:/.test(pet.project) ? tr('party.mysteryTag') : pet.project ? tr('party.project', { project: pet.project }) : null, 'brand'],
       [pet.region ? tr('region.chip', { region: tr(`region.${pet.region}`) }) : null, ''],
       [nature ? tr('card.nature', { nature }) : null, ''],
       [(pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null, ''],
@@ -1010,6 +1011,8 @@
         pose = live.pose;
         poseSince = now();
       }
+      // Its card (right-click) stays up to date like the main pet's.
+      renderAll();
       return;
     }
     const first = !pet;
@@ -1048,7 +1051,7 @@
   }
 
   function onEvents(all) {
-    if (companionId) return;
+    if (companionId) all = all.filter((e) => e.petId === companionId).map((e) => ({ ...e, petId: null }));
     // Another pet of your party (its project's work): a toast, no scene.
     const others = all.filter((e) => e.petId && pet && e.petId !== pet.id);
     for (const e of others) {
@@ -1277,7 +1280,7 @@
       // brings the agent's window to the front.
       if (companionId) {
         if (pose === 'attention' && live.focus) jumpTo(live.focus.id);
-        else for (let i = 0; i < 3; i++) spawn('heart', petCX() + (i - 1) * 22, headY(currentSpec().stage) + 6, { vx: (i - 1) * 8, vy: -34, max: 1.3 });
+        else post('/api/pet', { id: companionId });
       } else if (pose === 'attention' && live.focus) {
         const id = live.focus.id;
         dismissBubble();
@@ -1288,7 +1291,6 @@
   });
   canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (companionId) return desktop && desktop.menu();
     setHover(!hovering);
   });
 
@@ -1296,7 +1298,6 @@
   // counter) and stays until closed: X, Esc, another right-click, or
   // dragging the pet. A waiting agent opens it on the Agents tab.
   function setHover(on, tab = null) {
-    if (companionId) return;
     if (on && !hovering) {
       const waiting = (live.sessions || []).some((x) => x.state === 'attention');
       if (tab || waiting) cardTab = tab || 'agents';

@@ -35,6 +35,9 @@ function ensure(root) {
     if (!m.id) m.id = newId();
     if (!m.place) m.place = 'party';
     if (!m.worn) m.worn = { head: null, face: null, neck: null };
+    if (m.worn.face === undefined) m.worn.face = null;
+    // Legendaries arrive at Mythic level (older saves gave them level 1).
+    if (m.legend && (m.xp || 0) < 15000) m.xp = 15000;
   }
   return root;
 }

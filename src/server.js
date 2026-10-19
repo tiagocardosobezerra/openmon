@@ -359,7 +359,19 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     return focus.focus(target);
   }
 
-  function petIt() {
+  // A click on the pet. With an id, a companion on screen is petted (its
+  // own friendship); its events carry petId so only its window reacts.
+  function petIt(id = null) {
+    const member = id && world === real ? (real.pet.others || []).find((m) => m.id === id) : null;
+    if (member) {
+      const merged = party.merge(real.pet, member);
+      const events = pet.petIt(merged, now()).map((e) => ({ ...e, petId: id }));
+      party.split(real.pet, member, merged);
+      persist();
+      pushEvents(events);
+      pushState();
+      return events;
+    }
     const events = pet.petIt(world.pet, now());
     if (world === real) persist();
     pushEvents(events);
@@ -583,7 +595,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           res.writeHead(204).end();
         });
       case 'POST /api/pet':
-        return json(res, 200, { events: petIt() });
+        return readJson(req, (err, body) => json(res, 200, { events: petIt(!err && body && typeof body.id === 'string' ? body.id : null) }));
       case 'POST /api/rename':
         return readJson(req, (err, body) => (err ? res.writeHead(400).end() : json(res, 200, { events: rename(body.name) })));
       case 'GET /api/powers':
@@ -660,7 +672,13 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           }) });
         });
       case 'POST /api/party/move':
-        return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { ok: partyAction(() => party.move(real.pet, String(body.id || ''), body.place)) })));
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          const ok = partyAction(() => party.move(real.pet, String(body.id || ''), body.place));
+          // A pet sent to the Box leaves the screen too.
+          if (ok && body.place === 'box' && (config.companions || []).includes(body.id)) setConfig({ companions: config.companions.filter((x) => x !== body.id) });
+          json(res, 200, { ok });
+        });
       case 'POST /api/party/rename':
         return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { events: partyAction(() => party.renameMember(real.pet, String(body.id || ''), body.name)) })));
       case 'POST /api/lay-egg':
