@@ -578,9 +578,17 @@
     renderBubble();
   }
 
+  // Commands that can destroy work, shown in red in a permission request.
+  const DANGER = [
+    /\brm\s+(-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r)\b/i, /\bgit\s+push\b.*(--force\b|\s-f\b)/i, /\bgit\s+reset\s+--hard\b/i, /\bgit\s+clean\s+-[a-z]*f/i,
+    /\bdrop\s+(table|database|schema)\b/i, /\btruncate\s+table\b/i, /\bdelete\s+from\s+\w+\s*;?\s*$/i, /\bmkfs\b/i, /\bdd\s+if=/i,
+    /\bchmod\s+-R\s+777\b/i, /\bRemove-Item\b.*-Recurse\b.*-Force\b/i, /\bdel\s+\/[sq]\b/i, /\bformat\s+[a-z]:/i, /(curl|wget)[^|]*\|\s*(sudo\s+)?(sh|bash)\b/i,
+  ];
+  const isDanger = (text) => DANGER.some((re) => re.test(String(text || '')));
+
   // Status bubbles: a round icon, the session name, a title, one detail
   // line and, when it can jump to the agent's window, an action button.
-  const BUBBLE_ICON = { attention: '!', done: '✓', error: '✕', toast: '★', setup: 'i', restore: '↺' };
+  const BUBBLE_ICON = { attention: '!', done: '✓', error: '✕', toast: '★', setup: 'i', restore: '↺', warn: '?', notice: 'i' };
   let bubbleJump = null;
   function setBubble(cls, title, sub, { jump = null, eyebrow = null, action = null, choices = null, note = null } = {}) {
     const b = $('bubble');
@@ -673,13 +681,21 @@
       const waited = f.since ? ` · ${clock(Date.now() - f.since)}` : '';
       const long = f.since && Date.now() - f.since > LONG_WAIT_MS && ackedFor !== f.since;
       const pending = permissions.find((p) => p.session === f.id);
+      const danger = isDanger(f.detail) || (pending && isDanger(pending.detail));
+      const title = danger ? tr('danger.title') : tr('bubble.needsYou');
+      const cls = danger ? 'attention danger' : long ? 'attention long' : 'attention';
       if (pending) {
         const left = Math.max(0, Math.ceil((pending.until - Date.now()) / 1000));
-        return setBubble('attention', tr('bubble.needsYou'), trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: tr('perm.note', { s: left }) });
+        return setBubble(cls, title, trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: danger ? tr('danger.note') : tr('perm.note', { s: left }) });
       }
-      return setBubble(long ? 'attention long' : 'attention', tr('bubble.needsYou') + waited, trDetail(f.detail), { ...answer, eyebrow: f.label || tr('yourAgent') });
+      return setBubble(cls, title + waited, trDetail(f.detail), { ...answer, eyebrow: f.label || tr('yourAgent') });
     }
     if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent') });
+    // Mid-task and silent for minutes, or one command running very long.
+    const stuck = (live.sessions || []).find((x) => x.stuck);
+    if (stuck && pose !== 'done') return setBubble('warn', tr('stuck.title', { t: clock(stuck.stuck) }), tr('stuck.sub'), { jump: demo ? null : stuck.id, eyebrow: stuck.label });
+    const longTool = (live.sessions || []).find((x) => x.longTool);
+    if (longTool && pose === 'working') return setBubble('warn', tr('longTool.title', { t: clock(longTool.longTool.ms) }), trDetail(longTool.longTool.detail), { jump: demo ? null : longTool.id, eyebrow: longTool.label });
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
     if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent') });
     return setBubble(null);
@@ -1022,6 +1038,16 @@
           break;
         case 'switched':
           pushToast(tr('party.switched', { project: e.project }), '', 3000);
+          break;
+        case 'loop':
+          pushToast(tr('loop.title', { n: e.n }), `${e.label} · ${trDetail(e.detail)}`, 9000, 'notice');
+          play('attention');
+          break;
+        case 'compact':
+          pushToast(tr('compact.title'), tr('compact.sub', { label: e.label }), 6000, 'notice');
+          break;
+        case 'commit-nudge':
+          pushToast(tr('commit.title', { n: e.edits }), tr('commit.sub', { label: e.label, t: shortDur(e.ms) }), 8000, 'notice');
           break;
         case 'restored':
           pushToast(tr('restore.done', { name: e.name }), tr('restore.doneSub'), 6000, 'scene');

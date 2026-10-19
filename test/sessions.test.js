@@ -96,3 +96,30 @@ test('idle prompts after a finished turn do not raise the alarm', () => {
   assert.equal(snap.pose, 'done');
   assert.equal(snap.counts.waiting, 0);
 });
+
+test('it notices a stuck task, a long command, a loop and many edits without a commit', () => {
+  const { createSessions } = require('../src/sessions');
+  const s = createSessions();
+  const T = 1_000_000;
+  const base = { session: 'a', label: 'shop', agent: 'claude' };
+  s.apply({ ...base, kind: 'turn-start' }, T);
+  s.apply({ ...base, kind: 'tool-start', family: 'shell', tool: 'Bash', detail: 'Bash: npm run build' }, T + 1000);
+  // A command running for 9 minutes is "still running", not stuck.
+  let v = s.snapshot(T + 9 * 60_000).sessions[0];
+  assert.equal(v.stuck, null);
+  assert.ok(v.longTool && v.longTool.ms > 8 * 60_000);
+  s.apply({ ...base, kind: 'tool-done', family: 'shell', tool: 'Bash', detail: 'Bash: npm run build' }, T + 9 * 60_000);
+  v = s.snapshot(T + 14 * 60_000).sessions[0];
+  assert.ok(v.stuck > 4 * 60_000);
+  // Three identical failures: one loop notice.
+  for (let i = 0; i < 4; i++) s.apply({ ...base, kind: 'tool-fail', family: 'shell', tool: 'Bash', detail: 'Bash: npm test' }, T + 15 * 60_000 + i);
+  let notices = s.takeNotices();
+  assert.equal(notices.filter((n) => n.type === 'loop').length, 1);
+  // 30 edits over 45 minutes without a commit: one reminder; a commit resets it.
+  for (let i = 0; i < 30; i++) s.apply({ ...base, kind: 'tool-done', family: 'craft', tool: 'Edit', detail: 'Edit a.js' }, T + 20 * 60_000 + i);
+  s.snapshot(T + 70 * 60_000);
+  notices = s.takeNotices();
+  assert.equal(notices.filter((n) => n.type === 'commit-nudge').length, 1);
+  s.snapshot(T + 80 * 60_000);
+  assert.equal(s.takeNotices().length, 0);
+});

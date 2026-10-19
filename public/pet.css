@@ -91,6 +91,11 @@ html, body {
 #bubble.attention.long { background: color-mix(in srgb, var(--sun) 30%, var(--surface)); box-shadow: var(--lift), 0 0 0 5px color-mix(in srgb, var(--sun) 60%, transparent); animation: pop 0.22s cubic-bezier(.3,1.6,.6,1), shake 0.9s 0.3s ease-in-out infinite; }
 @keyframes shake { 0%, 100% { transform: translateX(-50%) rotate(0); } 20% { transform: translateX(calc(-50% - 3px)) rotate(-3deg); } 40% { transform: translateX(calc(-50% + 3px)) rotate(3deg); } 60% { transform: translateX(-50%) rotate(0); } }
 #bubble.done { --c: #5ccf74; }
+#bubble.warn { --c: #ffb35c; }
+#bubble.notice { --c: #8fd3ff; }
+/* A destructive command: red, so nobody approves it by reflex. */
+#bubble.attention.danger { --c: #ff6b6b; background: color-mix(in srgb, #ff6b6b 18%, var(--surface)); box-shadow: var(--lift), 0 0 0 4px rgba(255, 107, 107, 0.45); }
+#bubble.attention.danger .ic { color: #fff; }
 #bubble.error { --c: #ff8a80; }
 #bubble.toast { --c: var(--brand); }
 #bubble.toast .ic { color: #fff; }

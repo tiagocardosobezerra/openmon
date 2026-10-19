@@ -15,6 +15,15 @@ const MAIN_SCOPE = new Set(['turn-start', 'turn-end', 'session-start', 'api-erro
 // Hooks run as parallel processes, so the PreToolUse that caused a
 // permission prompt can arrive after it. No human answers this fast.
 const RACE_MS = 1500;
+// "Looks stuck": mid-task, no tool running, nothing for 4 minutes.
+const STUCK_MS = 4 * 60 * 1000;
+// A single tool (a command, tests) running for 8 minutes.
+const LONG_TOOL_MS = 8 * 60 * 1000;
+// The same thing failing this many times in a row is a loop.
+const LOOP_FAILS = 3;
+// Edits since the last commit before a gentle reminder.
+const COMMIT_EDITS = 30;
+const COMMIT_MS = 45 * 60 * 1000;
 
 function endsWait(signal, t, wait) {
   if (t <= wait.since) return false;
@@ -27,8 +36,22 @@ function endsWait(signal, t, wait) {
   return true;
 }
 
+// Counts edits since the last `git commit`; long enough without one
+// earns a one-time reminder.
+function trackCommit(s, signal, t) {
+  if (signal.tool && /(^|\s)git\s+commit\b/.test(String(signal.detail || ''))) {
+    s.commit = { edits: 0, since: t, told: false };
+    return;
+  }
+  if (signal.family !== 'craft') return;
+  s.commit = s.commit || { edits: 0, since: t, told: false };
+  s.commit.edits++;
+}
+
 function createSessions() {
   const sessions = new Map();
+  // One-time notices (loops, compaction, commit reminders), taken by the daemon.
+  const notices = [];
   let lastEventAt = 0;
 
   function get(signal, t) {
@@ -117,22 +140,37 @@ function createSessions() {
         break;
       case 'turn-end':
         s.subagents.clear();
+        s.inFlight = null;
         setState('done', null, 'Done');
         break;
       case 'tool-start':
       case 'test-start':
         setState('working', signal.family, signal.detail);
+        s.inFlight = { since: t, detail: signal.detail };
         break;
       case 'tool-done':
         s.turnTools++;
+        s.inFlight = null;
+        s.fails = null;
+        trackCommit(s, signal, t);
         if (s.state !== 'done') setState('working', s.family, s.detail);
         break;
-      case 'tool-fail':
+      case 'tool-fail': {
         s.turnTools++;
+        s.inFlight = null;
         s.error = { since: t, detail: signal.detail || 'Tool failed' };
+        // The same failure again and again: a loop worth telling you about.
+        const same = s.fails && s.fails.detail === signal.detail;
+        s.fails = { detail: signal.detail, n: same ? s.fails.n + 1 : 1, told: same ? s.fails.told : false };
+        if (s.fails.n >= LOOP_FAILS && !s.fails.told) {
+          s.fails.told = true;
+          notices.push({ type: 'loop', session: s.id, label: s.label, detail: signal.detail, n: s.fails.n });
+        }
         break;
+      }
       case 'test-end':
         s.turnTools++;
+        s.inFlight = null;
         if (signal.passed === false) s.error = { since: t, detail: 'Tests failed' };
         break;
       case 'subagent-start':
@@ -145,6 +183,7 @@ function createSessions() {
         break;
       case 'compact':
         setState('working', 'memory', 'Compacting memory');
+        notices.push({ type: 'compact', session: s.id, label: s.label });
         break;
       case 'api-error':
         s.error = { since: t, detail: String(signal.detail || 'API error') };
@@ -183,7 +222,18 @@ function createSessions() {
       state: s.attention ? 'attention' : s.state,
       detail: s.attention ? s.attention.detail : s.detail,
       subagents: s.subagents.size,
+      // Mid-task with no tool running and no news: it may be stuck.
+      stuck: !s.attention && s.state === 'working' && !s.inFlight && now - s.lastAt > STUCK_MS ? now - s.lastAt : null,
+      // One tool running for a long time.
+      longTool: !s.attention && s.inFlight && now - s.inFlight.since > LONG_TOOL_MS ? { detail: s.inFlight.detail, ms: now - s.inFlight.since } : null,
     }));
+    // Commit reminders: many edits, a long time, no commit.
+    for (const s of list) {
+      if (s.commit && !s.commit.told && s.commit.edits >= COMMIT_EDITS && now - s.commit.since > COMMIT_MS) {
+        s.commit.told = true;
+        notices.push({ type: 'commit-nudge', session: s.id, label: s.label, edits: s.commit.edits, ms: now - s.commit.since });
+      }
+    }
 
     const pick = (fn) => list.filter(fn).sort((a, b) => b.since - a.since)[0];
     let pose = 'idle';
@@ -225,7 +275,12 @@ function createSessions() {
     };
   }
 
-  return { apply, tick, snapshot, size: () => sessions.size };
+  // Notices since the last call (each one is handed out once).
+  function takeNotices() {
+    return notices.splice(0, notices.length);
+  }
+
+  return { apply, tick, snapshot, takeNotices, size: () => sessions.size };
 }
 
 module.exports = { createSessions, ERROR_SHOW_MS, DONE_SHOW_MS, SLEEP_AFTER_MS };

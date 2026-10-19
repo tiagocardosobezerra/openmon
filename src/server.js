@@ -167,6 +167,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // pet is a single egg.
     const events = target === real ? party.applySignal(real.pet, signal, ctx, t) : pet.applySignal(target.pet, signal, ctx, t);
     if (target === real) followProject(signal, t, events);
+    if (target === real) events.push(...target.sessions.takeNotices());
     if (target === real && (signal.kind === 'turn-end' || signal.kind === 'session-end') && payload.transcript_path) {
       const delta = usage.read(String(payload.transcript_path));
       if (delta) events.push(...pet.addTokens(real.pet, delta, t));
@@ -407,6 +408,11 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   const ticker = setInterval(() => {
     world.sessions.tick(now());
+    if (world === real) {
+      real.sessions.snapshot(now());
+      const late = real.sessions.takeNotices();
+      if (late.length) pushEvents(late);
+    }
     if (world !== real) real.sessions.tick(now());
     pushState();
   }, 1000);
