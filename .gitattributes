@@ -1,0 +1,5 @@
+# Same line endings on every OS: generated files (tints.json, SVGs) are
+# compared byte for byte by the tests.
+* text=auto eol=lf
+*.png binary
+*.ico binary

@@ -9,7 +9,8 @@ const { build, compare } = require('../tools/build-tints');
 const ART = path.join(__dirname, '..', 'art', 'official');
 
 test('tints.json is up to date with the art', () => {
-  assert.equal(fs.readFileSync(path.join(ART, 'tints.json'), 'utf8'), build());
+  // Parsed, so a checkout with Windows line endings still compares equal.
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ART, 'tints.json'), 'utf8')), JSON.parse(build()));
 });
 
 test('tints: colour map, night moon and pupil ring', () => {
