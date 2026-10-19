@@ -31,7 +31,7 @@ const API = 'https://api.github.com';
 const DESCRIPTION = 'openmon-save · your Openmon, synced between computers (do not edit)';
 const FILE = 'openmon.json';
 // The public id of the Openmon OAuth app (device flow needs no secret).
-const CLIENT_ID = process.env.OPENMON_GITHUB_CLIENT_ID || '';
+const CLIENT_ID = process.env.OPENMON_GITHUB_CLIENT_ID || 'Ov23liOIo3eISHLP2BpB';
 // Only harmless settings travel: never the phone topic (it works like a
 // password for your alerts), the pets on screen or anything else.
 const SHARED_CONFIG = ['muted', 'notify', 'chatter', 'stroll', 'scale', 'lang', 'seasons'];

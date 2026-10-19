@@ -114,7 +114,7 @@
       cloudIn: 'Entrar com GitHub', cloudOut: 'Sair', cloudNow: 'Sincronizar agora', cloudAs: 'Conectado como @{login}', cloudAt: 'sincronizado às {t}', cloudNever: 'ainda não sincronizou',
       cloudCode: 'Abra {uri} e digite o código {code}. O resto é automático.', cloudOpen: 'Abrir o GitHub', cloudCopy: 'Copiar código', cloudCopied: 'Copiado ✓',
       cloudConflict: 'Os dois computadores mudaram desde a última vez. No GitHub está {name} (Nv {level}), salvo em {machine}. Qual você quer manter?', cloudUseRemote: 'Usar o do GitHub', cloudKeepLocal: 'Manter o deste computador',
-      cloudErr: { 'no-gh': 'Instale o GitHub CLI e rode "gh auth login", ou use "openmon login --device" no terminal.', 'gh-no-gist': 'Seu GitHub CLI não pode criar Gists. Rode "gh auth refresh -s gist" e tente de novo.', 'signed-out': 'O acesso foi removido no GitHub. Entre de novo.' }, cloudFail: 'Não deu para falar com o GitHub agora. Ele tenta de novo sozinho.',
+      cloudErr: { 'no-gh': 'Instale o GitHub CLI e rode "gh auth login", ou entre de novo com o código.', 'gh-no-gist': 'Seu GitHub CLI não pode criar Gists. Rode "gh auth refresh -s gist" e tente de novo.', 'signed-out': 'O acesso foi removido no GitHub. Entre de novo.' }, cloudFail: 'Não deu para falar com o GitHub agora. Ele tenta de novo sozinho.',
     },
     es: {
       title: 'Ajustes', sub: 'Elige una sección a la izquierda. Todo se aplica al instante y queda guardado.',
@@ -160,7 +160,7 @@
       cloudIn: 'Entrar con GitHub', cloudOut: 'Salir', cloudNow: 'Sincronizar ahora', cloudAs: 'Conectado como @{login}', cloudAt: 'sincronizado a las {t}', cloudNever: 'aún no se sincronizó',
       cloudCode: 'Abre {uri} y escribe el código {code}. Lo demás es automático.', cloudOpen: 'Abrir GitHub', cloudCopy: 'Copiar código', cloudCopied: 'Copiado ✓',
       cloudConflict: 'Las dos computadoras cambiaron desde la última vez. En GitHub está {name} (Nv {level}), guardado en {machine}. ¿Cuál quieres conservar?', cloudUseRemote: 'Usar el de GitHub', cloudKeepLocal: 'Conservar el de esta computadora',
-      cloudErr: { 'no-gh': 'Instala GitHub CLI y ejecuta "gh auth login", o usa "openmon login --device" en la terminal.', 'gh-no-gist': 'Tu GitHub CLI no puede crear Gists. Ejecuta "gh auth refresh -s gist" y vuelve a intentar.', 'signed-out': 'Se quitó el acceso en GitHub. Inicia sesión de nuevo.' }, cloudFail: 'No se pudo hablar con GitHub ahora. Lo vuelve a intentar solo.',
+      cloudErr: { 'no-gh': 'Instala GitHub CLI y ejecuta "gh auth login", o vuelve a entrar con el código.', 'gh-no-gist': 'Tu GitHub CLI no puede crear Gists. Ejecuta "gh auth refresh -s gist" y vuelve a intentar.', 'signed-out': 'Se quitó el acceso en GitHub. Inicia sesión de nuevo.' }, cloudFail: 'No se pudo hablar con GitHub ahora. Lo vuelve a intentar solo.',
     },
     en: {
       title: 'Settings', sub: 'Pick a section on the left. Everything applies right away and is saved.',
@@ -206,7 +206,7 @@
       cloudIn: 'Sign in with GitHub', cloudOut: 'Sign out', cloudNow: 'Sync now', cloudAs: 'Signed in as @{login}', cloudAt: 'synced at {t}', cloudNever: 'not synced yet',
       cloudCode: 'Open {uri} and type the code {code}. The rest is automatic.', cloudOpen: 'Open GitHub', cloudCopy: 'Copy code', cloudCopied: 'Copied ✓',
       cloudConflict: 'Both computers changed since last time. GitHub has {name} (Lv {level}), saved on {machine}. Which one do you want to keep?', cloudUseRemote: 'Use the one on GitHub', cloudKeepLocal: "Keep this computer's",
-      cloudErr: { 'no-gh': 'Install the GitHub CLI and run "gh auth login", or use "openmon login --device" in a terminal.', 'gh-no-gist': 'Your GitHub CLI cannot create Gists. Run "gh auth refresh -s gist" and try again.', 'signed-out': 'Access was removed on GitHub. Sign in again.' }, cloudFail: 'Could not reach GitHub right now. It tries again on its own.',
+      cloudErr: { 'no-gh': 'Install the GitHub CLI and run "gh auth login", or sign in again with the code.', 'gh-no-gist': 'Your GitHub CLI cannot create Gists. Run "gh auth refresh -s gist" and try again.', 'signed-out': 'Access was removed on GitHub. Sign in again.' }, cloudFail: 'Could not reach GitHub right now. It tries again on its own.',
     },
   };
   const T = TEXT[lang] || TEXT.en;

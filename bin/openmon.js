@@ -28,7 +28,7 @@ const HELP = `
   openmon name <nickname>  give it a nickname (--clear: back to the species name)
   openmon backup [file]    save a backup now (or export to a file)
   openmon restore <file|latest>  bring back a pet from a backup
-  openmon login        keep your pet in your GitHub account, on any computer (--device: sign in with a code)
+  openmon login        keep your pet in your GitHub account, on any computer (--gh: use the GitHub CLI's login)
   openmon sync         sync now (--keep-local / --use-github when both computers changed)
   openmon logout       stop syncing on this computer (the Gist stays in your account)
   openmon dex          open the Opendex: every form you have seen
@@ -304,14 +304,14 @@ async function main() {
     }
 
     case 'login': {
-      const method = rest.includes('--device') ? 'device' : 'gh';
+      const method = rest.includes('--gh') ? 'gh' : 'device';
       const say = (r) => {
         if (r.ok && r.userCode) return console.log(`Open ${r.uri} and type the code ${r.userCode}. Openmon finishes on its own.`);
         if (r.ok) return console.log(`Signed in as @${r.login}. Your pet syncs with a secret Gist in your GitHub account; on another computer, run "openmon login" there.`);
         const why = {
-          'no-gh': 'GitHub CLI not found or not signed in. Run "gh auth login" first, or "openmon login --device".',
+          'no-gh': 'GitHub CLI not found or not signed in. Run "gh auth login" first, or plain "openmon login".',
           'gh-no-gist': 'Your GitHub CLI login cannot write Gists. Run "gh auth refresh -s gist", then try again.',
-          'no-device': 'Sign-in with a code is not available in this build. Use the GitHub CLI: "gh auth login", then "openmon login".',
+          'no-device': 'Sign-in with a code is not available in this build. Use the GitHub CLI: "gh auth login", then "openmon login --gh".',
         }[r.error];
         console.error(why || `Could not sign in (${r.error}).`);
         process.exitCode = 1;
