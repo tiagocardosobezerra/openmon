@@ -28,6 +28,8 @@ const PT_BR = {
     shiny: { title: 'Brilhante!', text: 'Nasceu um Openmon brilhante, chance de 1 em 128.' },
     hidden: { title: 'Quem é esse Openmon?', text: 'Encontrou uma forma oculta.' },
     nocturne: { title: 'Filho da noite', text: 'Evoluiu entre meia-noite e 5 da manhã, com cores Nocturne.' },
+    legend: { title: 'Lendário', text: 'Um Openmon lendário entrou no seu time.' },
+    friendship: { title: 'Laço de amizade', text: 'Evoluiu para Mítico com amizade completa.' },
   },
   dex: {
     egg: 'Quentinho ao toque. Escuta cada tecla e choca quando já ouviu o bastante.',
@@ -67,6 +69,9 @@ const PT_BR = {
     'style-juvenile': "Um camaleão rosa que fica um pouco mais ousado toda vez que uma cor muda.",
     'style-adult': "Pinta com a cauda de pincel. Não consegue passar por um botão desalinhado.",
     'style-mythic': "As listras passam por todas as cores. As interfaces ficam mais bonitas por onde ele passa.",
+    mergeon: "Dois rios que se encontraram e viraram um. Aparece quando seu primeiro pull request é aceito.",
+    aeonbyte: "A ampulheta dele contou um ano inteiro de trabalho com você. A areia é feita de pixels.",
+    zeroday: "Um guardião calmo de olho único. Viu cem bugs serem consertados e nunca piscou.",
   },
 };
 
@@ -95,6 +100,8 @@ const ES = {
     shiny: { title: '¡Brillante!', text: 'Nació un Openmon brillante, una posibilidad entre 128.' },
     hidden: { title: '¿Quién es ese Openmon?', text: 'Encontraste una forma oculta.' },
     nocturne: { title: 'Hijo de la noche', text: 'Evolucionó entre medianoche y las 5, con colores nocturnos.' },
+    legend: { title: 'Legendario', text: 'Un Openmon legendario se unió a tu equipo.' },
+    friendship: { title: 'Lazo de amistad', text: 'Evolucionó a Mítico con la amistad completa.' },
   },
   dex: {
     egg: 'Tibio al tacto. Escucha cada tecla y se abre cuando ya oyó lo suficiente.',
@@ -134,6 +141,9 @@ const ES = {
     'style-juvenile': "Un camaleón rosa que se vuelve un poco más audaz cada vez que cambia un color.",
     'style-adult': "Pinta con su cola de pincel. No puede pasar junto a un botón desalineado.",
     'style-mythic': "Sus rayas pasan por todos los colores. Las interfaces se ven más bonitas por donde pasa.",
+    mergeon: "Dos ríos que se encontraron y se volvieron uno. Aparece cuando se fusiona tu primer pull request.",
+    aeonbyte: "Su reloj de arena contó un año entero de trabajo contigo. La arena está hecha de píxeles.",
+    zeroday: "Un guardián tranquilo de un solo ojo. Vio cien bugs arreglados y nunca parpadeó.",
   },
 };
 

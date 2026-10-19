@@ -274,6 +274,9 @@ function createSessions() {
         working: list.filter((s) => s.state === 'working').length,
         waiting: list.filter((s) => s.attention).length,
         subagents,
+        // The longest request still running, in agent actions: from 50 on
+        // the pet takes its focus form.
+        longTurn: Math.max(0, ...list.filter((s) => s.state === 'working').map((s) => s.turnTools || 0)),
       },
     };
   }

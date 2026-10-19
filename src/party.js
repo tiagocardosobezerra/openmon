@@ -15,11 +15,12 @@
 
 const crypto = require('node:crypto');
 const pet = require('./pet');
+const { ACHIEVEMENTS } = require('./species');
 
 const PARTY_SIZE = 6;
 // Real work in a project before it earns its own egg: one-off folders never do.
 const EGG_AFTER_ACTIONS = 60;
-const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region'];
+const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region', 'legend', 'friend'];
 
 const newId = () => crypto.randomBytes(6).toString('hex');
 
@@ -33,7 +34,7 @@ function ensure(root) {
   for (const m of root.others) {
     if (!m.id) m.id = newId();
     if (!m.place) m.place = 'party';
-    if (!m.worn) m.worn = { head: null, neck: null };
+    if (!m.worn) m.worn = { head: null, face: null, neck: null };
   }
   return root;
 }
@@ -42,7 +43,8 @@ function ensure(root) {
 function own(full) {
   const out = {};
   for (const k of PER_PET) if (full[k] !== undefined) out[k] = full[k];
-  out.worn = { head: (full.wardrobe && full.wardrobe.head) || null, neck: (full.wardrobe && full.wardrobe.neck) || null };
+  const w = full.wardrobe || {};
+  out.worn = { head: w.head || null, face: w.face || null, neck: w.neck || null };
   return out;
 }
 
@@ -54,7 +56,7 @@ function merge(root, member) {
   return {
     ...shared,
     ...member,
-    wardrobe: { owned: root.wardrobe.owned, head: (member.worn && member.worn.head) || null, neck: (member.worn && member.worn.neck) || null },
+    wardrobe: { owned: root.wardrobe.owned, head: (member.worn && member.worn.head) || null, face: (member.worn && member.worn.face) || null, neck: (member.worn && member.worn.neck) || null },
   };
 }
 
@@ -65,7 +67,7 @@ function split(root, member, merged) {
     if (PER_PET.includes(k)) member[k] = v;
     else if (k === 'wardrobe') {
       root.wardrobe.owned = v.owned;
-      member.worn = { head: v.head || null, neck: v.neck || null };
+      member.worn = { head: v.head || null, face: v.face || null, neck: v.neck || null };
     } else root[k] = v;
   }
 }
@@ -99,7 +101,56 @@ function applySignal(root, signal, ctx, now) {
     }
   }
   events.push(...countProject(root, signal, now));
+  events.push(...checkLegends(root, now));
   return events;
+}
+
+// A new member: in the Party if there is room, else in the Box.
+function addMember(root, member) {
+  member.id = newId();
+  member.place = partyCount(root) < PARTY_SIZE ? 'party' : 'box';
+  member.worn = { head: null, face: null, neck: null };
+  root.others.push(member);
+  return member;
+}
+
+// Legendaries join once, the first time their feat is done: Mergeon for the
+// first merged pull request, Aeonbyte after a year as a trainer, Zeroday
+// for 100 fixes. They never evolve and no project feeds them.
+const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const LEGEND_FEATS = {
+  mergeon: (r) => (r.counters.merges || 0) >= 1,
+  aeonbyte: (r, now) => now - (r.trainerSince || r.bornAt || now) >= YEAR_MS,
+  zeroday: (r) => (r.counters.fixes || 0) >= 100,
+};
+function checkLegends(root, now) {
+  const events = [];
+  root.legends = root.legends || {};
+  for (const [id, done] of Object.entries(LEGEND_FEATS)) {
+    if (root.legends[id] || !done(root, now)) continue;
+    root.legends[id] = now;
+    const mon = own(pet.createPet(now));
+    Object.assign(mon, { legend: id, stage: 'mythic', lineage: null, project: `legend:${id}`, bond: 50, xp: 15000, history: [{ stage: 'legendary', form: id, at: now }] });
+    addMember(root, mon);
+    root.dex[id] = root.dex[id] || now;
+    if (!root.achievements.legend) {
+      root.achievements.legend = now;
+      events.push({ type: 'achievement', id: 'legend', ...ACHIEVEMENTS.legend });
+    }
+    events.push({ type: 'legend', id, petId: mon.id, place: mon.place, shiny: mon.shiny });
+  }
+  return events;
+}
+
+// A mystery egg from the Bag: a new egg with better shiny odds (1 in 16).
+function hatchMystery(root, now, rng = Math.random) {
+  ensure(root);
+  const egg = own(pet.createPet(now));
+  egg.shiny = rng() < 1 / 16;
+  egg.project = `mystery:${newId()}`;
+  addMember(root, egg);
+  root.dex.egg = root.dex.egg || now;
+  return [{ type: 'mystery-hatch', petId: egg.id, place: egg.place }];
 }
 
 // Counts real work per project; enough of it earns that project an egg.
@@ -109,11 +160,8 @@ function countProject(root, signal, now) {
   const seen = (root.projects[label] = (root.projects[label] || 0) + 1);
   if (seen < EGG_AFTER_ACTIONS || root.project === label || root.others.some((m) => m.project === label)) return [];
   const egg = own(pet.createPet(now));
-  egg.id = newId();
   egg.project = label;
-  egg.place = partyCount(root) < PARTY_SIZE ? 'party' : 'box';
-  egg.worn = { head: null, neck: null };
-  root.others.push(egg);
+  addMember(root, egg);
   root.dex.egg = root.dex.egg || now;
   return [{ type: 'project-egg', project: label, petId: egg.id, place: egg.place }];
 }
@@ -163,7 +211,7 @@ function view(root) {
   ensure(root);
   const summary = (full, active) => {
     const v = pet.view(full);
-    return { id: full.id, active, place: full.place || 'party', project: full.project ?? null, name: v.name, nickname: v.nickname, form: v.form, formKey: v.formKey, stage: v.stage, lineage: v.lineage, trait: v.trait, chimera: v.chimera, level: v.level, shiny: v.shiny, nocturne: v.nocturne, region: full.region || null, wear: v.wear, progress: v.progress.ratio, xp: v.xp };
+    return { id: full.id, active, place: full.place || 'party', project: full.project ?? null, name: v.name, nickname: v.nickname, form: v.form, formKey: v.formKey, stage: v.stage, lineage: v.lineage, trait: v.trait, chimera: v.chimera, level: v.level, shiny: v.shiny, nocturne: v.nocturne, region: full.region || null, wear: v.wear, progress: v.progress.ratio, xp: v.xp, legend: v.legend, friend: v.friend };
   };
   const list = [summary(root, true), ...root.others.map((m) => summary(merge(root, m), false))];
   const projects = Object.entries(root.projects || {})
@@ -174,4 +222,4 @@ function view(root) {
   return { size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
 }
 
-module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, PARTY_SIZE, EGG_AFTER_ACTIONS };
+module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, checkLegends, hatchMystery, PARTY_SIZE, EGG_AFTER_ACTIONS };

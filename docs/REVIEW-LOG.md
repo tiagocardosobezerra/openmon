@@ -223,3 +223,16 @@ The project is now **Openmon**, and its field guide is the **Opendex**. "Open" s
 5. **Regions.** The designer's regional Tinkits replace the recolour for that form; every other form gets the region's body, shadow and belly colours and the designer's mark on its forehead.
 6. **Party and Box.** Icons on both sections, the empty-slot nest, the project plaque under each mon and four Box wallpapers to pick from.
 7. **Kept short.** The card lists the six first types and adds a new one once the agent has done that work; the trainer card's radar shows the six strongest types.
+
+# Art round 3: the rest of the designer's delivery
+
+1. **Every pose, in every colour.** The designer's file brought the 5 poses of all 40 forms (the original 22, the 15 new ones and the three legendaries), shiny and night art for every form, the 15 Chimera pairs, two friendship Mythics, three season palettes, 18 accessories, 14 item icons, the 8 remaining Box wallpapers, the focus aura and the trade card frame.
+2. **Validated against the old art.** Shiny, night and pose files of the original forms were replaced by the new ones; the base forms and the regional Tinkits stay. Every file of one form now shares one frame (the union of their boxes), so switching between idle, a pose, shiny or night never resizes the pet.
+3. **Shiny always shines.** The designer's shine (golden glow, dotted ring, twinkling stars and dots) is drawn by the pet on every shiny, in every pose, at night too, and in the code-drawn art. It is not baked into the files, so it never shrinks the creature.
+4. **Poses in shiny, night and pair colours.** `tools/build-tints.js` compares each variant with its normal form and records the colour changes, the night pupil ring and what the variant adds (moon, friendship bow); the pet applies it to the normal poses at draw time. A test keeps `tints.json` in sync.
+5. **Accessories with a face slot.** 18 new accessories placed from each form's outline and eyes; glasses stay on while it sleeps. Each has its own feat: 3,000 files read, 20-day streak, 50 fixes, a 100-action request, 500 commands, 100 commits, 200 pages, 30 mission days, friendship 100, the original Opendex, October, December, a year as a trainer, 50 pull requests, 7 perfect days, a legendary, 100 pets, every item.
+6. **Items that do something.** Type stones (hold one and the next evolution goes to that type), XP charm (double XP for a day), friendship candy (+10), mystery egg (a new member with 1-in-16 shiny odds). They come from streak gifts and from petting.
+7. **Legendaries and friendship forms.** Mergeon (first merged pull request), Aeonbyte (a year as a trainer) and Zeroday (100 fixes) join the team once and never evolve; Opendex #038–#040. Archsmith and Oracle with friendship 100 grow their friendship form.
+8. **Seasons and focus.** Season colours in February, October and December (a switch in Settings). A request of 50+ actions gives the focus form: bigger, inside the aura ring.
+9. **Box wallpapers.** All 12.
+10. **Review.** 108 tests (art completeness, tints, legendaries, stones, charm, friendship, accessories), smoke test, docs in both languages.

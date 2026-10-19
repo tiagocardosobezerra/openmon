@@ -38,6 +38,10 @@
   const GROUND = 222;
   const CX = 140;
   const SIZE = 46;
+  // The focus form's aura ring, and how far into it the pet is (0..1).
+  const auraFocus = new Image();
+  auraFocus.src = '/ui/aura-focus.svg';
+  let focusK = 0;
   const STAGE_SCALE = { egg: 0.78, sprout: 0.66, juvenile: 0.82, adult: 1, mythic: 1.08 };
   const now = () => performance.now() / 1000;
   // The pet strolls a little when it has nothing to do; petX is how far
@@ -258,9 +262,15 @@
 
   // --- what to draw ------------------------------------------------------------
 
+  // Season colours in February, October and December (Settings can turn
+  // them off).
+  const SEASONS = { 1: 'fev', 9: 'out', 11: 'dez' };
+  function seasonNow() {
+    return config && config.seasons === false ? null : SEASONS[new Date().getMonth()] || null;
+  }
   function specOf(p) {
     if (!p) return { stage: 'egg', lineage: null, trait: null };
-    return { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera || null, nocturne: Boolean(p.nocturne), shiny: Boolean(p.shiny) && p.stage !== 'egg', wear: p.wear || null, region: p.region || null };
+    return { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera || null, nocturne: Boolean(p.nocturne), shiny: Boolean(p.shiny) && p.stage !== 'egg', wear: p.wear || null, region: p.region || null, legend: p.legend || null, friend: Boolean(p.friend), season: seasonNow() };
   }
   function currentSpec() {
     return force || specOf(pet);
@@ -370,6 +380,23 @@
     if (silhouette <= 0) {
       ctx.save();
       ctx.translate(petCX(), GROUND);
+      // Focus form: a long request (50+ actions) makes it bigger, inside
+      // the designer's aura ring, until the request ends.
+      const focusForm = showPose === 'working' && live.counts && live.counts.longTurn >= 50 && spec.stage !== 'egg';
+      focusK += ((focusForm ? 1 : 0) - focusK) * 0.06;
+      if (focusK > 0.01) {
+        const k = 1 + focusK * 0.18;
+        if (auraFocus.complete && auraFocus.naturalWidth) {
+          const r = SIZE * 1.9 * k;
+          ctx.save();
+          ctx.translate(0, -SIZE * 0.95 * k);
+          ctx.rotate(reducedMotion ? 0 : t * 0.4);
+          ctx.globalAlpha = focusK * (0.75 + Math.sin(t * 3) * 0.15);
+          ctx.drawImage(auraFocus, -r, -r, r * 2, r * 2);
+          ctx.restore();
+        }
+        ctx.scale(k, k);
+      }
       OpenmonArt.drawCreature(ctx, { ...spec, t, size: SIZE, pose: showPose, anim });
       ctx.restore();
       return;
@@ -992,7 +1019,7 @@
     // The evolution reveal comes first; achievements from the same batch wait for it.
     const evolve = events.find((e) => e.type === 'evolve');
     if (evolve) {
-      evolveFx = { start: t, from: specOf(pet), to: { stage: evolve.stage, lineage: evolve.lineage, trait: evolve.trait, chimera: evolve.chimera || null, nocturne: Boolean(evolve.nocturne), shiny: Boolean(evolve.shiny) }, toName: evolve.to, toStage: evolve.stage, shiny: Boolean(evolve.shiny), newDex: evolve.newDex, after: [] };
+      evolveFx = { start: t, from: specOf(pet), to: { stage: evolve.stage, lineage: evolve.lineage, trait: evolve.trait, chimera: evolve.chimera || null, nocturne: Boolean(evolve.nocturne), shiny: Boolean(evolve.shiny), friend: Boolean(evolve.friend), region: evolve.region || null, wear: pet && pet.wear, season: seasonNow() }, toName: evolve.to, toStage: evolve.stage, shiny: Boolean(evolve.shiny), newDex: evolve.newDex, after: [] };
       const name = pet ? pet.name : 'Your Openmon';
       toasts.length = 0;
       toast = null;
@@ -1036,7 +1063,25 @@
           play('level');
           break;
         case 'hold':
-          pushToast(tr(e.holding ? 'toast.hold' : 'toast.letGo'), tr(e.holding ? 'toast.holdSub' : 'toast.letGoSub'), 4500);
+          if (e.holding && e.holding.startsWith('stone-')) pushToast(tr('toast.holdStone', { type: tr(`power.${e.holding.slice(6)}`) }), tr('toast.holdStoneSub'), 4500);
+          else pushToast(tr(e.holding ? 'toast.hold' : 'toast.letGo'), tr(e.holding ? 'toast.holdSub' : 'toast.letGoSub'), 4500);
+          break;
+        case 'stone-used':
+          setTimeout(() => pushToast(tr('toast.stone', { type: tr(`power.${e.lineage}`) }), tr('toast.stoneSub'), 5000), 3200);
+          break;
+        case 'charm':
+          pushToast(tr('toast.charm'), tr('toast.charmSub'), 4500);
+          burst('spark', 14, petCX(), top, Math.PI * 2, { colors: ['#ffe156', '#fff', '#7c6cf2'], gravity: 40 });
+          play('level');
+          break;
+        case 'legend':
+          pushToast(tr('toast.legend', { name: e.id.charAt(0).toUpperCase() + e.id.slice(1) }), tr(e.place === 'box' ? 'toast.legendBox' : 'toast.legendSub'), 8000, 'scene');
+          burst('spark', 24, petCX(), top - 10, Math.PI * 2, { colors: ['#ffe156', '#fff', '#a9dcff'], gravity: 30 });
+          play('level');
+          break;
+        case 'mystery-hatch':
+          pushToast(tr('toast.mystery'), tr('toast.mysterySub'), 6000);
+          play('level');
           break;
         case 'wear':
           burst('spark', 10, petCX(), top - 6, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 50 });

@@ -157,7 +157,8 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
       // Every accessory, and a bag to play with.
       const { COSMETICS } = require('./species');
       for (const id of Object.keys(COSMETICS)) p.wardrobe.owned[id] = p.wardrobe.owned[id] || now();
-      p.bag = { snack: Math.max(p.bag.snack || 0, 5), candy: Math.max(p.bag.candy || 0, 3), everstone: Math.max(p.bag.everstone || 0, 1) };
+      const { ITEMS } = require('./species');
+      for (const id of Object.keys(ITEMS)) p.bag[id] = Math.max(p.bag[id] || 0, id === 'snack' ? 5 : id === 'candy' ? 3 : 1);
       return applyEvents([]);
     },
 

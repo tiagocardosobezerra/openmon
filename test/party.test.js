@@ -95,3 +95,35 @@ test('regional forms: a pet raised mostly on one language evolves into its regio
   assert.ok(p.dexRegions['craft-adult.py']);
   assert.equal(pet.regionOf({ py: 10 }), null);
 });
+
+test('legendaries join once when their feat is done, and never evolve', () => {
+  const p = fresh();
+  p.counters.merges = 1;
+  const events = party.applySignal(p, tool('app'), {}, T0 + 1000);
+  assert.ok(events.some((e) => e.type === 'legend' && e.id === 'mergeon'));
+  const mon = p.others.find((m) => m.legend === 'mergeon');
+  assert.ok(mon);
+  assert.equal(p.dex.mergeon, T0 + 1000);
+  // Once only.
+  party.applySignal(p, tool('app'), {}, T0 + 2000);
+  assert.equal(p.others.filter((m) => m.legend === 'mergeon').length, 1);
+  // A legendary does not evolve, even with plenty of XP.
+  const merged = party.merge(p, mon);
+  merged.xp = 99999;
+  pet.applySignal(merged, tool(null), {}, T0 + 3000);
+  assert.equal(merged.stage, 'mythic');
+  assert.equal(pet.view(merged).form, 'Mergeon');
+});
+
+test('a mystery egg hatches into a new member with better shiny odds', () => {
+  const p = fresh();
+  p.bag['mystery-egg'] = 1;
+  const used = pet.useItem(p, 'mystery-egg', T0);
+  assert.ok(used.some((e) => e.type === 'mystery-egg'));
+  const events = party.hatchMystery(p, T0, () => 0.01);
+  assert.equal(events[0].type, 'mystery-hatch');
+  const egg = p.others.find((m) => m.id === events[0].petId);
+  assert.equal(egg.stage, 'egg');
+  assert.equal(egg.shiny, true);
+  assert.deepEqual(egg.worn, { head: null, face: null, neck: null });
+});

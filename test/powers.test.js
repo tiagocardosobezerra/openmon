@@ -89,12 +89,3 @@ test('docs, git, debug, data and style views', () => {
   assert.equal(v.debug.fixes[0].target, 'make build');
   assert.equal(v.debug.open, null);
 });
-
-test('generated shiny and night art is up to date', () => {
-  const fs = require('node:fs');
-  const path = require('node:path');
-  const { build } = require('../tools/build-variants');
-  for (const [name, text] of Object.entries(build())) {
-    assert.equal(fs.readFileSync(path.join(__dirname, '..', 'art', 'official', name), 'utf8'), text, name);
-  }
-});

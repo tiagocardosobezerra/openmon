@@ -12,7 +12,7 @@
 
 <img width="100%" alt="Openmon: um ovo que choca e evolui com o trabalho do seu agente de IA" src="assets/openmon-banner.svg" />
 
-O Openmon é um pet de desktop, no espírito de Pokémon e Tamagotchi, que vive no canto da tela enquanto o Claude Code trabalha. Ele lê quando o agente lê, martela quando o agente edita, levanta um escudo quando os testes rodam e pula segurando uma placa quando o agente **precisa de você**. Um clique nele e a janela do agente vem para a frente, pronta para você aprovar ou responder. Com os dias, o ovo choca, cresce e evolui para uma de 37 formas, decidida pelo tipo de trabalho que o seu agente mais faz.
+O Openmon é um pet de desktop, no espírito de Pokémon e Tamagotchi, que vive no canto da tela enquanto o Claude Code trabalha. Ele lê quando o agente lê, martela quando o agente edita, levanta um escudo quando os testes rodam e pula segurando uma placa quando o agente **precisa de você**. Um clique nele e a janela do agente vem para a frente, pronta para você aprovar ou responder. Com os dias, o ovo choca, cresce e evolui para uma de 40 formas, decidida pelo tipo de trabalho que o seu agente mais faz.
 
 ## O que ele faz por você
 
@@ -119,29 +119,33 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 
 * **Amizade** (0 a 100) só sobe: responda rápido ao agente, faça carinho com um clique, volte todo dia. O estágio mítico pede amizade 60.
 * **Personalidade**: cada ovo nasce Corajoso, Sonolento, Curioso, Alegre, Calmo ou Atrevido, o que muda como ele se mexe e o que ele fala.
-* **Raridades**: 1 em 128 nasce com cores brilhantes (shiny); quem evolui de madrugada ganha cores noturnas.
+* **Raridades**: 1 em 128 nasce com cores brilhantes (shiny), sempre com brilho e estrelinhas em volta; quem evolui de madrugada ganha cores noturnas. Cada forma tem as 5 poses também em shiny e noturna.
+* **Evoluções especiais**: com amizade 100 na evolução mítica, Archsmith e Oracle crescem na **forma da amizade**; a hidden Chimera tem cores próprias para cada um dos 15 pares de tipos.
+* **Lendários**: três, cada um ligado a um feito. *Mergeon* aparece no seu primeiro pull request aceito, *Aeonbyte* depois de um ano de Openmon e *Zeroday* depois de 100 consertos. Eles entram no seu Time e nunca evoluem.
+* **Cores de época**: em fevereiro, outubro e dezembro o Openmon usa as cores da época (dá para desligar nas Configurações).
+* **Forma de foco**: num pedido longo (50 ações ou mais), ele cresce dentro de um anel de energia até o pedido acabar.
 * **Apelido**: sem apelido ele usa o nome da espécie, como no Pokémon. Ao chocar, ele pergunta se você quer dar um.
 * Ele nunca morre, nunca adoece e nunca perde o que conquistou.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screens/dex.pt-BR.png" alt="A Opendex com os tipos e as formas"><br><sub><b>Opendex</b>: os tipos, como cada um se conquista e as 37 formas</sub></td>
+<td width="50%"><img src="docs/screens/dex.pt-BR.png" alt="A Opendex com os tipos e as formas"><br><sub><b>Opendex</b>: os tipos, como cada um se conquista e as 40 formas</sub></td>
 <td width="50%"><img src="docs/screens/bag.pt-BR.png" alt="A Mochila com itens e acessórios"><br><sub><b>Mochila</b>: itens e acessórios para usar</sub></td>
 </tr>
 </table>
 
 ## Um Openmon por projeto
 
-Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. Até 6 andam no **Time**; os outros esperam na **Caixa**, como no PC do Pokémon. Cada um cresce só com o trabalho do seu projeto, e a Mochila, a Opendex e as insígnias são suas, de treinador, e valem para todos. Na página **Time** você escolhe quem fica na tela, ou liga "Mostrar o Openmon do projeto em que o agente está trabalhando".
+Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. Até 6 andam no **Time**; os outros esperam na **Caixa**, como no PC do Pokémon, com 12 papéis de parede para escolher. Cada um cresce só com o trabalho do seu projeto, e a Mochila, a Opendex e as insígnias são suas, de treinador, e valem para todos. Na página **Time** você escolhe quem fica na tela, ou liga "Mostrar o Openmon do projeto em que o agente está trabalhando".
 
 **Formas regionais**: um Openmon criado principalmente numa linguagem evolui com as cores daquela região e uma pequena marca: *Chaves* (JavaScript/TypeScript), *Serpente* (Python), *Ferrugem* (Rust), *Correnteza* (Go), *Grão* (Java/Kotlin) e *Sustenido* (C#/.NET). A Opendex registra as que você viu.
 
 ## Todo dia tem algo
 
 * **Missões**: três por dia, como "responder ao agente em até 30 s, 3 vezes" ou "3 rodadas de testes verdes". Cada uma dá experiência, amizade e um Biscoito.
-* **Mochila**: *Biscoito* (+2 de amizade), *Bala rara* (sobe um nível) e *Pedra eterna* (enquanto ele segura, não evolui).
-* **12 acessórios**: boné de treinador, chapéu de festa, gorro, fones, flor, touca, chapéu de mago, coroa, cachecol, gravata-borboleta, bandana e medalha, cada um liberado por uma conquista. Aparecem no pet, na Mochila e no cartão de treinador.
-* **Presente do dia e sequência**: um Biscoito por dia de uso, e uma Bala rara a cada 7 dias seguidos.
+* **Mochila**: *Biscoito* (+2 de amizade), *Bala rara* (sobe um nível), *Doce de amizade* (+10), *Amuleto de XP* (experiência em dobro por um dia), *Ovo misterioso* (choca um novo membro, com mais chance de shiny), *Pedra eterna* (enquanto ele segura, não evolui) e 11 *Pedras de tipo* (segure uma e a próxima evolução vai para aquele tipo).
+* **30 acessórios** na cabeça, no rosto e no pescoço: boné, coroa, cachecol, óculos redondos e escuros, monóculo, máscara de herói, capacete de obra, coroa de folhas, chapéu de explorador, gorro de chef, laço, tiara de estrelas, chapéu de abóbora, gorro de Natal, gravata, colar de pérolas, capa, sininho, mochilinha e outros, cada um liberado por uma conquista (100 commits, 50 consertos, 200 páginas lidas…). Aparecem no pet, na Mochila e no cartão de treinador.
+* **Presente do dia e sequência**: um Biscoito por dia de uso, uma Pedra de tipo a cada 3 dias seguidos, uma Bala rara a cada 7, um Amuleto de XP a cada 14 e um Ovo misterioso a cada 30.
 * **Opendex, insígnias e Hall da Fama**: quando o seu chega ao mítico, aposente-o no Hall da Fama e comece uma nova geração; a Mochila, a Opendex e as insígnias continuam.
 
 ## Poderes: utilidades que a evolução libera
@@ -216,7 +220,7 @@ As escolhas ficam salvas em `~/.openmon/config.json`; o pet, em `~/.openmon/pet.
 
 ### Sua arte
 
-As 37 formas vêm em arte vetorial oficial (`art/official`), com poses, versões brilhantes e noturnas. Para trocar, coloque imagens com o nome da forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) em `~/.openmon/art`. O guia está em [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` volta para a arte desenhada em código.
+As 40 formas vêm em arte vetorial oficial (`art/official`), com poses, versões brilhantes e noturnas. Para trocar, coloque imagens com o nome da forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) em `~/.openmon/art`. O guia está em [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` volta para a arte desenhada em código.
 
 ### Outros agentes
 

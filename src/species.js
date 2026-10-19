@@ -60,6 +60,14 @@ const CHIMERA_MIN = 0.2;
 
 const BASE_FORMS = { egg: 'Egg', sprout: 'Sprout' };
 
+// Legendaries: one form each, never evolving. Each joins your Party (or
+// Box) once, the first time its feat is done.
+const LEGENDS = {
+  mergeon: { name: 'Mergeon', text: 'Two rivers that met and became one. It appears when your first pull request is merged.' },
+  aeonbyte: { name: 'Aeonbyte', text: 'Its hourglass has counted a whole year of work with you. The sand inside is made of tiny pixels.' },
+  zeroday: { name: 'Zeroday', text: 'A calm guardian with a single eye. It has watched a hundred bugs get fixed and never blinked.' },
+};
+
 // The Opendex: one entry per form, numbered like a field guide.
 const DEX = [
   { key: 'egg', text: 'Warm to the touch. It listens to every keystroke and hatches when it has heard enough.' },
@@ -99,6 +107,9 @@ const DEX = [
   { key: 'style-juvenile', text: 'A pink chameleon that turns a little bolder every time a colour changes.' },
   { key: 'style-adult', text: 'Paints with its brush tail. It cannot walk past a misaligned button.' },
   { key: 'style-mythic', text: 'Its stripes shift through every colour. Interfaces grow prettier wherever it goes.' },
+  { key: 'mergeon', text: LEGENDS.mergeon.text, legend: true },
+  { key: 'aeonbyte', text: LEGENDS.aeonbyte.text, legend: true },
+  { key: 'zeroday', text: LEGENDS.zeroday.text, legend: true },
 ];
 
 // Rolled at birth. Each changes idle behaviour and what the pet says.
@@ -142,6 +153,8 @@ const ACHIEVEMENTS = {
   shiny: { title: 'Shiny!', text: 'A one-in-128 shiny Openmon hatched.' },
   hidden: { title: "Who's that Openmon?", text: 'Found a hidden form.', secret: true },
   nocturne: { title: 'Born of the night', text: 'Evolved between midnight and 5 am, into its Nocturne colours.', secret: true },
+  legend: { title: 'Legendary', text: 'A legendary Openmon joined your team.' },
+  friendship: { title: 'Bond of friendship', text: 'Evolved into a Mythic with full friendship.', secret: true },
 };
 
 // Accessories: earned by playing, kept forever (across generations), worn
@@ -159,14 +172,45 @@ const COSMETICS = {
   bowtie: { slot: 'neck' },
   bandana: { slot: 'neck' },
   medal: { slot: 'neck' },
+  // Designer art (public/wear/<id>.svg), placed from each sprite's anchors.
+  'glasses-round': { slot: 'face', svg: true },
+  'glasses-dark': { slot: 'face', svg: true },
+  monocle: { slot: 'face', svg: true },
+  'hero-mask': { slot: 'face', svg: true },
+  hardhat: { slot: 'head', svg: true },
+  'leaf-crown': { slot: 'head', svg: true },
+  'explorer-hat': { slot: 'head', svg: true },
+  'chef-hat': { slot: 'head', svg: true },
+  bow: { slot: 'head', svg: true },
+  'star-tiara': { slot: 'head', svg: true },
+  'pumpkin-hat': { slot: 'head', svg: true },
+  'santa-hat': { slot: 'head', svg: true },
+  'party-hat-gold': { slot: 'head', svg: true },
+  necktie: { slot: 'neck', svg: true },
+  pearls: { slot: 'neck', svg: true },
+  cape: { slot: 'neck', svg: true },
+  bell: { slot: 'neck', svg: true },
+  backpack: { slot: 'neck', svg: true },
 };
 
-// Items in the bag. Snacks and candies are used up; the Everstone is held.
+const WEAR_SLOTS = ['head', 'face', 'neck'];
+
+// Items in the bag. Snacks, candies and charms are used up; the Everstone
+// and the type stones are held. A held stone is spent at the next
+// evolution, which then goes to the stone's type.
 const ITEMS = {
   snack: { use: 'eat' },
   candy: { use: 'eat' },
+  'friend-candy': { use: 'eat' },
+  'xp-charm': { use: 'eat' },
+  'mystery-egg': { use: 'hatch' },
   everstone: { use: 'hold' },
 };
+for (const t of STATS) ITEMS[`stone-${t}`] = { use: 'hold', stone: t };
+
+// Mythic forms that grow differently when friendship is full (100) at the
+// moment of evolving. Lineages without friendship art keep the usual form.
+const FRIEND_FORMS = ['craft', 'lore'];
 
 function stageIndex(id) {
   return STAGES.findIndex((s) => s.id === id);
@@ -176,7 +220,8 @@ function formKey(stage, lineage) {
   return BASE_FORMS[stage] ? stage : `${lineage}-${stage}`;
 }
 
-function formName(stage, lineage) {
+function formName(stage, lineage, legend = null) {
+  if (legend && LEGENDS[legend]) return LEGENDS[legend].name;
   if (BASE_FORMS[stage]) return BASE_FORMS[stage];
   return (LINEAGES[lineage] && LINEAGES[lineage][stage]) || 'Openmon';
 }
@@ -184,6 +229,7 @@ function formName(stage, lineage) {
 // Dex entries with number, name, stage and lineage filled in.
 function dexEntries() {
   return DEX.map((entry, i) => {
+    if (entry.legend) return { no: i + 1, key: entry.key, stage: 'legendary', lineage: null, legend: entry.key, name: LEGENDS[entry.key].name, text: entry.text, hidden: true };
     const [lineage, stage] = entry.key.includes('-') ? entry.key.split('-') : [null, entry.key];
     return { no: i + 1, key: entry.key, stage, lineage, name: formName(stage, lineage), text: entry.text, hidden: Boolean(entry.hidden) };
   });
@@ -205,7 +251,10 @@ module.exports = {
   CHIMERA_MIN,
   ACHIEVEMENTS,
   COSMETICS,
+  WEAR_SLOTS,
   ITEMS,
+  LEGENDS,
+  FRIEND_FORMS,
   stageIndex,
   formKey,
   formName,

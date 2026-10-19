@@ -12,7 +12,7 @@
 
 <img width="100%" alt="Openmon: an egg that hatches and evolves from your AI agent's work" src="assets/openmon-banner.en.svg" />
 
-Openmon is a desktop pet, in the spirit of Pokémon and Tamagotchi, that lives in the corner of your screen while Claude Code works. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps holding a sign when the agent **needs you**. Click it and the agent's window comes to the front, ready for you to approve or reply. Over the days, the egg hatches, grows and evolves into one of 37 forms, decided by the kind of work your agent does most.
+Openmon is a desktop pet, in the spirit of Pokémon and Tamagotchi, that lives in the corner of your screen while Claude Code works. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps holding a sign when the agent **needs you**. Click it and the agent's window comes to the front, ready for you to approve or reply. Over the days, the egg hatches, grows and evolves into one of 40 forms, decided by the kind of work your agent does most.
 
 ## What it does for you
 
@@ -119,29 +119,33 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 
 * **Friendship** (0 to 100) only goes up: answer your agent quickly, pet it with a click, come back every day. The mythic stage asks for friendship 60.
 * **Personality**: every egg is born Brave, Sleepy, Curious, Cheerful, Calm or Cheeky, which changes how it moves and what it says.
-* **Rarities**: 1 in 128 hatches in shiny colours; evolving late at night gives night colours.
+* **Rarities**: 1 in 128 hatches in shiny colours, always with a glow and little stars around it; evolving late at night gives night colours. Every form has its 5 poses in shiny and night colours too.
+* **Special evolutions**: with friendship 100 at the Mythic evolution, Archsmith and Oracle grow into their **friendship form**; the hidden Chimera has its own colours for each of the 15 pairs of types.
+* **Legendaries**: three, each tied to a feat. *Mergeon* appears when your first pull request is merged, *Aeonbyte* after a year of Openmon and *Zeroday* after 100 fixes. They join your Party and never evolve.
+* **Season colours**: in February, October and December your Openmon wears the season's colours (you can turn this off in Settings).
+* **Focus form**: during a long request (50 actions or more) it grows inside a ring of energy until the request ends.
 * **Nickname**: without one it goes by its species name, like Pokémon. When it hatches, it asks whether you want to give it one.
 * It never dies, never gets sick and never loses what it earned.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screens/dex.en.png" alt="The Opendex with types and forms"><br><sub><b>Opendex</b>: the types, how to get each one and the 37 forms</sub></td>
+<td width="50%"><img src="docs/screens/dex.en.png" alt="The Opendex with types and forms"><br><sub><b>Opendex</b>: the types, how to get each one and the 40 forms</sub></td>
 <td width="50%"><img src="docs/screens/bag.en.png" alt="The Bag with items and accessories"><br><sub><b>Bag</b>: items and accessories to wear</sub></td>
 </tr>
 </table>
 
 ## One Openmon per project
 
-Every project your agent works on enough gets **its own egg**. Up to 6 travel in your **Party**; the rest wait in the **Box**, like a Pokémon PC. Each one grows only from its project's work, while the Bag, Opendex and badges belong to you as a trainer and count for all of them. On the **Party** page you pick who is on screen, or turn on "Show the Openmon of the project your agent is working in".
+Every project your agent works on enough gets **its own egg**. Up to 6 travel in your **Party**; the rest wait in the **Box**, like a Pokémon PC, with 12 wallpapers to pick from. Each one grows only from its project's work, while the Bag, Opendex and badges belong to you as a trainer and count for all of them. On the **Party** page you pick who is on screen, or turn on "Show the Openmon of the project your agent is working in".
 
 **Regional forms**: an Openmon raised mostly on one language evolves into that region's colours with a small mark: *Brace* (JavaScript/TypeScript), *Serpent* (Python), *Rust*, *Current* (Go), *Bean* (Java/Kotlin) and *Sharp* (C#/.NET). The Opendex records the ones you have seen.
 
 ## Something every day
 
 * **Missions**: three a day, like "answer your agent within 30 s, 3 times" or "3 green test runs". Each gives experience, friendship and a Snack.
-* **Bag**: *Snack* (+2 friendship), *Rare candy* (one level up) and *Everstone* (while it holds it, it does not evolve).
-* **12 accessories**: trainer cap, party hat, beanie, headphones, flower, nightcap, wizard hat, crown, scarf, bow tie, bandana and medal, each unlocked by an achievement. They show on the pet, in the Bag and on the trainer card.
-* **Daily gift and streak**: a Snack per day of use, and a Rare candy every 7 days in a row.
+* **Bag**: *Snack* (+2 friendship), *Rare candy* (one level up), *Friendship candy* (+10), *XP charm* (double experience for a day), *Mystery egg* (hatches a new member, with better shiny odds), *Everstone* (while it holds it, it does not evolve) and 11 *Type stones* (hold one and the next evolution goes to that type).
+* **30 accessories** for the head, face and neck: cap, crown, scarf, round glasses, sunglasses, monocle, hero mask, hard hat, leaf crown, explorer hat, chef hat, ribbon bow, star tiara, pumpkin hat, Santa hat, necktie, pearl necklace, cape, little bell, little backpack and more, each unlocked by an achievement (100 commits, 50 fixes, 200 pages read…). They show on the pet, in the Bag and on the trainer card.
+* **Daily gift and streak**: a Snack per day of use, a Type stone every 3 days in a row, a Rare candy every 7, an XP charm every 14 and a Mystery egg every 30.
 * **Opendex, badges and Hall of Fame**: once yours reaches mythic, retire it to the Hall of Fame and start a new generation; the Bag, Opendex and badges carry over.
 
 ## Powers: tools that evolution unlocks
@@ -216,7 +220,7 @@ Your choices are saved in `~/.openmon/config.json`; the pet in `~/.openmon/pet.j
 
 ### Your own art
 
-The 37 forms ship as official vector art (`art/official`), with poses, shiny and night versions. To replace them, put images named after the form (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) in `~/.openmon/art`. The guide is [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` brings back the art drawn in code.
+The 40 forms ship as official vector art (`art/official`), with poses, shiny and night versions. To replace them, put images named after the form (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) in `~/.openmon/art`. The guide is [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` brings back the art drawn in code.
 
 ### Other agents
 

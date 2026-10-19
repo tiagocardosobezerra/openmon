@@ -4,7 +4,7 @@
 // Pure functions over a plain JSON object, so it is easy to persist, test
 // and migrate. Nothing here ever takes progress away.
 
-const { MISSIONS, MISSION_XP, PERFECT_DAY_XP, COSMETICS, ITEMS } = require('./species');
+const { MISSIONS, MISSION_XP, PERFECT_DAY_XP, COSMETICS, ITEMS, WEAR_SLOTS, LEGENDS, FRIEND_FORMS } = require('./species');
 const { STATS, STAT_WEIGHTS, STAGES, ACHIEVEMENTS, NATURES, SHINY_ODDS, CHIMERA_GAP, CHIMERA_MIN, stageIndex, formName, formKey, dexEntries } = require('./species');
 
 const VERSION = 1;
@@ -84,12 +84,12 @@ function createPet(now, name = DEFAULT_NAME, rng = Math.random) {
     stage: 'egg',
     lineage: null,
     trait: null,
-    counters: { tools: 0, edits: 0, fails: 0, fixes: 0, testsGreen: 0, testsRed: 0, turns: 0, answers: 0, fastAnswers: 0, pets: 0, evolutions: 0, waitMs: 0 },
+    counters: { tools: 0, edits: 0, fails: 0, fixes: 0, commits: 0, prs: 0, merges: 0, pages: 0, shell: 0, reads: 0, longestTurn: 0, missionDays: 0, testsGreen: 0, testsRed: 0, turns: 0, answers: 0, fastAnswers: 0, pets: 0, evolutions: 0, waitMs: 0 },
     daily: { day: null, pets: 0, fastAnswers: 0, waitMs: 0, waits: 0, fastestMs: null, activeDays: 0 },
     xpLog: [],
     achievements: {},
     history: [{ stage: 'egg', form: 'Egg', at: now }],
-    wardrobe: { owned: {}, head: null, neck: null },
+    wardrobe: { owned: {}, head: null, face: null, neck: null },
     bag: { snack: 0, candy: 0, everstone: 0 },
     holding: null,
   };
@@ -117,6 +117,7 @@ function migrate(raw, now) {
     wardrobe: { ...fresh.wardrobe, ...(raw.wardrobe || {}), owned: { ...((raw.wardrobe && raw.wardrobe.owned) || {}) } },
     bag: { ...fresh.bag, ...(raw.bag || {}) },
     holding: raw.holding || null,
+    trainerSince: raw.trainerSince || Math.min(raw.bornAt || now, ...((raw.hallOfFame || []).map((h) => h.bornAt).filter(Boolean))),
   };
 }
 
@@ -154,10 +155,17 @@ function xpForLevel(lv) {
 }
 
 function form(pet) {
-  return formName(pet.stage, pet.lineage);
+  return formName(pet.stage, pet.lineage, pet.legend);
 }
 
+// The Opendex key of what the pet is now.
+function keyOf(pet) {
+  return pet.legend || formKey(pet.stage, pet.lineage);
+}
+
+// Legendaries never evolve.
 function nextStage(pet) {
+  if (pet.legend) return null;
   return STAGES[stageIndex(pet.stage) + 1] || null;
 }
 
@@ -185,8 +193,11 @@ function view(pet) {
     nocturne: Boolean(pet.nocturne),
     seenNight: pet.seenNight || {},
     form: form(pet),
-    formKey: formKey(pet.stage, pet.lineage),
-    dexNo: dexEntries().findIndex((e) => e.key === formKey(pet.stage, pet.lineage)) + 1,
+    formKey: keyOf(pet),
+    dexNo: dexEntries().findIndex((e) => e.key === keyOf(pet)) + 1,
+    legend: pet.legend || null,
+    friend: Boolean(pet.friend),
+    charmUntil: pet.charmUntil && pet.charmUntil > Date.now() ? pet.charmUntil : null,
     nature: pet.nature,
     shiny: pet.shiny,
     generation: pet.generation,
@@ -202,7 +213,7 @@ function view(pet) {
     history: pet.history,
     hallOfFame: pet.hallOfFame || [],
     wardrobe: pet.wardrobe,
-    wear: { head: pet.wardrobe.head, neck: pet.wardrobe.neck },
+    wear: { head: pet.wardrobe.head, face: pet.wardrobe.face || null, neck: pet.wardrobe.neck },
     cosmetics: cosmeticsView(pet),
     bag: pet.bag,
     holding: pet.holding,
@@ -233,7 +244,28 @@ const UNLOCKS = {
   bowtie: (p) => p.counters.turns >= 100,
   bandana: (p) => p.counters.tools >= 1000,
   medal: (p) => Boolean(p.achievements['quick-hands']),
+  'glasses-round': (p) => (p.counters.reads || 0) >= 3000,
+  'glasses-dark': (p) => ((p.streak && p.streak.best) || 0) >= 20,
+  monocle: (p) => (p.counters.fixes || 0) >= 50,
+  'hero-mask': (p) => (p.counters.longestTurn || 0) >= 100,
+  hardhat: (p) => (p.counters.shell || 0) >= 500,
+  'leaf-crown': (p) => (p.counters.commits || 0) >= 100,
+  'explorer-hat': (p) => (p.counters.pages || 0) >= 200,
+  'chef-hat': (p) => (p.counters.missionDays || 0) >= 30,
+  bow: (p) => p.bond >= 100,
+  'star-tiara': (p) => ORIGINAL_DEX().every((k) => p.dex[k]),
+  'pumpkin-hat': (p, now) => new Date(now).getMonth() === 9,
+  'santa-hat': (p, now) => new Date(now).getMonth() === 11,
+  'party-hat-gold': (p, now) => now - (p.trainerSince || p.bornAt || now) >= YEAR_MS,
+  necktie: (p) => (p.counters.prs || 0) >= 50,
+  pearls: (p) => (p.counters.perfectDays || 0) >= 7,
+  cape: (p) => Object.keys(p.legends || {}).length > 0,
+  bell: (p) => (p.counters.pets || 0) >= 100,
+  backpack: (p) => Object.keys(ITEMS).every((id) => (p.bagSeen || {})[id]),
 };
+const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+// The first briefing's forms (#001 to #022), hidden ones included.
+const ORIGINAL_DEX = () => dexEntries().slice(0, 22).map((e) => e.key);
 
 // Progress toward each locked accessory, for the bag's hints.
 const UNLOCK_PROGRESS = {
@@ -244,6 +276,20 @@ const UNLOCK_PROGRESS = {
   scarf: (p) => [p.counters.perfectDays || 0, 1],
   bowtie: (p) => [p.counters.turns, 100],
   bandana: (p) => [p.counters.tools, 1000],
+  'glasses-round': (p) => [p.counters.reads || 0, 3000],
+  'glasses-dark': (p) => [(p.streak && p.streak.best) || 0, 20],
+  monocle: (p) => [p.counters.fixes || 0, 50],
+  'hero-mask': (p) => [p.counters.longestTurn || 0, 100],
+  hardhat: (p) => [p.counters.shell || 0, 500],
+  'leaf-crown': (p) => [p.counters.commits || 0, 100],
+  'explorer-hat': (p) => [p.counters.pages || 0, 200],
+  'chef-hat': (p) => [p.counters.missionDays || 0, 30],
+  bow: (p) => [p.bond, 100],
+  'star-tiara': (p) => [ORIGINAL_DEX().filter((k) => p.dex[k]).length, 22],
+  necktie: (p) => [p.counters.prs || 0, 50],
+  pearls: (p) => [p.counters.perfectDays || 0, 7],
+  bell: (p) => [p.counters.pets || 0, 100],
+  backpack: (p) => [Object.keys(ITEMS).filter((id) => (p.bagSeen || {})[id]).length, Object.keys(ITEMS).length],
 };
 
 function cosmeticsView(pet) {
@@ -261,7 +307,7 @@ function checkCosmetics(pet, now, events) {
     if (!pet.bag.everstone && pet.holding !== 'everstone') giveItem(pet, 'everstone', 1, events);
   }
   for (const [id, ok] of Object.entries(UNLOCKS)) {
-    if (pet.wardrobe.owned[id] || !ok(pet)) continue;
+    if (pet.wardrobe.owned[id] || !ok(pet, now)) continue;
     pet.wardrobe.owned[id] = now;
     events.push({ type: 'cosmetic', id, slot: COSMETICS[id].slot });
   }
@@ -291,12 +337,13 @@ function addTokens(pet, delta, now) {
 
 function giveItem(pet, item, n, events) {
   pet.bag[item] = (pet.bag[item] || 0) + n;
+  pet.bagSeen = { ...(pet.bagSeen || {}), [item]: true };
   events.push({ type: 'item', item, n, total: pet.bag[item] });
 }
 
 // Wear an owned accessory (or null to take the slot off).
 function wear(pet, slot, id) {
-  if (slot !== 'head' && slot !== 'neck') return [];
+  if (!WEAR_SLOTS.includes(slot)) return [];
   if (id != null && (!COSMETICS[id] || COSMETICS[id].slot !== slot || !pet.wardrobe.owned[id])) return [];
   pet.wardrobe[slot] = id || null;
   return [{ type: 'wear', slot, id: id || null }];
@@ -308,20 +355,34 @@ function useItem(pet, item, now) {
   const events = [];
   if (!ITEMS[item]) return events;
   rollDay(pet, now, events);
-  if (item === 'everstone') {
-    if (!pet.bag.everstone && pet.holding !== 'everstone') return [];
-    pet.holding = pet.holding === 'everstone' ? null : 'everstone';
+  // Held items: the Everstone and the type stones. One at a time.
+  if (ITEMS[item].use === 'hold') {
+    if (pet.holding !== item && !pet.bag[item]) return [];
+    pet.holding = pet.holding === item ? null : item;
     events.push({ type: 'hold', item, holding: pet.holding });
     if (!pet.holding) evolve(pet, now, events);
     return events;
   }
   if (!pet.bag[item]) return [];
-  if (pet.stage === 'egg') return [];
+  // The mystery egg hatches into a new member of your team (the party does that).
+  if (item === 'mystery-egg') {
+    pet.bag[item]--;
+    events.push({ type: 'mystery-egg' });
+    return events;
+  }
+  if (pet.stage === 'egg' || pet.legend) return [];
   pet.bag[item]--;
   const levelBefore = level(pet.xp);
   if (item === 'snack') {
     events.push({ type: 'fed', item });
     addBond(pet, 2, now, events);
+  } else if (item === 'friend-candy') {
+    events.push({ type: 'fed', item });
+    addBond(pet, 10, now, events);
+  } else if (item === 'xp-charm') {
+    // Double XP for a day (the 10-minute cap doubles too).
+    pet.charmUntil = Math.max(pet.charmUntil || 0, now) + 24 * 60 * 60 * 1000;
+    events.push({ type: 'charm', until: pet.charmUntil });
   } else if (item === 'candy') {
     const target = xpForLevel(Math.min(MAX_LEVEL, level(pet.xp) + 1));
     const gain = Math.max(0, target - pet.xp);
@@ -407,7 +468,21 @@ function rollDay(pet, now, events) {
     giveItem(pet, 'snack', 1, events);
     events.push({ type: 'daily-gift', streak: pet.streak.days });
     if (pet.streak.days % 7 === 0) giveItem(pet, 'candy', 1, events);
+    // Every third day a type stone, of the work your agent did most yesterday;
+    // every 14 days an XP charm; every 30 days a mystery egg.
+    if (pet.streak.days % 3 === 0) giveItem(pet, `stone-${stoneFor(pet, day)}`, 1, events);
+    if (pet.streak.days % 14 === 0) giveItem(pet, 'xp-charm', 1, events);
+    if (pet.streak.days % 30 === 0) giveItem(pet, 'mystery-egg', 1, events);
   }
+}
+
+function stoneFor(pet, day) {
+  const last = (pet.journal || [])[pet.journal ? pet.journal.length - 1 : 0];
+  const fam = Object.entries((last && last.families) || {}).filter(([k]) => STATS.includes(k)).sort((a, b) => b[1] - a[1])[0];
+  if (fam) return fam[0];
+  let h = 0;
+  for (const ch of day) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return STATS[h % STATS.length];
 }
 
 function missionView(pet) {
@@ -425,6 +500,7 @@ function checkMissions(pet, now, events) {
     const def = MISSIONS.find((x) => x.id === m.id);
     if ((pet.daily[def.counter] || 0) < def.target) continue;
     m.done = true;
+    if (!list.some((x) => x !== m && x.done)) pet.counters.missionDays = (pet.counters.missionDays || 0) + 1;
     pet.xp += MISSION_XP;
     events.push({ type: 'xp', amount: MISSION_XP, xp: pet.xp });
     addBond(pet, 2, now, events);
@@ -451,7 +527,8 @@ function addBond(pet, amount, now, events) {
 function addXp(pet, amount, now, events) {
   pet.xpLog = pet.xpLog.filter(([at]) => now - at < XP_WINDOW_MS);
   const used = pet.xpLog.reduce((sum, [, xp]) => sum + xp, 0);
-  const granted = Math.max(0, Math.min(amount, XP_WINDOW_CAP - used));
+  const charm = pet.charmUntil && pet.charmUntil > now ? 2 : 1;
+  const granted = Math.max(0, Math.min(amount * charm, XP_WINDOW_CAP * charm - used));
   if (!granted) return;
   pet.xp += granted;
   pet.xpLog.push([now, granted]);
@@ -482,10 +559,21 @@ function evolve(pet, now, events) {
     const from = form(pet);
     const ranked = topStats(pet.stats);
     pet.stage = next.id;
+    // A held type stone decides the type of this evolution, then is spent.
+    const stone = next.id !== 'sprout' && pet.holding && ITEMS[pet.holding] && ITEMS[pet.holding].stone;
+    if (stone) {
+      pet.bag[pet.holding] = Math.max(0, (pet.bag[pet.holding] || 0) - 1);
+      events.push({ type: 'stone-used', item: pet.holding, lineage: stone });
+      pet.holding = null;
+    }
     if (next.id !== 'sprout') {
       const aff = affinity(pet.stats);
       const grown = stageIndex(next.id) >= stageIndex('adult');
-      if (grown && aff[ranked[0]] - aff[ranked[1]] < CHIMERA_GAP && aff[ranked[1]] >= CHIMERA_MIN) {
+      if (stone) {
+        pet.lineage = stone;
+        pet.chimera = null;
+        pet.trait = grown ? ranked.find((r) => r !== stone) : null;
+      } else if (grown && aff[ranked[0]] - aff[ranked[1]] < CHIMERA_GAP && aff[ranked[1]] >= CHIMERA_MIN) {
         pet.lineage = 'chimera';
         pet.chimera = [ranked[0], ranked[1]];
         pet.trait = ranked[2];
@@ -497,6 +585,9 @@ function evolve(pet, now, events) {
       // Evolving between midnight and 5 am gives the Nocturne colouring,
       // decided again at every evolution (Pokémon-style time evolution).
       pet.nocturne = new Date(now).getHours() < 5;
+      // Full friendship when it becomes Mythic: the friendship form.
+      pet.friend = next.id === 'mythic' && pet.bond >= BOND_MAX && FRIEND_FORMS.includes(pet.lineage);
+      if (pet.friend) unlock(pet, 'friendship', now, events);
       // Regional form: raised mostly on one language (60% of 50+ files).
       pet.region = regionOf(pet.langs);
       if (pet.region) pet.dexRegions = { ...(pet.dexRegions || {}), [`${formKey(pet.stage, pet.lineage)}.${pet.region}`]: now };
@@ -510,7 +601,7 @@ function evolve(pet, now, events) {
     const key = formKey(pet.stage, pet.lineage);
     const firstTime = !pet.dex[key];
     if (firstTime) pet.dex[key] = now;
-    events.push({ type: 'evolve', from, to: form(pet), stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, nocturne: Boolean(pet.nocturne), shiny: pet.shiny, region: pet.region || null, newDex: firstTime });
+    events.push({ type: 'evolve', from, to: form(pet), stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, nocturne: Boolean(pet.nocturne), shiny: pet.shiny, region: pet.region || null, friend: Boolean(pet.friend), newDex: firstTime });
     if (pet.stage === 'sprout') unlock(pet, 'hatch', now, events);
     if (pet.stage === 'sprout' && pet.shiny) unlock(pet, 'shiny', now, events);
     if (pet.stage === 'juvenile') {
@@ -563,6 +654,7 @@ function applySignal(pet, signal, ctx = {}, now) {
         pet.daily.edits = (pet.daily.edits || 0) + 1;
       }
       if (signal.family && pet.stats[signal.family] != null) pet.stats[signal.family]++;
+      countFeats(pet, signal);
       if (signal.lang) pet.langs = { ...(pet.langs || {}), [signal.lang]: ((pet.langs || {})[signal.lang] || 0) + 1 };
       countWork(pet, signal);
       addFix(pet, takeFix(signal, now, false), now);
@@ -610,6 +702,7 @@ function applySignal(pet, signal, ctx = {}, now) {
 
   if (c.edits >= 1000) unlock(pet, 'edits-1000', now, events);
   if ((ctx.turnTools || 0) >= 50) unlock(pet, 'marathon', now, events);
+  if ((ctx.turnTools || 0) > (c.longestTurn || 0)) c.longestTurn = ctx.turnTools;
   if ((ctx.workingSessions || 0) >= 5) unlock(pet, 'swarm', now, events);
   if (signal.kind.startsWith('tool') && new Date(now).getHours() < 5) unlock(pet, 'night-owl', now, events);
 
@@ -618,6 +711,22 @@ function applySignal(pet, signal, ctx = {}, now) {
   checkCosmetics(pet, now, events);
   if (level(pet.xp) > levelBefore) events.push({ type: 'level', level: level(pet.xp) });
   return events;
+}
+
+// Counters for accessories and legendaries: commits, pull requests opened
+// and merged, pages fetched, shell commands, files read.
+const SHELL = new Set(['Bash', 'PowerShell']);
+function countFeats(pet, signal) {
+  const c = pet.counters;
+  const cmd = String(signal.detail || '');
+  if (SHELL.has(signal.tool)) {
+    c.shell = (c.shell || 0) + 1;
+    if (/\bgit\s+commit\b/.test(cmd)) c.commits = (c.commits || 0) + 1;
+    if (/\bgh\s+pr\s+create\b/.test(cmd)) c.prs = (c.prs || 0) + 1;
+    if (/\bgh\s+pr\s+merge\b/.test(cmd)) c.merges = (c.merges || 0) + 1;
+  }
+  if (signal.tool === 'WebFetch' || signal.tool === 'WebSearch') c.pages = (c.pages || 0) + 1;
+  if (signal.tool === 'Read') c.reads = (c.reads || 0) + 1;
 }
 
 // The user clicked the pet.
@@ -630,6 +739,9 @@ function petIt(pet, now) {
     pet.daily.pets++;
     addBond(pet, 1, now, events);
   }
+  // Ten pets in a day: a friendship candy, once a day.
+  pet.daily.petClicks = (pet.daily.petClicks || 0) + 1;
+  if (pet.daily.petClicks === 10) giveItem(pet, 'friend-candy', 1, events);
   checkMissions(pet, now, events);
   evolve(pet, now, events);
   checkCosmetics(pet, now, events);
@@ -648,8 +760,13 @@ function layEgg(pet, now, rng = Math.random) {
   egg.generation = (pet.generation || 1) + 1;
   egg.dex = { ...pet.dex };
   egg.achievements = { ...pet.achievements };
-  egg.wardrobe = { owned: { ...pet.wardrobe.owned }, head: null, neck: null };
-  egg.bag = { ...pet.bag, everstone: (pet.bag.everstone || 0) + (pet.holding === 'everstone' ? 1 : 0) };
+  egg.wardrobe = { owned: { ...pet.wardrobe.owned }, head: null, face: null, neck: null };
+  egg.counters = { ...egg.counters, ...pet.counters };
+  egg.bagSeen = { ...(pet.bagSeen || {}) };
+  egg.legends = { ...(pet.legends || {}) };
+  egg.trainerSince = pet.trainerSince || pet.bornAt;
+  egg.bag = { ...pet.bag };
+  if (pet.holding) egg.bag[pet.holding] = (egg.bag[pet.holding] || 0) + (pet.holding === 'everstone' ? 1 : 0);
   egg.hallOfFame = [...(pet.hallOfFame || []), retired];
   egg.stats = Object.fromEntries(STATS.map((s) => [s, Math.floor((pet.stats[s] || 0) / 10)]));
   return { pet: egg, events: [{ type: 'new-egg', generation: egg.generation, retired }] };

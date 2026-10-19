@@ -139,7 +139,7 @@ test('species API serves the Opendex; shutdown is announced on the bus', async (
   const { daemon, port } = await boot();
   try {
     const species = JSON.parse((await request(port, 'GET', '/api/species')).body);
-    assert.equal(species.dex.length, 37);
+    assert.equal(species.dex.length, 40);
     assert.equal(species.dex[36].name, 'Chromancer');
     assert.equal(species.dex[3].name, 'Forgemaw');
     assert.ok(species.natures.cheeky);

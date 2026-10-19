@@ -359,3 +359,55 @@ test('old pets get the new stats at zero', () => {
   assert.equal(old.stats.craft, 5);
   for (const s of ['docs', 'git', 'debug', 'data', 'style']) assert.equal(old.stats[s], 0);
 });
+
+test('a held type stone decides the next evolution and is spent', () => {
+  const p = pet.createPet(T0);
+  p.stage = 'sprout';
+  p.xp = 399;
+  p.stats.craft = 500;
+  p.bag['stone-data'] = 1;
+  pet.useItem(p, 'stone-data', T0);
+  assert.equal(p.holding, 'stone-data');
+  const events = pet.applySignal(p, done('craft'), {}, T0 + 1000);
+  assert.equal(p.stage, 'juvenile');
+  assert.equal(p.lineage, 'data');
+  assert.equal(p.bag['stone-data'], 0);
+  assert.equal(p.holding, null);
+  assert.ok(events.some((e) => e.type === 'stone-used'));
+});
+
+test('full friendship at the Mythic evolution gives the friendship form', () => {
+  const p = pet.createPet(T0);
+  Object.assign(p, { stage: 'adult', lineage: 'craft', xp: 14999, bond: 100 });
+  p.stats.craft = 5000;
+  pet.applySignal(p, done('craft'), {}, T0 + 1000);
+  assert.equal(p.stage, 'mythic');
+  assert.equal(p.friend, true);
+  assert.ok(p.achievements.friendship);
+});
+
+test('the XP charm doubles experience for a day; friendship candy adds 10', () => {
+  const p = pet.createPet(T0);
+  Object.assign(p, { stage: 'juvenile', lineage: 'craft', xp: 500, bond: 10 });
+  p.bag['xp-charm'] = 1;
+  p.bag['friend-candy'] = 1;
+  pet.useItem(p, 'xp-charm', T0);
+  pet.applySignal(p, done('craft'), {}, T0 + 1000);
+  assert.equal(p.xp, 502);
+  pet.useItem(p, 'friend-candy', T0 + 2000);
+  assert.equal(p.bond, 20);
+});
+
+test('new accessories: commits, the face slot and progress hints', () => {
+  const p = pet.createPet(T0);
+  p.stage = 'juvenile';
+  for (let i = 0; i < 100; i++) pet.applySignal(p, { kind: 'tool-done', family: 'git', tool: 'Bash', detail: 'Bash: git commit -m x', session: 's' }, {}, T0 + i * 60000);
+  assert.ok(p.wardrobe.owned['leaf-crown']);
+  assert.equal(p.counters.commits, 100);
+  p.wardrobe.owned.monocle = T0;
+  assert.equal(pet.wear(p, 'face', 'monocle').length, 1);
+  assert.equal(p.wardrobe.face, 'monocle');
+  assert.equal(pet.wear(p, 'face', 'leaf-crown').length, 0);
+  const hint = pet.view(p).cosmetics.find((c) => c.id === 'hardhat');
+  assert.deepEqual(hint.progress, { have: 100, need: 500 });
+});

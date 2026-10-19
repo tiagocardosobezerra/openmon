@@ -30,7 +30,7 @@
   /* The Box: a wallpaper behind the stored mons, picked by the trainer. */
   .boxwrap { border-radius: var(--r-lg); padding: 14px; background: center / cover no-repeat var(--sunken); border: var(--bw) solid var(--line); }
   .boxwrap .muted { background: color-mix(in srgb, var(--surface) 88%, transparent); padding: 8px 12px; border-radius: var(--r-md); display: inline-block; }
-  .walls { display: inline-flex; gap: 6px; margin-left: 10px; vertical-align: middle; }
+  .walls { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 10px; vertical-align: middle; }
   .walls button { width: 34px; height: 22px; padding: 0; border-radius: 7px; border: 2px solid var(--line); background: center / cover no-repeat; cursor: pointer; }
   .walls button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--sun); }
   .upcoming { display: grid; gap: 6px; max-width: 640px; }
@@ -82,9 +82,12 @@
     const region = p.region ? ` · ${tr(`region.${p.region}`)}` : '';
     c.append(canvas, el('span', 'name', p.shiny && p.stage !== 'egg' ? `${p.name} ★` : p.name), el('span', 'meta', `${tr('card.level', { n: p.level })} · ${p.form}${region}`));
     const tag = el('span', 'ptag');
-    tag.title = p.project ? tr('party.project', { project: p.project }) : tr('party.general');
-    tag.style.setProperty('--c', p.lineage && p.lineage !== 'chimera' ? `var(--${p.lineage})` : 'var(--brand)');
-    tag.append(el('i'), el('span', '', p.project || tr('party.general')));
+    // Legendaries and mystery eggs belong to no project.
+    const special = p.legend ? tr('party.legendTag') : p.project && p.project.startsWith('mystery:') ? tr('party.mysteryTag') : null;
+    const label = special || p.project || tr('party.general');
+    tag.title = special || (p.project ? tr('party.project', { project: p.project }) : tr('party.general'));
+    tag.style.setProperty('--c', p.legend ? 'var(--sun)' : p.lineage && p.lineage !== 'chimera' ? `var(--${p.lineage})` : 'var(--brand)');
+    tag.append(el('i'), el('span', '', label));
     c.append(tag);
     const bar = el('div', 'bar');
     const fill = el('i');
@@ -154,7 +157,7 @@
       const ctx = canvas.getContext('2d');
       const k = canvas.width / 200;
       ctx.setTransform(k, 0, 0, k, 100 * k, 182 * k);
-      const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny && p.stage !== 'egg', wear: p.wear, region: p.region };
+      const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny && p.stage !== 'egg', wear: p.wear, region: p.region, legend: p.legend, friend: p.friend };
       OpenmonArt.drawCreature(ctx, { ...spec, t: 1, size: 56, pose: 'idle', anim: { eyes: 'happy', mouth: 'grin' } });
     }
   }
@@ -166,7 +169,7 @@
     if (data) render();
   }
   // Box wallpaper: a per-viewer choice, remembered in this browser only.
-  const WALLS = ['sky', 'forest', 'beach', 'desert'];
+  const WALLS = ['sky', 'forest', 'beach', 'desert', 'snow', 'night', 'workshop', 'library', 'lab', 'city', 'garden', 'space'];
   let wall = 'sky';
   try {
     wall = WALLS.includes(localStorage.getItem('openmon.boxWall')) ? localStorage.getItem('openmon.boxWall') : 'sky';

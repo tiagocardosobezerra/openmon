@@ -48,7 +48,7 @@ function createWorld(petState) {
 
 // Art packs: images named after forms (craft-adult.png, egg@sleep.svg…)
 // in this folder replace the procedural art. See docs/ART-PACKS.md.
-const ART_FILE = /^[a-z0-9-]+(.shiny)?(.night)?(.region-[a-z]+)?(@[a-z]+)?.(png|svg|webp)$/;
+const ART_FILE = /^[a-z0-9-]+(\.[a-z]+(-[a-z]+)?)*(@[a-z]+)?\.(png|svg|webp)$/;
 
 // The official art ships with Openmon; a user's own pack overrides it file
 // by file. OPENMON_CLASSIC=1 goes back to the art drawn in code.
@@ -63,9 +63,14 @@ function readPack(dir) {
     try {
       pack = JSON.parse(fs.readFileSync(path.join(dir, 'pack.json'), 'utf8'));
     } catch {}
-    return { files, pack };
+    // Colour changes for poses drawn only in normal colours (tools/build-tints.js).
+    let tints = null;
+    try {
+      tints = JSON.parse(fs.readFileSync(path.join(dir, 'tints.json'), 'utf8'));
+    } catch {}
+    return { files, pack, tints };
   } catch {
-    return { files: [], pack: null };
+    return { files: [], pack: null, tints: null };
   }
 }
 
@@ -73,12 +78,21 @@ function readPack(dir) {
 function listArt(dirs) {
   const where = {};
   let pack = null;
+  // Per form: a user pack's tints win over the official ones.
+  const tints = { forms: {}, seasons: {} };
+  for (const dir of [...dirs].reverse()) {
+    const p = readPack(dir);
+    if (p.tints) {
+      Object.assign(tints.forms, p.tints.forms || {});
+      Object.assign(tints.seasons, p.tints.seasons || {});
+    }
+  }
   for (const dir of dirs) {
     const p = readPack(dir);
     for (const f of p.files) if (!where[f]) where[f] = dir;
     if (!pack && p.files.length) pack = p.pack;
   }
-  return { files: Object.keys(where).sort(), pack, where };
+  return { files: Object.keys(where).sort(), pack, tints, where };
 }
 
 function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus(), backups = playground ? null : createBackups({ now }) } = {}) {
@@ -94,7 +108,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25 };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25, seasons: true };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -608,7 +622,17 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'POST /api/wear':
         return readJson(req, (err, body) => (err ? res.writeHead(400).end() : json(res, 200, { events: change((p) => pet.wear(p, body.slot, body.id ?? null)) })));
       case 'POST /api/use':
-        return readJson(req, (err, body) => (err ? res.writeHead(400).end() : json(res, 200, { events: change((p) => pet.useItem(p, String(body.item || ''), now())) })));
+        return readJson(req, (err, body) => {
+          if (err) return res.writeHead(400).end();
+          const events = change((p) => pet.useItem(p, String(body.item || ''), now()));
+          // A mystery egg hatches into a new member of the team.
+          if (events.some((e) => e.type === 'mystery-egg') && world === real) {
+            const hatched = partyAction(() => party.hatchMystery(real.pet, now()));
+            pushEvents(hatched);
+            events.push(...hatched);
+          }
+          json(res, 200, { events });
+        });
       case 'POST /api/party/active':
         return readJson(req, (err, body) => {
           if (err || !body) return res.writeHead(400).end();
@@ -641,6 +665,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.notify === 'boolean') patch.notify = body.notify;
           if (typeof body.chatter === 'boolean') patch.chatter = body.chatter;
           if (typeof body.stroll === 'boolean') patch.stroll = body.stroll;
+          if (typeof body.seasons === 'boolean') patch.seasons = body.seasons;
           if (typeof body.followProject === 'boolean') patch.followProject = body.followProject;
           if (typeof body.present === 'boolean') patch.present = body.present;
           if (typeof body.lang === 'string' && /^(en|pt-BR|es)$/.test(body.lang)) patch.lang = body.lang;
@@ -681,8 +706,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         }, url.searchParams.get('lang')));
       case 'GET /art/index.json':
         {
-          const { files, pack } = listArt(artDirs);
-          return json(res, 200, { files, pack });
+          const { files, pack, tints } = listArt(artDirs);
+          return json(res, 200, { files, pack, tints });
         }
       case 'GET /health':
         return json(res, 200, { app: 'openmon', clients: clients.size });

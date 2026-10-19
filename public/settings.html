@@ -49,6 +49,7 @@
         calm: 'Calma e foco', calmSub: 'Para dias de reunião, tela compartilhada ou foco.',
         present: 'Modo apresentação', presentSub: 'Esconde nomes de projetos e comandos em tudo o que o Openmon mostra. Use ao compartilhar a tela.',
         breaks: 'Lembrete de pausa', breaksSub: 'Depois de muito tempo seguido de trabalho, o pet sugere uma pausa.', off: 'Desligado', min: '{n} minutos',
+        seasons: 'Cores de época', seasonsSub: 'Em fevereiro, outubro e dezembro, seu Openmon usa as cores da época (carnaval, abóbora, Natal).',
         follow: 'Mostrar o Openmon do projeto ativo', followSub: 'O pet da tela troca para o do projeto em que o agente está trabalhando.',
         phone: 'Avisos no celular', phoneSub: 'Opcional. Usa o ntfy (app gratuito e aberto): quando um agente espera por você, chega um aviso no celular. É o único recurso do Openmon que usa a internet, e só manda "Seu agente precisa de você".',
         phoneOn: 'Avisar no celular', phoneOnSub: 'Instale o app ntfy no celular e assine o mesmo tópico abaixo.',
@@ -68,6 +69,7 @@
         calm: 'Calma y foco', calmSub: 'Para días de reuniones, pantalla compartida o trabajo profundo.',
         present: 'Modo presentación', presentSub: 'Oculta los nombres de proyectos y los comandos en todo lo que muestra Openmon. Úsalo al compartir pantalla.',
         breaks: 'Recordatorio de pausa', breaksSub: 'Tras mucho tiempo seguido de trabajo, la mascota sugiere una pausa.', off: 'Apagado', min: '{n} minutos',
+        seasons: 'Colores de temporada', seasonsSub: 'En febrero, octubre y diciembre, tu Openmon usa los colores de la temporada (carnaval, calabaza, Navidad).',
         follow: 'Mostrar el Openmon del proyecto activo', followSub: 'La mascota en pantalla cambia a la del proyecto en el que trabaja el agente.',
         phone: 'Avisos en el celular', phoneSub: 'Opcional. Usa ntfy (una app gratuita y abierta): cuando un agente te espera, llega un aviso al celular. Es la única función de Openmon que usa internet, y solo envía "Tu agente te necesita".',
         phoneOn: 'Avisar al celular', phoneOnSub: 'Instala la app ntfy en tu celular y suscríbete al mismo tema de abajo.',
@@ -86,6 +88,7 @@
         calm: 'Calm and focus', calmSub: 'For meeting days, shared screens or deep work.',
         present: 'Presentation mode', presentSub: 'Hides project names and commands in everything Openmon shows. Use it when you share your screen.',
         breaks: 'Break reminder', breaksSub: 'After a long stretch of work, the pet suggests a break.', off: 'Off', min: '{n} minutes',
+        seasons: 'Season colours', seasonsSub: 'In February, October and December your Openmon wears the season colours (carnival, pumpkin, Christmas).',
         follow: 'Show the Openmon of the active project', followSub: 'The pet on screen switches to the one of the project your agent is working in.',
         phone: 'Phone alerts', phoneSub: 'Optional. Uses ntfy (a free, open app): when an agent waits for you, your phone gets a notice. It is the only Openmon feature that uses the internet, and it only sends "Your agent needs you".',
         phoneOn: 'Alert my phone', phoneOnSub: 'Install the ntfy app on your phone and subscribe to the same topic below.',
@@ -155,6 +158,7 @@
       row(T.present, T.presentSub, toggle('present')),
       row(T.breaks, T.breaksSub, select('breakEvery', [[0, T.off], [50, fill(T.min, { n: 50 })], [90, fill(T.min, { n: 90 })]], config.breakEvery || 0)),
       row(T.follow, T.followSub, toggle('followProject')),
+      row(T.seasons, T.seasonsSub, toggle('seasons')),
     ]);
     const topic = el('input', 'input topic');
     topic.value = config.phoneTopic || '';

@@ -8,17 +8,27 @@ Put the images in `~/.openmon/art/` (run `openmon art` to print the exact folder
 
 ## File names
 
-`<form>[.shiny][@<pose>].<png|svg|webp>`
+`<form>[.shiny|.night|.<variant>][@<pose>].<png|svg|webp>`
 
 | Part | Values |
 | --- | --- |
-| `<form>` | `egg`, `sprout`, or `<lineage>-<stage>`: lineages `craft`, `lore`, `shell`, `test`, `roam`, `swarm`, `chimera`; stages `juvenile`, `adult`, `mythic` (Chimera has only `adult` and `mythic`) |
+| `<form>` | `egg`, `sprout`, `<lineage>-<stage>` or a legendary (`mergeon`, `aeonbyte`, `zeroday`): lineages `craft`, `lore`, `shell`, `test`, `roam`, `swarm`, `docs`, `git`, `debug`, `data`, `style`, `chimera`; stages `juvenile`, `adult`, `mythic` (Chimera has only `adult` and `mythic`) |
 | `.shiny` | optional, the rare colour variant |
+| `.night` | optional, the Nocturne colours |
+| `.<variant>` | optional: `.friend` (the friendship Mythic), `.craft-lore` and the other 14 pairs on `chimera-adult`, `.region-<js\|py\|rs\|go\|jvm\|cs>` |
 | `@<pose>` | optional: `sleep`, `working`, `attention`, `error`, `done` |
 
 Examples: `craft-adult.png`, `craft-adult.shiny.png`, `craft-adult@sleep.png`, `chimera-mythic.svg`.
 
 Lookup order for a shiny Forgemaw asleep: `craft-adult.shiny@sleep`, `craft-adult.shiny`, `craft-adult@sleep`, `craft-adult`, then the built-in art. A pack does not need to cover every form or pose: anything missing falls back to the official art, then to the built-in drawing. Nocturne art uses `.night` (`craft-adult.night.svg`); without it the image is tinted toward midnight blue.
+
+### Poses in every colour
+
+Draw the poses once, in the normal colours. `node tools/build-tints.js` compares each `.shiny`, `.night`, `.friend` and Chimera pair with its normal form and writes `tints.json` next to the art: which colours change, the white ring night pupils get, and what the variant adds (the night moon, the friendship bow). The pet applies that to every pose at draw time, so a shiny or night Openmon still sleeps, works and cheers in its own colours. Shiny art needs no sparkles: the pet draws the glow and stars on every shiny.
+
+### Accessories and items
+
+Accessories are SVGs in `public/wear/<id>.svg`, each in its own frame: a hat's base at 0,0 on a head 100 units wide, neckwear centred on the neck line of a body 100 wide, glasses centred between two eyes 40 units apart. The pet places them from each form's outline and eyes. Item icons are 40 × 40 SVGs in `public/items/`.
 
 ## Drawing guidelines
 

@@ -591,29 +591,65 @@
     }
   }
 
-  // Shiny Openmon twinkle.
-  function twinkle(ctx, R, cy, t) {
-    for (let i = 0; i < 3; i++) {
-      const phase = (t * 0.7 + i / 3) % 1;
-      if (phase > 0.35) continue;
-      const k = Math.sin((phase / 0.35) * Math.PI);
-      const a = i * 2.1 + Math.floor(t * 0.7 + i / 3) * 1.3;
-      const x = Math.cos(a) * R * 1.05;
-      const y = cy - R * 0.2 + Math.sin(a) * R * 0.8;
-      const s = R * 0.16 * k;
+  // The shine every shiny wears (from the designer's shiny boards): a soft
+  // golden glow with a dotted ring behind the creature, and four-point stars
+  // and dots around it that twinkle one after another. Positions are the
+  // designer's, relative to the glow's centre and radius.
+  const SHINE_STARS = [[-0.81, -0.77, 0.117, 0], [0.81, -0.89, 0.085, 1], [0.94, -0.06, 0.106, 2], [-0.94, 0.13, 0.074, 3], [0.7, 0.7, 0.096, 1], [-0.7, 0.74, 0.064, 2]];
+  const SHINE_DOTS = [[0, -1.1, 0.027, 0], [0.53, -0.55, 0.021, 3], [-0.98, -0.43, 0.021, 1]];
+  function shine(ctx, x, y, r, t, layer) {
+    const k = r / 94;
+    const pulse = (d) => 0.45 + 0.55 * Math.max(0, Math.sin(t * 2.2 - d * 1.6));
+    ctx.save();
+    ctx.translate(x, y);
+    if (layer === 'back') {
+      ctx.globalAlpha = 0.42 + Math.sin(t * 1.5) * 0.08;
       ctx.beginPath();
-      ctx.moveTo(x, y - s);
-      ctx.quadraticCurveTo(x, y, x + s, y);
-      ctx.quadraticCurveTo(x, y, x, y + s);
-      ctx.quadraticCurveTo(x, y, x - s, y);
-      ctx.quadraticCurveTo(x, y, x, y - s);
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff1b8';
+      ctx.fill();
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.03, 0, Math.PI * 2);
+      ctx.setLineDash([1.5 * k, 9 * k]);
+      ctx.lineDashOffset = -t * 6 * k;
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 2.5 * k;
+      ctx.strokeStyle = '#f2b632';
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+      return;
+    }
+    for (const [sx, sy, size, d] of SHINE_STARS) {
+      const p = pulse(d);
+      const s = r * size * (0.75 + 0.25 * p);
+      const px = sx * r;
+      const py = sy * r;
+      ctx.globalAlpha = p;
+      ctx.beginPath();
+      ctx.moveTo(px, py - s);
+      ctx.quadraticCurveTo(px, py, px + s, py);
+      ctx.quadraticCurveTo(px, py, px, py + s);
+      ctx.quadraticCurveTo(px, py, px - s, py);
+      ctx.quadraticCurveTo(px, py, px, py - s);
       ctx.fillStyle = '#fffbe0';
       ctx.fill();
-      ctx.lineWidth = 1.4;
-      ctx.strokeStyle = INK;
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(1, 2 * k);
+      ctx.strokeStyle = '#e9a92a';
       ctx.stroke();
     }
+    for (const [dx, dy, size, d] of SHINE_DOTS) {
+      ctx.globalAlpha = pulse(d);
+      ctx.beginPath();
+      ctx.arc(dx * r, dy * r, Math.max(1, r * size), 0, Math.PI * 2);
+      ctx.fillStyle = '#ffd166';
+      ctx.fill();
+    }
+    ctx.restore();
   }
+
 
   function hex(ctx, x, y, r) {
     ctx.beginPath();
@@ -1096,12 +1132,14 @@
 
   const sprites = {};
   let packInfo = null;
+  let tints = { forms: {}, seasons: {} };
 
   function loadPack() {
     return fetch('/art/index.json')
       .then((r) => r.json())
-      .then(({ files, pack }) => {
+      .then(({ files, pack, tints: t }) => {
         packInfo = pack;
+        if (t) tints = { forms: t.forms || {}, seasons: t.seasons || {} };
         return Promise.all(
           (files || []).map(
             (file) =>
@@ -1122,23 +1160,58 @@
       .catch(() => {});
   }
 
+  const CLASSIC = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
+
+  function spriteKey(spec) {
+    if (spec.legend) return spec.legend;
+    return spec.stage === 'egg' || spec.stage === 'sprout' || !spec.lineage ? spec.stage : `${spec.lineage}-${spec.stage}`;
+  }
+
+  // The colouring a pet wears, strongest first: night, shiny, the friendship
+  // form, a Chimera's own pair of types.
+  function colourOf(spec, key) {
+    if (spec.nocturne) return 'night';
+    if (spec.shiny) return 'shiny';
+    if (spec.friend && (sprites[`${key}.friend`] || (tints.forms[key] || {}).friend)) return 'friend';
+    if (key === 'chimera-adult' && Array.isArray(spec.chimera) && spec.chimera.length === 2) {
+      const pair = [...spec.chimera].sort((a, b) => CLASSIC.indexOf(a) - CLASSIC.indexOf(b)).join('-');
+      if (sprites[`${key}.${pair}`]) return pair;
+    }
+    return null;
+  }
+
+  // Returns { img, night, regional, tint }. A pose drawn only in normal
+  // colours gets the variant's colours at draw time (tint), so shiny, night
+  // and Chimera pets keep every pose.
   function spriteFor(spec) {
-    const key = spec.stage === 'egg' || spec.stage === 'sprout' || !spec.lineage ? spec.stage : `${spec.lineage}-${spec.stage}`;
-    const shiny = spec.shiny ? '.shiny' : '';
+    const key = spriteKey(spec);
     const pose = spec.pose && spec.pose !== 'idle' ? `@${spec.pose}` : '';
-    if (spec.nocturne) {
-      const night = sprites[key + shiny + '.night' + pose] || sprites[key + shiny + '.night'] || sprites[key + '.night' + pose] || sprites[key + '.night'];
-      if (night) return { img: night, night: true };
+    const v = colourOf(spec, key);
+    if (v) {
+      const exact = sprites[`${key}.${v}${pose}`];
+      if (exact) return { img: exact, night: v === 'night' };
+      const tint = (tints.forms[key] || {})[v];
+      if (pose && sprites[key + pose] && tint) return { img: sprites[key + pose], night: v === 'night', tint: `form:${key}:${v}` };
+      const still = sprites[`${key}.${v}`];
+      if (still) return { img: still, night: v === 'night' };
+      // A pack without night art: shiny colours if it has them, then the
+      // normal image tinted at draw time.
+      if (v === 'night' && spec.shiny) {
+        const shiny = sprites[`${key}.shiny${pose}`] || sprites[`${key}.shiny`];
+        if (shiny) return { img: shiny, night: false };
+      }
     }
-    // The designer's own regional form wins over recolouring at draw time.
-    if (spec.region && !spec.shiny) {
-      const regional = sprites[`${key}.region-${spec.region}${pose}`] || sprites[`${key}.region-${spec.region}`];
-      if (regional && !spec.nocturne) return { img: regional, night: false, regional: true };
+    const img = sprites[key + pose] || sprites[key] || null;
+    if (!img) return null;
+    if (v === 'night' || v === 'shiny') return { img, night: false };
+    // Regions and seasons recolour the normal colouring only.
+    if (spec.region && !v) {
+      const regional = sprites[`${key}.region-${spec.region}${pose}`] || (!pose && sprites[`${key}.region-${spec.region}`]);
+      if (regional) return { img: regional, night: false, regional: true };
+      return { img, night: false, region: spec.region };
     }
-    // A pack without shiny art falls back to the normal image (it still twinkles);
-    // without night art, the normal image is tinted at draw time.
-    const img = sprites[key + shiny + pose] || sprites[key + shiny] || sprites[key + pose] || sprites[key] || null;
-    return img ? { img, night: false } : null;
+    if (spec.season && !v && tints.seasons[spec.season] && spec.stage !== 'egg') return { img, night: false, tint: `season:${spec.season}:${spec.legend ? '' : spec.lineage || 'sprout'}` };
+    return { img, night: false };
   }
 
   // Nocturne for packs without night art: the sprite pulled toward midnight blue.
@@ -1193,18 +1266,26 @@
       for (let y = 0; y < H; y++) if (solid(x, y)) { tops.push(y); break; }
     }
     tops.sort((a, b) => a - b);
-    // The 70th percentile skips antennae, leaves and single spikes.
-    const top = tops.length ? tops[Math.floor(tops.length * 0.7)] : 0;
-    let bottom = H - 1;
-    while (bottom > top && !solid(cx, bottom)) bottom--;
     const widthAt = (y) => {
       y = Math.max(0, Math.min(H - 1, Math.round(y)));
+      if (!solid(cx, y)) return 0;
       let l = cx;
       let r = cx;
       while (l > 0 && (solid(l - 1, y) || solid(Math.max(0, l - 2), y))) l--;
       while (r < W - 1 && (solid(r + 1, y) || solid(Math.min(W - 1, r + 2), y))) r++;
       return r - l;
     };
+    // The 70th percentile skips antennae, leaves and single spikes. When the
+    // middle is still thin there (eye stalks, a floating symbol), the head
+    // starts at the first row that is really wide.
+    let top = tops.length ? tops[Math.floor(tops.length * 0.7)] : 0;
+    if (widthAt(top + H * 0.03) < W * 0.18) {
+      let y = top;
+      while (y < H * 0.7 && widthAt(y) < W * 0.22) y++;
+      if (y < H * 0.7) top = y;
+    }
+    let bottom = H - 1;
+    while (bottom > top && !solid(cx, bottom)) bottom--;
     const body = bottom - top;
     const eye = eyeY != null ? eyeY * H : top + body * 0.45;
     // Head width just above the eyes; the neckwear between mouth and feet.
@@ -1458,7 +1539,37 @@
     },
   };
 
-  // A = { topY, headW, neckY, neckW } in the creature's local coordinates.
+  // The designer's accessories (public/wear/<id>.svg), each in its own
+  // frame: a hat's base at 0,0 on a head 100 units wide, neckwear centred on
+  // the neck line of a body 100 wide, glasses centred between two eyes 40
+  // units apart. Loaded once; drawn when ready.
+  const wearArt = new Map();
+  function wearSvg(id) {
+    let w = wearArt.get(id);
+    if (w) return w.ready ? w : null;
+    w = { ready: false };
+    wearArt.set(id, w);
+    fetch(`/wear/${encodeURIComponent(id)}.svg`)
+      .then((r) => (r.ok ? r.text() : Promise.reject()))
+      .then((text) => {
+        const vb = (/viewBox="([^"]+)"/.exec(text) || [])[1];
+        if (!vb) return;
+        const img = new Image();
+        img.onload = () => Object.assign(w, { ready: true, img, vb: vb.trim().split(/[\s,]+/).map(Number) });
+        img.src = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
+      })
+      .catch(() => {});
+    return null;
+  }
+  function drawWearSvg(ctx, id, x, y, scale) {
+    const w = wearSvg(id);
+    if (!w) return;
+    const [vx, vy, vw, vh] = w.vb;
+    ctx.drawImage(w.img, x + vx * scale, y + vy * scale, vw * scale, vh * scale);
+  }
+
+  // A = { topY, headW, neckY, neckW, face: { x, y, span } } in the creature's
+  // local coordinates.
   function drawWear(ctx, wear, A, t) {
     if (!wear || !A) return;
     const S = Math.max(10, A.headW) * 1.25;
@@ -1466,7 +1577,10 @@
     ctx.save();
     ctx.lineCap = 'round';
     if (wear.neck && NECKWEAR[wear.neck]) NECKWEAR[wear.neck](ctx, S, A.neckY, Math.max(S * 0.6, A.neckW), lw, t);
+    else if (wear.neck) drawWearSvg(ctx, wear.neck, 0, A.neckY, Math.min(Math.max(S * 0.6, A.neckW), S * 1.1) / 100);
+    if (wear.face && A.face) drawWearSvg(ctx, wear.face, A.face.x, A.face.y, A.face.span / 40);
     if (wear.head && HATS[wear.head]) HATS[wear.head](ctx, S, A.topY + S * 0.05, lw, t);
+    else if (wear.head) drawWearSvg(ctx, wear.head, 0, A.topY + S * 0.06, (S * 0.92) / 100);
     ctx.restore();
   }
 
@@ -1542,6 +1656,7 @@
   for (const x of [-1, 0, 1]) for (const y of [-1, 0, 1]) if (x || y) EYE_KEYS.push(`look${x}${y}`);
 
   function eyeVariants(url, region = null) {
+    // region: a region code or any tint key (see tintSvg).
     const cacheKey = region ? `${url}|${region}` : url;
     let entry = eyeCache.get(cacheKey);
     if (entry) return entry;
@@ -1550,13 +1665,15 @@
     fetch(url)
       .then((r) => r.text())
       .then((raw) => {
-        const text = region ? regionSvg(raw, region) : raw;
+        const text = region ? tintSvg(raw, region) : raw;
         if (region) {
           const base = new Image();
           base.onload = () => (entry.base = base);
           base.src = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
         }
-        entry.eyeY = eyeHeight(text);
+        const geo = eyeGeometry(text);
+        entry.eyeY = geo ? geo.y : null;
+        entry.eyeX = geo ? [geo.x0, geo.x1] : null;
         for (const key of EYE_KEYS) {
           const svg = variantSvg(text, key);
           if (!svg) break;
@@ -1574,6 +1691,12 @@
   // transforms (matrix, translate, scale) are applied by hand: a parsed
   // document is not rendered, so it has no layout to ask.
   function eyeHeight(text) {
+    const g = eyeGeometry(text);
+    return g ? g.y : null;
+  }
+
+  // Both eyes in image fractions: { y, x0, x1 } (0..1 of width and height).
+  function eyeGeometry(text) {
     try {
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       const eyes = findEyes(doc);
@@ -1581,33 +1704,39 @@
       const root = doc.documentElement;
       const vb = (root.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
       if (vb.length !== 4 || !vb[3]) return null;
-      // Every transform list, from the eye up to the root, applied right to
-      // left within each list (that is how SVG composes them).
-      let x = eyes[0].cx;
-      let y = eyes[0].cy;
-      for (let el = eyes[0].el; el && el !== root; el = el.parentNode) {
-        const tr = el.getAttribute && el.getAttribute('transform');
-        if (!tr) continue;
-        const ops = [...tr.matchAll(/(matrix|translate|scale|rotate)\(([^)]*)\)/g)].reverse();
-        for (const [, op, args] of ops) {
-          const n = args.split(/[\s,]+/).filter(Boolean).map(Number);
-          if (op === 'matrix') [x, y] = [n[0] * x + n[2] * y + n[4], n[1] * x + n[3] * y + n[5]];
-          else if (op === 'translate') [x, y] = [x + n[0], y + (n[1] || 0)];
-          else if (op === 'scale') [x, y] = [x * n[0], y * (n[1] ?? n[0])];
-          else if (op === 'rotate') {
-            const r = (n[0] * Math.PI) / 180;
-            const cx = n[1] || 0;
-            const cy = n[2] || 0;
-            [x, y] = [cx + (x - cx) * Math.cos(r) - (y - cy) * Math.sin(r), cy + (x - cx) * Math.sin(r) + (y - cy) * Math.cos(r)];
-          }
-        }
-      }
-      const at = (y - vb[1]) / vb[3];
+      const [l, r] = eyes.map((e) => place(e, root));
+      const y = (l.y - vb[1]) / vb[3];
       // Eyes are always inside the picture; anything else is a misread.
-      return at > 0.05 && at < 0.9 ? at : null;
+      if (!(y > 0.05 && y < 0.9)) return null;
+      return { y, x0: (l.x - vb[0]) / vb[2], x1: (r.x - vb[0]) / vb[2] };
     } catch {
       return null;
     }
+  }
+
+  function place(eye, root) {
+    // Every transform list, from the eye up to the root, applied right to
+    // left within each list (that is how SVG composes them).
+    let x = eye.cx;
+    let y = eye.cy;
+    for (let el = eye.el; el && el !== root; el = el.parentNode) {
+      const tr = el.getAttribute && el.getAttribute('transform');
+      if (!tr) continue;
+      const ops = [...tr.matchAll(/(matrix|translate|scale|rotate)\(([^)]*)\)/g)].reverse();
+      for (const [, op, args] of ops) {
+        const n = args.split(/[\s,]+/).filter(Boolean).map(Number);
+        if (op === 'matrix') [x, y] = [n[0] * x + n[2] * y + n[4], n[1] * x + n[3] * y + n[5]];
+        else if (op === 'translate') [x, y] = [x + n[0], y + (n[1] || 0)];
+        else if (op === 'scale') [x, y] = [x * n[0], y * (n[1] ?? n[0])];
+        else if (op === 'rotate') {
+          const r = (n[0] * Math.PI) / 180;
+          const cx = n[1] || 0;
+          const cy = n[2] || 0;
+          [x, y] = [cx + (x - cx) * Math.cos(r) - (y - cy) * Math.sin(r), cy + (x - cx) * Math.sin(r) + (y - cy) * Math.cos(r)];
+        }
+      }
+    }
+    return { x, y };
   }
 
   // --- regional forms ------------------------------------------------------------
@@ -1627,6 +1756,76 @@
     jvm: { body: '#8b5e3c', shadow: '#664229', belly: '#f1dcc6', mark: '#f2c14e' },
     cs: { body: '#8a6ad6', shadow: '#6648b5', belly: '#ece4ff', mark: '#e8dcff' },
   };
+
+  // Colour changes for a pose drawn in normal colours: a colour map, the
+  // white ring night pupils get, and added elements (the night moon) placed
+  // before the same element as in the designer's variant.
+  const SHAPE_SEL = 'path,ellipse,circle,rect,polygon,polyline,line';
+  const GEOMETRY = ['d', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'width', 'height', 'points', 'x1', 'y1', 'x2', 'y2', 'transform'];
+  const geometryKey = (el) => [el.tagName, ...GEOMETRY.map((g) => el.getAttribute(g) || '')].join('|');
+  function toHex(c) {
+    const v = String(c || '').trim().toLowerCase();
+    const m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(v);
+    if (m) return `#${[m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('')}`;
+    if (/^#[0-9a-f]{3}$/.test(v)) return `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`;
+    return v;
+  }
+  function recolor(text, map) {
+    return text.replace(/\b(fill|stroke)="([^"]+)"/g, (all, attr, value) => {
+      const to = map[toHex(value)];
+      return to ? `${attr}="${to}"` : all;
+    });
+  }
+  function seasonMap(season, lineage) {
+    const to = tints.seasons[season];
+    const from = PALETTES[lineage] || PALETTES.sprout;
+    if (!to) return {};
+    const map = {};
+    for (const role of ['body', 'dark', 'belly', 'accent']) if (from[role] && to[role]) map[from[role].toLowerCase()] = to[role];
+    return map;
+  }
+  function tintSvg(text, tintKey) {
+    if (REGIONS[tintKey]) return regionSvg(text, tintKey);
+    const [kind, a, b] = tintKey.split(':');
+    if (kind === 'season') return recolor(text, seasonMap(a, b));
+    const tint = kind === 'form' && (tints.forms[a] || {})[b];
+    if (!tint) return text;
+    const out = recolor(text, tint.map || {});
+    if (!tint.ring && !(tint.extras || []).length) return out;
+    try {
+      const doc = new DOMParser().parseFromString(out, 'image/svg+xml');
+      const NS = 'http://www.w3.org/2000/svg';
+      if (tint.ring) {
+        const eyes = findEyes(doc);
+        for (const e of eyes || []) {
+          const ring = doc.createElementNS(NS, 'ellipse');
+          for (const n of ['cx', 'cy', 'transform']) if (e.el.getAttribute(n)) ring.setAttribute(n, e.el.getAttribute(n));
+          ring.setAttribute('rx', String(e.rx + tint.ring));
+          ring.setAttribute('ry', String(e.ry + tint.ring));
+          ring.setAttribute('fill', '#fff');
+          ring.setAttribute('stroke', 'none');
+          e.el.parentNode.insertBefore(ring, e.el);
+        }
+      }
+      const shapes = [...doc.querySelectorAll(SHAPE_SEL)];
+      const byKey = new Map(shapes.map((el) => [geometryKey(el), el]));
+      const outline = shapes.find((el) => /\bln\b/.test(el.getAttribute('class') || '')) || shapes[shapes.length - 1];
+      for (const x of tint.extras || []) {
+        const frag = new DOMParser().parseFromString(`<svg xmlns="${NS}">${x.svg}</svg>`, 'image/svg+xml').documentElement.firstElementChild;
+        if (!frag) continue;
+        const node = doc.importNode(frag, true);
+        const before = x.before && byKey.get(x.before);
+        const after = x.after && byKey.get(x.after);
+        if (before) before.parentNode.insertBefore(node, before);
+        else if (after) after.parentNode.insertBefore(node, after.nextSibling);
+        else if (x.bottom && shapes[0]) shapes[0].parentNode.insertBefore(node, shapes[0]);
+        else if (outline) outline.parentNode.appendChild(node);
+      }
+      return new XMLSerializer().serializeToString(doc);
+    } catch {
+      return out;
+    }
+  }
 
   function regionSvg(text, region) {
     const r = REGIONS[region];
@@ -1755,6 +1954,7 @@
   }
 
   function livingImage(img, a, region = null) {
+    // region: a region code or a tint key; its recoloured image is entry.base.
     if (!img.__svg) return img;
     const entry = eyeVariants(img.__svg, region);
     const base = region ? entry.base || img : img;
@@ -1763,11 +1963,22 @@
     return entry.imgs[key] || base;
   }
 
+  // Where accessories sit, from the form's idle image: its eyes are open,
+  // so glasses stay on while it sleeps. Same frame as every pose of the form.
+  function wearAnchors(sprite, spec, w, h) {
+    const still = sprites[spriteKey(spec)] || sprite.img;
+    const an = spriteAnchor(still);
+    if (!an) return null;
+    const eyes = still.__svg ? eyeVariants(still.__svg) : null;
+    const face = eyes && eyes.eyeX && eyes.eyeY != null ? { x: -w / 2 + ((eyes.eyeX[0] + eyes.eyeX[1]) / 2) * w, y: -h + eyes.eyeY * h, span: (eyes.eyeX[1] - eyes.eyeX[0]) * w } : null;
+    return { topY: -h + an.top * h, headW: an.headW * h, neckY: -h + an.neckY * h, neckW: an.neckW * h, face };
+  }
+
   function drawSprite(ctx, sprite, spec, a, R, t) {
-    // Regional colours only on the normal colouring (shiny and night win).
-    const region = spec.region && REGIONS[spec.region] && !spec.shiny && !sprite.night && !spec.nocturne ? spec.region : null;
-    // A designer regional file is already coloured and marked.
-    const base = livingImage(sprite.img, a, sprite.regional ? null : region);
+    // Regional colours only on the normal colouring (shiny and night win);
+    // a designer regional file is already coloured and marked.
+    const region = sprite.region && REGIONS[sprite.region] ? sprite.region : null;
+    const base = livingImage(sprite.img, a, sprite.tint || region);
     const img = spec.nocturne && !sprite.night ? nightTint(base) : base;
     const h = heightOf(spec.stage, spec.size || 48) * ((packInfo && packInfo.scale) || 1);
     const w = ((sprite.img.naturalWidth || 1) / Math.max(1, sprite.img.naturalHeight || 1)) * h;
@@ -1776,16 +1987,16 @@
     ctx.rotate(a.tilt);
     ctx.scale((a.turn == null ? 1 : a.turn) * (1 + a.squash), 1 - a.squash);
     if (a.glow > 0 || spec.stage === 'mythic') aura(ctx, spec, R, -h * 0.45, palette(spec), t, Math.max(a.glow, spec.stage === 'mythic' ? 0.6 : 0));
+    // A shiny always shines: glow and ring behind, stars in front.
+    if (spec.shiny && spec.stage !== 'egg') shine(ctx, 0, -h * 0.5, Math.max(w, h) * 0.56, t, 'back');
     ctx.drawImage(img, -w / 2, -h, w, h);
+    const anchors = spec.wear && spec.stage !== 'egg' ? wearAnchors(sprite, spec, w, h) : null;
     if (region && !sprite.regional && spec.stage !== 'egg' && spec.stage !== 'sprout') drawRegionMark(ctx, sprite, region, h);
-    if (spec.wear && spec.stage !== 'egg') {
-      const an = spriteAnchor(sprite.img);
-      if (an) drawWear(ctx, spec.wear, { topY: -h + an.top * h, headW: an.headW * h, neckY: -h + an.neckY * h, neckW: an.neckW * h }, t);
-    }
+    if (anchors) drawWear(ctx, spec.wear, anchors, t);
     ctx.restore();
     if (a.motes) motes(ctx, a.motes, R, -h * 0.45, palette(spec), t);
     if (a.prop) prop(ctx, a.prop, R, -h * 0.45, palette(spec), t);
-    if (spec.shiny) twinkle(ctx, R, -h * 0.45, t);
+    if (spec.shiny && spec.stage !== 'egg') shine(ctx, 0, -h * 0.5, Math.max(w, h) * 0.56, t, 'front');
   }
 
   // --- main entry --------------------------------------------------------------
@@ -1842,6 +2053,7 @@
     if (a.turn != null && a.turn !== 1) ctx.scale(a.turn, 1);
 
     if (!spec.plain) aura(ctx, spec, R, cy, pal, t, Math.max(a.glow, spec.stage === 'mythic' ? 0.8 : 0));
+    if (spec.shiny && !spec.plain) shine(ctx, 0, cy, R * 1.25, t, 'back');
     for (const look of looks) {
       backFeatures(ctx, look, R, cy, pal, t);
       grownFeatures(ctx, look, R, cy, w, hb, pal, t);
@@ -1893,7 +2105,7 @@
     if (spec.nocturne && stageN(spec.stage) >= 1) moon(ctx, R, top, t);
     ctx.__shine = null;
 
-    if (spec.wear && spec.stage !== 'egg') drawWear(ctx, spec.wear, { topY: top + ht * 0.08, headW: w * 1.25, neckY: cy + hb * 0.35, neckW: w * 1.7 }, t);
+    if (spec.wear && spec.stage !== 'egg') drawWear(ctx, spec.wear, { topY: top + ht * 0.08, headW: w * 1.25, neckY: cy + hb * 0.35, neckW: w * 1.7, face: { x: 0, y: cy - R * 0.12, span: R * 0.62 } }, t);
 
     // Arms: small nubs, raised when cheering or holding things.
     const raise = a.armsUp || a.eyes === 'happy' || a.prop === 'sign' ? -0.9 : a.prop ? -0.35 : 0.2;
@@ -1910,7 +2122,7 @@
     if (a.motes) motes(ctx, a.motes, R, cy, pal, t);
     ctx.__shield = PALETTES.test.extra;
     if (a.prop) prop(ctx, a.prop, R, cy, pal, t);
-    if (spec.shiny) twinkle(ctx, R, cy, t);
+    if (spec.shiny) shine(ctx, 0, cy, R * 1.25, t, 'front');
 
     ctx.restore();
   }
@@ -1921,5 +2133,5 @@
     return stage === 'egg' ? R * 2.5 : R * 2.4;
   }
 
-  window.OpenmonArt = { drawCreature, heightOf, loadPack, eyeVariants, PALETTES, SHINY, INK, REGIONS };
+  window.OpenmonArt = { drawCreature, heightOf, loadPack, eyeVariants, spriteAnchor, PALETTES, SHINY, INK, REGIONS };
 })();

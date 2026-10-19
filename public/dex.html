@@ -138,7 +138,8 @@
       const known = revealAll || Boolean(dex[entry.key]);
       if (known) seen++;
       // ?shiny previews the shiny colours (dev aid, like ?all).
-      const spec = { stage: entry.stage, lineage: entry.lineage, trait: null, progress: 0.3, shiny: params.has('shiny') && entry.stage !== 'egg' };
+      // Legendaries draw at Mythic size.
+      const spec = { stage: entry.legend ? 'mythic' : entry.stage, lineage: entry.lineage, legend: entry.legend || null, trait: null, progress: 0.3, shiny: params.has('shiny') && entry.stage !== 'egg' };
       const current = pet && pet.formKey === entry.key;
       if (current) Object.assign(spec, { trait: pet.trait, shiny: pet.shiny, chimera: pet.chimera, nocturne: pet.nocturne });
       if (params.has('night') && entry.stage !== 'egg' && entry.stage !== 'sprout') spec.nocturne = true;
@@ -296,9 +297,11 @@
     if (entry.hidden && !known) how.hidden = true;
     else {
       how.hidden = false;
-      if (!entry.lineage) how.append(tr('type.baseHow'));
+      if (entry.legend) how.append(el('b', '', tr('dex.legendary') + ': '), tr(`legend.${entry.legend}.how`));
+      else if (!entry.lineage) how.append(tr('type.baseHow'));
       else if (entry.lineage === 'chimera') how.append(tr('types.hiddenText'));
       else how.append(el('b', '', lineageName(entry.lineage) + ': '), tr(`type.${entry.lineage}.how`), ' ', tr('type.weight', { w: weights[entry.lineage] || 1 }) + '.');
+      if (['craft-mythic', 'lore-mythic'].includes(entry.key)) how.append(' ', tr('dex.friendForm'));
     }
     const lineBox = document.getElementById('d-line');
     lineBox.replaceWith(Object.assign(entry.lineage ? evolutionLine(entry.lineage, entry.key) : el('div', 'line'), { id: 'd-line' }));
