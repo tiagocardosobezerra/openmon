@@ -200,3 +200,16 @@ The project is now **Openmon**, and its field guide is the **Opendex**. "Open" s
 8. **First run.** Connect Claude Code from the pet's own bubble; two tips shown once (right-click for the card, click the sign to jump to the agent).
 9. **Polish.** Visible keyboard focus, window titles in your language, a "Walk around" switch, emotes follow Chatter and quiet mode.
 10. **Review.** A declined restore no longer risks the found pet; an older pet that unlocks many accessories at once gets one toast instead of a flood. Tests (76), smoke test and docs updated.
+
+# Round 5: ten cycles as someone who does not play games
+
+1. **No jargon.** Bond became Friendship, lineage became type, tool calls became agent actions, turns became requests, the Stats tab became Work, nature became personality, Nocturne became night colours, "Lv" became "Level" in Portuguese.
+2. **A help page.** "How it works": each pose drawn live with what it means, what you can do, and the questions people ask (speed, privacy, quiet, hiding, reinstalling, removing).
+3. **The card in plain words.** The XP and Friendship bars explain themselves on hover; label and value sit above a full-width bar, so long values never squeeze it.
+4. **What the agent asks, in everyday words.** "Wants permission to run a command: npm publish", "Editing the file app.js", "Opening example.com".
+5. **Menu.** Nickname…, Chatter and emotes, Connect to Claude Code, Make a copy now, Export my pet to a file…, Bring back a pet from a file….
+6. **Empty states that guide.** No agents: what to do and what will appear.
+7. **Numbers with units.** "11,998 XP to evolve", "4/100" friendship, level with a hint.
+8. **Newcomers.** After the nickname question, one tip says where the help is.
+9. **Pages explain themselves.** Window titles in your language; every page opens with what it is for.
+10. **Review.** The card now draws again once names load (it could show raw ids for a moment). Tests and smoke test pass.

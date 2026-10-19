@@ -236,9 +236,11 @@ button.chip[aria-pressed="true"] { border-color: var(--outline); box-shadow: var
 .seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); border-color: var(--outline); box-shadow: 0 2px 0 var(--outline); transform: translateY(-1px); }
 .seg button .n { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 99px; background: var(--sun); color: #2a2140; font-size: 10.5px; line-height: 1; box-shadow: 0 0 0 1.5px var(--outline); }
 
-.meter { display: grid; grid-template-columns: 62px 1fr auto; align-items: center; gap: 8px; font-size: 12px; }
-.meter > span { color: var(--muted); font-weight: 650; }
-.meter > b { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11.5px; color: var(--muted); }
+/* Label and value on one line, the bar under them: long values never squeeze the bar. */
+.meter { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "label value" "bar bar"; align-items: baseline; gap: 2px 8px; font-size: 12px; }
+.meter > span { grid-area: label; color: var(--muted); font-weight: 650; }
+.meter > b { grid-area: value; justify-self: end; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meter > .bar { grid-area: bar; }
 .bar { height: 10px; border-radius: 99px; background: var(--sunken); overflow: hidden; border: 1.5px solid var(--outline); }
 .bar > i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--brand); transition: width 0.6s ease; }
 .bar.bond > i { background: var(--bond); }

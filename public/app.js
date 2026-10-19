@@ -297,6 +297,8 @@
           toast = null;
           if (evolveFx.toStage === 'sprout') {
             nicknameOffer = { until: Date.now() + 120_000 };
+            // After the nickname question, where to find help.
+            tip('help', tr('tip.help'), tr('tip.help.sub'), 130_000);
             if (evolveFx.shiny) burst('spark', 24, petCX(), GROUND - 50, Math.PI * 2, { colors: ['#fffbe0', '#ffe156'], gravity: 40, max: 1.8 });
             pushToast(evolveFx.shiny ? tr('scene.shiny', { form: evolveFx.toName }) : tr('scene.hatched', { name }), tr(evolveFx.shiny ? 'scene.shiny.sub' : 'scene.hatched.sub'), 5500, 'scene');
           } else {
@@ -721,7 +723,8 @@
     // The species line only when a nickname takes the title.
     const dexNo = pet.dexNo ? `#${String(pet.dexNo).padStart(3, '0')}` : '';
     $('card-form').textContent = pet.nickname ? `${dexNo} ${pet.form}`.trim() : dexNo;
-    $('card-level').textContent = `Lv ${pet.level || 1}`;
+    $('card-level').textContent = tr('card.level', { n: pet.level || 1 });
+    $('card-level').title = tr('card.levelHelp');
     $('card-stage').textContent = tr(`stage.${pet.stage}`);
     const pr = pet.progress;
     const soon = pr.next && pr.ratio >= 0.9 && !pr.needsBond;
@@ -1195,6 +1198,8 @@
         const trait = stats.find((x) => x !== lineage);
         for (const stage of ['juvenile', 'adult', 'mythic']) add(`${stage}:${lineage}:${trait}`, `${forms[stage]} (${lineage} ${stage})`);
       }
+      // Names arrived after the first draw: draw the card again with them.
+      renderAll();
     })
     .catch(() => {});
 

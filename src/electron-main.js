@@ -16,15 +16,15 @@ const installer = require('./install');
 // Menu and notification text follow the OS language (English or Portuguese).
 const PT = {
   'Open card': 'Abrir card',
-  'Name…': 'Dar nome…',
+  'Nickname…': 'Apelido…',
   'Play demo': 'Ver demonstração',
   'Show pet': 'Mostrar pet',
   'Sounds': 'Sons',
   'Notify when an agent waits': 'Avisar quando um agente esperar',
-  'Chatter': 'Falas',
+  'Chatter and emotes': 'Falas e emoções',
   'Start with the computer': 'Iniciar com o computador',
-  'Claude Code hooks installed ✓': 'Hooks do Claude Code instalados ✓',
-  'Connect Claude Code (install hooks)': 'Conectar ao Claude Code (instalar hooks)',
+  'Connected to Claude Code ✓': 'Conectado ao Claude Code ✓',
+  'Connect to Claude Code': 'Conectar ao Claude Code',
   'Trainer card (share)': 'Cartão de treinador (compartilhar)',
   'Retire to Hall of Fame and lay a new egg': 'Aposentar no Hall da Fama e botar um novo ovo',
   'Powers…': 'Poderes…',
@@ -39,19 +39,19 @@ const PT = {
   'Normal': 'Normal',
   'Large': 'Grande',
   'Settings': 'Configurações',
-  'Backups': 'Backups',
+  'Backups': 'Cópias de segurança',
   'Walk around': 'Passear pela tela',
   'Bag': 'Mochila',
   'How it works': 'Como funciona',
-  'Save a backup now': 'Salvar um backup agora',
-  'Export save…': 'Exportar save…',
-  'Import save…': 'Importar save…',
-  'Open backups folder': 'Abrir pasta de backups',
+  'Make a copy now': 'Fazer uma cópia agora',
+  'Export my pet to a file…': 'Exportar meu pet para um arquivo…',
+  'Bring back a pet from a file…': 'Trazer um pet de um arquivo…',
+  'Open the copies folder': 'Abrir a pasta das cópias',
   'Replace': 'Substituir',
   'Cancel': 'Cancelar',
   'Replace {name} with the pet in this file?': 'Substituir {name} pelo pet deste arquivo?',
-  'A backup of the current pet is kept in the backups folder.': 'Um backup do pet atual fica guardado na pasta de backups.',
-  'This file is not an Openmon save.': 'Este arquivo não é um save do Openmon.',
+  'A backup of the current pet is kept in the backups folder.': 'Uma cópia do pet atual fica guardada na pasta das cópias.',
+  'This file is not an Openmon save.': 'Este arquivo não é um pet do Openmon.',
   'Reset position': 'Voltar à posição inicial',
   'Quit': 'Sair',
   '{label} needs you': '{label} precisa de você',
@@ -231,10 +231,10 @@ function menuTemplate() {
     {
       label: L('Settings'),
       submenu: [
-        { label: L('Name…'), click: openNameWindow },
+        { label: L('Nickname…'), click: openNameWindow },
         { type: 'separator' },
         { label: L('Sounds'), type: 'checkbox', checked: !config.muted, click: (item) => daemon.setConfig({ muted: !item.checked }) },
-        { label: L('Chatter'), type: 'checkbox', checked: config.chatter, click: (item) => daemon.setConfig({ chatter: item.checked }) },
+        { label: L('Chatter and emotes'), type: 'checkbox', checked: config.chatter, click: (item) => daemon.setConfig({ chatter: item.checked }) },
         { label: L('Walk around'), type: 'checkbox', checked: config.stroll !== false, click: (item) => daemon.setConfig({ stroll: item.checked }) },
         { label: L('Notify when an agent waits'), type: 'checkbox', checked: config.notify, click: (item) => daemon.setConfig({ notify: item.checked }) },
         {
@@ -245,9 +245,9 @@ function menuTemplate() {
         },
         { type: 'separator' },
         hooked
-          ? { label: L('Claude Code hooks installed ✓'), enabled: false }
+          ? { label: L('Connected to Claude Code ✓'), enabled: false }
           : {
-              label: L('Connect Claude Code (install hooks)'),
+              label: L('Connect to Claude Code'),
               click: () => {
                 installer.install();
                 daemon.recheckHooks();
@@ -257,11 +257,11 @@ function menuTemplate() {
         {
           label: L('Backups'),
           submenu: [
-            { label: L('Save a backup now'), click: () => daemon.backupNow() },
-            { label: L('Export save…'), click: exportSave },
-            { label: L('Import save…'), click: importSave },
+            { label: L('Make a copy now'), click: () => daemon.backupNow() },
+            { label: L('Export my pet to a file…'), click: exportSave },
+            { label: L('Bring back a pet from a file…'), click: importSave },
             { type: 'separator' },
-            { label: L('Open backups folder'), enabled: Boolean(daemon.backupDir()), click: () => shell.openPath(daemon.backupDir()) },
+            { label: L('Open the copies folder'), enabled: Boolean(daemon.backupDir()), click: () => shell.openPath(daemon.backupDir()) },
           ],
         },
         { label: L('Reset position'), click: () => { const p = defaultPlace(); win.setPosition(p.x, p.y); savePlace(); } },
@@ -282,12 +282,12 @@ function menuTemplate() {
 // Saves: export to a file you choose, or bring one back.
 async function exportSave() {
   const name = ((latest && latest.pet && latest.pet.name) || 'openmon').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const r = await dialog.showSaveDialog({ title: L('Export save…'), defaultPath: path.join(app.getPath('documents'), `${name}.openmon.json`), filters: [{ name: 'Openmon', extensions: ['json'] }] });
+  const r = await dialog.showSaveDialog({ title: L('Export my pet to a file…'), defaultPath: path.join(app.getPath('documents'), `${name}.openmon.json`), filters: [{ name: 'Openmon', extensions: ['json'] }] });
   if (!r.canceled && r.filePath) daemon.exportTo(r.filePath);
 }
 
 async function importSave() {
-  const r = await dialog.showOpenDialog({ title: L('Import save…'), properties: ['openFile'], filters: [{ name: 'Openmon', extensions: ['json'] }] });
+  const r = await dialog.showOpenDialog({ title: L('Bring back a pet from a file…'), properties: ['openFile'], filters: [{ name: 'Openmon', extensions: ['json'] }] });
   if (r.canceled || !r.filePaths[0]) return;
   const current = latest && latest.pet ? `${latest.pet.name} (Lv ${latest.pet.level})` : 'Openmon';
   const ok = await dialog.showMessageBox({ type: 'question', buttons: [L('Replace'), L('Cancel')], defaultId: 1, cancelId: 1, message: L('Replace {name} with the pet in this file?', { name: current }), detail: L('A backup of the current pet is kept in the backups folder.') });
