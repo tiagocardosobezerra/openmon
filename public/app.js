@@ -993,8 +993,9 @@
   }
 
   // The pose of a companion: what its own project's agent is doing.
-  function companionLive(all, project) {
-    const mine = (all.sessions || []).filter((s) => project && s.label === project);
+  // A companion's own sessions: those of its project, and those handed to it.
+  function companionLive(all, project, ids = []) {
+    const mine = (all.sessions || []).filter((s) => (project && s.label === project) || ids.includes(s.id));
     const pick = (st) => mine.find((s) => s.state === st);
     const s = pick('attention') || pick('working') || pick('done') || null;
     const poseOf = { attention: 'attention', working: 'working', done: 'done' };
@@ -1007,7 +1008,7 @@
       if (!c) return;
       pet = c;
       config = { ...(msg.config || config), muted: true, chatter: false };
-      live = companionLive(msg.live, c.project);
+      live = companionLive(msg.live, c.project, c.sessions || []);
       if (!params.get('scale') && msg.config) document.documentElement.style.setProperty('--scale', String(msg.config.scale || 1));
       if (live.pose !== pose) {
         pose = live.pose;

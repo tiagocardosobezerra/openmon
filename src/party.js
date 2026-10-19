@@ -90,9 +90,12 @@ function petFor(root, project) {
 
 // Applies a hook signal to the right pet. Returns events; events about a pet
 // that is not on screen carry `petId` and `project`.
-function applySignal(root, signal, ctx, now) {
+// petId: the pet on screen this session was handed to (see the daemon),
+// for work that has no pet of its own.
+function applySignal(root, signal, ctx, now, petId = null) {
   ensure(root);
-  const target = petFor(root, projectOf(signal));
+  const chosen = petId && petId !== root.id ? root.others.find((m) => m.id === petId && m.place === 'party') : null;
+  const target = chosen || petFor(root, projectOf(signal));
   let events;
   if (target === root) events = pet.applySignal(root, signal, ctx, now);
   else {
