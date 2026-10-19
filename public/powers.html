@@ -235,6 +235,7 @@
       e.turns ? tr('journal.turns', { n: e.turns }) : null,
       e.green || e.red ? tr('journal.tests', { g: e.green, r: e.red }) : null,
       e.waitMs ? tr('journal.waited', { t: dur(e.waitMs) }) : null,
+      e.tokens ? tr('yesterday.tokens', { n: new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 }).format(e.tokens) }) : null,
     ].filter(Boolean);
     return `${dayLabel(e.day, { weekday: 'long', day: 'numeric', month: 'short' })} · ${bits.join(' · ')}${projects ? ` · ${projects}` : ''}`;
   }
@@ -289,6 +290,7 @@
       h('div', {}, h('b', {}, String(sum('turns'))), h('small', {}, tr('journal.weekTurns'))),
       h('div', {}, h('b', {}, tests ? `${Math.round((sum('green') / tests) * 100)}%` : '–'), h('small', {}, tr('journal.weekGreen'))),
       h('div', {}, h('b', {}, dur(sum('waitMs'))), h('small', {}, tr('journal.weekWait'))),
+      h('div', { title: tr('today.tokensHelp') }, h('b', {}, new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 }).format(sum('tokens'))), h('small', {}, tr('journal.weekTokens'))),
       h('div', {}, h('b', { style: 'font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, top ? top[0] : '–'), h('small', {}, tr('journal.weekTop'))));
     box.append(head, chart, labels, legend, detail, totals);
   }

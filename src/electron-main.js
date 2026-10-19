@@ -29,6 +29,12 @@ const PT = {
   'Retire to Hall of Fame and lay a new egg': 'Aposentar no Hall da Fama e botar um novo ovo',
   'Powers…': 'Poderes…',
   'Quiet mode': 'Modo silencioso',
+  'Focus mode': 'Modo foco',
+  'Focus until {t}': 'Foco até {t}',
+  '25 minutes': '25 minutos',
+  '50 minutes': '50 minutos',
+  '1 hour 30': '1 hora e 30',
+  'End focus': 'Encerrar o foco',
   'Quiet until {t}': 'Silêncio até {t}',
   '30 minutes': '30 minutos',
   '1 hour': '1 hora',
@@ -216,6 +222,16 @@ function menuTemplate() {
     { label: L('How it works'), click: () => openAppWindow('help') },
     { label: L('Trainer card (share)'), click: () => openAppWindow('card') },
     { type: 'separator' },
+    {
+      label: config.focus ? L('Focus until {t}', { t: until(config.focusUntil) }) : L('Focus mode'),
+      submenu: [
+        { label: L('25 minutes'), click: () => daemon.setFocus(25) },
+        { label: L('50 minutes'), click: () => daemon.setFocus(50) },
+        { label: L('1 hour 30'), click: () => daemon.setFocus(90) },
+        { type: 'separator', visible: Boolean(config.focus) },
+        { label: L('End focus'), visible: Boolean(config.focus), click: () => daemon.setFocus(0) },
+      ],
+    },
     {
       label: config.quiet ? L('Quiet until {t}', { t: until(config.quietUntil) }) : L('Quiet mode'),
       submenu: [

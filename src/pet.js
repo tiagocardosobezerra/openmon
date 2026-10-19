@@ -168,7 +168,7 @@ function view(pet) {
     leaning: pet.stage === 'egg' ? null : topStats(pet.stats)[0],
     progress: progress(pet),
     counters: pet.counters,
-    today: { waitMs: pet.daily.waitMs || 0, waits: pet.daily.waits || 0, fastestMs: pet.daily.fastestMs ?? null, day: pet.daily.day, missions: missionView(pet), perfect: Boolean(pet.daily.perfect) },
+    today: { tokens: pet.daily.tokens || 0, waitMs: pet.daily.waitMs || 0, waits: pet.daily.waits || 0, fastestMs: pet.daily.fastestMs ?? null, day: pet.daily.day, missions: missionView(pet), perfect: Boolean(pet.daily.perfect) },
     achievements: pet.achievements,
     history: pet.history,
     hallOfFame: pet.hallOfFame || [],
@@ -236,6 +236,17 @@ function checkCosmetics(pet, now, events) {
     pet.wardrobe.owned[id] = now;
     events.push({ type: 'cosmetic', id, slot: COSMETICS[id].slot });
   }
+}
+
+// Tokens your agents used (read from Claude Code's conversation files).
+function addTokens(pet, delta, now) {
+  const events = [];
+  rollDay(pet, now, events);
+  const n = (delta.input || 0) + (delta.output || 0) + (delta.cacheWrite || 0);
+  if (!n) return events;
+  pet.daily.tokens = (pet.daily.tokens || 0) + n;
+  pet.counters.tokens = (pet.counters.tokens || 0) + n;
+  return events;
 }
 
 function giveItem(pet, item, n, events) {
@@ -311,6 +322,7 @@ function journalEntry(d) {
     waitMs: d.waitMs || 0,
     waits: d.waits || 0,
     fastestMs: d.fastestMs ?? null,
+    tokens: d.tokens || 0,
     families: { ...(d.families || {}) },
     projects: { ...(d.projects || {}) },
   };
@@ -336,9 +348,12 @@ function rollDay(pet, now, events) {
     return;
   }
   const previous = pet.daily.day;
-  // Yesterday goes into the journal (the last 60 days are kept).
+  // Yesterday goes into the journal (the last 60 days are kept), and the
+  // first thing today is a one-line summary of it.
   if (previous) {
-    pet.journal = [...(pet.journal || []), journalEntry(pet.daily)].slice(-JOURNAL_DAYS);
+    const entry = journalEntry(pet.daily);
+    pet.journal = [...(pet.journal || []), entry].slice(-JOURNAL_DAYS);
+    if (entry.tools || entry.turns) events.push({ type: 'yesterday', entry });
   }
   pet.daily = { day, pets: 0, fastAnswers: 0, waitMs: 0, waits: 0, fastestMs: null, tools: 0, edits: 0, green: 0, turns: 0, missions: missionsFor(day), perfect: false, activeDays: (pet.daily.activeDays || 0) + 1 };
   // Streak: consecutive days with your agent. A missed day starts over.
@@ -624,6 +639,7 @@ module.exports = {
   regionOf,
   wear,
   useItem,
+  addTokens,
   checkCosmetics,
   missionsFor,
   dayKey,

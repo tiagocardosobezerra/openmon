@@ -400,8 +400,8 @@
   let nearSince = null;
   let lastEmote = 0;
   function showEmote(glyph, t, ms = 1800) {
-    // "Chatter" off or quiet mode: no little bubbles either.
-    if (evolveFx || toast || !config.chatter || config.quiet) return;
+    // "Chatter" off, quiet or focus mode: no little bubbles either.
+    if (evolveFx || toast || !config.chatter || config.quiet || config.focus) return;
     emote = { glyph, at: t, until: t + ms / 1000 };
     lastEmote = t;
   }
@@ -642,6 +642,11 @@
     document.documentElement.style.setProperty('--bubble-bottom', `${Math.min(300, H - headY(stage) + lift)}px`);
     const f = live.focus || {};
     if (toast && toast.style === 'say' && (pose === 'attention' || pose === 'error')) toast = null;
+    // Focus mode: only "needs you" (and its answer buttons) gets through.
+    if (config.focus && pose !== 'attention' && !restoreOffer) {
+      if (toast && toast.style !== 'scene') toast = null;
+      return setBubble(null);
+    }
     // First of all: a fresh install found a backup; offer to bring that pet back.
     if (restoreOffer) {
       const o = restoreOffer;
@@ -720,6 +725,11 @@
     renderCard();
   }
 
+  // 1234567 -> "1.2 M" (in the user's language).
+  function compact(n) {
+    return new Intl.NumberFormat(window.OpenmonI18n.lang, { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+  }
+
   function el(tag, cls, text) {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -768,6 +778,7 @@
     for (const [text, cls] of [
       [soon ? tr(pet.stage === 'egg' ? 'card.aboutToHatch' : 'card.evolveSoon') : null, 'sun'],
       [quiet || null, ''],
+      [config.focus && config.focusUntil ? tr('card.focus', { t: new Date(config.focusUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : null, 'sun'],
       [pet.nocturne ? tr('card.night') : null, 'brand'],
       [pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null, ''],
       [pet.holding === 'everstone' ? tr(pr.next && pet.xp >= 0 && pr.ratio >= 1 ? 'card.everstoneReady' : 'card.everstone') : null, 'brand'],
@@ -823,6 +834,16 @@
     if (pet.today && pet.today.waitMs) wait.append(el('b', '', shortDur(pet.today.waitMs)), el('span', '', tr('today.waited')));
     else wait.append(el('span', '', tr('today.noWaits')));
     if (pet.streak && pet.streak.days > 1) wait.append(el('span', 'chip sun streak', tr('today.streak', { n: pet.streak.days })));
+    // Tokens today, one line under the waiting time.
+    const oldTk = document.getElementById('card-tokens');
+    if (oldTk) oldTk.remove();
+    if (pet.today && pet.today.tokens) {
+      const tk = el('div', 'card-wait tokens');
+      tk.id = 'card-tokens';
+      tk.title = tr('today.tokensHelp');
+      tk.append(el('b', '', compact(pet.today.tokens)), el('span', '', tr('today.tokens')));
+      wait.after(tk);
+    }
     const ml = $('missions');
     ml.textContent = '';
     ml.hidden = !missions.length;
@@ -906,7 +927,10 @@
     if (msg.demo && !demo) pushToast(tr('demo'), tr('demo.sub'), 3000);
     demo = msg.demo;
     live = msg.live;
+    // Focus just ended: say so, and suggest a short break.
+    const wasFocus = Boolean(config && config.focus);
     config = msg.config || config;
+    if (wasFocus && !config.focus && config.focusUntil && Date.now() >= config.focusUntil - 1000) pushToast(tr('focus.done'), tr('focus.doneSub'), 8000, 'scene');
     pet = msg.pet;
     const nextFamily = live.family || (live.focus && live.focus.family) || null;
     if (live.pose !== pose) {
@@ -982,6 +1006,13 @@
         case 'wear':
           burst('spark', 10, petCX(), top - 6, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 50 });
           break;
+        case 'yesterday': {
+          const y = e.entry;
+          const tests = (y.green || 0) + (y.red || 0);
+          const bits = [tr('journal.tools', { n: y.tools }), y.turns ? tr('journal.turns', { n: y.turns }) : null, tests ? tr('yesterday.tests', { p: Math.round(((y.green || 0) / tests) * 100) }) : null, y.tokens ? tr('yesterday.tokens', { n: compact(y.tokens) }) : null].filter(Boolean);
+          setTimeout(() => pushToast(tr('yesterday.title'), bits.join(' · '), 7000), 9000);
+          break;
+        }
         case 'daily-gift':
           setTimeout(() => pushToast(tr('gift.title'), e.streak > 1 ? tr('gift.streak', { n: e.streak }) : tr('gift.sub'), 5000), 2500);
           break;

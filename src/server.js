@@ -19,6 +19,7 @@ const { localizeSpecies } = require('./i18n');
 const { createPlayground } = require('./playground');
 const { createFocus } = require('./focus');
 const party = require('./party');
+const { createUsage } = require('./usage');
 const { createBackups, unwrap } = require('./backup');
 const { createPowers, unlockedPowers } = require('./powers');
 
@@ -81,6 +82,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   const artDirs = [artDir, bundledArt].filter(Boolean);
   const bus = new EventEmitter();
   const powers = createPowers();
+  const usage = createUsage();
   const clients = new Set();
   // A brand-new pet file: if a backup exists, offer to bring that pet back.
   const freshInstall = Boolean(store.file) && !fs.existsSync(store.file);
@@ -88,13 +90,13 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25 };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25 };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
   } catch {}
   // What the renderers need: the settings plus whether quiet mode is on now.
-  const publicConfig = () => ({ ...config, quiet: Boolean(config.quietUntil && config.quietUntil > now()) });
+  const publicConfig = () => ({ ...config, quiet: Boolean(config.quietUntil && config.quietUntil > now()), focus: Boolean(config.focusUntil && config.focusUntil > now()) });
   let demoTimers = [];
   let lastStateJson = '';
 
@@ -165,6 +167,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // pet is a single egg.
     const events = target === real ? party.applySignal(real.pet, signal, ctx, t) : pet.applySignal(target.pet, signal, ctx, t);
     if (target === real) followProject(signal, t, events);
+    if (target === real && (signal.kind === 'turn-end' || signal.kind === 'session-end') && payload.transcript_path) {
+      const delta = usage.read(String(payload.transcript_path));
+      if (delta) events.push(...pet.addTokens(real.pet, delta, t));
+    }
     if (target === real) persist(events.some((e) => e.type === 'evolve'));
     log(`${signal.kind.padEnd(14)} ${signal.label}${signal.detail ? ` · ${signal.detail}` : ''}`);
     return events;
@@ -390,6 +396,11 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   }
 
   // Quiet mode: no sounds, no chatter, no OS notifications for a while.
+  // Focus mode: only "needs you" gets through, for a while.
+  function setFocus(minutes) {
+    setConfig({ focusUntil: minutes > 0 ? now() + minutes * 60_000 : null });
+  }
+
   function setQuiet(minutes) {
     setConfig({ quietUntil: minutes > 0 ? now() + minutes * 60_000 : null });
   }
@@ -543,6 +554,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
           // One-time tips, remembered so they are never shown twice.
           if (typeof body.tipSeen === 'string' && /^[a-z-]{1,24}$/.test(body.tipSeen) && !(config.tips || []).includes(body.tipSeen)) patch.tips = [...(config.tips || []), body.tipSeen].slice(-20);
+          if (typeof body.focusMinutes === 'number') patch.focusUntil = body.focusMinutes > 0 ? now() + Math.min(body.focusMinutes, 600) * 60_000 : null;
           if (typeof body.quietMinutes === 'number') patch.quietUntil = body.quietMinutes > 0 ? now() + body.quietMinutes * 60_000 : null;
           setConfig(patch);
           json(res, 200, publicConfig());
@@ -625,6 +637,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     petIt,
     focusAgent,
     recheckHooks,
+    setFocus,
     restoreFile,
     exportTo,
     backupNow: () => (backups ? backups.maybe(real.pet, config, true) : false),
