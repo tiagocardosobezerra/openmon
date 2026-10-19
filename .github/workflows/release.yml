@@ -1,7 +1,9 @@
 name: Release
 
 # Push a tag like v0.2.0 to build the installers and attach them to a
-# GitHub Release (Windows .exe, macOS .dmg, Linux .AppImage).
+# GitHub Release (Windows .exe, macOS .dmg, Linux .AppImage), plus
+# SHA256SUMS.txt so anyone can check a download was not changed.
+# Actions are pinned to commit SHAs: a moved tag cannot change what runs.
 on:
   push:
     tags: ['v*']
@@ -16,8 +18,8 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -26,3 +28,18 @@ jobs:
       - run: node tools/dist.js --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  checksums:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: SHA-256 of every installer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir dl && cd dl
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.exe' --pattern '*.dmg' --pattern '*.AppImage'
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          gh release upload "$TAG" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber

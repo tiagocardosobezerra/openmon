@@ -145,3 +145,30 @@ test('the Gist never holds the phone topic or the computer name', async () => {
   const saved = JSON.parse(text);
   assert.deepEqual(saved.config, { muted: true, lang: 'pt-BR' });
 });
+
+test('with a system keychain, the saved token is sealed and opens again after a restart', async () => {
+  const gh = fakeGitHub();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-cloud-'));
+  const file = path.join(dir, 'cloud.json');
+  // A stand-in keychain: reversible, but the file never holds the plain token.
+  const vault = {
+    encryptString: (s) => Buffer.from(`sealed:${Buffer.from(s).toString('hex')}`),
+    decryptString: (b) => Buffer.from(String(b).slice(7), 'hex').toString(),
+  };
+  // A device sign-in saved by an older version, in plain text.
+  fs.writeFileSync(file, JSON.stringify({ source: 'device', token: 'gho_device_token', login: 'ana', machineId: 'aaaabbbbccccdddd' }));
+  const loaded = createCloud({ file, fetchImpl: gh.fetchImpl, now: () => 2, vault });
+  assert.equal(loaded.connected(), true);
+  await loaded.sync({ pet: grown(5), config: {} });
+  const text = fs.readFileSync(file, 'utf8');
+  assert.equal(text.includes('gho_device_token'), false);
+  assert.ok(JSON.parse(text).tokenSealed);
+  const again = createCloud({ file, fetchImpl: gh.fetchImpl, now: () => 3, vault });
+  assert.equal(again.connected(), true);
+  // Without the keychain (plain Node), a sealed token cannot be used: signed out, nothing leaks.
+  const noVault = createCloud({ file, fetchImpl: gh.fetchImpl, now: () => 4, vault: null });
+  assert.equal(noVault.connected(), false);
+  // ...and it does not wipe the sealed token the app still uses.
+  assert.ok(JSON.parse(fs.readFileSync(file, 'utf8')).tokenSealed);
+  assert.equal(createCloud({ file, fetchImpl: gh.fetchImpl, now: () => 5, vault }).connected(), true);
+});

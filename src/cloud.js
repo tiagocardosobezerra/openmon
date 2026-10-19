@@ -53,23 +53,48 @@ function readGhToken() {
   return ghCandidates().reduce((p, bin) => p.then((t) => t || tryOne(bin)), Promise.resolve(null));
 }
 
-function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (...a) => fetch(...a), ghToken = readGhToken, clientId = CLIENT_ID, machineName = null, now = Date.now } = {}) {
-  let st = { token: null, login: null, source: null, gistId: null, machineId: null, lastSync: null, dirty: false, syncedAt: null };
+// Inside the desktop app, the system keychain (Windows DPAPI, macOS Keychain,
+// libsecret on Linux) encrypts the saved token. Plain Node has none.
+function systemVault() {
+  try {
+    if (!process.versions.electron) return null;
+    const { safeStorage } = require('electron');
+    return safeStorage && safeStorage.isEncryptionAvailable() ? safeStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (...a) => fetch(...a), ghToken = readGhToken, clientId = CLIENT_ID, machineName = null, now = Date.now, vault = systemVault() } = {}) {
+  let st = { token: null, tokenSealed: null, login: null, source: null, gistId: null, machineId: null, lastSync: null, dirty: false, syncedAt: null };
   try {
     st = { ...st, ...JSON.parse(fs.readFileSync(file, 'utf8')) };
   } catch {}
   if (!st.machineId) st.machineId = crypto.randomBytes(8).toString('hex');
   // Not the computer's name: just its system and a short id.
   const machine = machineName || `${OS_NAME[process.platform] || process.platform} · ${st.machineId.slice(0, 4)}`;
-  // Only a device-flow token (gist scope only) is kept in the file.
-  let token = st.source === 'device' ? st.token : null;
+  // Only a device-flow token (gist scope only) is kept in the file, sealed
+  // by the system keychain when there is one.
+  let token = null;
+  if (st.source === 'device') {
+    if (st.tokenSealed) {
+      try {
+        token = vault ? vault.decryptString(Buffer.from(st.tokenSealed, 'base64')) : null;
+      } catch {}
+    } else token = st.token;
+  }
+  // A sealed token this process cannot open (the terminal, outside the app):
+  // not signed in here, but the file keeps it for the app.
+  let locked = st.source === 'device' && !token && Boolean(st.tokenSealed);
   let device = null;
   let lastError = null;
 
   function save() {
     try {
       fs.mkdirSync(path.dirname(file), { recursive: true });
-      const kept = { ...st, token: st.source === 'device' ? token : null };
+      const keep = st.source === 'device' ? token : null;
+      const sealed = keep && vault ? vault.encryptString(keep).toString('base64') : locked && st.source === 'device' ? st.tokenSealed : null;
+      const kept = { ...st, token: sealed ? null : keep, tokenSealed: sealed };
       fs.writeFileSync(file, `${JSON.stringify(kept, null, 2)}\n`, { mode: 0o600 });
     } catch {}
   }
@@ -101,6 +126,7 @@ function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (.
   }
 
   async function adopt(newToken, source) {
+    locked = false;
     token = newToken;
     const res = await api('GET', '/user');
     const scopes = String(res.headers.get('x-oauth-scopes') || '').split(/,\s*/);
@@ -171,6 +197,7 @@ function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (.
   }
 
   function logout() {
+    locked = false;
     token = null;
     st.login = null;
     st.source = null;
@@ -238,7 +265,7 @@ function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (.
 
   // Decides what to do. fresh: this computer's pet is a new egg.
   async function sync({ pet, config, fresh = false, force = null } = {}) {
-    if (!st.login) return { action: 'off' };
+    if (!st.login || locked) return { action: 'off' };
     try {
       const remote = await fetchRemote();
       if (!remote) {
@@ -266,7 +293,7 @@ function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (.
 
   function status() {
     return {
-      connected: Boolean(st.login),
+      connected: Boolean(st.login) && !locked,
       login: st.login,
       source: st.source,
       syncedAt: st.syncedAt,
@@ -278,7 +305,7 @@ function createCloud({ file = path.join(homeDir(), 'cloud.json'), fetchImpl = (.
   }
 
   save();
-  return { connectGh, startDevice, logout, sync, push, synced, markChanged, fetchRemote, status, connected: () => Boolean(st.login) };
+  return { connectGh, startDevice, logout, sync, push, synced, markChanged, fetchRemote, status, connected: () => Boolean(st.login) && !locked };
 }
 
 module.exports = { createCloud, readGhToken, DESCRIPTION, FILE };
