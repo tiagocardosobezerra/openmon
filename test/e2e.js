@@ -146,13 +146,16 @@ function runScenario(scenario) {
   // (The screen module exists once the app is ready; this runs before the
   // app's own ready handler.)
   app.whenReady().then(() => {
-    // Start the pets in the corner away from the real pointer, which the
+    // Start the pets on the side away from the real pointer, which the
     // test never moves.
     const real = screen.getCursorScreenPoint();
     const area = screen.getPrimaryDisplay().workArea;
     const right = real.x < area.x + area.width / 2;
-    const low = real.y < area.y + area.height / 2;
-    const place = { x: right ? area.x + area.width - 324 : area.x + 420, y: low ? area.y + area.height - 560 : area.y, w: 300, h: 560 };
+    // Standing on the bottom of the screen, as the app places them; the
+    // companion goes to the left, so keep room for it.
+    const place = { x: right ? area.x + area.width - 324 : area.x + 420, y: area.y + area.height - 560, w: 300, h: 560 };
+    const d = screen.getPrimaryDisplay();
+    console.log(`screen ${d.bounds.width}x${d.bounds.height} work area ${JSON.stringify(area)} scale ${d.scaleFactor}, pointer ${real.x},${real.y}`);
     fs.writeFileSync(path.join(home, 'window.json'), JSON.stringify(place));
     screen.getCursorScreenPoint = () => ({ ...cursor });
   });
@@ -286,7 +289,9 @@ function runScenario(scenario) {
     await wait(40);
     mouse(w, 'mouseDown', p.x, p.y, { button: 'left', clickCount: 1 });
     await wait(60);
-    const dx = -90;
+    // Towards the middle of the screen: the OS may stop a window at its edges.
+    const area = screen.getDisplayMatching(w.getBounds()).workArea;
+    const dx = before[0] + 150 > area.x + area.width / 2 ? -90 : 90;
     const dy = -60;
     for (let i = 1; i <= 6; i++) {
       // The window follows the pointer, so the point in the window stays put.
@@ -356,7 +361,7 @@ function runScenario(scenario) {
         // The main pet first.
         return ws.sort((a, b) => Boolean(a.__companion) - Boolean(b.__companion));
       }, 30_000, 200);
-      check(`${want} pet window(s) open`, ready, `found ${petWindows().length}`);
+      check(`${want} pet window(s) open`, ready, JSON.stringify(await Promise.all(petWindows().map(async (w) => ({ url: w.webContents.getURL(), bounds: w.getBounds(), visible: w.isVisible(), loading: w.webContents.isLoading(), pet: await petPoint(w).catch((e) => String(e)) })))));
       if (!ready) throw new Error('pet windows never showed');
       // The card is drawn from state the page gets once connected.
       await wait(800);
