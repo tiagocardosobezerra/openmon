@@ -87,7 +87,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, quietUntil: null, scale: 1 };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, quietUntil: null, scale: 1, tips: [] };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -99,6 +99,11 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   // Whether Claude Code is connected, re-checked at most every 10 s.
   let hooks = { at: 0, ok: false };
+  function recheckHooks() {
+    hooks = { at: 0, ok: false };
+    pushState(true);
+  }
+
   function setup() {
     if (now() - hooks.at > 10_000) hooks = { at: now(), ok: hooksInstalled() };
     return { hooks: hooks.ok };
@@ -423,6 +428,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.notify === 'boolean') patch.notify = body.notify;
           if (typeof body.chatter === 'boolean') patch.chatter = body.chatter;
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
+          // One-time tips, remembered so they are never shown twice.
+          if (typeof body.tipSeen === 'string' && /^[a-z-]{1,24}$/.test(body.tipSeen) && !(config.tips || []).includes(body.tipSeen)) patch.tips = [...(config.tips || []), body.tipSeen].slice(-20);
           if (typeof body.quietMinutes === 'number') patch.quietUntil = body.quietMinutes > 0 ? now() + body.quietMinutes * 60_000 : null;
           setConfig(patch);
           json(res, 200, publicConfig());
@@ -504,6 +511,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     ingest,
     petIt,
     focusAgent,
+    recheckHooks,
     restoreFile,
     exportTo,
     backupNow: () => (backups ? backups.maybe(real.pet, config, true) : false),

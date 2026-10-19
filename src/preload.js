@@ -13,4 +13,5 @@ contextBridge.exposeInMainWorld('openmonDesktop', {
   openPowers: () => ipcRenderer.send('open-powers'),
   openPage: (page) => ipcRenderer.send('open-page', String(page)),
   openName: () => ipcRenderer.send('open-name'),
+  installHooks: () => ipcRenderer.send('install-hooks'),
 });

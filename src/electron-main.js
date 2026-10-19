@@ -246,6 +246,7 @@ function menuTemplate() {
               label: L('Connect Claude Code (install hooks)'),
               click: () => {
                 installer.install();
+                daemon.recheckHooks();
                 refreshTray();
               },
             },
@@ -461,6 +462,16 @@ function wireIpc() {
   ipcMain.on('menu', () => Menu.buildFromTemplate(menuTemplate()).popup({ window: win }));
   ipcMain.on('open-powers', openPowersWindow);
   ipcMain.on('open-name', () => openNameWindow());
+  // The "connect Claude Code" bubble: same as the menu item.
+  ipcMain.on('install-hooks', () => {
+    try {
+      installer.install();
+    } catch (err) {
+      dialog.showErrorBox('Openmon', String(err.message || err));
+    }
+    daemon.recheckHooks();
+    refreshTray();
+  });
   ipcMain.on('open-page', (_e, page) => {
     openAppWindow(page);
   });

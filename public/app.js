@@ -531,6 +531,14 @@
   function pick(list) {
     return list[Math.floor(Math.random() * list.length)];
   }
+  function tip(id, title, sub, delayMs = 0) {
+    if (!config || (config.tips || []).includes(id) || demo || params.has('quiet')) return false;
+    config.tips = [...(config.tips || []), id];
+    setTimeout(() => pushToast(title, sub, 7000, 'say'), delayMs);
+    post('/api/config', { tipSeen: id });
+    return true;
+  }
+
   function chatter(kind) {
     if (!kind || !config.chatter || config.quiet || params.has('quiet') || !pet || pet.stage === 'egg') return;
     if (toast || hovering || evolveFx || pose === 'attention' || pose === 'error') return;
@@ -616,7 +624,10 @@
     if (!connected && !preview) return setBubble(null);
     if (!connected) return setBubble('error', tr('offline'), tr('offline.sub'));
     // Not connected to any agent yet: say how, until it is.
-    if (setupInfo && !setupInfo.hooks && !(live.sessions || []).length) return setBubble('setup', tr('setup'), tr('setup.sub'));
+    if (setupInfo && !setupInfo.hooks && !(live.sessions || []).length) {
+      // On the desktop one click connects; in a browser, the command.
+      return desktop && desktop.installHooks ? setBubble('setup', tr('setup'), tr('setup.click'), { jump: 'install', action: tr('setup.action') }) : setBubble('setup', tr('setup'), tr('setup.sub'));
+    }
     const jump = !demo && f.id ? f.id : null;
     if (dismissed && dismissed === bubbleKey()) return setBubble(null);
     if (pose === 'attention') {
@@ -821,6 +832,7 @@
       burst('confetti', 18, petCX(), headY(stage) + 10, 1.8, { colors: CONFETTI, gravity: 260 });
       play('done');
     } else if (next === 'attention') {
+      tip('jump', tr('tip.jump'), tr('tip.jump.sub'), 6000);
       // One chime per 20 s at most, however many prompts arrive.
       if (Date.now() - lastChime > 20_000) {
         lastChime = Date.now();
@@ -844,6 +856,9 @@
       } else if (msg.pet.stage === 'egg' && msg.pet.counters.tools === 0 && (!msg.setup || msg.setup.hooks)) {
         setTimeout(() => pushToast(tr('intro'), tr('intro.sub'), 7000, 'say'), 1500);
       } else setTimeout(() => chatter('greet'), 2500);
+      // Teach the right-click once, after the hello.
+      config = msg.config || config;
+      tip('rightclick', tr('tip.rightclick'), tr('tip.rightclick.sub'), 10_000);
     }
     if (msg.demo && !demo) pushToast(tr('demo'), tr('demo.sub'), 3000);
     demo = msg.demo;
@@ -1114,6 +1129,11 @@
   });
   $('bubble').addEventListener('click', () => {
     if (!bubbleJump) return;
+    if (bubbleJump === 'install') {
+      desktop.installHooks();
+      pushToast(tr('setup.done'), tr('setup.doneSub'), 6000, 'say');
+      return;
+    }
     if (bubbleJump === 'nickname') {
       nicknameOffer = null;
       if (desktop && desktop.openName) desktop.openName();
