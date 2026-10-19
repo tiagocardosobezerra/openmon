@@ -132,6 +132,9 @@ body.page * { box-sizing: border-box; }
 .section-title { display: flex; align-items: baseline; gap: 8px; margin: 28px 0 10px; font: 600 15px var(--font-display); }
 .section-title small { color: var(--muted); font: 600 13px var(--font-body); font-variant-numeric: tabular-nums; }
 
+/* Keyboard focus you can see, on every page. */
+.page :is(a, button, [tabindex], input, select):focus-visible { outline: 3px solid color-mix(in srgb, var(--brand) 70%, transparent); outline-offset: 2px; }
+
 /* ---- components -------------------------------------------------------- */
 
 .panel {

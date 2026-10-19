@@ -29,5 +29,7 @@
     nav.appendChild(a);
   }
   bar.append(brand, nav);
+  const here = [...nav.children].find((a) => a.getAttribute('aria-current') === 'page');
+  if (here) document.title = `${here.textContent} · Openmon`;
   document.body.prepend(bar);
 })();

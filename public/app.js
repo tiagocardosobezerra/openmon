@@ -395,7 +395,8 @@
   let nearSince = null;
   let lastEmote = 0;
   function showEmote(glyph, t, ms = 1800) {
-    if (evolveFx || toast) return;
+    // "Chatter" off or quiet mode: no little bubbles either.
+    if (evolveFx || toast || !config.chatter || config.quiet) return;
     emote = { glyph, at: t, until: t + ms / 1000 };
     lastEmote = t;
   }
@@ -438,7 +439,7 @@
   function life(t, dt) {
     const idle = pose === 'idle' && !hovering && !down && !evolveFx && !(toast && toast.style === 'scene');
     if (!idle) walkTo = 0;
-    else if (t > nextStroll && !reducedMotion) {
+    else if (t > nextStroll && !reducedMotion && config.stroll !== false) {
       // A few steps to one side, a rest, then maybe back.
       walkTo = Math.abs(walkTo) > 10 && Math.random() < 0.5 ? 0 : (Math.random() < 0.5 ? -1 : 1) * (14 + Math.random() * 16);
       nextStroll = t + 14 + Math.random() * 18;

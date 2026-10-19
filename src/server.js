@@ -87,7 +87,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, quietUntil: null, scale: 1, tips: [] };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, quietUntil: null, scale: 1, tips: [] };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -427,6 +427,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.muted === 'boolean') patch.muted = body.muted;
           if (typeof body.notify === 'boolean') patch.notify = body.notify;
           if (typeof body.chatter === 'boolean') patch.chatter = body.chatter;
+          if (typeof body.stroll === 'boolean') patch.stroll = body.stroll;
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
           // One-time tips, remembered so they are never shown twice.
           if (typeof body.tipSeen === 'string' && /^[a-z-]{1,24}$/.test(body.tipSeen) && !(config.tips || []).includes(body.tipSeen)) patch.tips = [...(config.tips || []), body.tipSeen].slice(-20);

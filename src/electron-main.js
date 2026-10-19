@@ -40,6 +40,7 @@ const PT = {
   'Large': 'Grande',
   'Settings': 'Configurações',
   'Backups': 'Backups',
+  'Walk around': 'Passear pela tela',
   'Bag': 'Mochila',
   'Save a backup now': 'Salvar um backup agora',
   'Export save…': 'Exportar save…',
@@ -232,6 +233,7 @@ function menuTemplate() {
         { type: 'separator' },
         { label: L('Sounds'), type: 'checkbox', checked: !config.muted, click: (item) => daemon.setConfig({ muted: !item.checked }) },
         { label: L('Chatter'), type: 'checkbox', checked: config.chatter, click: (item) => daemon.setConfig({ chatter: item.checked }) },
+        { label: L('Walk around'), type: 'checkbox', checked: config.stroll !== false, click: (item) => daemon.setConfig({ stroll: item.checked }) },
         { label: L('Notify when an agent waits'), type: 'checkbox', checked: config.notify, click: (item) => daemon.setConfig({ notify: item.checked }) },
         {
           label: L('Start with the computer'),
