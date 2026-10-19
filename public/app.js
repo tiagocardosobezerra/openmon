@@ -1178,6 +1178,12 @@
           burst('confetti', 26, petCX(), GROUND - 80, 2.2, { colors: CONFETTI, gravity: 260 });
           play('level');
           break;
+        case 'cloud-pulled':
+          pushToast(tr('cloud.pulled'), tr('cloud.pulledSub', { machine: e.machine || '?' }), 6000, 'scene');
+          break;
+        case 'cloud-conflict':
+          pushToast(tr('cloud.conflict'), tr('cloud.conflictSub'), 9000, 'notice');
+          break;
         case 'mission':
           pushToast(tr('mission.doneTitle'), `${tr(`mission.${e.id}`, { n: e.target })} · +${e.xp} XP`, 4500);
           play('level');

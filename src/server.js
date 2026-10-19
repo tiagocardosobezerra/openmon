@@ -95,7 +95,7 @@ function listArt(dirs) {
   return { files: Object.keys(where).sort(), pack, tints, where };
 }
 
-function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus(), backups = playground ? null : createBackups({ now }) } = {}) {
+function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus(), backups = playground ? null : createBackups({ now }), cloud = null } = {}) {
   const artDirs = [artDir, bundledArt].filter(Boolean);
   const bus = new EventEmitter();
   const powers = createPowers();
@@ -189,6 +189,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       companions: world === real ? companionViews() : {},
       config: publicConfig(),
       restoreOffer: restoreOffer ? restoreOffer.summary : null,
+      cloud: cloudView(),
       permissions: permissionView(),
     });
   }
@@ -424,6 +425,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   function persist(force = false) {
     store.save(real.pet);
+    if (cloud) cloud.markChanged();
     // The offer only stands until the new egg starts its own life.
     if (restoreOffer && (real.pet.xp > 0 || real.pet.counters.tools > 0)) {
       restoreOffer = null;
@@ -536,6 +538,68 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   function setQuiet(minutes) {
     setConfig({ quietUntil: minutes > 0 ? now() + minutes * 60_000 : null });
+  }
+
+  // Your pet on other computers, through your GitHub account (src/cloud.js).
+  const CLOUD_EVERY_MS = 10 * 60 * 1000;
+  let cloudConflict = null;
+  let cloudBusy = null;
+  function cloudView() {
+    if (!cloud) return null;
+    return { ...cloud.status(), conflict: cloudConflict ? { ...cloudConflict.summary, machine: cloudConflict.machine.name } : null };
+  }
+  function freshPet() {
+    return real.pet.xp === 0 && !(real.pet.counters && real.pet.counters.tools) && real.pet.others.length === 0;
+  }
+  // force: 'local' keeps this computer's pet, 'remote' takes the Gist's.
+  function syncCloud(force = null) {
+    if (!cloud || !cloud.connected() || world !== real) return Promise.resolve({ action: 'off' });
+    if (cloudBusy) return cloudBusy;
+    cloudBusy = (async () => {
+      store.flush();
+      const r = await cloud.sync({ pet: real.pet, config, fresh: freshPet() || Boolean(restoreOffer), force });
+      if (r.action === 'pull') {
+        // This computer's pet is kept in the backup folder first.
+        if (backups && !freshPet()) {
+          backups.maybe(real.pet, config, true);
+          backups.keepAside();
+        }
+        restore(r.remote);
+        cloud.synced(r.remote.savedAt);
+        cloudConflict = null;
+        pushEvents([{ type: 'cloud-pulled', machine: r.remote.machine.name }]);
+      } else if (r.action === 'conflict') {
+        const first = !cloudConflict;
+        cloudConflict = r.remote;
+        if (first) pushEvents([{ type: 'cloud-conflict', machine: r.remote.machine.name }]);
+      } else if (r.action === 'pushed') cloudConflict = null;
+      pushState(true);
+      return { action: r.action, error: r.error };
+    })().finally(() => {
+      cloudBusy = null;
+    });
+    return cloudBusy;
+  }
+  const cloudTimer = setInterval(() => syncCloud(), CLOUD_EVERY_MS);
+  cloudTimer.unref();
+  if (cloud) setTimeout(() => syncCloud(), 1500).unref();
+
+  async function cloudConnect(method) {
+    if (!cloud) return { ok: false, error: 'off' };
+    try {
+      if (method === 'device') {
+        const d = await cloud.startDevice();
+        d.done.then(() => syncCloud(), () => pushState(true));
+        pushState(true);
+        return { ok: true, userCode: d.userCode, uri: d.uri };
+      }
+      const r = await cloud.connectGh();
+      syncCloud();
+      return r;
+    } catch (err) {
+      pushState(true);
+      return { ok: false, error: err.message };
+    }
   }
 
   const ticker = setInterval(() => {
@@ -655,6 +719,21 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         return json(res, 200, backups ? { dir: backups.dir, lastAt: backups.lastAt(), items: backups.list() } : { dir: null, items: [] });
       case 'POST /api/backup':
         return json(res, 200, { ok: backups ? backups.maybe(real.pet, config, true) : false });
+      case 'GET /api/cloud':
+        return json(res, 200, cloudView() || { off: true });
+      case 'POST /api/cloud/connect':
+        return readJson(req, (err, body) => (err ? res.writeHead(400).end() : cloudConnect(body && body.method === 'device' ? 'device' : 'gh').then((r) => json(res, 200, r))));
+      case 'POST /api/cloud/logout':
+        if (cloud) cloud.logout();
+        cloudConflict = null;
+        pushState(true);
+        return json(res, 200, { ok: true });
+      case 'POST /api/cloud/sync':
+        return readJson(req, (err, body) => {
+          if (err) return res.writeHead(400).end();
+          const force = body && ['local', 'remote'].includes(body.use) ? body.use : null;
+          syncCloud(force).then((r) => json(res, 200, r));
+        });
       case 'POST /api/restore':
         return readJson(req, (err, body) => {
           if (err || !backups) return res.writeHead(400).end();
@@ -832,14 +911,18 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         server.once('error', reject);
         server.listen(port, '127.0.0.1', () => resolve(server.address().port));
       }),
+    syncCloud,
     close: () =>
       new Promise((resolve) => {
         stopDemo();
         clearInterval(ticker);
+        clearInterval(cloudTimer);
         store.flush();
         if (backups && !restoreOffer && !playground) backups.maybe(real.pet, config, true);
         for (const res of clients) res.end();
-        server.close(() => resolve());
+        // The last few minutes go to GitHub too, if it answers quickly.
+        const last = cloud && cloud.connected() && !cloudConflict ? Promise.race([syncCloud(), new Promise((r) => setTimeout(r, 3000))]) : Promise.resolve();
+        last.catch(() => {}).then(() => server.close(() => resolve()));
       }),
   };
 }

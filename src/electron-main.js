@@ -792,7 +792,7 @@ async function capture() {
 app.whenReady().then(async () => {
   if (autostartArg >= 0) return;
   if (process.platform === 'darwin' && app.dock) app.dock.hide();
-  daemon = createDaemon({ playground: PLAYGROUND });
+  daemon = createDaemon({ playground: PLAYGROUND, cloud: PLAYGROUND ? null : require('./cloud').createCloud() });
   try {
     port = await daemon.listen();
   } catch (err) {

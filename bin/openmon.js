@@ -28,6 +28,9 @@ const HELP = `
   openmon name <nickname>  give it a nickname (--clear: back to the species name)
   openmon backup [file]    save a backup now (or export to a file)
   openmon restore <file|latest>  bring back a pet from a backup
+  openmon login        keep your pet in your GitHub account, on any computer (--device: sign in with a code)
+  openmon sync         sync now (--keep-local / --use-github when both computers changed)
+  openmon logout       stop syncing on this computer (the Gist stays in your account)
   openmon dex          open the Opendex: every form you have seen
   openmon card         open your trainer card, ready to share
   openmon stop         put your pet away (quits the app or daemon)
@@ -139,7 +142,8 @@ async function main() {
       return supervise(require('electron'), false);
 
     case 'serve': {
-      const daemon = createDaemon({ log: (line) => console.log(line), playground: flag('playground-daemon') });
+      const playground = flag('playground-daemon');
+      const daemon = createDaemon({ log: (line) => console.log(line), playground, cloud: playground ? null : require('../src/cloud').createCloud() });
       try {
         await daemon.listen();
         console.log(`Openmon daemon on ${base}/`);
@@ -297,6 +301,57 @@ async function main() {
       const { view } = require('../src/pet');
       const v = view(save.pet);
       return console.log(`Welcome back, ${v.name} (${v.form}, Lv ${v.level}). Your previous pet.json was kept next to it.`);
+    }
+
+    case 'login': {
+      const method = rest.includes('--device') ? 'device' : 'gh';
+      const say = (r) => {
+        if (r.ok && r.userCode) return console.log(`Open ${r.uri} and type the code ${r.userCode}. Openmon finishes on its own.`);
+        if (r.ok) return console.log(`Signed in as @${r.login}. Your pet syncs with a secret Gist in your GitHub account; on another computer, run "openmon login" there.`);
+        const why = {
+          'no-gh': 'GitHub CLI not found or not signed in. Run "gh auth login" first, or "openmon login --device".',
+          'gh-no-gist': 'Your GitHub CLI login cannot write Gists. Run "gh auth refresh -s gist", then try again.',
+          'no-device': 'Sign-in with a code is not available in this build. Use the GitHub CLI: "gh auth login", then "openmon login".',
+        }[r.error];
+        console.error(why || `Could not sign in (${r.error}).`);
+        process.exitCode = 1;
+      };
+      if (await isRunning()) {
+        const r = await (await fetch(`${base}/api/cloud/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method }) })).json();
+        return say(r);
+      }
+      const cloud = require('../src/cloud').createCloud();
+      try {
+        if (method === 'device') {
+          const d = await cloud.startDevice();
+          say({ ok: true, ...d });
+          const r = await d.done;
+          return say(r);
+        }
+        return say(await cloud.connectGh());
+      } catch (err) {
+        return say({ ok: false, error: err.message });
+      }
+    }
+
+    case 'logout': {
+      if (await isRunning()) await fetch(`${base}/api/cloud/logout`, { method: 'POST' });
+      else require('../src/cloud').createCloud().logout();
+      return console.log('This computer no longer syncs. The Gist stays in your GitHub account.');
+    }
+
+    case 'sync': {
+      if (!(await isRunning())) return console.error('Open your pet first ("openmon start"); it syncs when it opens.');
+      const use = rest.includes('--keep-local') ? 'local' : rest.includes('--use-github') ? 'remote' : null;
+      const r = await (await fetch(`${base}/api/cloud/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ use }) })).json();
+      const text = {
+        off: 'Not signed in. Run "openmon login".',
+        pushed: 'Saved to GitHub.',
+        pull: 'Brought your pet from the other computer.',
+        'up-to-date': 'Already in sync.',
+        conflict: 'Both computers changed since the last sync. Keep one: "openmon sync --keep-local" or "openmon sync --use-github".',
+      }[r.action];
+      return console.log(text || `Could not sync (${r.error}).`);
     }
 
     case 'uninstall': {

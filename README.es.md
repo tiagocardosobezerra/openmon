@@ -22,8 +22,9 @@ Openmon es una mascota de escritorio, en el espíritu de los juegos de criaturas
 * **Muestra lo que pasa, sin mirar la terminal.** Martillo es editar, libro es leer, escudo es probar, catalejo es web. ¿Varios agentes a la vez? La tarjeta lista cada uno, con lo que está haciendo.
 * **Resume cada tarea.** Cuando el agente termina: "shop-api terminó ✓ · 3 archivos · 12 comandos · pruebas ✓ · 2m 10s".
 * **Lleva un diario.** Lo que hicieron tus agentes cada día, por tipo de trabajo y por proyecto, y cuánto tiempo te esperaron.
-* **No molesta y no sale de tu computadora.** Los clics atraviesan la ventana, nunca bloquea ni retrasa al agente, no usa internet, no tiene cuenta, y las contraseñas y claves aparecen ocultas (`•••`).
+* **No molesta y no sale de tu computadora.** Los clics atraviesan la ventana, nunca bloquea ni retrasa al agente, no usa internet ni cuenta (salvo que actives el aviso en el celular o GitHub), y las contraseñas y claves aparecen ocultas (`•••`).
 * **No se pierde.** Hace copias en Documentos/Openmon Backups. ¿Formateaste la PC? En una instalación nueva pregunta si quieres traerla de vuelta.
+* **Va contigo a otra computadora (opcional).** Inicia sesión con GitHub (`openmon login` o Ajustes → Computadora) y tu mascota queda guardada en un Gist secreto de tu cuenta. En otra computadora, inicia sesión con la misma cuenta y sigue donde la dejaste. Si cambió en las dos, Openmon pregunta cuál conservar. Sin servidor de Openmon: la app habla directo con GitHub.
 
 ## Cómo se ve en la práctica
 
@@ -93,6 +94,7 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 | `openmon dex` / `openmon card` | Abre la Opendex o la tarjeta de entrenador |
 | `openmon name <apodo>` | Pone un apodo (`--clear` vuelve al nombre de la especie) |
 | `openmon backup [archivo]` / `openmon restore <archivo\|latest>` | Hace una copia o trae una mascota de vuelta |
+| `openmon login` / `openmon sync` / `openmon logout` | Lleva tu mascota entre computadoras con tu cuenta de GitHub |
 | `openmon install --agent gemini\|cursor\|opencode\|aider` | Conecta Openmon a Gemini CLI, Cursor, OpenCode o Aider |
 | `openmon autostart on\|off` | Abre la mascota al encender la computadora |
 | `openmon stats` / `openmon status` | La mascota en la terminal / si todo está conectado |
@@ -197,7 +199,7 @@ Para todos: el **Diario** de los últimos 14 días y el **contador de espera**, 
 * **Modo foco** (25, 50 o 90 minutos): solo aparece "te necesita"; al final, una sugerencia de pausa.
 * **Recordatorio de pausa** después de 50 o 90 minutos seguidos de trabajo.
 * **Modo presentación**: cambia los nombres de proyecto por "Proyecto A, B…" y oculta los comandos en todo lo que muestra Openmon, para compartir pantalla.
-* **Aviso en el celular** (opcional, con la app gratuita ntfy): si un agente espera desde hace un rato, llega un aviso. Es la única función que usa internet, y solo envía "Tu agente te necesita".
+* **Aviso en el celular** (opcional, con la app gratuita ntfy): si un agente espera desde hace un rato, llega un aviso. Solo envía "Tu agente te necesita".
 * **En OBS**: la mascota con fondo transparente para transmisiones (la dirección está en la página de Configuración).
 
 ## Para ir más allá
@@ -210,7 +212,7 @@ Haz clic derecho en la mascota y en el engranaje de la tarjeta (o en el ícono d
 * **Avisos**: notificación del sistema y responder permisos desde la mascota (con el tiempo de espera).
 * **Foco y calma**: modo foco, modo silencio, modo presentación y recordatorio de pausa.
 * **Celular**: aviso en el celular con la app ntfy (opcional).
-* **Computadora**: iniciar con la computadora, conectar Claude Code, copias de la mascota (hacer ahora, exportar, traer de un archivo) y devolver la mascota a la esquina.
+* **Computadora**: iniciar con la computadora, conectar Claude Code, tu mascota en cualquier computadora (cuenta de GitHub), copias de la mascota (hacer ahora, exportar, traer de un archivo) y devolver la mascota a la esquina.
 * **Avanzado**: atajos de teclado, OBS y demostración.
 
 ### Tu arte
@@ -254,7 +256,7 @@ El servidor solo escucha en `127.0.0.1` y rechaza pedidos de otras páginas web 
 1. **El agente avisa.** Claude Code, Gemini CLI, Cursor, OpenCode y Aider ya avisan cada paso que dan (hooks). Openmon solo escucha, sin bloquear nada.
 2. **Se vuelve señal.** Un servidor local en `127.0.0.1:4747` convierte cada aviso en una señal simple: herramienta usada, prueba en verde o en rojo, "te necesita".
 3. **La mascota decide.** Elige la pose, gana experiencia en el tipo de trabajo correcto y anota lo que hizo el agente en los Poderes.
-4. **Aparece en pantalla.** Todo queda en la esquina de tu pantalla. Nada sale de tu computadora (el aviso en el celular es opcional y solo envía "Tu agente te necesita").
+4. **Aparece en pantalla.** Todo queda en la esquina de tu pantalla. Nada sale de tu computadora (el aviso en el celular y GitHub son opcionales: uno solo envía "Tu agente te necesita", el otro guarda tu mascota en un Gist secreto de tu cuenta).
 
 ## Desarrollar
 

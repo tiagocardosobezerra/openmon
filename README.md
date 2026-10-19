@@ -22,8 +22,9 @@ O Openmon é um pet de desktop, no espírito dos jogos de criaturas e dos bichin
 * **Mostra o que está acontecendo, sem você olhar o terminal.** Martelo é editar, livro é ler, escudo é testar, luneta é web. Vários agentes ao mesmo tempo? O card lista cada um, com o que está fazendo.
 * **Resume cada tarefa.** Quando o agente termina: "shop-api terminou ✓ · 3 arquivos · 12 comandos · testes ✓ · 2m 10s".
 * **Guarda um diário.** O que seus agentes fizeram em cada dia, por tipo de trabalho e por projeto, e quanto tempo esperaram por você.
-* **Não atrapalha e não sai do seu computador.** Os cliques passam através da janela, ele nunca bloqueia nem atrasa o agente, não usa internet, não tem conta, e senhas e chaves aparecem escondidas (`•••`).
+* **Não atrapalha e não sai do seu computador.** Os cliques passam através da janela, ele nunca bloqueia nem atrasa o agente, não usa internet nem conta (a não ser que você ligue o aviso no celular ou o GitHub), e senhas e chaves aparecem escondidas (`•••`).
 * **Não se perde.** Ele faz cópias em Documentos/Openmon Backups. Formatou o PC? Numa instalação nova ele pergunta se você quer trazê-lo de volta.
+* **Vai com você para outro computador (opcional).** Entre com o GitHub (`openmon login` ou Configurações → Computador) e seu pet fica salvo num Gist secreto da sua conta. Em outro computador, entre com a mesma conta e ele continua de onde parou. Se ele mudou nos dois, o Openmon pergunta qual manter. Sem servidor do Openmon: o app fala direto com o GitHub.
 
 ## Como fica na prática
 
@@ -93,6 +94,7 @@ O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa n
 | `openmon dex` / `openmon card` | Abre a Opendex ou o cartão de treinador |
 | `openmon name <apelido>` | Dá um apelido (`--clear` volta ao nome da espécie) |
 | `openmon backup [arquivo]` / `openmon restore <arquivo\|latest>` | Faz uma cópia ou traz um pet de volta |
+| `openmon login` / `openmon sync` / `openmon logout` | Leva seu pet entre computadores pela sua conta do GitHub |
 | `openmon install --agent gemini\|cursor\|opencode\|aider` | Liga o Openmon no Gemini CLI, Cursor, OpenCode ou Aider |
 | `openmon autostart on\|off` | Abre o pet quando você liga o computador |
 | `openmon stats` / `openmon status` | O pet no terminal / se está tudo ligado |
@@ -197,7 +199,7 @@ Para todo mundo: o **Diário** dos últimos 14 dias e o **contador de espera**, 
 * **Modo foco** (25, 50 ou 90 minutos): só "precisa de você" aparece; no fim, uma sugestão de pausa.
 * **Lembrete de pausa** depois de 50 ou 90 minutos seguidos de trabalho.
 * **Modo apresentação**: troca nomes de projeto por "Projeto A, B…" e esconde comandos em tudo o que o Openmon mostra, para compartilhar a tela.
-* **Aviso no celular** (opcional, via app gratuito ntfy): se um agente espera há um tempo, chega um aviso. É a única função que usa a internet, e manda só "Seu agente precisa de você".
+* **Aviso no celular** (opcional, via app gratuito ntfy): se um agente espera há um tempo, chega um aviso. Manda só "Seu agente precisa de você".
 * **No OBS**: o pet com fundo transparente para lives (endereço na página de Configurações).
 
 ## Para ir além
@@ -210,7 +212,7 @@ Clique com o botão direito no pet e na engrenagem do card (ou no ícone da band
 * **Avisos**: notificação do sistema e responder permissões pelo pet (com o tempo de espera).
 * **Foco e calma**: modo foco, modo silencioso, modo apresentação e lembrete de pausa.
 * **Celular**: aviso no celular pelo app ntfy (opcional).
-* **Computador**: iniciar com o computador, conectar o Claude Code, cópias do pet (fazer agora, exportar, trazer de um arquivo) e voltar o pet ao canto da tela.
+* **Computador**: iniciar com o computador, conectar o Claude Code, seu pet em qualquer computador (conta do GitHub), cópias do pet (fazer agora, exportar, trazer de um arquivo) e voltar o pet ao canto da tela.
 * **Avançado**: atalhos de teclado, OBS e demonstração.
 
 ### Sua arte
@@ -254,7 +256,7 @@ O servidor só escuta em `127.0.0.1` e recusa pedidos de outras páginas da web 
 1. **O agente avisa.** Claude Code, Gemini CLI, Cursor, OpenCode e Aider já avisam cada passo que dão (hooks). O Openmon só escuta, sem bloquear nada.
 2. **Vira sinal.** Um servidor local em `127.0.0.1:4747` transforma cada aviso em um sinal simples: ferramenta usada, teste verde ou vermelho, "precisa de você".
 3. **O pet decide.** Ele escolhe a pose, ganha experiência no tipo de trabalho certo e anota o que o agente fez nos Poderes.
-4. **Aparece na tela.** Tudo fica no canto da sua tela. Nada sai do seu computador (o aviso no celular é opcional e só manda "Seu agente precisa de você").
+4. **Aparece na tela.** Tudo fica no canto da sua tela. Nada sai do seu computador (o aviso no celular e o GitHub são opcionais: um manda só "Seu agente precisa de você", o outro guarda seu pet num Gist secreto da sua conta).
 
 ## Desenvolver
 

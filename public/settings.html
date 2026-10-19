@@ -77,7 +77,7 @@
         pet: 'Como ele aparece e se comporta na tela.',
         alerts: 'Como você fica sabendo que um agente precisa de você.',
         focus: 'Para reuniões, tela compartilhada ou trabalho concentrado.',
-        phone: 'Opcional. Usa o ntfy (app gratuito e aberto). É o único recurso que usa a internet, e só manda "Seu agente precisa de você".',
+        phone: 'Opcional. Usa o ntfy (app gratuito e aberto) e só manda "Seu agente precisa de você".',
         computer: 'O app no seu computador: inicialização, conexão e cópias do seu pet.',
         more: 'Atalhos e transmissão ao vivo.',
       },
@@ -110,6 +110,11 @@
       keys: 'Atalhos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre o card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> leva ao agente que está esperando.',
       obs: 'Pet no OBS (live)', obsSub: 'Adicione uma Fonte de Navegador no OBS com este endereço, 300 × 560. O fundo é transparente.', copy: 'Copiar', copiedUrl: 'Copiado ✓',
       desktopOnly: 'Disponível no app do Openmon.',
+      cloud: 'Seu pet em qualquer computador', cloudSub: 'Entre com o GitHub e seu pet fica salvo num Gist secreto da sua conta. Em outro computador, entre com a mesma conta e ele vem junto.',
+      cloudIn: 'Entrar com GitHub', cloudOut: 'Sair', cloudNow: 'Sincronizar agora', cloudAs: 'Conectado como @{login}', cloudAt: 'sincronizado às {t}', cloudNever: 'ainda não sincronizou',
+      cloudCode: 'Abra {uri} e digite o código {code}. O resto é automático.', cloudOpen: 'Abrir o GitHub', cloudCopy: 'Copiar código', cloudCopied: 'Copiado ✓',
+      cloudConflict: 'Os dois computadores mudaram desde a última vez. No GitHub está {name} (Nv {level}), salvo em {machine}. Qual você quer manter?', cloudUseRemote: 'Usar o do GitHub', cloudKeepLocal: 'Manter o deste computador',
+      cloudErr: { 'no-gh': 'Instale o GitHub CLI e rode "gh auth login", ou use "openmon login --device" no terminal.', 'gh-no-gist': 'Seu GitHub CLI não pode criar Gists. Rode "gh auth refresh -s gist" e tente de novo.', 'signed-out': 'O acesso foi removido no GitHub. Entre de novo.' }, cloudFail: 'Não deu para falar com o GitHub agora. Ele tenta de novo sozinho.',
     },
     es: {
       title: 'Ajustes', sub: 'Elige una sección a la izquierda. Todo se aplica al instante y queda guardado.',
@@ -118,7 +123,7 @@
         pet: 'Cómo aparece y se comporta en la pantalla.',
         alerts: 'Cómo te enteras de que un agente te necesita.',
         focus: 'Para reuniones, pantalla compartida o trabajo concentrado.',
-        phone: 'Opcional. Usa ntfy (una app gratuita y abierta). Es la única función que usa internet, y solo envía "Tu agente te necesita".',
+        phone: 'Opcional. Usa ntfy (una app gratuita y abierta) y solo envía "Tu agente te necesita".',
         computer: 'La app en tu computadora: inicio, conexión y copias de tu mascota.',
         more: 'Atajos y transmisión en directo.',
       },
@@ -151,6 +156,11 @@
       keys: 'Atajos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre la tarjeta · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> te lleva al agente que espera.',
       obs: 'Mascota en OBS (directo)', obsSub: 'Agrega una Fuente de navegador en OBS con esta dirección, 300 × 560. El fondo es transparente.', copy: 'Copiar', copiedUrl: 'Copiado ✓',
       desktopOnly: 'Disponible en la app de Openmon.',
+      cloud: 'Tu mascota en cualquier computadora', cloudSub: 'Inicia sesión con GitHub y tu mascota queda guardada en un Gist secreto de tu cuenta. En otra computadora, inicia sesión con la misma cuenta y viene contigo.',
+      cloudIn: 'Entrar con GitHub', cloudOut: 'Salir', cloudNow: 'Sincronizar ahora', cloudAs: 'Conectado como @{login}', cloudAt: 'sincronizado a las {t}', cloudNever: 'aún no se sincronizó',
+      cloudCode: 'Abre {uri} y escribe el código {code}. Lo demás es automático.', cloudOpen: 'Abrir GitHub', cloudCopy: 'Copiar código', cloudCopied: 'Copiado ✓',
+      cloudConflict: 'Las dos computadoras cambiaron desde la última vez. En GitHub está {name} (Nv {level}), guardado en {machine}. ¿Cuál quieres conservar?', cloudUseRemote: 'Usar el de GitHub', cloudKeepLocal: 'Conservar el de esta computadora',
+      cloudErr: { 'no-gh': 'Instala GitHub CLI y ejecuta "gh auth login", o usa "openmon login --device" en la terminal.', 'gh-no-gist': 'Tu GitHub CLI no puede crear Gists. Ejecuta "gh auth refresh -s gist" y vuelve a intentar.', 'signed-out': 'Se quitó el acceso en GitHub. Inicia sesión de nuevo.' }, cloudFail: 'No se pudo hablar con GitHub ahora. Lo vuelve a intentar solo.',
     },
     en: {
       title: 'Settings', sub: 'Pick a section on the left. Everything applies right away and is saved.',
@@ -159,7 +169,7 @@
         pet: 'How it looks and behaves on screen.',
         alerts: 'How you learn that an agent needs you.',
         focus: 'For meetings, shared screens or deep work.',
-        phone: 'Optional. Uses ntfy (a free, open app). It is the only feature that uses the internet, and it only sends "Your agent needs you".',
+        phone: 'Optional. Uses ntfy (a free, open app) and only sends "Your agent needs you".',
         computer: 'The app on your computer: start-up, connection and copies of your pet.',
         more: 'Shortcuts and live streaming.',
       },
@@ -192,6 +202,11 @@
       keys: 'Keyboard shortcuts', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> opens the card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> takes you to the agent that waits.',
       obs: 'Pet in OBS (streaming)', obsSub: 'Add a Browser Source in OBS with this address, 300 × 560. The background is transparent.', copy: 'Copy', copiedUrl: 'Copied ✓',
       desktopOnly: 'Available in the Openmon app.',
+      cloud: 'Your pet on any computer', cloudSub: 'Sign in with GitHub and your pet is saved in a secret Gist in your account. On another computer, sign in with the same account and it comes along.',
+      cloudIn: 'Sign in with GitHub', cloudOut: 'Sign out', cloudNow: 'Sync now', cloudAs: 'Signed in as @{login}', cloudAt: 'synced at {t}', cloudNever: 'not synced yet',
+      cloudCode: 'Open {uri} and type the code {code}. The rest is automatic.', cloudOpen: 'Open GitHub', cloudCopy: 'Copy code', cloudCopied: 'Copied ✓',
+      cloudConflict: 'Both computers changed since last time. GitHub has {name} (Lv {level}), saved on {machine}. Which one do you want to keep?', cloudUseRemote: 'Use the one on GitHub', cloudKeepLocal: "Keep this computer's",
+      cloudErr: { 'no-gh': 'Install the GitHub CLI and run "gh auth login", or use "openmon login --device" in a terminal.', 'gh-no-gist': 'Your GitHub CLI cannot create Gists. Run "gh auth refresh -s gist" and try again.', 'signed-out': 'Access was removed on GitHub. Sign in again.' }, cloudFail: 'Could not reach GitHub right now. It tries again on its own.',
     },
   };
   const T = TEXT[lang] || TEXT.en;
@@ -211,6 +226,9 @@
   let config = {};
   let pet = null;
   let desktop = null;
+  let cloud = null;
+  let cloudCode = null;
+  let cloudMsg = '';
   let tab = SECTIONS.some(([id]) => id === location.hash.slice(1)) ? location.hash.slice(1) : 'pet';
 
   async function save(patch, redraw = false) {
@@ -264,6 +282,66 @@
     b.onclick = () => onClick(b);
     return b;
   }
+
+  // Your pet on any computer, through your GitHub account.
+  async function cloudPost(path, body) {
+    return (await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })).json();
+  }
+  async function refreshCloud() {
+    cloud = await (await fetch('/api/cloud')).json();
+    if (cloud && cloud.connected) cloudCode = null;
+    if (tab === 'computer') render();
+  }
+  function cloudCard() {
+    if (!cloud || cloud.off) return null;
+    const rows = [];
+    if (!cloud.connected) {
+      const signIn = btn(T.cloudIn, async (b) => {
+        b.disabled = true;
+        cloudMsg = '';
+        const r = await cloudPost('/api/cloud/connect', { method: cloud.canDevice ? 'device' : 'gh' });
+        if (r.userCode) cloudCode = r;
+        else if (!r.ok) cloudMsg = T.cloudErr[r.error] || T.cloudFail;
+        await refreshCloud();
+      }, 'btn sm primary');
+      rows.push(row('', T.cloudSub, signIn, { cls: 'wide' }));
+      if (cloudCode) {
+        const copy = btn(T.cloudCopy, (b) => navigator.clipboard.writeText(cloudCode.userCode).then(() => (b.textContent = T.cloudCopied)));
+        const open = btn(T.cloudOpen, () => window.open(cloudCode.uri, '_blank'), 'btn sm primary');
+        rows.push(row(cloudCode.userCode, fill(T.cloudCode, { uri: cloudCode.uri, code: cloudCode.userCode }), [open, copy], { cls: 'wide' }));
+      }
+    } else {
+      const when = cloud.syncedAt ? fill(T.cloudAt, { t: clock(cloud.syncedAt) }) : T.cloudNever;
+      const now = btn(T.cloudNow, async (b) => {
+        b.disabled = true;
+        const r = await cloudPost('/api/cloud/sync');
+        cloudMsg = r.action === 'error' ? T.cloudErr[r.error] || T.cloudFail : '';
+        await refreshCloud();
+      });
+      const out = btn(T.cloudOut, async () => {
+        await cloudPost('/api/cloud/logout');
+        await refreshCloud();
+      }, 'btn sm ghost');
+      rows.push(row(fill(T.cloudAs, { login: cloud.login }), `${cloud.machine} · ${when}`, [now, out]));
+      if (cloud.conflict) {
+        const c = cloud.conflict;
+        const pick = (use) => async () => {
+          await cloudPost('/api/cloud/sync', { use });
+          await refreshCloud();
+        };
+        rows.push(row('', fill(T.cloudConflict, { name: c.nickname || c.name, level: c.level, machine: c.machine || '?' }), [
+          btn(T.cloudUseRemote, pick('remote'), 'btn sm primary'),
+          btn(T.cloudKeepLocal, pick('local')),
+        ], { cls: 'wide' }));
+      }
+    }
+    if (cloudMsg || cloud.error) rows.push(row('', cloudMsg || T.cloudErr[cloud.error] || T.cloudFail, null, { cls: 'wide' }));
+    return card(T.cloud, rows);
+  }
+  // While a sign-in code is on screen, watch for it to finish.
+  setInterval(() => {
+    if (cloudCode && tab === 'computer') refreshCloud();
+  }, 3000);
 
   // --- sections ------------------------------------------------------------
   const VIEWS = {
@@ -341,7 +419,7 @@
       return [card(null, rows)];
     },
     computer() {
-      if (!desk || !desktop) return [card(null, [row(T.tabs.computer, T.desktopOnly, null)])];
+      if (!desk || !desktop) return [cloudCard(), card(null, [row(T.tabs.computer, T.desktopOnly, null)])].filter(Boolean);
       const login = el('label', 'switch');
       const c = el('input');
       c.type = 'checkbox';
@@ -358,6 +436,7 @@
           row(T.claude, T.claudeSub, claude),
           row(T.position, T.positionSub, btn(T.reset, () => desk.call('reset-position'))),
         ]),
+        cloudCard(),
         card(T.backups, [
           row('', T.backupsSub, [
             btn(T.copyNow, async (b) => {
@@ -408,7 +487,9 @@
   Promise.all([
     fetch('/api/state').then((r) => r.json()),
     desk ? desk.call('info').catch(() => null) : null,
-  ]).then(([s, d]) => {
+    fetch('/api/cloud').then((r) => r.json()).catch(() => null),
+  ]).then(([s, d, c]) => {
+    cloud = c;
     config = s.config || {};
     pet = s.pet || null;
     desktop = d;
