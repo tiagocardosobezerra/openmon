@@ -33,7 +33,7 @@ Accessories are SVGs in `public/wear/<id>.svg`, each in its own frame: a hat's b
 ## Drawing guidelines
 
 - Transparent background, the creature centred horizontally, feet on the bottom edge.
-- Any size; 512 px tall is a good master. The pet scales it to the stage's height (eggs and sprouts are smaller than elders).
+- Any size; 512 px tall is a good master. The pet scales it to the stage's height (eggs and babies are smaller than elders).
 - A dark outline (about 2–3 % of the height) keeps it readable on any wallpaper.
 - Motion is added for you: breathing, hops, squash and stretch, the spin, shaking on errors. Props (the "!" sign, hammer, book, shield…) and particles are drawn on top. Leave a little room on the right for the sign.
 - Pose images are where the personality goes: closed eyes for `sleep`, a surprised face for `attention`, a grin for `done`.

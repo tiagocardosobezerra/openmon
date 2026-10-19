@@ -8,7 +8,7 @@ Esta página explica el juego. Para lo que Openmon hace por ti y cómo instalarl
 
 ## Cómo crece
 
-Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evoluciona: huevo, brote, joven, adulto y anciano, en semanas de uso. Su **tipo** viene del trabajo que más hace el agente:
+Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evoluciona: huevo, bebé, joven, adulto y anciano, en semanas de uso. Su **tipo** viene del trabajo que más hace el agente:
 
 | Tipo | Viene de | Joven | Adulto | Anciano |
 |---|---|---|---|---|

@@ -15,7 +15,7 @@ function feed(p, signal, n, start = T0, step = 6000) {
   return events;
 }
 
-test('an egg hatches into a sprout at 30 XP', () => {
+test('an egg hatches into a baby (the Sprout form) at 30 XP', () => {
   const p = pet.createPet(T0);
   const events = feed(p, done('craft'), 30);
   assert.equal(p.stage, 'sprout');

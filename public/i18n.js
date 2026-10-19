@@ -7,7 +7,7 @@
 
   const STRINGS = {
     en: {
-      'stage.egg': 'egg', 'stage.sprout': 'sprout', 'stage.juvenile': 'juvenile', 'stage.adult': 'adult', 'stage.mythic': 'elder',
+      'stage.egg': 'egg', 'stage.sprout': 'baby', 'stage.juvenile': 'juvenile', 'stage.adult': 'adult', 'stage.mythic': 'elder',
       'scene.hatching': 'Oh? The egg is hatching!',
       'scene.evolving': 'What? {name} is evolving!',
       'scene.hatched': '{name} hatched!',
@@ -554,7 +554,7 @@
     },
     es: {
       "stage.egg": "huevo",
-      "stage.sprout": "brote",
+      "stage.sprout": "bebé",
       "stage.juvenile": "joven",
       "stage.adult": "adulto",
       "stage.mythic": "anciano",
@@ -1127,7 +1127,7 @@
       "name.hintForm": "Vacío, queda \"{form}\" y el nombre cambia en cada evolución.",
     },
     'pt-BR': {
-      'stage.egg': 'ovo', 'stage.sprout': 'broto', 'stage.juvenile': 'jovem', 'stage.adult': 'adulto', 'stage.mythic': 'ancião',
+      'stage.egg': 'ovo', 'stage.sprout': 'bebê', 'stage.juvenile': 'jovem', 'stage.adult': 'adulto', 'stage.mythic': 'ancião',
       'scene.hatching': 'Hã? O ovo está chocando!',
       'scene.evolving': 'O quê? {name} está evoluindo!',
       'scene.hatched': '{name} nasceu!',

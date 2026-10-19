@@ -8,7 +8,7 @@ This page explains the game. For what Openmon does for you and how to install it
 
 ## How it grows
 
-Everything your agent does is worth **experience (XP)**. With enough, it evolves: egg, sprout, juvenile, adult and elder, over weeks of use. Its **type** comes from the work your agent does most:
+Everything your agent does is worth **experience (XP)**. With enough, it evolves: egg, baby, juvenile, adult and elder, over weeks of use. Its **type** comes from the work your agent does most:
 
 | Type | Comes from | Juvenile | Adult | Elder |
 |---|---|---|---|---|
