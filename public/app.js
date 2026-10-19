@@ -695,10 +695,12 @@
   }
 
   function renderBubble() {
-    if (companionId) return setBubble(null);
+    // Where the bubble and the card sit, just above the pet's head: the
+    // same rule for a companion, so every Openmon's card lines up.
     const stage = currentSpec().stage;
     const lift = pose === 'attention' ? 38 : 14;
     document.documentElement.style.setProperty('--bubble-bottom', `${Math.min(300, H - headY(stage) + lift)}px`);
+    if (companionId) return setBubble(null);
     const f = live.focus || {};
     if (toast && toast.style === 'say' && (pose === 'attention' || pose === 'error')) toast = null;
     // Focus mode: only "needs you" (and its answer buttons) gets through.
