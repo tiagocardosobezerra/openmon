@@ -60,6 +60,14 @@
   let lastSpark = 0;
   const particles = [];
   let ackedFor = null;
+  // The bubble you clicked (Answer / Open): it stays hidden until the next one.
+  let dismissed = null;
+  const bubbleKey = () => (live.focus ? `${pose}|${live.focus.id}|${live.focus.since}` : null);
+  function dismissBubble() {
+    if (pose === 'attention' && live.focus) ackedFor = live.focus.since;
+    dismissed = bubbleKey();
+    renderBubble();
+  }
   let renudged = null;
   const LONG_WAIT_MS = 2 * 60 * 1000;
   let lastUiCheck = 0;
@@ -509,6 +517,7 @@
     // Not connected to any agent yet: say how, until it is.
     if (setupInfo && !setupInfo.hooks && !(live.sessions || []).length) return setBubble('setup', tr('setup'), tr('setup.sub'));
     const jump = !demo && f.id ? f.id : null;
+    if (dismissed && dismissed === bubbleKey()) return setBubble(null);
     if (pose === 'attention') {
       const waiting = (live.sessions || []).filter((s) => s.state === 'attention');
       const answer = { jump, action: tr('jump.answer') };
@@ -876,8 +885,9 @@
       // Clicking while it waits means "take me there": it calms down and
       // brings the agent's window to the front.
       if (pose === 'attention' && live.focus) {
-        ackedFor = live.focus.since;
-        jumpTo(live.focus.id);
+        const id = live.focus.id;
+        dismissBubble();
+        jumpTo(id);
       } else post('/api/pet');
     }
     down = null;
@@ -905,7 +915,7 @@
     if (!id || demo) return;
     try {
       const r = await (await fetch('/api/focus', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })).json();
-      if (!r.ok) pushToast(tr('jump.fail'), tr('jump.failSub'), 4000);
+      if (!r.ok) pushToast(tr('jump.fail'), tr('jump.failSub'), 4000, 'error');
     } catch {}
   }
 
@@ -944,8 +954,9 @@
   });
   $('bubble').addEventListener('click', () => {
     if (!bubbleJump) return;
-    if (pose === 'attention' && live.focus) ackedFor = live.focus.since;
-    jumpTo(bubbleJump);
+    const id = bubbleJump;
+    dismissBubble();
+    jumpTo(id);
   });
 
   // --- preview controls ------------------------------------------------------------
