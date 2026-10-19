@@ -602,22 +602,8 @@
     const pulse = (d) => 0.45 + 0.55 * Math.max(0, Math.sin(t * 2.2 - d * 1.6));
     ctx.save();
     ctx.translate(x, y);
+    // Shiny is the sparkle alone: no glow disc or ring behind the creature.
     if (layer === 'back') {
-      ctx.globalAlpha = 0.42 + Math.sin(t * 1.5) * 0.08;
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff1b8';
-      ctx.fill();
-      ctx.globalAlpha = 0.9;
-      ctx.beginPath();
-      ctx.arc(0, 0, r * 1.03, 0, Math.PI * 2);
-      ctx.setLineDash([1.5 * k, 9 * k]);
-      ctx.lineDashOffset = -t * 6 * k;
-      ctx.lineCap = 'round';
-      ctx.lineWidth = 2.5 * k;
-      ctx.strokeStyle = '#f2b632';
-      ctx.stroke();
-      ctx.setLineDash([]);
       ctx.restore();
       return;
     }
