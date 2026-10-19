@@ -464,9 +464,11 @@
     renderBubble();
   }
 
-  // jump: the session id a click on the bubble brings to the front.
+  // Status bubbles: a round icon, the session name, a title, one detail
+  // line and, when it can jump to the agent's window, an action button.
+  const BUBBLE_ICON = { attention: '!', done: '✓', error: '✕', toast: '★', setup: 'i' };
   let bubbleJump = null;
-  function setBubble(cls, title, sub, jump = null) {
+  function setBubble(cls, title, sub, { jump = null, eyebrow = null, action = null } = {}) {
     const b = $('bubble');
     bubbleJump = jump;
     if (!cls) {
@@ -474,23 +476,24 @@
       b.dataset.key = '';
       return;
     }
-    const key = `${cls}|${title}|${sub}|${jump || ''}`;
+    const key = [cls, title, sub, jump, eyebrow, action].join('|');
     if (b.dataset.key === key && !b.hidden) return;
     b.dataset.key = key;
-    b.className = jump ? `${cls} jump` : cls;
-    b.textContent = title;
-    if (sub) {
-      const small = document.createElement('small');
-      small.textContent = sub;
-      b.appendChild(small);
-    }
-    if (jump) {
-      const hint = document.createElement('span');
-      hint.className = 'hint';
-      hint.textContent = tr('jump.hint');
-      b.appendChild(document.createElement('br'));
-      b.appendChild(hint);
-    }
+    const kind = cls.split(' ')[0];
+    const icon = BUBBLE_ICON[kind];
+    b.className = [cls, icon ? 'status' : '', jump ? 'jump' : ''].filter(Boolean).join(' ');
+    b.textContent = '';
+    const add = (tag, klass, text) => {
+      const e = document.createElement(tag);
+      e.className = klass;
+      e.textContent = text;
+      b.appendChild(e);
+    };
+    if (icon) add('span', 'ic', icon);
+    if (eyebrow) add('span', 'eyebrow', eyebrow);
+    add('span', 'title', title);
+    if (sub) add('small', '', sub);
+    if (jump) add('span', `btn sm act${kind === 'attention' ? ' primary' : ''}`, action || tr('jump.open'));
     b.hidden = false;
   }
 
@@ -509,14 +512,15 @@
     const jump = !demo && f.id ? f.id : null;
     if (pose === 'attention') {
       const waiting = (live.sessions || []).filter((s) => s.state === 'attention');
-      if (waiting.length > 1) return setBubble('attention', tr('needsYou.many', { n: waiting.length }), waiting.map((s) => s.label).join(', '), jump);
+      const answer = { jump, action: tr('jump.answer') };
+      if (waiting.length > 1) return setBubble('attention', tr('needsYou.many', { n: waiting.length }), waiting.map((s) => s.label).join(', '), answer);
       const waited = f.since ? ` · ${clock(Date.now() - f.since)}` : '';
       const long = f.since && Date.now() - f.since > LONG_WAIT_MS && ackedFor !== f.since;
-      return setBubble(long ? 'attention long' : 'attention', tr('needsYou', { label: f.label || tr('yourAgent') }) + waited, trDetail(f.detail), jump);
+      return setBubble(long ? 'attention long' : 'attention', tr('bubble.needsYou') + waited, trDetail(f.detail), { ...answer, eyebrow: f.label || tr('yourAgent') });
     }
-    if (pose === 'error') return setBubble('error', tr('ouch'), `${f.label || ''} · ${f.detail ? trDetail(f.detail) : tr('failed')}`, jump);
+    if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent') });
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
-    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('done', { label: f.label || tr('yourAgent') }), recapLine(f.recap) || tr('done.sub'), jump);
+    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent') });
     return setBubble(null);
   }
 

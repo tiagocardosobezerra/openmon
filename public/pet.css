@@ -1,9 +1,5 @@
 :root {
   --scale: 1;
-  /* Speech bubbles are comic-book paper in light and dark mode alike. */
-  --b-ink: #2a2140;
-  --b-paper: #fffdf7;
-  --b-muted: #6d6680;
   --warn: #ffe156;
 }
 
@@ -15,7 +11,7 @@ html, body {
   background: transparent;
   overflow: hidden;
   font: 13px/1.35 var(--font-body);
-  color: var(--b-ink);
+  color: var(--ink);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -39,22 +35,26 @@ html, body {
   height: 250px;
 }
 
-/* Speech bubble, anchored above the pet's head. */
+/* Speech bubble, anchored above the pet's head. Same panel as the card:
+   ink outline, hard drop shadow, theme colours. Status bubbles carry a
+   round icon, the session name, a title, a detail line and an action. */
 #bubble {
   position: absolute;
   z-index: 2;
   left: 50%;
   transform: translateX(-50%);
   bottom: var(--bubble-bottom, 190px);
-  max-width: 270px;
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  max-width: 276px;
   width: max-content;
-  padding: 7px 11px 8px;
-  border: 2.5px solid var(--b-ink);
-  border-radius: 14px;
-  background: var(--b-paper);
-  box-shadow: 0 3px 0 var(--b-ink);
-  color: var(--b-ink);
-  font: 600 13.5px/1.3 var(--font-display);
+  padding: 8px 13px 9px;
+  border: 2.5px solid var(--outline);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--lift), 0 8px 20px rgba(20, 12, 40, 0.16);
+  color: var(--ink);
   text-align: center;
   animation: pop 0.22s cubic-bezier(.3,1.6,.6,1);
 }
@@ -67,33 +67,38 @@ html, body {
   height: 12px;
   margin-left: -6px;
   background: inherit;
-  border-right: 2.5px solid var(--b-ink);
-  border-bottom: 2.5px solid var(--b-ink);
+  border-right: 2.5px solid var(--outline);
+  border-bottom: 2.5px solid var(--outline);
   transform: rotate(45deg);
 }
-#bubble small { font-family: var(--font-body); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-weight: 500; color: var(--b-muted); max-width: 250px; overflow: hidden; overflow-wrap: anywhere; font-size: 12px; margin-top: 1px; }
-#bubble.attention { background: var(--warn); animation: pop 0.22s cubic-bezier(.3,1.6,.6,1), nudge 1.2s 0.3s ease-in-out infinite; }
-/* Waiting for more than two minutes: a stronger, warmer nudge. */
-#bubble.attention.long { background: #ffcf3a; box-shadow: 0 3px 0 var(--b-ink), 0 0 0 4px rgba(255, 207, 58, 0.35); animation: pop 0.22s cubic-bezier(.3,1.6,.6,1), shake 0.9s 0.3s ease-in-out infinite; }
-@keyframes shake { 0%, 100% { transform: translateX(-50%) rotate(0); } 20% { transform: translateX(calc(-50% - 3px)) rotate(-3deg); } 40% { transform: translateX(calc(-50% + 3px)) rotate(3deg); } 60% { transform: translateX(-50%) rotate(0); } }
-#bubble.attention small { color: #5c4a00; }
-#bubble.error { background: #ffe1e1; }
-#bubble.done { background: #ddf7e3; }
-#bubble.toast { background: var(--b-ink); color: #fff; box-shadow: 0 3px 0 #000; }
-#bubble.toast small { color: #cfc6ea; }
-#bubble.toast::after { border-color: #000; }
-/* Evolution / hatch text box, like a handheld game. */
-#bubble.scene { background: #fff; font-size: 14px; font-weight: 800; border-width: 3px; box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 5px #6fa8dc, 0 3px 0 var(--b-ink); padding: 9px 14px 10px; max-width: 280px; }
-#bubble.scene small { color: #4a4460; font-weight: 600; white-space: normal; }
-#bubble.say { background: #fff; font-weight: 650; }
-#bubble.setup { background: #e8f4ff; }
-#bubble.setup small { font-family: ui-monospace, Consolas, monospace; color: #234; }
+#bubble .title { font: 600 14px/1.25 var(--font-display); }
+#bubble small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; max-width: 236px; overflow: hidden; overflow-wrap: anywhere; margin-top: 1px; color: var(--muted); font: 500 12px/1.35 var(--font-body); }
 
-/* Bubbles you can click to jump to the agent's window. */
+/* Status layout: icon on the left, text on the right. */
+#bubble.status { grid-template-columns: 28px minmax(0, 1fr); column-gap: 9px; justify-items: start; text-align: left; padding: 8px 12px 9px 9px; min-width: 170px; }
+#bubble .ic { grid-row: 1 / span 4; align-self: start; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--c, var(--brand)); color: #2a2140; box-shadow: 0 0 0 2px var(--outline), 0 2px 0 2px var(--outline); font: 700 15px/1 var(--font-display); }
+#bubble .eyebrow { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font: 600 11px/1.4 var(--font-display); letter-spacing: 0.02em; }
+#bubble .act { margin-top: 6px; min-height: 24px; padding: 1px 10px; font-size: 12px; pointer-events: none; }
 #bubble.jump { cursor: pointer; }
-#bubble.jump:hover { filter: brightness(1.03); box-shadow: 0 4px 0 var(--b-ink); }
-#bubble .hint { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; padding: 1px 9px; border-radius: 99px; background: var(--b-ink); color: #fff; font: 700 11px/1.6 var(--font-display); letter-spacing: 0.02em; }
-#bubble.toast .hint { background: #fff; color: var(--b-ink); }
+#bubble.jump:hover .act { background: color-mix(in srgb, var(--sun) 85%, #fff); }
+#bubble.jump:active { transform: translateX(-50%) translateY(2px); box-shadow: 0 1px 0 var(--outline); }
+
+#bubble.attention { --c: var(--sun); border-color: var(--outline); box-shadow: var(--lift), 0 0 0 4px color-mix(in srgb, var(--sun) 45%, transparent); animation: pop 0.22s cubic-bezier(.3,1.6,.6,1), nudge 1.2s 0.3s ease-in-out infinite; }
+/* Waiting for more than two minutes: warmer and a stronger nudge. */
+#bubble.attention.long { background: color-mix(in srgb, var(--sun) 30%, var(--surface)); box-shadow: var(--lift), 0 0 0 5px color-mix(in srgb, var(--sun) 60%, transparent); animation: pop 0.22s cubic-bezier(.3,1.6,.6,1), shake 0.9s 0.3s ease-in-out infinite; }
+@keyframes shake { 0%, 100% { transform: translateX(-50%) rotate(0); } 20% { transform: translateX(calc(-50% - 3px)) rotate(-3deg); } 40% { transform: translateX(calc(-50% + 3px)) rotate(3deg); } 60% { transform: translateX(-50%) rotate(0); } }
+#bubble.done { --c: #5ccf74; }
+#bubble.error { --c: #ff8a80; }
+#bubble.toast { --c: var(--brand); }
+#bubble.toast .ic { color: #fff; }
+#bubble.setup { --c: #8fd3ff; }
+#bubble.setup small { font-family: var(--font-mono); -webkit-line-clamp: 3; }
+#bubble.say .title { font-weight: 500; }
+
+/* Evolution / hatch text box, like a handheld game. */
+#bubble.scene { background: #fff; color: #2a2140; border-width: 3px; box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 5px #6fa8dc, 0 3px 0 var(--outline); padding: 10px 15px 11px; max-width: 280px; }
+#bubble.scene .title { font-size: 15px; }
+#bubble.scene small { color: #4a4460; font-weight: 600; }
 
 @keyframes pop { from { transform: translateX(-50%) scale(0.6); opacity: 0; } }
 @keyframes nudge { 0%, 100% { transform: translateX(-50%) rotate(0); } 50% { transform: translateX(-50%) rotate(-2.5deg); } }
@@ -106,15 +111,15 @@ html, body {
   min-width: 24px;
   height: 24px;
   padding: 0 8px;
-  border: 2.5px solid var(--b-ink);
+  border: 2.5px solid var(--outline);
   border-radius: 12px;
-  background: var(--b-paper);
-  color: var(--b-ink);
+  background: var(--surface);
+  color: var(--ink);
   font: 600 12px/19px var(--font-display);
   text-align: center;
-  box-shadow: 0 2px 0 var(--b-ink);
+  box-shadow: 0 2px 0 var(--outline);
 }
-#badge.waiting { background: var(--warn); }
+#badge.waiting { background: var(--warn); color: #2a2140; }
 
 /* The card: who your Openmon is, your agents, today, stats, actions. */
 #card {

@@ -6,7 +6,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, BrowserWindow, Menu, Tray, Notification, ipcMain, nativeImage, screen, shell } = require('electron');
+const { app, BrowserWindow, Menu, Tray, Notification, ipcMain, nativeImage, nativeTheme, screen, shell } = require('electron');
 const { createDaemon } = require('./server');
 const { homeDir, adoptLegacyHome } = require('./store');
 
@@ -192,8 +192,8 @@ function menuTemplate() {
     { type: 'separator' },
     { label: L('Stats card'), click: () => win.webContents.send('command', 'card') },
     { label: L('Powers…'), click: openPowersWindow },
-    { label: 'Opendex', click: () => shell.openExternal(`http://127.0.0.1:${port}/dex.html`) },
-    { label: L('Trainer card (share)'), click: () => shell.openExternal(`http://127.0.0.1:${port}/card.html`) },
+    { label: 'Opendex', click: () => openAppWindow('dex') },
+    { label: L('Trainer card (share)'), click: () => openAppWindow('card') },
     { type: 'separator' },
     {
       label: config.quiet ? L('Quiet until {t}', { t: until(config.quietUntil) }) : L('Quiet mode'),
@@ -268,24 +268,59 @@ function applyScale(scale) {
 
 // The Powers window: a normal window, closing it leaves the pet running.
 let powersWin = null;
-function openPowersWindow() {
-  if (powersWin && !powersWin.isDestroyed()) return powersWin.focus();
+// One app window for Powers, Opendex and the trainer card; the top bar
+// moves between them.
+const APP_PAGES = new Set(['powers', 'dex', 'card']);
+function openAppWindow(page = 'powers') {
+  if (!APP_PAGES.has(page)) page = 'powers';
+  const url = `http://127.0.0.1:${port}/${page}.html`;
+  if (powersWin && !powersWin.isDestroyed()) {
+    if (!powersWin.webContents.getURL().startsWith(url)) powersWin.loadURL(url);
+    return bringToFront(powersWin);
+  }
   powersWin = new BrowserWindow({
-    width: 620,
-    height: 760,
+    width: 900,
+    height: 780,
+    minWidth: 380,
+    minHeight: 420,
     title: 'Openmon',
+    show: false,
     autoHideMenuBar: true,
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#14101b' : '#f3eee4',
     icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
-  powersWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  powersWin.webContents.on('will-navigate', (e) => e.preventDefault());
-  powersWin.loadURL(`http://127.0.0.1:${port}/powers.html`);
+  const origin = `http://127.0.0.1:${port}/`;
+  powersWin.webContents.setWindowOpenHandler(({ url: target }) => {
+    if (/^https?:\/\//.test(target) && !target.startsWith(origin)) shell.openExternal(target);
+    return { action: 'deny' };
+  });
+  // Pages of the daemon only; anything else opens in the browser.
+  powersWin.webContents.on('will-navigate', (e, target) => {
+    if (target.startsWith(origin)) return;
+    e.preventDefault();
+    if (/^https?:\/\//.test(target)) shell.openExternal(target);
+  });
+  powersWin.once('ready-to-show', () => bringToFront(powersWin));
+  powersWin.loadURL(url);
+}
+const openPowersWindow = () => openAppWindow('powers');
+
+// The pet window never takes focus, so Windows would open our other windows
+// behind whatever app is active. A brief always-on-top puts them in front.
+function bringToFront(w) {
+  if (!w || w.isDestroyed()) return;
+  if (w.isMinimized()) w.restore();
+  w.show();
+  w.setAlwaysOnTop(true);
+  w.moveTop();
+  w.focus();
+  setTimeout(() => !w.isDestroyed() && w.setAlwaysOnTop(false), 400);
 }
 
 let nameWin = null;
 function openNameWindow() {
-  if (nameWin && !nameWin.isDestroyed()) return nameWin.focus();
+  if (nameWin && !nameWin.isDestroyed()) return bringToFront(nameWin);
   const [x, y] = win.getPosition();
   nameWin = new BrowserWindow({
     width: 320,
@@ -301,6 +336,7 @@ function openNameWindow() {
   });
   nameWin.webContents.on('will-navigate', (e) => e.preventDefault());
   nameWin.on('blur', () => nameWin && !nameWin.isDestroyed() && nameWin.close());
+  nameWin.once('ready-to-show', () => bringToFront(nameWin));
   nameWin.loadURL(`http://127.0.0.1:${port}/name.html`);
 }
 
@@ -382,7 +418,7 @@ function wireIpc() {
   ipcMain.on('menu', () => Menu.buildFromTemplate(menuTemplate()).popup({ window: win }));
   ipcMain.on('open-powers', openPowersWindow);
   ipcMain.on('open-page', (_e, page) => {
-    if (page === 'dex' || page === 'card') shell.openExternal(`http://127.0.0.1:${port}/${page}.html`);
+    openAppWindow(page);
   });
   ipcMain.on('drag-start', () => {
     clearInterval(dragTimer);
