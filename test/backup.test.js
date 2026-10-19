@@ -61,3 +61,16 @@ test('reads only its own files, and accepts a bare pet.json too', () => {
   assert.throws(() => unwrap('nope'), /not a JSON file/);
   assert.equal(unwrap(JSON.stringify(wrap(grown(), { muted: true }, T0))).config.muted, true);
 });
+
+test('a pet found but not restored is kept aside, never overwritten', () => {
+  const dir = tmp();
+  let t = T0;
+  const b = createBackups({ dir, now: () => t });
+  b.maybe(grown(), {}, true);
+  t += 1000;
+  const name = b.keepAside();
+  assert.match(name, /^kept-\d+\.openmon\.json$/);
+  b.maybe(pet.createPet(t), {}, true);
+  const kept = unwrap(fs.readFileSync(path.join(dir, name), 'utf8'));
+  assert.equal(kept.pet.name, 'Rex');
+});

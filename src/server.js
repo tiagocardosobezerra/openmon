@@ -217,7 +217,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   function persist(force = false) {
     store.save(real.pet);
     // The offer only stands until the new egg starts its own life.
-    if (restoreOffer && (real.pet.xp > 0 || real.pet.counters.tools > 0)) restoreOffer = null;
+    if (restoreOffer && (real.pet.xp > 0 || real.pet.counters.tools > 0)) {
+      restoreOffer = null;
+      if (backups) backups.keepAside();
+    }
     if (backups && !restoreOffer) backups.maybe(real.pet, config, force);
   }
 

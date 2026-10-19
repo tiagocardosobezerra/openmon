@@ -147,7 +147,21 @@ function createBackups({ dir = defaultDir(), now = Date.now } = {}) {
     }
   }
 
-  return { dir, snapshot, maybe, list, latest, read, lastAt: () => lastAt };
+  // Copies the current latest backup to kept-<time>.openmon.json, which is
+  // never pruned. Used before a new egg starts over an offered backup.
+  function keepAside() {
+    try {
+      const src = path.join(dir, LATEST);
+      if (!fs.existsSync(src)) return null;
+      const name = `kept-${now()}.openmon.json`;
+      fs.copyFileSync(src, path.join(dir, name));
+      return name;
+    } catch {
+      return null;
+    }
+  }
+
+  return { dir, snapshot, maybe, list, latest, read, keepAside, lastAt: () => lastAt };
 }
 
 module.exports = { createBackups, defaultDir, documentsDir, wrap, unwrap, summary, FORMAT };

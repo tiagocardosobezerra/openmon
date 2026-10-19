@@ -180,3 +180,23 @@ The project is now **Openmon**, and its field guide is the **Opendex**. "Open" s
 5. **Menu and size.** The menu was a flat list of 18 items. Now: views first, then Quiet mode, Size and Settings submenus, Quit last. The pet comes in three sizes that grow or shrink around the corner it stands on.
 6. **Long waits.** A wait that goes past two minutes gets one more chime and a stronger nudge, and the tray icon shows a "!" badge with the project name in its tooltip while any agent waits.
 7. **Final pass.** The stats card got longer with missions and needed scrolling; it was reordered (level, XP and bond first, then missions, sessions, stats), missions were made one line each, and the window grew to 560 px (click-through outside the pet). Tests, smoke test and docs updated.
+
+# Round 3: UI and UX overhaul
+
+- One UI kit (`public/ui.css`: tokens, light and dark, Fredoka) and one top bar for every page. The card opens with a right-click and stays until closed; tabs (Agents, Today, Stats); Powers, Opendex and Bag one click away; a gear for the settings.
+- Click to answer: the pet, its bubble, a session row and the OS notification bring the agent's window (terminal, VS Code, the Claude app) to the front. The hook finds that window once per session by walking up its process tree (`src/focus.js`).
+- Bubbles look like the card (icon, session name, title, detail, action) and hide once you act on them. Pages open in one app window, in front of other apps.
+- Pets go by their species name until you give a nickname, like Pokémon. The Opendex has a type chart and entries with how to get each form; stats explain how to train them.
+
+# Round 4: ten cycles as a game, UI and UX reviewer
+
+1. **The art is alive.** The SVG art ignored blinks and glances (the face was code-only). Eye variants (closed, happy, eight look directions) are now generated from each SVG's own pupils; idle breathing, sway, glances and a wiggle.
+2. **Backups.** A formatted PC meant a new egg. Snapshots go to Documents/Openmon Backups (OneDrive-synced on Windows): daily files for 14 days plus `latest`, every 10 minutes of use and at every evolution. A fresh install offers to bring the pet back; a declined offer keeps the found pet aside. Export, import and CLI commands.
+3. **Accessories.** 12 hats and neckwear unlocked by feats, kept across generations, drawn in ink style and placed from each sprite's outline and eye line.
+4. **Items and the Bag.** Snacks (+2 bond, one per mission), Rare candy (one level, one per perfect day), the Everstone (stops evolving). A Bag page with previews on your own pet.
+5. **Reactions.** It strolls a few steps when idle and shows emotes (? ♥ ♪ … !?) in character when the cursor rests near it, after a turn and after a snack.
+6. **Pokémon moments.** A nickname prompt at hatch, a daily gift, streaks with a candy every 7 days.
+7. **Journal.** One line per day for 60 days: work by kind, projects, tests, turns, waits. A 14-day chart on the Powers page with a week in numbers.
+8. **First run.** Connect Claude Code from the pet's own bubble; two tips shown once (right-click for the card, click the sign to jump to the agent).
+9. **Polish.** Visible keyboard focus, window titles in your language, a "Walk around" switch, emotes follow Chatter and quiet mode.
+10. **Review.** A declined restore no longer risks the found pet; an older pet that unlocks many accessories at once gets one toast instead of a flood. Tests (76), smoke test and docs updated.

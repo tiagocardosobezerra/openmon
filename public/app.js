@@ -891,6 +891,11 @@
       toast = null;
       pushToast(evolve.stage === 'sprout' ? tr('scene.hatching') : tr('scene.evolving', { name }), '', 2400, 'scene');
     }
+    const newWear = events.filter((e) => e.type === 'cosmetic');
+    if (newWear.length > 1) {
+      pushToast(tr('toast.cosmeticMany', { n: newWear.length }), newWear.map((e) => tr(`wear.${e.id}`)).join(', '), 6000);
+      play('level');
+    }
     for (const e of events) {
       switch (e.type) {
         case 'petted':
@@ -907,6 +912,7 @@
           }
           break;
         case 'cosmetic':
+          if (newWear.length > 1) break;
           pushToast(tr('toast.cosmetic', { item: tr(`wear.${e.id}`) }), tr('toast.cosmeticSub'), 5000);
           burst('spark', 14, petCX(), top - 10, Math.PI * 2, { colors: ['#ffe156', '#fff', '#ff7fa3'], gravity: 60 });
           play('level');
