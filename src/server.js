@@ -374,7 +374,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'POST /api/rename':
         return readJson(req, (err, body) => (err ? res.writeHead(400).end() : json(res, 200, { events: rename(body.name) })));
       case 'GET /api/powers':
-        return json(res, 200, { unlocked: unlockedPowers(world.pet), today: pet.view(world.pet).today, sessions: powers.view() });
+        {
+          const v = pet.view(world.pet);
+          return json(res, 200, { unlocked: unlockedPowers(world.pet), today: v.today, journal: v.journal, streak: v.streak, sessions: powers.view() });
+        }
       case 'GET /api/playground':
         return json(res, 200, { playground: Boolean(dev) });
       case 'POST /api/window':

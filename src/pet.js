@@ -178,6 +178,7 @@ function view(pet) {
     bag: pet.bag,
     holding: pet.holding,
     streak: pet.streak || { days: 0, best: 0 },
+    journal: [...(pet.journal || []), journalEntry(pet.daily)].filter((e) => e.day),
   };
 }
 
@@ -286,6 +287,37 @@ function missionsFor(day) {
   return picked.map((m) => ({ id: m.id, done: false }));
 }
 
+// One line per day of agent work, for the journal.
+const JOURNAL_DAYS = 60;
+function journalEntry(d) {
+  return {
+    day: d.day,
+    tools: d.tools || 0,
+    edits: d.edits || 0,
+    green: d.green || 0,
+    red: d.red || 0,
+    turns: d.turns || 0,
+    waitMs: d.waitMs || 0,
+    waits: d.waits || 0,
+    fastestMs: d.fastestMs ?? null,
+    families: { ...(d.families || {}) },
+    projects: { ...(d.projects || {}) },
+  };
+}
+
+// Counts a finished tool by kind of work and by project (top 12 kept).
+function countWork(pet, signal) {
+  const d = pet.daily;
+  if (signal.family) {
+    d.families = d.families || {};
+    d.families[signal.family] = (d.families[signal.family] || 0) + 1;
+  }
+  if (signal.label) {
+    d.projects = d.projects || {};
+    if (d.projects[signal.label] != null || Object.keys(d.projects).length < 12) d.projects[signal.label] = (d.projects[signal.label] || 0) + 1;
+  }
+}
+
 function rollDay(pet, now, events) {
   const day = dayKey(now);
   if (pet.daily.day === day) {
@@ -293,6 +325,10 @@ function rollDay(pet, now, events) {
     return;
   }
   const previous = pet.daily.day;
+  // Yesterday goes into the journal (the last 60 days are kept).
+  if (previous) {
+    pet.journal = [...(pet.journal || []), journalEntry(pet.daily)].slice(-JOURNAL_DAYS);
+  }
   pet.daily = { day, pets: 0, fastAnswers: 0, waitMs: 0, waits: 0, fastestMs: null, tools: 0, edits: 0, green: 0, turns: 0, missions: missionsFor(day), perfect: false, activeDays: (pet.daily.activeDays || 0) + 1 };
   // Streak: consecutive days with your agent. A missed day starts over.
   const yesterday = dayKey(now - 24 * 60 * 60 * 1000);
@@ -443,6 +479,7 @@ function applySignal(pet, signal, ctx = {}, now) {
         pet.daily.edits = (pet.daily.edits || 0) + 1;
       }
       if (signal.family && pet.stats[signal.family] != null) pet.stats[signal.family]++;
+      countWork(pet, signal);
       addXp(pet, XP.tool, now, events);
       break;
     case 'tool-fail':
@@ -453,6 +490,8 @@ function applySignal(pet, signal, ctx = {}, now) {
       break;
     case 'test-end':
       c.tools++;
+      pet.daily.tools = (pet.daily.tools || 0) + 1;
+      countWork(pet, { ...signal, family: 'test' });
       if (signal.passed === true) {
         c.testsGreen++;
         pet.daily.green = (pet.daily.green || 0) + 1;
@@ -462,7 +501,10 @@ function applySignal(pet, signal, ctx = {}, now) {
         unlock(pet, 'first-green', now, events);
         if (c.testsGreen >= 100) unlock(pet, 'green-100', now, events);
       } else {
-        if (signal.passed === false) c.testsRed++;
+        if (signal.passed === false) {
+          c.testsRed++;
+          pet.daily.red = (pet.daily.red || 0) + 1;
+        }
         pet.stats.test++;
         addXp(pet, XP.tool, now, events);
         events.push({ type: 'tests', passed: signal.passed });

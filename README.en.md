@@ -125,6 +125,8 @@ Each lineage your Openmon grows into unlocks a **power**, for good (the Opendex 
 | Travel log | Roam | pages fetched, web searches, MCP tools |
 | Hive view | Swarm | subagents, still running or done, and their time |
 
+Above the powers sits the **Journal**: a chart of the last 14 days of what your agents did by kind of work, each day's projects and, for the last week, tool calls, turns, % of green test runs, time waiting for you and the busiest project. It keeps 60 days and goes into the backups.
+
 Everyone also gets the **waiting counter**: how long your agents sat waiting for you today, your fastest answer, and a live timer in the "needs you" bubble. It is the number a good pet helps you shrink.
 
 All of it stays in memory on your machine; nothing is written to disk or sent anywhere.

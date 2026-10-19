@@ -125,6 +125,8 @@ Cada linhagem em que seu Openmon evolui desbloqueia um **poder**, para sempre (a
 | Diário de viagem | Viagem | páginas abertas, buscas na web, ferramentas MCP |
 | Visão da colmeia | Enxame | subagentes, ainda rodando ou prontos, e o tempo deles |
 
+Acima dos poderes fica o **Diário**: um gráfico dos últimos 14 dias com o que seus agentes fizeram por tipo de trabalho, os projetos de cada dia e, na última semana, ferramentas, turnos, % de testes verdes, tempo esperando por você e o projeto mais ativo. O histórico guarda 60 dias e vai junto nos backups.
+
 Todo mundo também tem o **contador de espera**: quanto tempo seus agentes ficaram esperando por você hoje, sua resposta mais rápida e um cronômetro ao vivo no balão "precisa de você". É o número que um bom pet ajuda a diminuir.
 
 Tudo fica na memória da sua máquina; nada é gravado em disco nem enviado para lugar nenhum.

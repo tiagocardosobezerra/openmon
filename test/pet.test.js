@@ -322,3 +322,19 @@ test('every new day: a snack, and a streak that resets after a missed day', () =
   assert.equal(p.streak.days, 1);
   assert.equal(p.streak.best, 7);
 });
+
+test('the journal keeps one line per day: work by kind and by project', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const p = pet.createPet(T0, null, () => 0.5);
+  pet.applySignal(p, { kind: 'tool-done', family: 'craft', label: 'shop' }, {}, T0);
+  pet.applySignal(p, { kind: 'tool-done', family: 'lore', label: 'shop' }, {}, T0 + 1000);
+  pet.applySignal(p, { kind: 'test-end', family: 'test', passed: false, label: 'api' }, {}, T0 + 2000);
+  pet.applySignal(p, { kind: 'tool-done', family: 'craft', label: 'api' }, {}, T0 + DAY);
+  const j = pet.view(p).journal;
+  assert.equal(j.length, 2);
+  assert.deepEqual(j[0].families, { craft: 1, lore: 1, test: 1 });
+  assert.deepEqual(j[0].projects, { shop: 2, api: 1 });
+  assert.equal(j[0].red, 1);
+  assert.equal(j[0].tools, 3);
+  assert.equal(j[1].tools, 1);
+});

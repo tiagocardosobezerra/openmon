@@ -18,6 +18,23 @@
   .sessions-box h3 { margin: 0 0 8px; font-size: 14px; }
   .sessions { display: flex; flex-wrap: wrap; gap: 6px; }
   .sessions .recap { flex-basis: 100%; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .journal { margin-top: 12px; padding: 14px 16px; }
+  .journal h3 { margin: 0; font-size: 16px; }
+  .journal .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .journal .head p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .chart { display: grid; grid-template-columns: repeat(14, 1fr); align-items: end; gap: 6px; height: 120px; padding-bottom: 2px; border-bottom: 2px solid var(--line); }
+  .col { display: flex; flex-direction: column-reverse; height: 100%; justify-content: flex-start; border-radius: 6px 6px 2px 2px; cursor: pointer; overflow: hidden; background: var(--surface-2); }
+  .col i { display: block; width: 100%; }
+  .col:hover, .col.on { box-shadow: 0 0 0 2px var(--outline); }
+  .days { display: grid; grid-template-columns: repeat(14, 1fr); gap: 6px; margin-top: 4px; font-size: 10.5px; color: var(--muted); text-align: center; }
+  .days .today { color: var(--ink); font-weight: 800; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; background: var(--c); }
+  .day-detail { margin-top: 10px; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 13px; min-height: 40px; }
+  .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
+  .totals div { padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); }
+  .totals b { display: block; font: 600 20px var(--font-display); font-variant-numeric: tabular-nums; }
+  .totals small { color: var(--muted); font-size: 11.5px; }
   .tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 22px; }
   .tab { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px 8px; border: var(--bw) solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--ink); cursor: pointer; transition: transform 0.08s ease; }
   .tab:hover { transform: translateY(-2px); border-color: var(--c); }
@@ -48,6 +65,7 @@
     <section class="wait panel" id="wait"></section>
     <section class="sessions-box panel soft"><h3 id="h-sessions"></h3><div class="sessions" id="sessions"></div></section>
   </div>
+  <section class="journal panel soft" id="journal"></section>
   <div class="tabs" id="tabs"></div>
   <section class="panel panel-body" id="panel"></section>
 </main>
@@ -191,8 +209,93 @@
     box.append(view || h('div', { class: 'empty' }, tr('powers.nothing')));
   }
 
+  // The journal: the last 14 days of agent work, by kind of work.
+  const FAMILIES = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
+  let pickedDay = null;
+  const dayLabel = (key, opts) => {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(lang, opts);
+  };
+  function lastDays(journal) {
+    const byDay = Object.fromEntries((journal || []).map((e) => [e.day, e]));
+    const out = [];
+    const d = new Date();
+    for (let i = 13; i >= 0; i--) {
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() - i);
+      const key = `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+      out.push(byDay[key] || { day: key, tools: 0, edits: 0, green: 0, red: 0, turns: 0, waitMs: 0, waits: 0, families: {}, projects: {} });
+    }
+    return out;
+  }
+  function dayText(e) {
+    if (!e.tools && !e.turns) return tr('journal.quiet', { day: dayLabel(e.day, { weekday: 'long', day: 'numeric', month: 'short' }) });
+    const projects = Object.entries(e.projects || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([p, n]) => `${p} (${n})`).join(', ');
+    const bits = [
+      tr('journal.tools', { n: e.tools }),
+      e.turns ? tr('journal.turns', { n: e.turns }) : null,
+      e.green || e.red ? tr('journal.tests', { g: e.green, r: e.red }) : null,
+      e.waitMs ? tr('journal.waited', { t: dur(e.waitMs) }) : null,
+    ].filter(Boolean);
+    return `${dayLabel(e.day, { weekday: 'long', day: 'numeric', month: 'short' })} · ${bits.join(' · ')}${projects ? ` · ${projects}` : ''}`;
+  }
+  function renderJournal() {
+    const box = $('journal');
+    box.textContent = '';
+    const days = lastDays(data.journal);
+    const head = h('div', { class: 'head' }, h('h3', {}, tr('journal.title')), h('p', {}, tr('journal.sub')));
+    if (data.streak && data.streak.days > 1) head.append(h('span', { class: 'chip sun' }, tr('today.streak', { n: data.streak.days })));
+    const max = Math.max(1, ...days.map((e) => e.tools));
+    const chart = h('div', { class: 'chart' });
+    const labels = h('div', { class: 'days' });
+    const detail = h('div', { class: 'day-detail' });
+    const today = days[days.length - 1].day;
+    if (!pickedDay) pickedDay = today;
+    for (const e of days) {
+      const col = h('div', { class: `col${e.day === pickedDay ? ' on' : ''}`, title: dayText(e) });
+      col.style.height = `${Math.max(3, (e.tools / max) * 100)}%`;
+      const total = Math.max(1, Object.values(e.families || {}).reduce((a, b) => a + b, 0));
+      for (const fam of FAMILIES) {
+        const n = (e.families || {})[fam] || 0;
+        if (!n) continue;
+        const seg = h('i');
+        seg.style.height = `${(n / total) * 100}%`;
+        seg.style.background = `var(--${fam})`;
+        col.append(seg);
+      }
+      col.onmouseenter = () => (detail.textContent = dayText(e));
+      col.onclick = () => {
+        pickedDay = e.day;
+        renderJournal();
+      };
+      chart.append(col);
+      labels.append(h('span', { class: e.day === today ? 'today' : '' }, e.day === today ? tr('journal.today') : dayLabel(e.day, { weekday: 'narrow' })));
+    }
+    chart.onmouseleave = () => (detail.textContent = dayText(days.find((x) => x.day === pickedDay) || days[days.length - 1]));
+    detail.textContent = dayText(days.find((x) => x.day === pickedDay) || days[days.length - 1]);
+    const legend = h('div', { class: 'legend' }, FAMILIES.map((fam) => {
+      const sp = h('span', {}, tr(`power.${fam}`));
+      sp.style.setProperty('--c', `var(--${fam})`);
+      return sp;
+    }));
+    // The last 7 days in four numbers.
+    const week = days.slice(-7);
+    const sum = (k) => week.reduce((a, e) => a + (e[k] || 0), 0);
+    const tests = sum('green') + sum('red');
+    const proj = {};
+    for (const e of week) for (const [p, n] of Object.entries(e.projects || {})) proj[p] = (proj[p] || 0) + n;
+    const top = Object.entries(proj).sort((a, b) => b[1] - a[1])[0];
+    const totals = h('div', { class: 'totals' },
+      h('div', {}, h('b', {}, String(sum('tools'))), h('small', {}, tr('journal.weekTools'))),
+      h('div', {}, h('b', {}, String(sum('turns'))), h('small', {}, tr('journal.weekTurns'))),
+      h('div', {}, h('b', {}, tests ? `${Math.round((sum('green') / tests) * 100)}%` : '–'), h('small', {}, tr('journal.weekGreen'))),
+      h('div', {}, h('b', {}, dur(sum('waitMs'))), h('small', {}, tr('journal.weekWait'))),
+      h('div', {}, h('b', { style: 'font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, top ? top[0] : '–'), h('small', {}, tr('journal.weekTop'))));
+    box.append(head, chart, labels, legend, detail, totals);
+  }
+
   function render() {
     if (!data) return;
+    renderJournal();
     renderWait();
     renderSessions();
     renderTabs();
