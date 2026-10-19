@@ -24,7 +24,13 @@ const COMPANION_ID = 'c0ffee00c0ffee';
 if (!process.versions.electron) {
   runAll().then((code) => process.exit(code));
 } else {
-  runScenario(process.argv[process.argv.indexOf('--scenario') + 1]);
+  // A throw while loading would show Electron's error dialog: print it and fail.
+  try {
+    runScenario(process.argv[process.argv.indexOf('--scenario') + 1]);
+  } catch (err) {
+    console.error(`FAIL e2e main process: ${err.stack || err}`);
+    process.exit(1);
+  }
 }
 
 // --- outer runner (plain Node) ------------------------------------------------
@@ -103,7 +109,28 @@ async function runAll() {
 // --- inside Electron ----------------------------------------------------------
 
 function runScenario(scenario) {
-  const { app, BrowserWindow, Menu, screen } = require('electron');
+  const electron = require('electron');
+  const { app, BrowserWindow, Menu, dialog } = electron;
+  // Never touch the screen module before the app is ready (it throws).
+  const screen = new Proxy({}, { get: (_t, k) => (typeof electron.screen[k] === 'function' ? electron.screen[k].bind(electron.screen) : electron.screen[k]), set: (_t, k, v) => ((electron.screen[k] = v), true) });
+
+  // Nothing may pop up on the desktop: an error in this process fails the
+  // run with its stack on the console instead of Electron's error dialog,
+  // and the app's own dialogs are logged, not shown.
+  const fatal = (err) => {
+    console.error(`FAIL e2e main process: ${err && err.stack ? err.stack : err}`);
+    if (app.isReady()) app.exit(1);
+    else process.exit(1);
+  };
+  process.on('uncaughtException', fatal);
+  process.on('unhandledRejection', fatal);
+  dialog.showErrorBox = (title, content) => fatal(`error dialog: ${title}: ${content}`);
+  for (const k of ['showMessageBox', 'showOpenDialog', 'showSaveDialog']) {
+    dialog[k] = async (...args) => {
+      fatal(`dialog.${k} opened: ${JSON.stringify(args.find((a) => a && a.message) || args[args.length - 1])}`);
+      return { response: 1, canceled: true, filePaths: [] };
+    };
+  }
   const home = process.env.OPENMON_HOME;
   const port = Number(process.env.OPENMON_PORT);
   if (!home || !port || !home.includes('openmon-e2e-')) throw new Error('run through `npm run e2e`');
