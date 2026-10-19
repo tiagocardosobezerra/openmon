@@ -517,6 +517,25 @@ function openControlPanel() {
   panel.loadURL(`http://127.0.0.1:${port}/playground.html`);
 }
 
+// Another always-on-top window (a game overlay, a screen recorder) can sit
+// above the pets and swallow their clicks. On Windows the 'floating' level
+// stacks a window just under the taskbar, below such overlays, so a pet moves
+// to the very top when it shows, when the pointer reaches it and after a drag.
+// At most every 500 ms per window, and never with the pointer on the taskbar
+// (its previews and menus stay on top).
+function liftPet(w) {
+  if (!w || w.isDestroyed() || !w.isVisible()) return;
+  const now = Date.now();
+  if (now - (w.__lifted || 0) < 500) return;
+  const p = screen.getCursorScreenPoint();
+  const d = screen.getDisplayNearestPoint(p);
+  const inside = (r) => p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
+  if (inside(d.bounds) && !inside(d.workArea)) return;
+  w.__lifted = now;
+  w.setAlwaysOnTop(true, 'dock');
+  w.moveTop();
+}
+
 function petWindow(place, size = { width: WIN_W, height: WIN_H }) {
   const w = new BrowserWindow({
     width: size.width,
@@ -549,7 +568,10 @@ function petWindow(place, size = { width: WIN_W, height: WIN_H }) {
   // Only our own page, never anything else.
   w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   w.webContents.on('will-navigate', (e) => e.preventDefault());
-  w.once('ready-to-show', () => w.showInactive());
+  w.once('ready-to-show', () => {
+    w.showInactive();
+    liftPet(w);
+  });
   return w;
 }
 
@@ -589,8 +611,10 @@ function companionUrl(id) {
 function showPets(on) {
   for (const w of [win, ...companionWins.values()]) {
     if (!w || w.isDestroyed()) continue;
-    if (on) w.showInactive();
-    else w.hide();
+    if (on) {
+      w.showInactive();
+      liftPet(w);
+    } else w.hide();
   }
 }
 
@@ -639,7 +663,9 @@ function wireIpc() {
   const senderWin = (e) => BrowserWindow.fromWebContents(e.sender);
   ipcMain.on('interactive', (e, on) => {
     const w = senderWin(e);
-    if (w && !w.isDestroyed()) w.setIgnoreMouseEvents(!on, { forward: true });
+    if (!w || w.isDestroyed()) return;
+    w.setIgnoreMouseEvents(!on, { forward: true });
+    if (on && !dragTimer) liftPet(w);
   });
   ipcMain.on('menu', (e) => Menu.buildFromTemplate(menuTemplate()).popup({ window: senderWin(e) || win }));
   ipcMain.on('open-powers', openPowersWindow);
@@ -725,6 +751,10 @@ function wireIpc() {
     dragTimer = null;
     if (dragging && dragging.__companion) saveCompanionPlace(dragging.__companion, dragging);
     else savePlace();
+    if (dragging) {
+      dragging.__lifted = 0;
+      liftPet(dragging);
+    }
     dragging = null;
   });
 }
@@ -796,28 +826,6 @@ app.whenReady().then(async () => {
     trayWasWaiting = waiting;
   });
   setInterval(() => watchAttention(daemon.state()), 2000).unref();
-  // Another always-on-top window (a game overlay, a screen recorder) can
-  // sit above the pets and swallow their clicks. On Windows the 'floating'
-  // level stacks a window just under the taskbar, below such overlays, so
-  // lift the pets to the very top every 1.5 s. Not while one is dragged, and
-  // not while the pointer is on the taskbar (its previews and menus stay on top).
-  let lastLift = 0;
-  let lastOnTaskbar = 0;
-  setInterval(() => {
-    const now = Date.now();
-    const p = screen.getCursorScreenPoint();
-    const d = screen.getDisplayNearestPoint(p);
-    const inside = (r) => p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
-    if (inside(d.bounds) && !inside(d.workArea)) lastOnTaskbar = now;
-    if (dragTimer || now - lastOnTaskbar < 5000 || now - lastLift < 1500) return;
-    lastLift = now;
-    for (const w of [win, ...companionWins.values()]) {
-      if (!w || w.isDestroyed() || !w.isVisible()) continue;
-      w.setAlwaysOnTop(true, 'dock');
-      w.moveTop();
-    }
-  }, 500).unref();
-
   wireIpc();
   createWindow();
   if (PLAYGROUND) openControlPanel();
