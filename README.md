@@ -101,7 +101,7 @@ O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa n
 
 ## Como ele cresce
 
-Cada coisa que o agente faz vale **experiência (XP)**. Com o bastante, ele evolui: ovo, broto, jovem, adulto e ancião, em semanas de uso. O **tipo** dele vem do trabalho que o agente mais faz:
+Cada coisa que o agente faz vale **experiência (XP)**. Com o bastante, ele evolui: ovo, bebê, jovem, adulto e ancião, em semanas de uso. O **tipo** dele vem do trabalho que o agente mais faz:
 
 | Tipo | Vem de | Jovem | Adulto | Ancião |
 |---|---|---|---|---|

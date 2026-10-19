@@ -101,7 +101,7 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 
 ## Cómo crece
 
-Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evoluciona: huevo, brote, joven, adulto y anciano, en semanas de uso. Su **tipo** viene del trabajo que más hace el agente:
+Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evoluciona: huevo, bebé, joven, adulto y anciano, en semanas de uso. Su **tipo** viene del trabajo que más hace el agente:
 
 | Tipo | Viene de | Joven | Adulto | Anciano |
 |---|---|---|---|---|
