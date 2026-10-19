@@ -670,21 +670,16 @@ test('daemon: a stone held by another member cannot be held again', async () => 
   }
 });
 
-test('daemon: following the project swaps a companion with the main pet; Box members never show', async () => {
+test('daemon: a companion in the Box is not drawn', async () => {
   const { daemon, port } = await boot();
   try {
     for (let i = 0; i < 61; i++) await request(port, 'POST', '/event', hook('/w/other'));
     let s = await request(port, 'GET', '/api/state');
     const other = s.party.members.find((m) => !m.active);
-    const mainId = s.pet.id;
-    await request(port, 'POST', '/api/config', { companions: [other.id], followProject: true });
-    await request(port, 'POST', '/event', hook('/w/other', 'PreToolUse'));
+    await request(port, 'POST', '/api/config', { companions: [other.id] });
     s = await request(port, 'GET', '/api/state');
-    assert.equal(s.pet.id, other.id);
-    assert.deepEqual(s.config.companions, [mainId]);
-    // A companion in the Box is not drawn.
-    await request(port, 'POST', '/api/config', { followProject: false });
-    await request(port, 'POST', '/api/party/move', { id: mainId, place: 'box' });
+    assert.deepEqual(Object.keys(s.companions), [other.id]);
+    await request(port, 'POST', '/api/party/move', { id: other.id, place: 'box' });
     s = await request(port, 'GET', '/api/state');
     assert.deepEqual(Object.keys(s.companions), []);
   } finally {

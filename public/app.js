@@ -1181,9 +1181,6 @@
           pushToast(tr('party.newEgg', { project: e.project }), tr(e.place === 'box' ? 'party.newEggBox' : 'party.newEggSub'), 6000);
           play('level');
           break;
-        case 'switched':
-          pushToast(tr('party.switched', { project: e.project }), '', 3000);
-          break;
         case 'tests-fixed':
           pushToast(tr('fixed.title'), e.label, 4500, 'done');
           burst('confetti', 14, petCX(), GROUND - 80, 2, { colors: ['#5ccf74', '#fff', '#ffe156'], gravity: 260 });

@@ -144,7 +144,7 @@ O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa n
 
 Clique com o botão direito no pet e em **Mais**, no pé do card (ou no ícone da bandeja). O menu tem o card, as páginas, o **modo foco**, o **modo silencioso** e as **Configurações**, uma página com seis seções:
 
-* **Pet**: apelido, tamanho, idioma, cores de época, sons, falas, passear pela tela e mostrar o Openmon do projeto ativo.
+* **Pet**: apelido, tamanho, idioma, cores de época, sons, falas, passear pela tela e dividir as conversas entre os Openmons na tela.
 * **Avisos**: notificação do sistema e responder permissões pelo pet (com o tempo de espera).
 * **Foco e calma**: modo foco, modo silencioso, modo apresentação e lembrete de pausa.
 * **Celular**: aviso no celular pelo app ntfy (opcional).

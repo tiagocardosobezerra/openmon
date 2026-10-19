@@ -108,7 +108,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25, seasons: false, companions: [], shareSessions: true, follows: {} };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25, seasons: false, companions: [], shareSessions: true, follows: {} };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -319,7 +319,6 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // The real pet routes work to the pet of each project (Party); the demo
     // pet is a single egg.
     const events = target === real ? party.applySignal(real.pet, signal, ctx, t, petForSession(signal)) : pet.applySignal(target.pet, signal, ctx, t);
-    if (target === real) followProject(signal, t, events);
     if (target === real) events.push(...target.sessions.takeNotices());
     if (target === real) noteActivity(t);
     // Agent time per project: the gap since this session's previous event.
@@ -336,19 +335,6 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     if (target === real) persist(events.some((e) => e.type === 'evolve'));
     log(`${signal.kind.padEnd(14)} ${signal.label}${signal.detail ? ` · ${signal.detail}` : ''}`);
     return events;
-  }
-
-  // "Show the pet of the project your agent is working in": switches the pet
-  // on screen to that project's own pet (at most every 20 s).
-  let lastFollow = 0;
-  function followProject(signal, t, events) {
-    if (!config.followProject || signal.kind !== 'tool-start' || t - lastFollow < 20_000) return;
-    const target = party.petFor(real.pet, party.projectOf(signal));
-    if (target === real.pet || target.place !== 'party') return;
-    // A companion swaps places with the main pet, so it stays on screen.
-    swapMain(target.id);
-    lastFollow = t;
-    events.push({ type: 'switched', project: target.project });
   }
 
   function partyAction(fn) {
@@ -890,7 +876,6 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.seasons === 'boolean') Object.assign(patch, { seasons: body.seasons, seasonsChosen: true });
           // Other Openmons of the team standing next to the main one (2 at most).
           if (Array.isArray(body.companions)) patch.companions = [...new Set(body.companions.filter((id) => typeof id === 'string' && /^[a-f0-9]{6,32}$/.test(id)))].slice(0, MAX_COMPANIONS);
-          if (typeof body.followProject === 'boolean') patch.followProject = body.followProject;
           if (typeof body.shareSessions === 'boolean') patch.shareSessions = body.shareSessions;
           if (typeof body.present === 'boolean') patch.present = body.present;
           if (typeof body.lang === 'string' && /^(en|pt-BR|es)$/.test(body.lang)) patch.lang = body.lang;

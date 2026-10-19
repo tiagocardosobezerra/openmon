@@ -43,9 +43,7 @@
 </head>
 <body class="page" data-page="party">
 <main class="wrap">
-  <div class="hero"><div><h1 id="title"></h1><p id="sub"></p>
-    <label class="switch"><input type="checkbox" id="follow"><span id="follow-label"></span></label>
-  </div></div>
+  <div class="hero"><div><h1 id="title"></h1><p id="sub"></p></div></div>
   <h2 class="section-title"><img src="/ui/party.svg" alt=""><span id="h-party"></span> <small id="party-count"></small></h2>
   <div class="grid" id="party"></div>
   <h2 class="section-title" id="h-upcoming"></h2>
@@ -62,7 +60,7 @@
   const { t: tr, lang } = window.OpenmonI18n;
   document.documentElement.lang = lang;
   const $ = (id) => document.getElementById(id);
-  for (const [id, key] of [['title', 'party.title'], ['sub', 'party.sub'], ['h-party', 'party.party'], ['h-box', 'party.box'], ['h-upcoming', 'party.upcoming'], ['upcoming-sub', 'party.upcomingSub'], ['follow-label', 'party.follow']]) $(id).textContent = tr(key);
+  for (const [id, key] of [['title', 'party.title'], ['sub', 'party.sub'], ['h-party', 'party.party'], ['h-box', 'party.box'], ['h-upcoming', 'party.upcoming'], ['upcoming-sub', 'party.upcomingSub']]) $(id).textContent = tr(key);
   const el = (tag, cls, text) => {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -204,7 +202,6 @@
     const s = await (await fetch('/api/state')).json();
     data = s.party;
     cfg = s.config || {};
-    $('follow').checked = Boolean(s.config && s.config.followProject);
     if (data) render();
   }
   // Box wallpaper: a per-viewer choice, remembered in this browser only.
@@ -234,7 +231,6 @@
     }
   }
   renderWalls();
-  $('follow').addEventListener('change', (e) => post('/api/config', { followProject: e.target.checked }));
   OpenmonArt.loadPack().then(load);
   setTimeout(drawAll, 1500);
   setTimeout(drawAll, 3500);
