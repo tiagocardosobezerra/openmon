@@ -143,17 +143,22 @@ function runScenario(scenario) {
   // from sendInputEvent; the shell reads the pointer for drags and for its
   // click-through safety net, so it reads this fake one.
   let cursor = { x: 0, y: 0 };
+  // Where the real pointer is. Over a window that takes clicks the OS sends
+  // it real mouse moves (no button held), which would end a drag: the
+  // windows stay clear of it.
+  let realPointer = { x: 0, y: 0 };
   // (The screen module exists once the app is ready; this runs before the
   // app's own ready handler.)
   app.whenReady().then(() => {
     // Start the pets on the side away from the real pointer, which the
-    // test never moves.
+    // test never moves: standing on the bottom of the screen, as the app
+    // places them, with room on the left for the companion (165 px).
     const real = screen.getCursorScreenPoint();
+    realPointer = real;
     const area = screen.getPrimaryDisplay().workArea;
-    const right = real.x < area.x + area.width / 2;
-    // Standing on the bottom of the screen, as the app places them; the
-    // companion goes to the left, so keep room for it.
-    const place = { x: right ? area.x + area.width - 324 : area.x + 420, y: area.y + area.height - 560, w: 300, h: 560 };
+    const gap = (x) => Math.max(x - 165 - real.x, real.x - (x + 300));
+    const x = [area.x + area.width - 324, area.x + 180].sort((a, b) => gap(b) - gap(a))[0];
+    const place = { x, y: area.y + area.height - 560, w: 300, h: 560 };
     const d = screen.getPrimaryDisplay();
     console.log(`screen ${d.bounds.width}x${d.bounds.height} work area ${JSON.stringify(area)} scale ${d.scaleFactor}, pointer ${real.x},${real.y}`);
     fs.writeFileSync(path.join(home, 'window.json'), JSON.stringify(place));
@@ -289,9 +294,9 @@ function runScenario(scenario) {
     await wait(40);
     mouse(w, 'mouseDown', p.x, p.y, { button: 'left', clickCount: 1 });
     await wait(60);
-    // Towards the middle of the screen: the OS may stop a window at its edges.
-    const area = screen.getDisplayMatching(w.getBounds()).workArea;
-    const dx = before[0] + 150 > area.x + area.width / 2 ? -90 : 90;
+    // Away from the real pointer (see realPointer), and up: the windows
+    // stand on the bottom of the screen.
+    const dx = before[0] + 150 > realPointer.x ? 90 : -90;
     const dy = -60;
     for (let i = 1; i <= 6; i++) {
       // The window follows the pointer, so the point in the window stays put.
