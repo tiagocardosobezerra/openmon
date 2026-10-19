@@ -204,19 +204,14 @@ Para todo mundo: o **Diário** dos últimos 14 dias e o **contador de espera**, 
 
 ### Configurações
 
-Clique com o botão direito no pet e na engrenagem do card (ou use o ícone da bandeja):
+Clique com o botão direito no pet e na engrenagem do card (ou no ícone da bandeja). O menu tem o card, as páginas, o **modo foco**, o **modo silencioso** e as **Configurações**, uma página com seis seções:
 
-* **Modo silencioso**: 30 minutos, 1 hora ou até amanhã. Ele continua mostrando tudo, sem som.
-* **Tamanho**: pequeno, normal ou grande.
-* **Responder permissões pelo pet**: Permitir e Recusar no balão (desligado por padrão).
-* **Sons**, **Falas e emoções**, **Passear pela tela**, **Avisar quando um agente esperar**, **Iniciar com o computador**.
-* **Cópias de segurança**: fazer uma cópia agora, exportar o pet para um arquivo, trazer um pet de um arquivo, abrir a pasta.
-* **Como funciona**: uma página com o que cada pose significa e perguntas frequentes.
-* **Mais configurações…** (a engrenagem no topo das páginas): responder pelo pet e tempo de espera, modo apresentação, pausas, seguir o projeto ativo, aviso no celular, atalhos e OBS.
-
-Idiomas: português, inglês e espanhol, conforme o sistema.
-
-As escolhas ficam salvas em `~/.openmon/config.json`; o pet, em `~/.openmon/pet.json`.
+* **Pet**: apelido, tamanho, idioma, cores de época, sons, falas, passear pela tela e mostrar o Openmon do projeto ativo.
+* **Avisos**: notificação do sistema e responder permissões pelo pet (com o tempo de espera).
+* **Foco e calma**: modo foco, modo silencioso, modo apresentação e lembrete de pausa.
+* **Celular**: aviso no celular pelo app ntfy (opcional).
+* **Computador**: iniciar com o computador, conectar o Claude Code, cópias do pet (fazer agora, exportar, trazer de um arquivo) e voltar o pet ao canto da tela.
+* **Avançado**: atalhos de teclado, OBS e demonstração.
 
 ### Sua arte
 

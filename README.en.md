@@ -204,19 +204,14 @@ For everyone: the **Journal** of the last 14 days and the **waiting counter**, h
 
 ### Settings
 
-Right-click the pet and click the gear on its card (or use the tray icon):
+Right-click the pet and click the gear on its card (or the tray icon). The menu has the card, the pages, **focus mode**, **quiet mode** and **Settings**, a page with six sections:
 
-* **Quiet mode**: 30 minutes, 1 hour or until tomorrow. It still shows everything, silently.
-* **Size**: small, normal or large.
-* **Answer permissions from the pet**: Allow and Deny on the bubble (off by default).
-* **Sounds**, **Chatter and emotes**, **Walk around**, **Notify when an agent waits**, **Start with the computer**.
-* **Backups**: make a copy now, export your pet to a file, bring back a pet from a file, open the folder.
-* **How it works**: a page with what each pose means and common questions.
-* **More settings…** (the gear at the top of the pages): answering from the pet and its waiting time, presentation mode, breaks, following the active project, phone alerts, shortcuts and OBS.
-
-Languages: English, Portuguese and Spanish, following your system.
-
-Your choices are saved in `~/.openmon/config.json`; the pet in `~/.openmon/pet.json`.
+* **Pet**: nickname, size, language, season colours, sounds, chatter, walking around and showing the Openmon of the active project.
+* **Alerts**: system notification and answering permissions from the pet (with the waiting time).
+* **Focus and calm**: focus mode, quiet mode, presentation mode and break reminder.
+* **Phone**: phone alerts through the ntfy app (optional).
+* **Computer**: start with the computer, connect Claude Code, copies of your pet (make one now, export, bring back from a file) and putting the pet back in its corner.
+* **Advanced**: keyboard shortcuts, OBS and the demo.
 
 ### Your own art
 

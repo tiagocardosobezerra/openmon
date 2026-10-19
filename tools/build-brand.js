@@ -37,6 +37,11 @@ const OUTPUTS = [
   ['logo-mark.svg', 'logo-mark-1024.png', 1024],
   ['source/tray-16.svg', 'tray-alert.png', 16, 'alert'],
   ['source/tray-32.svg', 'tray-alert@2x.png', 32, 'alert'],
+  // A light egg for dark taskbars (Windows dark mode, dark Linux panels).
+  ['source/tray-dark-16.svg', 'tray-dark.png', 16],
+  ['source/tray-dark-32.svg', 'tray-dark@2x.png', 32],
+  ['source/tray-dark-16.svg', 'tray-dark-alert.png', 16, 'alert'],
+  ['source/tray-dark-32.svg', 'tray-dark-alert@2x.png', 32, 'alert'],
 ];
 
 app.disableHardwareAcceleration();

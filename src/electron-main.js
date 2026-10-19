@@ -27,7 +27,7 @@ const PT = {
   'Connect to Claude Code': 'Conectar ao Claude Code',
   'Trainer card (share)': 'Cartão de treinador (compartilhar)',
   'Retire to Hall of Fame and lay a new egg': 'Aposentar no Hall da Fama e botar um novo ovo',
-  'Powers…': 'Poderes…',
+  Powers: 'Poderes',
   'Quiet mode': 'Modo silencioso',
   'Focus mode': 'Modo foco',
   'Focus until {t}': 'Foco até {t}',
@@ -53,7 +53,6 @@ const PT = {
   'When an agent asks for permission, the pet shows Allow and Deny. For up to {s} seconds Claude Code waits for your answer on the pet; after that it asks you as usual. You can turn this off any time.': 'Quando um agente pedir permissão, o pet mostra Permitir e Recusar. Por até {s} segundos o Claude Code espera a sua resposta no pet; depois disso ele pergunta como sempre. Dá para desligar quando quiser.',
   'Bag': 'Mochila',
   'More settings…': 'Mais configurações…',
-  'Settings…': 'Configurações…',
   Pages: 'Páginas',
   'Party': 'Time',
   'How it works': 'Como funciona',
@@ -89,7 +88,7 @@ const ES_TEXT = {
   "Connect to Claude Code": "Conectar con Claude Code",
   "Trainer card (share)": "Tarjeta de entrenador (compartir)",
   "Retire to Hall of Fame and lay a new egg": "Retirar al Salón de la Fama y poner un huevo nuevo",
-  "Powers…": "Poderes…",
+  Powers: "Poderes",
   "Quiet mode": "Modo silencioso",
   "Quiet until {t}": "Silencio hasta {t}",
   "30 minutes": "30 minutos",
@@ -116,7 +115,6 @@ const ES_TEXT = {
   "Bag": "Mochila",
   "Party": "Equipo",
   "More settings…": "Más ajustes…",
-  "Settings…": "Ajustes…",
   Pages: "Páginas",
   "How it works": "Cómo funciona",
   "Save a backup now": "Hacer una copia ahora",
@@ -239,9 +237,25 @@ function savePlace() {
 const BRAND = path.join(__dirname, '..', 'assets', 'brand');
 const APP_ICON = path.join(BRAND, process.platform === 'win32' ? 'app-icon.ico' : 'app-icon-256.png');
 
-// The brand egg (tray.png + tray@2x.png; a template image on macOS).
+// Is the taskbar dark? On Windows the taskbar has its own theme (it can be
+// dark while apps are light), read from the registry; elsewhere the system
+// colour scheme.
+function darkTaskbar() {
+  if (process.platform === 'win32') {
+    try {
+      const out = require('node:child_process').execFileSync('reg', ['query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize', '/v', 'SystemUsesLightTheme'], { encoding: 'utf8', windowsHide: true, timeout: 2000 });
+      const m = /SystemUsesLightTheme\s+REG_DWORD\s+0x(\d+)/.exec(out);
+      if (m) return Number(m[1]) === 0;
+    } catch {}
+  }
+  return nativeTheme.shouldUseDarkColors;
+}
+
+// The brand egg (tray.png + tray@2x.png, a light one for dark taskbars; a
+// template image on macOS, which the system tints).
 function brandTrayIcon(alert = false) {
-  const file = path.join(BRAND, alert ? 'tray-alert.png' : process.platform === 'darwin' ? 'trayTemplate.png' : 'tray.png');
+  const dark = process.platform !== 'darwin' && darkTaskbar() ? 'tray-dark' : 'tray';
+  const file = path.join(BRAND, alert ? `${dark}-alert.png` : process.platform === 'darwin' ? 'trayTemplate.png' : `${dark}.png`);
   if (!fs.existsSync(file)) return null;
   const img = nativeImage.createFromPath(file);
   if (img.isEmpty()) return null;
@@ -289,7 +303,7 @@ function menuTemplate() {
     {
       label: L('Pages'),
       submenu: [
-        { label: L('Powers…'), click: openPowersWindow },
+        { label: L('Powers'), click: openPowersWindow },
         { label: 'Opendex', click: () => openAppWindow('dex') },
         { label: L('Party'), click: () => openAppWindow('party') },
         { label: L('Bag'), click: () => openAppWindow('bag') },
@@ -320,7 +334,7 @@ function menuTemplate() {
       ],
     },
     hooked ? null : { label: L('Connect to Claude Code'), click: () => { installer.install(); daemon.recheckHooks(); refreshTray(); } },
-    { label: L('Settings…'), click: () => openAppWindow('settings') },
+    { label: L('Settings'), click: () => openAppWindow('settings') },
     {
       label: L('Retire to Hall of Fame and lay a new egg'),
       visible: Boolean(pet && pet.stage === 'mythic'),
@@ -672,6 +686,11 @@ app.whenReady().then(async () => {
   tray.on('click', () => (win.isVisible() ? win.webContents.send('command', 'card') : win.showInactive()));
   refreshTray();
   tray.on('right-click', () => tray.popUpContextMenu(Menu.buildFromTemplate(menuTemplate())));
+  // Light or dark taskbar: the egg follows when the theme changes.
+  nativeTheme.on('updated', () => {
+    const img = brandTrayIcon(trayAlert);
+    if (img) tray.setImage(img);
+  });
   if (capturePath) win.webContents.once('did-finish-load', capture);
 });
 
