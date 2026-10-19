@@ -1068,6 +1068,9 @@
         case 'commit-nudge':
           pushToast(tr('commit.title', { n: e.edits }), tr('commit.sub', { label: e.label, t: shortDur(e.ms) }), 8000, 'notice');
           break;
+        case 'break':
+          if (!config.focus) pushToast(tr('break.title', { n: e.minutes }), tr('break.sub'), 9000, 'say');
+          break;
         case 'restored':
           pushToast(tr('restore.done', { name: e.name }), tr('restore.doneSub'), 6000, 'scene');
           burst('confetti', 26, petCX(), GROUND - 80, 2.2, { colors: CONFETTI, gravity: 260 });
@@ -1357,6 +1360,7 @@
   }
 
   document.documentElement.lang = window.OpenmonI18n.lang;
+  if (!preview || params.has('lang')) post('/api/config', { lang: window.OpenmonI18n.lang });
   $('lbl-bond').textContent = tr('card.bond');
   $('lbl-powers').textContent = tr('act.powers');
   $('lbl-bag').textContent = tr('act.bag');

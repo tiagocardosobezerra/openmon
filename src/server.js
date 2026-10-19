@@ -23,6 +23,8 @@ const { createUsage } = require('./usage');
 const { createBackups, unwrap } = require('./backup');
 const { createPowers, unlockedPowers } = require('./powers');
 
+// ntfy.sh topics: letters, digits, _ and -, long enough to be private.
+const PHONE_TOPIC = /^[A-Za-z0-9_-]{8,64}$/;
 const DEFAULT_PORT = Number(process.env.OPENMON_PORT) || 4747;
 const MAX_BODY = 2 * 1024 * 1024;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -91,7 +93,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25 };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25 };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -113,11 +115,28 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     return { hooks: hooks.ok };
   }
 
+  // Presentation mode: project names become "Project A, B…" and what the
+  // agent does becomes generic, everywhere the daemon sends it.
+  function presentable(s) {
+    if (!config.present) return s;
+    const names = new Map();
+    const alias = (label) => {
+      if (!label) return label;
+      if (!names.has(label)) names.set(label, String.fromCharCode(65 + (names.size % 26)));
+      return `${names.size && /^pt/i.test(config.lang || '') ? 'Projeto' : 'Project'} ${names.get(label)}`;
+    };
+    const live = { ...s.live, sessions: (s.live.sessions || []).map((x) => ({ ...x, label: alias(x.label), detail: null, longTool: x.longTool ? { ...x.longTool, detail: null } : null })) };
+    if (live.focus) live.focus = { ...live.focus, label: alias(live.focus.label), detail: null, recap: null };
+    const petView = { ...s.pet, project: s.pet.project ? alias(s.pet.project) : s.pet.project, journal: (s.pet.journal || []).map((e) => ({ ...e, projects: {}, agentMs: {} })) };
+    const partyView = s.party ? { ...s.party, members: s.party.members.map((m) => ({ ...m, project: m.project && alias(m.project) })), box: s.party.box.map((m) => ({ ...m, project: m.project && alias(m.project) })), upcoming: [] } : s.party;
+    return { ...s, live, pet: petView, party: partyView, permissions: (s.permissions || []).map((p) => ({ ...p, label: alias(p.label), detail: null })), present: true };
+  }
+
   function state() {
     const live = world.sessions.snapshot(now());
     // A finished turn carries its recap (files, commands, tests, time).
     if (live.pose === 'done' && live.focus && world === real) live.focus.recap = powers.recap(live.focus.id);
-    return {
+    return presentable({
       type: 'state',
       demo: world !== real,
       setup: setup(),
@@ -127,7 +146,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       config: publicConfig(),
       restoreOffer: restoreOffer ? restoreOffer.summary : null,
       permissions: permissionView(),
-    };
+    });
   }
 
   function broadcast(message) {
@@ -169,6 +188,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const events = target === real ? party.applySignal(real.pet, signal, ctx, t) : pet.applySignal(target.pet, signal, ctx, t);
     if (target === real) followProject(signal, t, events);
     if (target === real) events.push(...target.sessions.takeNotices());
+    if (target === real) noteActivity(t);
     // Agent time per project: the gap since this session's previous event.
     if (target === real && signal.label) {
       const last = lastEventOf.get(signal.session);
@@ -202,6 +222,50 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     persist(true);
     pushState(true);
     return result;
+  }
+
+  // Break reminder: after 50 or 90 minutes of agent work without a pause
+  // of 10 minutes.
+  let activeSince = null;
+  let lastActivity = 0;
+  function noteActivity(t) {
+    if (!activeSince || t - lastActivity > 10 * 60_000) activeSince = t;
+    lastActivity = t;
+  }
+  function checkBreak() {
+    const t = now();
+    if (!config.breakEvery || !activeSince || t - lastActivity > 5 * 60_000) return;
+    if (t - activeSince >= config.breakEvery * 60_000) {
+      activeSince = t;
+      pushEvents([{ type: 'break', minutes: config.breakEvery }]);
+    }
+  }
+
+  // Phone alert (opt-in, ntfy.sh): an agent has waited for you a while.
+  // Sends only "Your agent needs you" (and the project name if you allow it).
+  let phonedFor = null;
+  function phone(title, message) {
+    if (!PHONE_TOPIC.test(config.phoneTopic || '')) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      const req = require('node:https').request({ host: 'ntfy.sh', path: `/${config.phoneTopic}`, method: 'POST', headers: { Title: title, Tags: 'egg', 'Content-Type': 'text/plain; charset=utf-8' }, timeout: 8000 }, (res) => {
+        res.resume();
+        resolve(res.statusCode < 300);
+      });
+      req.on('error', () => resolve(false));
+      req.on('timeout', () => req.destroy());
+      req.end(message);
+    });
+  }
+  function checkPhone() {
+    if (!config.phoneAlerts || world !== real) return;
+    const live = real.sessions.snapshot(now());
+    if (live.pose !== 'attention' || !live.focus) return;
+    const quiet = config.quietUntil && config.quietUntil > now();
+    if (quiet || phonedFor === live.focus.since || now() - live.focus.since < (config.phoneAfterSec ?? 60) * 1000) return;
+    phonedFor = live.focus.since;
+    const pt = /^pt/i.test(config.lang || '');
+    const who = config.phoneProject && !config.present ? live.focus.label : pt ? 'Seu agente' : 'Your agent';
+    phone('Openmon', pt ? `${who} precisa de você.` : `${who} needs you.`);
   }
 
   // Real agent events always reach the real pet, even while a demo plays.
@@ -420,6 +484,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   const ticker = setInterval(() => {
     world.sessions.tick(now());
+    checkBreak();
+    checkPhone();
     if (world === real) {
       real.sessions.snapshot(now());
       const late = real.sessions.takeNotices();
@@ -489,6 +555,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'GET /api/powers':
         {
           const v = pet.view(world.pet);
+          if (config.present) return json(res, 200, { unlocked: unlockedPowers(world.pet), today: v.today, journal: v.journal.map((e) => ({ ...e, projects: {}, agentMs: {} })), streak: v.streak, sessions: [], present: true });
           return json(res, 200, { unlocked: unlockedPowers(world.pet), today: v.today, journal: v.journal, streak: v.streak, sessions: powers.view() });
         }
       case 'GET /api/playground':
@@ -518,6 +585,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (body.decision === 'always' && pendingEntry && !pendingEntry.suggestions) return json(res, 200, { ok: false });
           json(res, 200, { ok: settlePermission(String(body.id || ''), body.decision) });
         });
+      case 'POST /api/phone/test':
+        return phone('Openmon', /^pt/i.test(config.lang || '') ? 'Teste: os alertas no celular funcionam.' : 'Test: phone alerts work.').then((ok) => json(res, 200, { ok }));
       case 'POST /api/focus':
         return readJson(req, (err, body) => {
           if (err) return res.writeHead(400).end();
@@ -569,6 +638,19 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.chatter === 'boolean') patch.chatter = body.chatter;
           if (typeof body.stroll === 'boolean') patch.stroll = body.stroll;
           if (typeof body.followProject === 'boolean') patch.followProject = body.followProject;
+          if (typeof body.present === 'boolean') patch.present = body.present;
+          if (typeof body.lang === 'string' && /^(en|pt-BR|es)$/.test(body.lang)) patch.lang = body.lang;
+          if ([0, 50, 90].includes(body.breakEvery)) patch.breakEvery = body.breakEvery;
+          if (typeof body.phoneAlerts === 'boolean') patch.phoneAlerts = body.phoneAlerts;
+          if (typeof body.phoneProject === 'boolean') patch.phoneProject = body.phoneProject;
+          if (typeof body.phoneTopic === 'string' && (body.phoneTopic === '' || PHONE_TOPIC.test(body.phoneTopic))) patch.phoneTopic = body.phoneTopic;
+          if (typeof body.phoneAfterSec === 'number' && body.phoneAfterSec >= 0 && body.phoneAfterSec <= 600) patch.phoneAfterSec = Math.round(body.phoneAfterSec);
+          // Turning on "answer from the pet" brings older hooks up to date.
+          if (body.answerFromPet === true && hooksInstalled() && !installer.hasPermissionHook()) {
+            try {
+              installer.install();
+            } catch {}
+          }
           if (typeof body.answerFromPet === 'boolean') patch.answerFromPet = body.answerFromPet;
           if (typeof body.answerWaitSec === 'number' && body.answerWaitSec >= 5 && body.answerWaitSec <= 60) patch.answerWaitSec = Math.round(body.answerWaitSec);
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;

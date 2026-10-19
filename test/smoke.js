@@ -42,6 +42,7 @@ const PAGES = [
   { path: '/playground.html' },
   { path: '/bag.html' },
   { path: '/party.html' },
+  { path: '/settings.html' },
   { path: '/help.html' },
   { path: '/powers.html' },
   { path: '/powers.html?tab=shell' },
@@ -73,7 +74,7 @@ async function visit(port, page) {
     for (let i = 3; i < d.length; i += 4) if (d[i]) return 'ok';
     return 'blank canvas';
   })()`);
-  if (drawn !== 'ok' && !['/name.html', '/playground.html', '/help.html'].includes(page.path) && !page.path.startsWith('/powers.html')) problems.push(`${where}: ${drawn}`);
+  if (drawn !== 'ok' && !['/name.html', '/playground.html', '/help.html', '/settings.html'].includes(page.path) && !page.path.startsWith('/powers.html')) problems.push(`${where}: ${drawn}`);
   win.destroy();
 }
 

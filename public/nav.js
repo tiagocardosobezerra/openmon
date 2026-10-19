@@ -16,22 +16,27 @@
   mark.alt = '';
   brand.append(mark, 'Openmon');
   const nav = document.createElement('nav');
-  for (const [id, href, label] of [
+  for (const [id, href, label, name] of [
     ['powers', '/powers.html', tr('act.powers')],
     ['dex', '/dex.html', 'Opendex'],
     ['party', '/party.html', tr('act.party')],
     ['bag', '/bag.html', tr('act.bag')],
     ['card', '/card.html', tr('nav.card')],
     ['help', '/help.html', tr('nav.help')],
+    ['settings', '/settings.html', '⚙', tr('card.settings')],
   ]) {
     const a = document.createElement('a');
     a.href = href;
     a.textContent = label;
+    if (name) {
+      a.title = name;
+      a.setAttribute('aria-label', name);
+    }
     if (id === page) a.setAttribute('aria-current', 'page');
     nav.appendChild(a);
   }
   bar.append(brand, nav);
   const here = [...nav.children].find((a) => a.getAttribute('aria-current') === 'page');
-  if (here) document.title = `${here.textContent} · Openmon`;
+  if (here) document.title = `${here.title || here.textContent} · Openmon`;
   document.body.prepend(bar);
 })();

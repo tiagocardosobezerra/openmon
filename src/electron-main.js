@@ -6,7 +6,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, BrowserWindow, Menu, Tray, Notification, dialog, ipcMain, nativeImage, nativeTheme, screen, shell } = require('electron');
+const { app, BrowserWindow, Menu, Tray, Notification, dialog, globalShortcut, ipcMain, nativeImage, nativeTheme, screen, shell } = require('electron');
 const { createDaemon } = require('./server');
 const { homeDir, adoptLegacyHome } = require('./store');
 
@@ -52,6 +52,7 @@ const PT = {
   'Answer permissions from the pet?': 'Responder permissões pelo pet?',
   'When an agent asks for permission, the pet shows Allow and Deny. For up to {s} seconds Claude Code waits for your answer on the pet; after that it asks you as usual. You can turn this off any time.': 'Quando um agente pedir permissão, o pet mostra Permitir e Recusar. Por até {s} segundos o Claude Code espera a sua resposta no pet; depois disso ele pergunta como sempre. Dá para desligar quando quiser.',
   'Bag': 'Mochila',
+  'More settings…': 'Mais configurações…',
   'Party': 'Time',
   'How it works': 'Como funciona',
   'Make a copy now': 'Fazer uma cópia agora',
@@ -287,6 +288,7 @@ function menuTemplate() {
             { label: L('Open the copies folder'), enabled: Boolean(daemon.backupDir()), click: () => shell.openPath(daemon.backupDir()) },
           ],
         },
+        { label: L('More settings…'), click: () => openAppWindow('settings') },
         { label: L('Reset position'), click: () => { const p = defaultPlace(); win.setPosition(p.x, p.y); savePlace(); } },
       ],
     },
@@ -360,7 +362,7 @@ function applyScale(scale) {
 let powersWin = null;
 // One app window for Powers, Opendex and the trainer card; the top bar
 // moves between them.
-const APP_PAGES = new Set(['powers', 'dex', 'party', 'bag', 'card', 'help']);
+const APP_PAGES = new Set(['powers', 'dex', 'party', 'bag', 'card', 'help', 'settings']);
 function openAppWindow(page = 'powers') {
   if (!APP_PAGES.has(page)) page = 'powers';
   const url = `http://127.0.0.1:${port}/${page}.html`;
@@ -603,6 +605,13 @@ app.whenReady().then(async () => {
   wireIpc();
   createWindow();
   if (PLAYGROUND) openControlPanel();
+  // Keyboard: Ctrl+Alt+O opens the card, Ctrl+Alt+J jumps to the agent that waits.
+  if (!PLAYGROUND) {
+    try {
+      globalShortcut.register('CommandOrControl+Alt+O', () => win && win.webContents.send('command', 'card'));
+      globalShortcut.register('CommandOrControl+Alt+J', () => daemon.focusAgent(null));
+    } catch {}
+  }
   applyScale(daemon.config().scale || 1);
   latest = daemon.state();
   tray = new Tray(brandTrayIcon() || trayIcon());

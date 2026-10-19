@@ -406,3 +406,21 @@ test('"Always allow" hands back Claude Code\'s own suggested rule', async () => 
     await daemon.close();
   }
 });
+
+test('presentation mode: project names and commands never leave the daemon', async () => {
+  const { daemon, port } = await boot();
+  const json = { 'Content-Type': 'application/json' };
+  try {
+    await request(port, 'POST', '/api/config', { body: JSON.stringify({ present: true }), headers: json });
+    await request(port, 'POST', '/event', { body: JSON.stringify({ session_id: 'pp', hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'deploy --prod' }, cwd: '/work/acme-secret' }), headers: json });
+    const state = (await request(port, 'GET', '/api/state')).body;
+    const powersView = (await request(port, 'GET', '/api/powers')).body;
+    for (const text of [state, powersView]) {
+      assert.ok(!text.includes('acme-secret'));
+      assert.ok(!text.includes('deploy --prod'));
+    }
+    assert.match(JSON.parse(state).live.focus.label, /^(Project|Projeto) A$/);
+  } finally {
+    await daemon.close();
+  }
+});

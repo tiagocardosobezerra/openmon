@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Openmon Settings</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  main { padding-bottom: 56px; max-width: 820px; }
+  .group { padding: 16px 18px; margin-top: 14px; }
+  .group h2 { margin: 0 0 4px; font-size: 18px; }
+  .group > p { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; }
+  .row b { font: 600 15px var(--font-display); }
+  .row small { grid-column: 1; color: var(--muted); font-size: 12.5px; }
+  .row .ctl { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 8px; align-items: center; }
+  input[type=checkbox].toggle { width: 22px; height: 22px; accent-color: var(--brand); }
+  select, .input { font: 500 14px var(--font-body); }
+  select { min-height: 34px; padding: 4px 10px; border: var(--bw) solid var(--outline); border-radius: var(--r-sm); background: var(--surface); color: var(--ink); }
+  .input.topic { width: 240px; min-height: 34px; font-size: 14px; }
+  code.url { padding: 4px 8px; border-radius: var(--r-sm); background: var(--surface-2); }
+  .ok { color: var(--ok); font-weight: 700; } .bad { color: var(--bad); font-weight: 700; }
+  kbd { margin: 0 2px; }
+</style>
+</head>
+<body class="page" data-page="settings">
+<main class="wrap">
+  <div class="hero"><div><h1 id="title"></h1><p id="sub"></p></div></div>
+  <section class="group panel soft" id="g-answer"></section>
+  <section class="group panel soft" id="g-calm"></section>
+  <section class="group panel soft" id="g-phone"></section>
+  <section class="group panel soft" id="g-more"></section>
+</main>
+<script src="i18n.js"></script>
+<script src="nav.js"></script>
+<script>
+  const { t: tr, lang } = window.OpenmonI18n;
+  document.documentElement.lang = lang;
+  const pt = lang === 'pt-BR';
+  const T = pt
+    ? {
+        title: 'Configurações', sub: 'Tudo o que muda como o Openmon ajuda você. As escolhas valem na hora e ficam salvas.',
+        answer: 'Responder pelo pet', answerSub: 'Quando um agente pedir permissão, o balão mostra Permitir, Sempre permitir e Recusar.',
+        answerOn: 'Responder permissões pelo pet', answerOnSub: 'Desligado por padrão. O Claude Code espera sua resposta no pet pelo tempo abaixo; depois ele pergunta como sempre.',
+        wait: 'Tempo de espera', waitSub: 'Quantos segundos o Claude Code espera sua resposta no pet.',
+        calm: 'Calma e foco', calmSub: 'Para dias de reunião, tela compartilhada ou foco.',
+        present: 'Modo apresentação', presentSub: 'Esconde nomes de projetos e comandos em tudo o que o Openmon mostra. Use ao compartilhar a tela.',
+        breaks: 'Lembrete de pausa', breaksSub: 'Depois de muito tempo seguido de trabalho, o pet sugere uma pausa.', off: 'Desligado', min: '{n} minutos',
+        follow: 'Mostrar o Openmon do projeto ativo', followSub: 'O pet da tela troca para o do projeto em que o agente está trabalhando.',
+        phone: 'Avisos no celular', phoneSub: 'Opcional. Usa o ntfy (app gratuito e aberto): quando um agente espera por você, chega um aviso no celular. É o único recurso do Openmon que usa a internet, e só manda "Seu agente precisa de você".',
+        phoneOn: 'Avisar no celular', phoneOnSub: 'Instale o app ntfy no celular e assine o mesmo tópico abaixo.',
+        topic: 'Tópico', topicSub: 'Um nome difícil de adivinhar (8 a 64 letras, números, _ ou -). Quem souber o tópico pode ler os avisos.', random: 'Gerar', test: 'Testar', sent: 'Enviado ✓', failed: 'Não deu: confira o tópico e a internet.',
+        after: 'Depois de', afterSub: 'Quanto tempo o agente espera antes do aviso.', seconds: '{n} segundos', immediately: 'Na hora',
+        project: 'Incluir o nome do projeto', projectSub: 'Desligado: o aviso não diz em que projeto.',
+        more: 'Mais', moreSub: 'Atalhos e transmissão.',
+        keys: 'Atalhos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre o card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> leva ao agente que está esperando.',
+        obs: 'Pet no OBS (live)', obsSub: 'Adicione uma Fonte de Navegador no OBS com este endereço, 300 × 560. O fundo é transparente.', copy: 'Copiar', copied: 'Copiado ✓',
+      }
+    : {
+        title: 'Settings', sub: 'Everything that changes how Openmon helps you. Choices apply right away and are saved.',
+        answer: 'Answer from the pet', answerSub: 'When an agent asks for permission, the bubble shows Allow, Always allow and Deny.',
+        answerOn: 'Answer permissions from the pet', answerOnSub: 'Off by default. Claude Code waits for your answer on the pet for the time below; after that it asks you as usual.',
+        wait: 'Waiting time', waitSub: 'How many seconds Claude Code waits for your answer on the pet.',
+        calm: 'Calm and focus', calmSub: 'For meeting days, shared screens or deep work.',
+        present: 'Presentation mode', presentSub: 'Hides project names and commands in everything Openmon shows. Use it when you share your screen.',
+        breaks: 'Break reminder', breaksSub: 'After a long stretch of work, the pet suggests a break.', off: 'Off', min: '{n} minutes',
+        follow: 'Show the Openmon of the active project', followSub: 'The pet on screen switches to the one of the project your agent is working in.',
+        phone: 'Phone alerts', phoneSub: 'Optional. Uses ntfy (a free, open app): when an agent waits for you, your phone gets a notice. It is the only Openmon feature that uses the internet, and it only sends "Your agent needs you".',
+        phoneOn: 'Alert my phone', phoneOnSub: 'Install the ntfy app on your phone and subscribe to the same topic below.',
+        topic: 'Topic', topicSub: 'A name hard to guess (8 to 64 letters, digits, _ or -). Anyone who knows the topic can read the alerts.', random: 'Generate', test: 'Test', sent: 'Sent ✓', failed: 'It did not work: check the topic and your internet.',
+        after: 'After', afterSub: 'How long the agent waits before the alert.', seconds: '{n} seconds', immediately: 'Right away',
+        project: 'Include the project name', projectSub: 'Off: the alert does not say which project.',
+        more: 'More', moreSub: 'Shortcuts and streaming.',
+        keys: 'Keyboard shortcuts', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> opens the card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> takes you to the agent that waits.',
+        obs: 'Pet in OBS (streaming)', obsSub: 'Add a Browser Source in OBS with this address, 300 × 560. The background is transparent.', copy: 'Copy', copied: 'Copied ✓',
+      };
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const fill = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k]);
+  $('title').textContent = T.title;
+  $('sub').textContent = T.sub;
+  let config = {};
+
+  async function save(patch) {
+    config = await (await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) })).json();
+  }
+
+  function row(title, sub, control, html = false) {
+    const r = el('div', 'row');
+    const small = el('small');
+    if (html) small.innerHTML = sub;
+    else small.textContent = sub;
+    const ctl = el('div', 'ctl');
+    if (control) ctl.append(...[].concat(control));
+    r.append(el('b', '', title), ctl, small);
+    return r;
+  }
+  function toggle(key, onChange) {
+    const c = el('input', 'toggle');
+    c.type = 'checkbox';
+    c.checked = Boolean(config[key]);
+    c.onchange = () => (onChange ? onChange(c.checked) : save({ [key]: c.checked }));
+    return c;
+  }
+  function select(key, options, value) {
+    const sel = el('select');
+    for (const [v, label] of options) {
+      const o = el('option', '', label);
+      o.value = String(v);
+      if (Number(v) === Number(value)) o.selected = true;
+      sel.append(o);
+    }
+    sel.onchange = () => save({ [key]: Number(sel.value) });
+    return sel;
+  }
+  function group(id, title, sub, rows) {
+    const g = $(id);
+    g.textContent = '';
+    g.append(el('h2', '', title), el('p', '', sub), ...rows);
+  }
+
+  function render() {
+    group('g-answer', T.answer, T.answerSub, [
+      row(T.answerOn, T.answerOnSub, toggle('answerFromPet')),
+      row(T.wait, T.waitSub, select('answerWaitSec', [10, 15, 25, 40, 60].map((n) => [n, fill(T.seconds, { n })]), config.answerWaitSec || 25)),
+    ]);
+    group('g-calm', T.calm, T.calmSub, [
+      row(T.present, T.presentSub, toggle('present')),
+      row(T.breaks, T.breaksSub, select('breakEvery', [[0, T.off], [50, fill(T.min, { n: 50 })], [90, fill(T.min, { n: 90 })]], config.breakEvery || 0)),
+      row(T.follow, T.followSub, toggle('followProject')),
+    ]);
+    const topic = el('input', 'input topic');
+    topic.value = config.phoneTopic || '';
+    topic.placeholder = 'openmon-…';
+    topic.onchange = () => save({ phoneTopic: topic.value.trim() });
+    const gen = el('button', 'btn sm', T.random);
+    gen.onclick = () => {
+      const bytes = crypto.getRandomValues(new Uint8Array(9));
+      topic.value = `openmon-${[...bytes].map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 14)}`;
+      save({ phoneTopic: topic.value });
+    };
+    const result = el('span');
+    const test = el('button', 'btn sm primary', T.test);
+    test.onclick = async () => {
+      await save({ phoneTopic: topic.value.trim() });
+      const r = await (await fetch('/api/phone/test', { method: 'POST' })).json();
+      result.className = r.ok ? 'ok' : 'bad';
+      result.textContent = r.ok ? T.sent : T.failed;
+    };
+    group('g-phone', T.phone, T.phoneSub, [
+      row(T.phoneOn, T.phoneOnSub, toggle('phoneAlerts')),
+      row(T.topic, T.topicSub, [topic, gen, test, result]),
+      row(T.after, T.afterSub, select('phoneAfterSec', [[0, T.immediately], [30, fill(T.seconds, { n: 30 })], [60, fill(T.seconds, { n: 60 })], [180, fill(T.seconds, { n: 180 })]], config.phoneAfterSec ?? 60)),
+      row(T.project, T.projectSub, toggle('phoneProject')),
+    ]);
+    const url = `${location.origin}/?scale=1&quiet`;
+    const copy = el('button', 'btn sm', T.copy);
+    copy.onclick = () => navigator.clipboard.writeText(url).then(() => (copy.textContent = T.copied));
+    group('g-more', T.more, T.moreSub, [row(T.keys, T.keysSub, null, true), row(T.obs, T.obsSub, [el('code', 'url', url), copy])]);
+  }
+
+  fetch('/api/state').then((r) => r.json()).then((s) => {
+    config = s.config || {};
+    render();
+  });
+</script>
+</body>
+</html>
