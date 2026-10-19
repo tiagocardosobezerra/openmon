@@ -1295,6 +1295,17 @@
     }
     down = null;
   });
+  // The press can end without a pointerup (the system took the pointer, a
+  // menu opened): stop dragging anyway, or the window keeps chasing the mouse.
+  const dropDrag = () => {
+    if (!down) return;
+    if (desktop) desktop.dragEnd();
+    canvas.classList.remove('dragging');
+    down = null;
+  };
+  canvas.addEventListener('pointercancel', dropDrag);
+  canvas.addEventListener('lostpointercapture', () => setTimeout(dropDrag, 0));
+  window.addEventListener('blur', dropDrag);
   canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     setHover(!hovering);

@@ -796,6 +796,27 @@ app.whenReady().then(async () => {
     trayWasWaiting = waiting;
   });
   setInterval(() => watchAttention(daemon.state()), 2000).unref();
+  // Another always-on-top window (a game overlay, a screen recorder) can
+  // sit above the pets and swallow their clicks. On Windows the 'floating'
+  // level stacks a window just under the taskbar, below such overlays, so
+  // lift the pets to the very top every 1.5 s. Not while one is dragged, and
+  // not while the pointer is on the taskbar (its previews and menus stay on top).
+  let lastLift = 0;
+  let lastOnTaskbar = 0;
+  setInterval(() => {
+    const now = Date.now();
+    const p = screen.getCursorScreenPoint();
+    const d = screen.getDisplayNearestPoint(p);
+    const inside = (r) => p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
+    if (inside(d.bounds) && !inside(d.workArea)) lastOnTaskbar = now;
+    if (dragTimer || now - lastOnTaskbar < 5000 || now - lastLift < 1500) return;
+    lastLift = now;
+    for (const w of [win, ...companionWins.values()]) {
+      if (!w || w.isDestroyed() || !w.isVisible()) continue;
+      w.setAlwaysOnTop(true, 'dock');
+      w.moveTop();
+    }
+  }, 500).unref();
 
   wireIpc();
   createWindow();
