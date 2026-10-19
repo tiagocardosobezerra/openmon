@@ -24,6 +24,7 @@
     "demo": "node bin/openmon.js demo",
     "test": "node --test \"test/*.test.js\"",
     "smoke": "node test/smoke.js",
+    "e2e": "node test/e2e.js",
     "brand": "node tools/build-brand.js",
     "screens": "node tools/screens.js",
     "banner": "node tools/build-banner.js",
