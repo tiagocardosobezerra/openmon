@@ -34,7 +34,11 @@ function seeded(seed) {
 }
 
 // Until the player names it, an Openmon is simply called "Openmon".
-const DEFAULT_NAME = 'Openmon';
+// Like Pokémon: without a nickname the pet goes by its species name, which
+// changes as it evolves. pet.name holds the nickname, or null.
+const DEFAULT_NAME = null;
+// Old default names nobody chose: "Byte" (before the rename), "Openmon".
+const OLD_DEFAULTS = new Set(['Byte', 'Openmon']);
 
 function createPet(now, name = DEFAULT_NAME, rng = Math.random) {
   return {
@@ -62,8 +66,7 @@ function createPet(now, name = DEFAULT_NAME, rng = Math.random) {
 // Fills in fields added by later versions, keeps everything the user had.
 function migrate(raw, now) {
   if (!raw || typeof raw !== 'object') return createPet(now);
-  // "Byte" was the default name before the Openmon rename; nobody chose it.
-  const name = !raw.name || raw.name === 'Byte' ? DEFAULT_NAME : raw.name;
+  const name = !raw.name || OLD_DEFAULTS.has(raw.name) ? DEFAULT_NAME : raw.name;
   const fresh = createPet(raw.bornAt || now, name, () => seeded(raw.bornAt || now));
   // Pets from before shinies existed are not re-rolled.
   if (raw.shiny === undefined) fresh.shiny = false;
@@ -134,7 +137,8 @@ function progress(pet) {
 
 function view(pet) {
   return {
-    name: pet.name,
+    name: displayName(pet),
+    nickname: pet.name || null,
     bornAt: pet.bornAt,
     xp: pet.xp,
     stats: pet.stats,
@@ -385,8 +389,9 @@ function petIt(pet, now) {
 // the same way unless your work changes.
 function layEgg(pet, now, rng = Math.random) {
   if (pet.stage !== 'mythic') return { pet, events: [] };
-  const retired = { name: pet.name, form: form(pet), lineage: pet.lineage, shiny: pet.shiny, nature: pet.nature, generation: pet.generation, bornAt: pet.bornAt, retiredAt: now };
-  const egg = createPet(now, pet.name, rng);
+  const retired = { name: displayName(pet), form: form(pet), lineage: pet.lineage, shiny: pet.shiny, nature: pet.nature, generation: pet.generation, bornAt: pet.bornAt, retiredAt: now };
+  // A new creature: it starts with no nickname.
+  const egg = createPet(now, DEFAULT_NAME, rng);
   egg.generation = (pet.generation || 1) + 1;
   egg.dex = { ...pet.dex };
   egg.achievements = { ...pet.achievements };
@@ -395,10 +400,15 @@ function layEgg(pet, now, rng = Math.random) {
   return { pet: egg, events: [{ type: 'new-egg', generation: egg.generation, retired }] };
 }
 
+// An empty name clears the nickname: the pet goes back to its species name.
 function rename(pet, name) {
   const clean = String(name || '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, 24);
-  if (clean) pet.name = clean;
-  return clean ? [{ type: 'renamed', name: pet.name }] : [];
+  pet.name = clean || null;
+  return [{ type: 'renamed', name: displayName(pet) }];
+}
+
+function displayName(pet) {
+  return pet.name || form(pet);
 }
 
 module.exports = {
@@ -415,6 +425,7 @@ module.exports = {
   affinity,
   level,
   xpForLevel,
+  displayName,
   missionsFor,
   dayKey,
   XP,

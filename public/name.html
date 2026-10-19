@@ -22,7 +22,7 @@
   <label for="name">What will you call it?</label>
   <p id="hint">Up to 24 characters. You can change it later.</p>
   <div class="row">
-    <input id="name" class="input" maxlength="24" autocomplete="off" spellcheck="false" required>
+    <input id="name" class="input" maxlength="24" autocomplete="off" spellcheck="false">
     <button type="submit" class="btn primary">OK</button>
   </div>
 </form>
@@ -33,14 +33,14 @@
   document.getElementById('hint').textContent = tr('name.hint');
   const input = document.getElementById('name');
   fetch('/api/state').then((r) => r.json()).then((s) => {
-    input.value = s.pet.name;
+    input.value = s.pet.nickname || '';
+    input.placeholder = s.pet.form;
     input.select();
     if (s.pet.form) document.getElementById('hint').textContent = tr('name.hintForm', { form: s.pet.form });
   });
   input.focus();
   document.getElementById('f').addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!input.value.trim()) return;
     await fetch('/api/rename', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: input.value }) });
     window.close();
   });

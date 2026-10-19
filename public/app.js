@@ -595,7 +595,9 @@
     $('card-close').setAttribute('aria-label', tr('card.close'));
 
     $('card-name').textContent = pet.shiny && pet.stage !== 'egg' ? `${pet.name} ★` : pet.name;
-    $('card-form').textContent = pet.dexNo ? `#${String(pet.dexNo).padStart(3, '0')} ${pet.form}` : pet.form;
+    // The species line only when a nickname takes the title.
+    const dexNo = pet.dexNo ? `#${String(pet.dexNo).padStart(3, '0')}` : '';
+    $('card-form').textContent = pet.nickname ? `${dexNo} ${pet.form}`.trim() : dexNo;
     $('card-level').textContent = `Lv ${pet.level || 1}`;
     $('card-stage').textContent = tr(`stage.${pet.stage}`);
     const pr = pet.progress;

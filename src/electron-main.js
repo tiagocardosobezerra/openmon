@@ -188,7 +188,7 @@ function menuTemplate() {
   };
   const size = config.scale || 1;
   return [
-    { label: pet ? `${pet.name} · ${pet.form} · Lv ${pet.level}` : 'Openmon', enabled: false },
+    { label: pet ? `${pet.nickname ? `${pet.nickname} · ${pet.form}` : pet.form} · Lv ${pet.level}` : 'Openmon', enabled: false },
     { type: 'separator' },
     { label: L('Open card'), click: () => win.webContents.send('command', 'card') },
     { label: L('Powers…'), click: openPowersWindow },
@@ -343,7 +343,7 @@ function openNameWindow() {
 function refreshTray() {
   if (!tray) return;
   const pet = latest && latest.pet;
-  tray.setToolTip(`${PLAYGROUND ? 'Openmon Playground: ' : ''}${pet ? `${pet.name} the ${pet.form}` : 'Openmon'}`);
+  tray.setToolTip(`${PLAYGROUND ? 'Openmon Playground: ' : ''}${pet ? (pet.nickname ? `${pet.nickname} the ${pet.form}` : pet.form) : 'Openmon'}`);
   // Linux trays only show a static menu; elsewhere it is built fresh on open.
   if (process.platform === 'linux') tray.setContextMenu(Menu.buildFromTemplate(menuTemplate()));
 }

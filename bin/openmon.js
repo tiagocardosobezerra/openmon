@@ -61,7 +61,7 @@ function printPet(p) {
   const v = pet.view(p);
   const days = Math.max(1, Math.ceil((Date.now() - v.bornAt) / 86400000));
   const max = Math.max(1, ...Object.values(v.stats));
-  console.log(`\n  ${v.name} the ${v.form}  ·  ${v.stage}  ·  day ${days}`);
+  console.log(`\n  ${v.nickname ? `${v.nickname} the ${v.form}` : v.form}  ·  ${v.stage}  ·  day ${days}`);
   console.log(`  XP ${v.xp}  ${bar(v.progress.ratio)}  ${v.progress.next ? `${v.progress.xpToGo} to ${v.progress.next}` : 'final stage'}`);
   if (v.progress.needsBond) console.log(`  Needs bond ${v.progress.bondNeeded} to evolve (now ${v.bond})`);
   console.log(`  Bond ${v.bond}/100  ${bar(v.bond / 100)}\n`);
@@ -231,7 +231,7 @@ async function main() {
 
     case 'name': {
       const name = rest.filter((r) => !r.startsWith('--')).join(' ');
-      if (!name.trim()) return console.error('Usage: openmon name <new name>');
+      if (!name.trim() && !flag('clear')) return console.error('Usage: openmon name <nickname>   (or --clear to use the species name)');
       if (await isRunning()) {
         await fetch(`${base}/api/rename`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
       } else {

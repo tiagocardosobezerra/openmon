@@ -135,7 +135,7 @@
     ctx.font = '900 64px system-ui, sans-serif';
     ctx.fillText(p.name + (p.shiny ? ' ★' : ''), 578, 182);
     ctx.font = '600 30px system-ui, sans-serif';
-    ctx.fillText(p.form, 580, 224);
+    if (p.nickname) ctx.fillText(p.form, 580, 224);
     ctx.fillStyle = '#6d6680';
     ctx.font = '500 22px system-ui, sans-serif';
     ctx.fillText(tr('card.meta', { nature, days: days > 1 ? tr('card.days', { n: days }) : tr('card.day'), bond: p.bond }), 580, 260);

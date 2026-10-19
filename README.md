@@ -72,6 +72,8 @@ Todo ovo nasce com uma **natureza** (Corajosa, Sonolenta, Curiosa, Alegre, Calma
 
 As evoluções são como num jogo de portátil: *"O quê? Openmon está evoluindo!"*, a tela escurece, a forma antiga e a nova piscam, vem a revelação, uma fanfarra e o grito da nova forma.
 
+Como no Pokémon, sem apelido ele usa o nome da espécie, que muda a cada evolução (Tinkit, depois Forgemaw). Dê um apelido pelo menu (Configurações → Nome…) e ele fica fixo; deixe vazio para voltar ao nome da espécie.
+
 O **laço** (0 a 100) só sobe: responda ao agente em até 30 segundos (+2), faça carinho com um clique (+1, cinco por dia), volte em um novo dia (+1).
 
 O XP tem limite de 120 a cada 10 minutos, então um loop descontrolado não acelera o seu pet.
@@ -122,7 +124,7 @@ openmon install      adiciona hooks em ~/.claude/settings.json (com backup)
 openmon start        abre o pet
 openmon demo         sessão roteirizada em um ovo descartável
 openmon stats        seu pet no terminal
-openmon name <nome>  renomeia
+openmon name <apelido>  dá um apelido (--clear volta ao nome da espécie)
 openmon dex          abre a Opendex
 openmon card         abre o cartão de treinador
 openmon stop         guarda o pet

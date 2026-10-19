@@ -72,6 +72,8 @@ Every egg is born with a **nature** (Brave, Sleepy, Curious, Cheerful, Calm or C
 
 Evolutions play like a handheld game: *"What? Openmon is evolving!"*, the screen dims, the old and new forms flicker, then the reveal, a fanfare and the new form's own cry.
 
+Like Pokémon, without a nickname it goes by its species name, which changes as it evolves (Tinkit, then Forgemaw). Give it a nickname from the menu (Settings → Name…) and it sticks; leave it empty to go back to the species name.
+
 **Bond** (0 to 100) only goes up: answer your agent within 30 seconds (+2), pet it with a click (+1, five a day), come back on a new day (+1).
 
 XP is capped at 120 per 10 minutes, so a runaway loop cannot fast-forward your pet.
@@ -122,7 +124,7 @@ openmon install      add hooks to ~/.claude/settings.json (a backup is kept)
 openmon start        open the pet
 openmon demo         scripted session on a throwaway egg
 openmon stats        your pet in the terminal
-openmon name <name>  rename it
+openmon name <nickname>  give it a nickname (--clear goes back to the species name)
 openmon dex          open the Opendex
 openmon card         open your trainer card
 openmon stop         put your pet away

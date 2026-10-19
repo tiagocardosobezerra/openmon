@@ -112,8 +112,10 @@ test('rename is cleaned', () => {
   const p = pet.createPet(T0);
   pet.rename(p, '  Bit\u0007zy the very long named creature  ');
   assert.equal(p.name, 'Bitzy the very long name');
+  // Empty clears the nickname: back to the species name.
   pet.rename(p, '   ');
-  assert.equal(p.name, 'Bitzy the very long name');
+  assert.equal(p.name, null);
+  assert.equal(pet.view(p).name, pet.view(p).form);
 });
 
 test('weighted affinity: a typical read-heavy agent is not always Lore', () => {
@@ -207,9 +209,16 @@ test('evolving at night gives the Nocturne variant; by day it does not', () => {
   assert.equal(day.nocturne, false);
 });
 
-test('the default name is Openmon, and old default "Byte" pets are renamed', () => {
-  assert.equal(pet.createPet(T0).name, 'Openmon');
-  assert.equal(pet.migrate({ name: 'Byte', bornAt: 1 }, T0).name, 'Openmon');
+test('without a nickname the pet goes by its species name; old defaults are dropped', () => {
+  const p = pet.createPet(T0);
+  assert.equal(p.name, null);
+  assert.equal(pet.view(p).name, 'Egg');
+  assert.equal(pet.view(p).nickname, null);
+  p.stage = 'juvenile';
+  p.lineage = 'craft';
+  assert.equal(pet.view(p).name, 'Tinkit');
+  assert.equal(pet.migrate({ name: 'Byte', bornAt: 1 }, T0).name, null);
+  assert.equal(pet.migrate({ name: 'Openmon', bornAt: 1 }, T0).name, null);
   assert.equal(pet.migrate({ name: 'Rex', bornAt: 1 }, T0).name, 'Rex');
 });
 

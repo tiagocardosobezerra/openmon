@@ -190,7 +190,7 @@
       'card.footer': 'openmon · a pet that grows from your AI agent’s work',
       'card.save': 'Save PNG', 'card.copy': 'Copy image', 'card.saved': 'Saved.', 'card.copied': 'Copied. Paste it anywhere.',
       'card.copyFail': 'Your browser blocked copying. Use Save PNG instead.', 'card.start': 'Start your Openmon first ("openmon start").',
-      'name.q': 'What will you call it?', 'name.hint': 'Up to 24 characters. You can change it later.', 'name.hintForm': 'Your {form}. Up to 24 characters.',
+      'name.q': 'Give it a nickname?', 'name.hint': 'Up to 24 characters. Leave it empty to use the species name.', 'name.hintForm': 'Leave it empty and it stays "{form}", changing as it evolves.',
     },
     'pt-BR': {
       'stage.egg': 'ovo', 'stage.sprout': 'broto', 'stage.juvenile': 'jovem', 'stage.adult': 'adulto', 'stage.mythic': 'mítico',
@@ -376,7 +376,7 @@
       'card.footer': 'openmon · um pet que cresce com o trabalho do seu agente de IA',
       'card.save': 'Salvar PNG', 'card.copy': 'Copiar imagem', 'card.saved': 'Salvo.', 'card.copied': 'Copiado. Cole onde quiser.',
       'card.copyFail': 'O navegador bloqueou a cópia. Use Salvar PNG.', 'card.start': 'Abra seu Openmon primeiro ("openmon start").',
-      'name.q': 'Que nome você vai dar?', 'name.hint': 'Até 24 caracteres. Dá para mudar depois.', 'name.hintForm': 'Seu {form}. Até 24 caracteres.',
+      'name.q': 'Quer dar um apelido?', 'name.hint': 'Até 24 caracteres. Deixe vazio para usar o nome da espécie.', 'name.hintForm': 'Vazio, ele fica "{form}" e o nome muda a cada evolução.',
     },
   };
 
