@@ -81,7 +81,7 @@ O XP tem limite de 120 a cada 10 minutos, então um loop descontrolado não acel
 ### Opendex, cartão de treinador, gerações
 
 - **Níveis**: Lv 1–100 numa curva no estilo Pokémon (Lv 9 na primeira evolução, Lv 25 no Adulto, Lv 55 no Mítico). O pet brilha quando uma evolução está perto.
-- **Opendex** (`openmon dex`): 22 formas numeradas com anotações de campo, mais suas insígnias. Formas não vistas aparecem como silhuetas, e duas são escondidas: *dizem que o equilíbrio é a chave.*
+- **Opendex** (`openmon dex`): 22 formas numeradas com anotações de campo, mais suas insígnias. Uma tabela de **tipos**, como na Pokédex, mostra o que treina cada tipo, quanto cada ação vale, a linha evolutiva e o poder que ele desbloqueia; cada forma tem sua ficha com tipo e como conseguir. No card, apontar para um atributo explica como treiná-lo. Formas não vistas aparecem como silhuetas, e duas são escondidas: *dizem que o equilíbrio é a chave.*
 - **Cartão de treinador** (`openmon card`): uma imagem 1200×630 do seu pet com o radar de atributos, pronta para postar.
 - **Gerações**: quando seu Openmon chega ao Mítico, aposente-o no **Hall da Fama** pelo menu. Ele deixa um ovo que herda um décimo dos atributos; a Opendex e as insígnias continuam. Consegue completar a dex?
 

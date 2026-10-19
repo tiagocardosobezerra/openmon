@@ -10,6 +10,19 @@
 <style>
   :root { --dex: #e5484d; }
   .hero .progress { width: 180px; margin: 6px 0 0 auto; }
+  .types { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .type { display: grid; grid-template-columns: 72px 1fr; gap: 4px 14px; padding: 12px 14px; background: var(--surface); border: var(--bw) solid var(--line); border-top: 6px solid var(--c); border-radius: var(--r-lg); }
+  .type img { grid-row: span 4; width: 72px; height: 72px; object-fit: contain; align-self: center; }
+  .type img.unseen { filter: grayscale(1) brightness(0.25); opacity: 0.6; }
+  .type h3 { margin: 0; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+  .type p { margin: 0; font-size: 13px; }
+  .type .flavor { color: var(--muted); font-style: italic; }
+  .type .meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .type-chip { display: inline-flex; align-items: center; padding: 1px 10px; border-radius: 99px; background: var(--c); color: #2a2140; font: 600 12px/1.6 var(--font-display); box-shadow: 0 0 0 1.5px var(--outline); }
+  .type.hidden-type { --c: var(--sunken); border-style: dashed; border-top-style: solid; }
+  .line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 12.5px; }
+  .line span.cur { font-weight: 800; text-decoration: underline; text-decoration-color: var(--c); text-decoration-thickness: 2px; }
+  .line i { color: var(--muted); font-style: normal; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
   .cell { background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-lg); padding: 8px 8px 12px; text-align: center; cursor: pointer; position: relative; font: inherit; color: inherit; transition: transform 0.08s ease, border-color 0.12s ease; }
   .cell:hover, .cell:focus-visible { border-color: var(--outline); transform: translateY(-2px); box-shadow: var(--lift); outline: none; }
@@ -26,7 +39,11 @@
   .detail { padding: 16px 20px 20px; text-align: center; }
   .detail canvas { width: 220px; margin: 0 auto; background: radial-gradient(circle at 50% 60%, var(--surface-2), transparent 70%); border-radius: 50%; }
   .detail h3 { margin: 4px 0 2px; font-size: 24px; }
-  .detail .text { margin: 12px 0 16px; text-align: left; }
+  .detail .text { margin: 12px 0 10px; text-align: left; }
+  .detail .types-row { display: flex; justify-content: center; gap: 6px; margin: 6px 0 2px; }
+  .detail .how { text-align: left; margin: 0 0 8px; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 13px; }
+  .detail .how b { font-family: var(--font-display); font-weight: 600; }
+  .detail .line { justify-content: flex-start; margin: 0 0 14px; }
   .hof { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   .hof div { background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-md); padding: 10px 12px; }
   .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; padding-bottom: 48px; }
@@ -44,6 +61,9 @@
     <div><h1>Opendex</h1><p id="intro"></p></div>
     <div class="aside"><div class="big-number" id="seen"></div><div class="muted" id="seen-label"></div><div class="bar progress"><i id="seen-bar"></i></div></div>
   </div>
+  <h2 class="section-title" id="h-types">Types</h2>
+  <p class="muted" id="types-sub" style="margin:-4px 0 12px"></p>
+  <div class="types" id="types"></div>
   <h2 class="section-title" id="h-forms">Forms</h2>
   <div class="grid" id="grid"></div>
   <h2 class="section-title"><span id="h-hall">Hall of Fame</span></h2>
@@ -55,8 +75,11 @@
   <canvas id="big"></canvas>
   <div class="sub" id="d-no"></div>
   <h3 id="d-name"></h3>
+  <div class="types-row" id="d-types"></div>
   <div class="sub" id="d-meta"></div>
   <p class="text" id="d-text"></p>
+  <div class="how" id="d-how"></div>
+  <div class="line" id="d-line"></div>
   <button id="d-close" class="btn"></button>
 </div></dialog>
 <script src="i18n.js"></script>
@@ -126,6 +149,7 @@
       grid.appendChild(el);
       cells.push({ canvas: el.querySelector('canvas'), spec, known, offset: entry.no * 0.7 });
     }
+    renderTypes(species, dex);
     document.getElementById('seen').textContent = `${seen}/${species.dex.length}`;
     document.getElementById('seen-label').textContent = tr('dex.seenShort');
     document.getElementById('seen-bar').style.width = `${Math.round((seen / species.dex.length) * 100)}%`;
@@ -169,8 +193,86 @@
     requestAnimationFrame(frame);
   }
 
+  // Types, like a Pokédex type chart: what work trains each one, how much
+  // it counts, its evolution line and the power it unlocks.
+  const TYPES = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
+  let lineages = {};
+  let weights = {};
+  let dexSeen = {};
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const typeChip = (t) => {
+    const c = el('span', 'type-chip', t ? lineageName(t) : tr('type.base'));
+    c.style.setProperty('--c', t ? (t === 'chimera' ? 'linear-gradient(90deg, var(--craft), var(--swarm))' : `var(--${t})`) : 'var(--sunken)');
+    if (t === 'chimera') c.style.background = 'linear-gradient(90deg, var(--craft), var(--lore), var(--roam))';
+    return c;
+  };
+  function evolutionLine(t, current) {
+    const box = el('div', 'line');
+    if (t === 'chimera') return box;
+    box.append(el('b', '', tr('type.line') + ':'), ' ');
+    ['juvenile', 'adult', 'mythic'].forEach((stage, i) => {
+      if (i) box.append(el('i', '', '→'));
+      const known = revealAll || dexSeen[`${t}-${stage}`];
+      box.append(el('span', current === `${t}-${stage}` ? 'cur' : '', known ? lineages[t][stage] : '???'));
+    });
+    return box;
+  }
+  function renderTypes(species, dex) {
+    lineages = species.lineages;
+    weights = species.weights || {};
+    dexSeen = dex;
+    document.getElementById('h-types').textContent = tr('types.title');
+    document.getElementById('types-sub').textContent = tr('types.sub');
+    const box = document.getElementById('types');
+    for (const t of TYPES) {
+      const card = el('div', 'type');
+      card.style.setProperty('--c', `var(--${t})`);
+      const seenJuvenile = revealAll || dex[`${t}-juvenile`];
+      const img = el('img', seenJuvenile ? '' : 'unseen');
+      img.src = `/art/${t}-juvenile.svg`;
+      img.alt = '';
+      const h = el('h3');
+      h.append(typeChip(t));
+      const meta = el('div', 'meta');
+      const w = el('span', 'chip', tr('type.weight', { w: weights[t] || 1 }));
+      w.title = tr('type.weightWhy');
+      meta.append(w, el('span', 'chip brand', tr('type.power', { power: tr(`power.${t}.title`) })));
+      card.append(img, h, el('p', '', tr(`type.${t}.how`)), el('p', 'flavor', tr(`type.${t}.flavor`)), meta);
+      const line = evolutionLine(t, null);
+      line.style.gridColumn = '1 / -1';
+      card.append(line);
+      box.append(card);
+    }
+    const hidden = el('div', 'type hidden-type');
+    const img = el('img', 'unseen');
+    img.src = '/art/chimera-adult.svg';
+    img.alt = '';
+    const h = el('h3', '', tr('types.hidden'));
+    hidden.append(img, h, el('p', 'flavor', tr('types.hiddenText')));
+    box.append(hidden);
+  }
+
   function show(entry, spec, known) {
     open = { spec, known };
+    const types = document.getElementById('d-types');
+    types.textContent = '';
+    types.append(typeChip(entry.lineage));
+    const how = document.getElementById('d-how');
+    how.textContent = '';
+    if (entry.hidden && !known) how.hidden = true;
+    else {
+      how.hidden = false;
+      if (!entry.lineage) how.append(tr('type.baseHow'));
+      else if (entry.lineage === 'chimera') how.append(tr('types.hiddenText'));
+      else how.append(el('b', '', lineageName(entry.lineage) + ': '), tr(`type.${entry.lineage}.how`), ' ', tr('type.weight', { w: weights[entry.lineage] || 1 }) + '.');
+    }
+    const lineBox = document.getElementById('d-line');
+    lineBox.replaceWith(Object.assign(entry.lineage ? evolutionLine(entry.lineage, entry.key) : el('div', 'line'), { id: 'd-line' }));
     document.getElementById('d-no').textContent = pad(entry.no);
     document.getElementById('d-name').textContent = known ? entry.name : '???';
     document.getElementById('d-meta').textContent = entry.lineage ? tr('dex.lineage', { lineage: lineageName(entry.lineage), stage: tr(`stage.${entry.stage}`) }) : tr(`stage.${entry.stage}`);

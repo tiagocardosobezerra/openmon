@@ -81,7 +81,7 @@ XP is capped at 120 per 10 minutes, so a runaway loop cannot fast-forward your p
 ### Opendex, trainer card, generations
 
 - **Levels**: Lv 1–100 on a Pokémon-like curve (about Lv 9 at the first evolution, Lv 25 at Adult, Lv 55 at Mythic). The pet glows when an evolution is close.
-- **Opendex** (`openmon dex`): 22 numbered forms with field notes, plus your badges. Unseen forms are silhouettes, and two of them are hidden: *some say balance is the key.*
+- **Opendex** (`openmon dex`): 22 numbered forms with field notes, plus your badges. A **type** chart, like a Pokédex, shows what trains each type, how much each action counts, its evolution line and the power it unlocks; each form has an entry with its type and how to get it. On the card, pointing at a stat explains how to train it. Unseen forms are silhouettes, and two of them are hidden: *some say balance is the key.*
 - **Trainer card** (`openmon card`): a 1200×630 image of your pet with its stats radar, ready to post.
 - **Generations**: once your Openmon reaches Mythic, retire it to the **Hall of Fame** from its menu. It leaves an egg that inherits a tenth of its stats; your Opendex and badges carry over. Can you fill the whole dex?
 

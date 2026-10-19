@@ -556,6 +556,7 @@
   }
 
   let stats = null;
+  let statWeights = {};
   let statLabels = {};
   let natures = {};
   // Which tab the card shows. An agent waiting for you always wins.
@@ -681,6 +682,8 @@
     // Stats: affinity bars, the weighted share that actually decides the lineage.
     const box = $('stats');
     box.textContent = '';
+    $('stat-info').hidden = pet.stage === 'egg';
+    if (!$('stat-info').classList.contains('on')) $('stat-info').textContent = tr('stats.hint');
     if (pet.stage === 'egg') box.appendChild(el('span', 'egg-note', tr('card.eggStats')));
     else {
       const aff = pet.affinity || {};
@@ -688,7 +691,9 @@
       const total = Object.values(aff).reduce((a, b) => a + b, 0) || 1;
       for (const [k, v] of Object.entries(pet.stats)) {
         const d = el('div', k === pet.leaning && v > 0 ? 'top' : '');
-        d.title = tr('actions', { n: v, stat: statLabels[k] || k });
+        d.dataset.stat = k;
+        d.dataset.n = v;
+        d.tabIndex = 0;
         const bar = el('i', `aff aff-${k}`);
         bar.style.setProperty('--w', `${Math.round(((aff[k] || 0) / max) * 100)}%`);
         d.append(el('span', '', statLabels[k] || k), bar, el('em', '', `${Math.round(((aff[k] || 0) / total) * 100)}%`));
@@ -948,6 +953,24 @@
     const b = e.target.closest('button[data-tab]');
     if (b) setCardTab(b.dataset.tab);
   });
+  // Stats tab: pointing at a stat explains how your agent trains it.
+  function statInfo(row) {
+    const info = $('stat-info');
+    if (!row) {
+      info.textContent = tr('stats.hint');
+      info.classList.remove('on');
+      return;
+    }
+    const k = row.dataset.stat;
+    info.textContent = '';
+    const name = el('b', `aff-name aff-${k}`, statLabels[k] || k);
+    info.append(name, ' ', tr('stats.row', { how: tr(`type.${k}.how`), w: statWeights[k] || 1, n: row.dataset.n }));
+    info.classList.add('on');
+  }
+  $('stats').addEventListener('mouseover', (e) => statInfo(e.target.closest('[data-stat]')));
+  $('stats').addEventListener('focusin', (e) => statInfo(e.target.closest('[data-stat]')));
+  $('stats').addEventListener('mouseleave', () => statInfo(null));
+
   $('sessions').addEventListener('click', (e) => {
     const li = e.target.closest('li.jump');
     if (li) jumpTo(li.dataset.id);
@@ -978,6 +1001,7 @@
     .then((r) => r.json())
     .then((s) => {
       statLabels = s.statLabels;
+      statWeights = s.weights || {};
       natures = s.natures || {};
       stats = s.stats;
       const select = $('force');
