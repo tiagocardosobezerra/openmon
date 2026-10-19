@@ -80,6 +80,7 @@
   };
 
   let pet = null;
+  let cfg = {};
   const previews = [];
 
   async function act(path, body) {
@@ -132,7 +133,7 @@
   }
 
   function specFor(wear) {
-    return { stage: pet.stage === 'egg' ? 'sprout' : pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera, nocturne: pet.nocturne, shiny: pet.shiny, region: pet.region, legend: pet.legend, friend: pet.friend, wear };
+    return { stage: pet.stage === 'egg' ? 'sprout' : pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera, nocturne: pet.nocturne, shiny: pet.shiny, region: pet.region, legend: pet.legend, friend: pet.friend, season: (cfg && cfg.seasons ? { 1: 'fev', 9: 'out', 11: 'dez' }[new Date().getMonth()] || null : null), wear };
   }
 
   function drawPreview(canvas, spec) {
@@ -181,6 +182,7 @@
   async function load() {
     const s = await (await fetch('/api/state')).json();
     pet = s.pet;
+    cfg = s.config || {};
     renderItems();
     renderWear();
   }

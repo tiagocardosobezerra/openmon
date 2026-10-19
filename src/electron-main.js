@@ -487,11 +487,10 @@ function openControlPanel() {
   panel.loadURL(`http://127.0.0.1:${port}/playground.html`);
 }
 
-function createWindow() {
-  const place = loadPlace();
-  win = new BrowserWindow({
-    width: WIN_W,
-    height: WIN_H,
+function petWindow(place, size = { width: WIN_W, height: WIN_H }) {
+  const w = new BrowserWindow({
+    width: size.width,
+    height: size.height,
     x: place.x,
     y: place.y,
     transparent: true,
@@ -514,24 +513,80 @@ function createWindow() {
       backgroundThrottling: false,
     },
   });
-  win.setAlwaysOnTop(true, 'floating');
-  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  win.setIgnoreMouseEvents(true, { forward: true });
+  w.setAlwaysOnTop(true, 'floating');
+  w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  w.setIgnoreMouseEvents(true, { forward: true });
   // Only our own page, never anything else.
-  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  win.webContents.on('will-navigate', (e) => e.preventDefault());
-  win.once('ready-to-show', () => win.showInactive());
+  w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  w.webContents.on('will-navigate', (e) => e.preventDefault());
+  w.once('ready-to-show', () => w.showInactive());
+  return w;
+}
+
+function createWindow() {
+  win = petWindow(loadPlace());
   // If the page ever crashes, log it and bring the pet back.
   win.webContents.on('render-process-gone', (_e, details) => {
     logError(`renderer gone: ${details.reason}`);
-    setTimeout(() => win && !win.isDestroyed() && win.loadURL(`http://127.0.0.1:${port}/`), 1000);
+    setTimeout(() => win && !win.isDestroyed() && win.loadURL(petUrl()), 1000);
   });
   win.loadURL(petUrl());
 }
 
+// Companions: other Openmons of the team on screen next to the main one,
+// each in its own window (Settings → Party → "Also on screen").
+const companionWins = new Map();
+const companionPlacesFile = () => path.join(homeDir(), PLAYGROUND ? 'companions-playground.json' : 'companions.json');
+function companionPlaces() {
+  try {
+    return JSON.parse(fs.readFileSync(companionPlacesFile(), 'utf8'));
+  } catch {
+    return {};
+  }
+}
+function saveCompanionPlace(id, w) {
+  const all = companionPlaces();
+  const [x, y] = w.getPosition();
+  all[id] = { x, y };
+  try {
+    fs.writeFileSync(companionPlacesFile(), JSON.stringify(all));
+  } catch {}
+}
+function companionUrl(id) {
+  const base = petUrl();
+  return `${base}${base.includes('?') ? '&' : '?'}companion=${encodeURIComponent(id)}`;
+}
+function syncCompanions(state) {
+  if (!win || win.isDestroyed()) return;
+  const wanted = ((state.config && state.config.companions) || []).filter((id) => state.companions && state.companions[id]);
+  for (const [id, w] of companionWins) {
+    if (!wanted.includes(id)) {
+      companionWins.delete(id);
+      if (!w.isDestroyed()) w.close();
+    }
+  }
+  const saved = companionPlaces();
+  wanted.forEach((id, i) => {
+    if (companionWins.has(id)) return;
+    // To the left of the main pet, unless it was moved before.
+    const [mx, my] = win.getPosition();
+    const [mw, mh] = win.getSize();
+    const place = saved[id] || { x: mx - Math.round(mw * 0.55) * (i + 1), y: my };
+    const w = petWindow(place, { width: mw, height: mh });
+    w.__companion = id;
+    w.loadURL(companionUrl(id));
+    w.on('closed', () => companionWins.delete(id));
+    companionWins.set(id, w);
+  });
+}
+
 function wireIpc() {
-  ipcMain.on('interactive', (_e, on) => win && win.setIgnoreMouseEvents(!on, { forward: true }));
-  ipcMain.on('menu', () => Menu.buildFromTemplate(menuTemplate()).popup({ window: win }));
+  const senderWin = (e) => BrowserWindow.fromWebContents(e.sender);
+  ipcMain.on('interactive', (e, on) => {
+    const w = senderWin(e);
+    if (w && !w.isDestroyed()) w.setIgnoreMouseEvents(!on, { forward: true });
+  });
+  ipcMain.on('menu', (e) => Menu.buildFromTemplate(menuTemplate()).popup({ window: senderWin(e) || win }));
   ipcMain.on('open-powers', openPowersWindow);
   ipcMain.on('open-name', () => openNameWindow());
   // The "connect Claude Code" bubble: same as the menu item.
@@ -591,20 +646,24 @@ function wireIpc() {
   ipcMain.on('open-page', (_e, page) => {
     openAppWindow(page);
   });
-  ipcMain.on('drag-start', () => {
+  let dragging = null;
+  ipcMain.on('drag-start', (e) => {
     clearInterval(dragTimer);
+    dragging = senderWin(e) || win;
     const start = screen.getCursorScreenPoint();
-    const [wx, wy] = win.getPosition();
+    const [wx, wy] = dragging.getPosition();
     const offset = { x: start.x - wx, y: start.y - wy };
     dragTimer = setInterval(() => {
       const c = screen.getCursorScreenPoint();
-      win.setPosition(c.x - offset.x, c.y - offset.y);
+      if (dragging && !dragging.isDestroyed()) dragging.setPosition(c.x - offset.x, c.y - offset.y);
     }, 16);
   });
   ipcMain.on('drag-end', () => {
     clearInterval(dragTimer);
     dragTimer = null;
-    savePlace();
+    if (dragging && dragging.__companion) saveCompanionPlace(dragging.__companion, dragging);
+    else savePlace();
+    dragging = null;
   });
 }
 
@@ -653,9 +712,11 @@ app.whenReady().then(async () => {
   daemon.bus.on('lang', (l) => {
     lang = l;
     if (win && !win.isDestroyed()) win.loadURL(petUrl());
+    for (const [id, w] of companionWins) if (!w.isDestroyed()) w.loadURL(companionUrl(id));
   });
   daemon.bus.on('state', (s) => {
     applyScale((s.config && s.config.scale) || 1);
+    syncCompanions(s);
     // The tray icon wears a "!" while an agent waits for you.
     const waiting = s.live.pose === 'attention';
     if (tray && waiting !== trayAlert) {

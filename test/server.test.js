@@ -425,3 +425,25 @@ test('presentation mode: project names and commands never leave the daemon', asy
     await daemon.close();
   }
 });
+
+test('companions: other team members on screen, never the main one; seasons off by default', async () => {
+  const { daemon, port } = await boot();
+  try {
+    const st = daemon.state();
+    assert.equal(st.config.seasons, false);
+    // A project with enough work earns a second member.
+    for (let i = 0; i < 61; i++) await request(port, 'POST', '/event', { body: JSON.stringify({ hook_event_name: 'PostToolUse', session_id: 's2', cwd: '/w/other', tool_name: 'Read', tool_input: { file_path: '/w/other/a.js' } }) });
+    const party = JSON.parse((await request(port, 'GET', '/api/state')).body).party;
+    const other = [...party.members, ...party.box].find((m) => !m.active);
+    assert.ok(other, 'a second member');
+    const cfg = JSON.parse((await request(port, 'POST', '/api/config', { body: JSON.stringify({ companions: [other.id, 'not an id!', other.id] }) })).body);
+    assert.deepEqual(cfg.companions, [other.id]);
+    const state = JSON.parse((await request(port, 'GET', '/api/state')).body);
+    assert.equal(state.companions[other.id].name, 'Egg');
+    // Putting it on screen as the main pet removes it from the companions.
+    await request(port, 'POST', '/api/party/active', { body: JSON.stringify({ id: other.id }) });
+    assert.deepEqual(JSON.parse((await request(port, 'GET', '/api/state')).body).config.companions, []);
+  } finally {
+    await daemon.close();
+  }
+});

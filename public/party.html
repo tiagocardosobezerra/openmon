@@ -69,6 +69,9 @@
   };
   const canvases = [];
   let data = null;
+  let cfg = {};
+  // Season colours, only when turned on in Settings (same rule as the pet).
+  const seasonNow = () => (cfg.seasons ? { 1: 'fev', 9: 'out', 11: 'dez' }[new Date().getMonth()] || null : null);
 
   async function post(path, body) {
     await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -94,12 +97,24 @@
     fill.style.width = `${Math.round((p.progress || 0) * 100)}%`;
     bar.append(fill);
     c.append(bar);
-    if (p.active) c.append(el('span', 'tag chip sun', tr('party.onScreen')));
+    if (p.active || (cfg.companions || []).includes(p.id)) c.append(el('span', 'tag chip sun', tr('party.onScreen')));
     const actions = el('div', 'actions');
     if (!p.active) {
       const show = el('button', 'btn sm primary', tr('party.show'));
       show.onclick = () => post('/api/party/active', { id: p.id });
       actions.append(show);
+      // Also on screen, next to the main one (up to 2 more).
+      if (p.place === 'party') {
+        const list = cfg.companions || [];
+        const on = list.includes(p.id);
+        const also = el('button', `btn sm${on ? ' brand' : ''}`, tr(on ? 'party.alsoOff' : 'party.alsoOn'));
+        if (!on && list.length >= 2) {
+          also.disabled = true;
+          also.title = tr('party.alsoFull');
+        }
+        also.onclick = () => post('/api/config', { companions: on ? list.filter((x) => x !== p.id) : [...list, p.id] });
+        actions.append(also);
+      }
       const move = el('button', 'btn sm', p.place === 'box' ? tr('party.toParty') : tr('party.toBox'));
       move.onclick = () => post('/api/party/move', { id: p.id, place: p.place === 'box' ? 'party' : 'box' });
       if (p.place === 'box' && data.members.length >= size) {
@@ -157,7 +172,7 @@
       const ctx = canvas.getContext('2d');
       const k = canvas.width / 200;
       ctx.setTransform(k, 0, 0, k, 100 * k, 182 * k);
-      const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny && p.stage !== 'egg', wear: p.wear, region: p.region, legend: p.legend, friend: p.friend };
+      const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, nocturne: p.nocturne, shiny: p.shiny && p.stage !== 'egg', wear: p.wear, region: p.region, legend: p.legend, friend: p.friend, season: seasonNow() };
       OpenmonArt.drawCreature(ctx, { ...spec, t: 1, size: 56, pose: 'idle', anim: { eyes: 'happy', mouth: 'grin' } });
     }
   }
@@ -165,6 +180,7 @@
   async function load() {
     const s = await (await fetch('/api/state')).json();
     data = s.party;
+    cfg = s.config || {};
     $('follow').checked = Boolean(s.config && s.config.followProject);
     if (data) render();
   }

@@ -23,6 +23,11 @@
   };
   const params = new URLSearchParams(location.search);
   const desktop = window.openmonDesktop || null;
+  // ?companion=<id>: another Openmon of the team standing next to the main
+  // one. It shows its own project's work (sleeping, working, cheering,
+  // waiting) but no bubbles, card, toasts or sounds: those stay with the
+  // main pet.
+  const companionId = params.get('companion');
   const preview = params.has('preview');
   if (preview) {
     document.body.classList.add('preview');
@@ -599,6 +604,7 @@
   // --- bubble, badge, card -------------------------------------------------------
 
   function pushToast(title, text, ms = 4500, style = 'toast') {
+    if (companionId) return;
     toasts.push({ title, text, ms, style });
     if (!toast) nextToast();
   }
@@ -687,6 +693,7 @@
   }
 
   function renderBubble() {
+    if (companionId) return setBubble(null);
     const stage = currentSpec().stage;
     const lift = pose === 'attention' ? 38 : 14;
     document.documentElement.style.setProperty('--bubble-bottom', `${Math.min(300, H - headY(stage) + lift)}px`);
@@ -982,7 +989,29 @@
     }
   }
 
+  // The pose of a companion: what its own project's agent is doing.
+  function companionLive(all, project) {
+    const mine = (all.sessions || []).filter((s) => project && s.label === project);
+    const pick = (st) => mine.find((s) => s.state === st);
+    const s = pick('attention') || pick('working') || pick('done') || null;
+    const poseOf = { attention: 'attention', working: 'working', done: 'done' };
+    return { pose: s ? poseOf[s.state] : mine.length ? 'idle' : 'sleep', focus: s ? { id: s.id, label: s.label, detail: s.detail, since: 0 } : null, sessions: mine, counts: {}, family: null };
+  }
+
   function onState(msg) {
+    if (companionId) {
+      const c = msg.companions && msg.companions[companionId];
+      if (!c) return;
+      pet = c;
+      config = { ...(msg.config || config), muted: true, chatter: false };
+      live = companionLive(msg.live, c.project);
+      if (!params.get('scale') && msg.config) document.documentElement.style.setProperty('--scale', String(msg.config.scale || 1));
+      if (live.pose !== pose) {
+        pose = live.pose;
+        poseSince = now();
+      }
+      return;
+    }
     const first = !pet;
     setupInfo = msg.setup || null;
     restoreOffer = msg.restoreOffer || null;
@@ -1019,6 +1048,7 @@
   }
 
   function onEvents(all) {
+    if (companionId) return;
     // Another pet of your party (its project's work): a toast, no scene.
     const others = all.filter((e) => e.petId && pet && e.petId !== pet.id);
     for (const e of others) {
@@ -1245,7 +1275,10 @@
     if (!down.moved) {
       // Clicking while it waits means "take me there": it calms down and
       // brings the agent's window to the front.
-      if (pose === 'attention' && live.focus) {
+      if (companionId) {
+        if (pose === 'attention' && live.focus) jumpTo(live.focus.id);
+        else for (let i = 0; i < 3; i++) spawn('heart', petCX() + (i - 1) * 22, headY(currentSpec().stage) + 6, { vx: (i - 1) * 8, vy: -34, max: 1.3 });
+      } else if (pose === 'attention' && live.focus) {
         const id = live.focus.id;
         dismissBubble();
         jumpTo(id);
@@ -1255,6 +1288,7 @@
   });
   canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
+    if (companionId) return desktop && desktop.menu();
     setHover(!hovering);
   });
 
@@ -1262,6 +1296,7 @@
   // counter) and stays until closed: X, Esc, another right-click, or
   // dragging the pet. A waiting agent opens it on the Agents tab.
   function setHover(on, tab = null) {
+    if (companionId) return;
     if (on && !hovering) {
       const waiting = (live.sessions || []).some((x) => x.state === 'attention');
       if (tab || waiting) cardTab = tab || 'agents';

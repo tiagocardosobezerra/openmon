@@ -122,7 +122,7 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 * **Raridades**: 1 em 128 nasce com cores brilhantes (shiny), sempre com brilho e estrelinhas em volta; quem evolui de madrugada ganha cores noturnas. Cada forma tem as 5 poses também em shiny e noturna.
 * **Evoluções especiais**: com amizade 100 na evolução mítica, Archsmith e Oracle crescem na **forma da amizade**; a hidden Chimera tem cores próprias para cada um dos 15 pares de tipos.
 * **Lendários**: três, cada um ligado a um feito. *Mergeon* aparece no seu primeiro pull request aceito, *Aeonbyte* depois de um ano de Openmon e *Zeroday* depois de 100 consertos. Eles entram no seu Time e nunca evoluem.
-* **Cores de época**: em fevereiro, outubro e dezembro o Openmon usa as cores da época (dá para desligar nas Configurações).
+* **Cores de época** (opcional): ligue nas Configurações e, em fevereiro, outubro e dezembro, o Openmon usa as cores da época.
 * **Forma de foco**: num pedido longo (50 ações ou mais), ele cresce dentro de um anel de energia até o pedido acabar.
 * **Apelido**: sem apelido ele usa o nome da espécie, como no Pokémon. Ao chocar, ele pergunta se você quer dar um.
 * Ele nunca morre, nunca adoece e nunca perde o que conquistou.
@@ -136,7 +136,7 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 
 ## Um Openmon por projeto
 
-Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. Até 6 andam no **Time**; os outros esperam na **Caixa**, como no PC do Pokémon, com 12 papéis de parede para escolher. Cada um cresce só com o trabalho do seu projeto, e a Mochila, a Opendex e as insígnias são suas, de treinador, e valem para todos. Na página **Time** você escolhe quem fica na tela, ou liga "Mostrar o Openmon do projeto em que o agente está trabalhando".
+Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. Até 6 andam no **Time**; os outros esperam na **Caixa**, como no PC do Pokémon, com 12 papéis de parede para escolher. Até 3 podem ficar na tela ao mesmo tempo: no Time, use "Também na tela"; cada um mostra o que o agente do seu projeto está fazendo. Cada um cresce só com o trabalho do seu projeto, e a Mochila, a Opendex e as insígnias são suas, de treinador, e valem para todos. Na página **Time** você escolhe quem fica na tela, ou liga "Mostrar o Openmon do projeto em que o agente está trabalhando".
 
 **Formas regionais**: um Openmon criado principalmente numa linguagem evolui com as cores daquela região e uma pequena marca: *Chaves* (JavaScript/TypeScript), *Serpente* (Python), *Ferrugem* (Rust), *Correnteza* (Go), *Grão* (Java/Kotlin) e *Sustenido* (C#/.NET). A Opendex registra as que você viu.
 

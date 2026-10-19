@@ -122,7 +122,7 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 * **Rarities**: 1 in 128 hatches in shiny colours, always with a glow and little stars around it; evolving late at night gives night colours. Every form has its 5 poses in shiny and night colours too.
 * **Special evolutions**: with friendship 100 at the Mythic evolution, Archsmith and Oracle grow into their **friendship form**; the hidden Chimera has its own colours for each of the 15 pairs of types.
 * **Legendaries**: three, each tied to a feat. *Mergeon* appears when your first pull request is merged, *Aeonbyte* after a year of Openmon and *Zeroday* after 100 fixes. They join your Party and never evolve.
-* **Season colours**: in February, October and December your Openmon wears the season's colours (you can turn this off in Settings).
+* **Season colours** (optional): turn them on in Settings and, in February, October and December, your Openmon wears the season's colours.
 * **Focus form**: during a long request (50 actions or more) it grows inside a ring of energy until the request ends.
 * **Nickname**: without one it goes by its species name, like Pokémon. When it hatches, it asks whether you want to give it one.
 * It never dies, never gets sick and never loses what it earned.
@@ -136,7 +136,7 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 
 ## One Openmon per project
 
-Every project your agent works on enough gets **its own egg**. Up to 6 travel in your **Party**; the rest wait in the **Box**, like a Pokémon PC, with 12 wallpapers to pick from. Each one grows only from its project's work, while the Bag, Opendex and badges belong to you as a trainer and count for all of them. On the **Party** page you pick who is on screen, or turn on "Show the Openmon of the project your agent is working in".
+Every project your agent works on enough gets **its own egg**. Up to 6 travel in your **Party**; the rest wait in the **Box**, like a Pokémon PC, with 12 wallpapers to pick from. Up to 3 can be on screen at once: on the Party page, use "Also on screen"; each one shows what its own project's agent is doing. Each one grows only from its project's work, while the Bag, Opendex and badges belong to you as a trainer and count for all of them. On the **Party** page you pick who is on screen, or turn on "Show the Openmon of the project your agent is working in".
 
 **Regional forms**: an Openmon raised mostly on one language evolves into that region's colours with a small mark: *Brace* (JavaScript/TypeScript), *Serpent* (Python), *Rust*, *Current* (Go), *Bean* (Java/Kotlin) and *Sharp* (C#/.NET). The Opendex records the ones you have seen.
 

@@ -108,11 +108,14 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25, seasons: true };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25, seasons: false, companions: [] };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
   } catch {}
+  // Season colours used to be on by default and were saved with the rest;
+  // only a choice made in Settings keeps them on.
+  if (!config.seasonsChosen) config.seasons = false;
   // What the renderers need: the settings plus whether quiet mode is on now.
   const publicConfig = () => ({ ...config, quiet: Boolean(config.quietUntil && config.quietUntil > now()), focus: Boolean(config.focusUntil && config.focusUntil > now()) });
   let demoTimers = [];
@@ -144,7 +147,19 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     if (live.focus) live.focus = { ...live.focus, label: alias(live.focus.label), detail: null, recap: null };
     const petView = { ...s.pet, project: s.pet.project ? alias(s.pet.project) : s.pet.project, journal: (s.pet.journal || []).map((e) => ({ ...e, projects: {}, agentMs: {} })) };
     const partyView = s.party ? { ...s.party, members: s.party.members.map((m) => ({ ...m, project: m.project && alias(m.project) })), box: s.party.box.map((m) => ({ ...m, project: m.project && alias(m.project) })), upcoming: [] } : s.party;
-    return { ...s, live, pet: petView, party: partyView, permissions: (s.permissions || []).map((p) => ({ ...p, label: alias(p.label), detail: null })), present: true };
+    const companions = Object.fromEntries(Object.entries(s.companions || {}).map(([id, c]) => [id, { ...c, project: c.project ? alias(c.project) : c.project, journal: [] }]));
+    return { ...s, live, pet: petView, party: partyView, companions, permissions: (s.permissions || []).map((p) => ({ ...p, label: alias(p.label), detail: null })), present: true };
+  }
+
+  // The Openmons standing next to the main one: full views, like the main pet.
+  const MAX_COMPANIONS = 2;
+  function companionViews() {
+    const out = {};
+    for (const id of config.companions || []) {
+      const member = (real.pet.others || []).find((m) => m.id === id);
+      if (member) out[id] = { ...pet.view(party.merge(real.pet, member)), project: member.project ?? null };
+    }
+    return out;
   }
 
   function state() {
@@ -158,6 +173,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       live,
       pet: pet.view(world.pet),
       party: world === real ? party.view(real.pet) : null,
+      companions: world === real ? companionViews() : {},
       config: publicConfig(),
       restoreOffer: restoreOffer ? restoreOffer.summary : null,
       permissions: permissionView(),
@@ -639,6 +655,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           json(res, 200, { ok: partyAction(() => {
             const before = real.pet.id;
             real.pet = party.setActive(real.pet, String(body.id || ''));
+            if ((config.companions || []).includes(real.pet.id)) setConfig({ companions: config.companions.filter((x) => x !== real.pet.id) });
             return real.pet.id !== before;
           }) });
         });
@@ -665,7 +682,9 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.notify === 'boolean') patch.notify = body.notify;
           if (typeof body.chatter === 'boolean') patch.chatter = body.chatter;
           if (typeof body.stroll === 'boolean') patch.stroll = body.stroll;
-          if (typeof body.seasons === 'boolean') patch.seasons = body.seasons;
+          if (typeof body.seasons === 'boolean') Object.assign(patch, { seasons: body.seasons, seasonsChosen: true });
+          // Other Openmons of the team standing next to the main one (2 at most).
+          if (Array.isArray(body.companions)) patch.companions = [...new Set(body.companions.filter((id) => typeof id === 'string' && /^[a-f0-9]{6,32}$/.test(id)))].slice(0, MAX_COMPANIONS);
           if (typeof body.followProject === 'boolean') patch.followProject = body.followProject;
           if (typeof body.present === 'boolean') patch.present = body.present;
           if (typeof body.lang === 'string' && /^(en|pt-BR|es)$/.test(body.lang)) patch.lang = body.lang;
