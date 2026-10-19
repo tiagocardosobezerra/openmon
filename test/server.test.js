@@ -455,3 +455,37 @@ test('companions: other team members on screen, never the main one; seasons off 
     await daemon.close();
   }
 });
+
+test('with two pets on screen, agent sessions without a pet of their own are shared between them', async () => {
+  const party = require('../src/party');
+  const petMod = require('../src/pet');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-home-'));
+  const store = createStore({ dir, delay: 10 });
+  const root = party.ensure(petMod.createPet(Date.now()));
+  party.hatchMystery(root, Date.now(), () => 0.9);
+  const side = root.others[0];
+  store.save(root);
+  store.flush();
+  const daemon = createDaemon({ port: 0, store, hooksInstalled: () => true, bundledArt: null, configFile: path.join(dir, 'config.json'), focus: createFocus({ driver: null }) });
+  await daemon.listen();
+  try {
+    daemon.setConfig({ companions: [side.id] });
+    const edit = (session) => ({ session_id: session, cwd: '/tmp/scratch', hook_event_name: 'PostToolUse', tool_name: 'Edit', tool_input: { file_path: '/tmp/scratch/a.js', old_string: 'a', new_string: 'b' } });
+    for (let i = 0; i < 3; i++) {
+      daemon.ingest(edit('one'));
+      daemon.ingest(edit('two'));
+    }
+    const s = daemon.state();
+    const mainXp = s.pet.xp;
+    const sideView = s.companions[side.id];
+    assert.ok(mainXp > 0, 'the main pet earns from its session');
+    assert.ok(sideView.xp > 0, 'the pet next to it earns from the other one');
+    assert.deepEqual(sideView.sessions.length, 1);
+    // A session keeps its pet.
+    daemon.ingest(edit(sideView.sessions[0]));
+    assert.ok(daemon.state().companions[side.id].xp > sideView.xp);
+    assert.equal(daemon.state().pet.xp, mainXp);
+  } finally {
+    await daemon.close();
+  }
+});
