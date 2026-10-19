@@ -48,3 +48,12 @@ test('accessories and items: one file each', () => {
   const items = new Set(fs.readdirSync(path.join(__dirname, '..', 'public', 'items')));
   for (const id of Object.keys(species.ITEMS)) if (!['snack', 'candy', 'everstone'].includes(id)) assert.ok(items.has(`${id}.svg`), id);
 });
+
+test('the English README animations match the designer\'s Portuguese ones', () => {
+  const { translate, FILES } = require('../tools/build-banner');
+  const lf = (s) => s.replace(/\r\n/g, '\n');
+  for (const name of Object.keys(FILES)) {
+    const en = fs.readFileSync(path.join(__dirname, '..', 'assets', name.replace(/\.svg$/, '.en.svg')), 'utf8');
+    assert.equal(lf(en), lf(translate(name)), name);
+  }
+});

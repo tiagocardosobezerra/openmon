@@ -1,100 +1,140 @@
+#!/usr/bin/env node
 'use strict';
 
-// Builds the README banners (assets/openmon-banner.svg and .en.svg): the
-// logo, a tagline and an evolution line drawn with the official art. Every
-// SVG is inlined, so the banner renders on GitHub, where an SVG shown as an
-// image cannot load other files.
+// The README animations are drawn by the designer in Portuguese
+// (assets/openmon-banner.svg, assets/openmon-dentro.svg). This makes the
+// English copies by swapping the texts, keeping the same timeline and art:
 //
-//   node tools/build-banner.js
+//   node tools/build-banner.js            writes assets/*.en.svg
+//   node tools/build-banner.js --check    fails if they are out of date
 
 const fs = require('node:fs');
 const path = require('node:path');
 
-const ROOT = path.join(__dirname, '..');
-const ART = path.join(ROOT, 'art', 'official');
-const OUT = path.join(ROOT, 'assets');
+const ASSETS = path.join(__dirname, '..', 'assets');
 
-// Turns a whole SVG file into a nested <svg> placed at x, y with a size.
-function nest(file, x, y, w, h) {
-  const text = fs.readFileSync(file, 'utf8');
-  const open = text.match(/<svg\b[^>]*>/)[0];
-  const viewBox = open.match(/viewBox="([^"]+)"/)[1];
-  // Keep the root class: the art's styles hang off ".cr".
-  const cls = (open.match(/class="([^"]+)"/) || [])[1];
-  const inner = text.slice(text.indexOf(open) + open.length, text.lastIndexOf('</svg>'));
-  return `<svg${cls ? ` class="${cls}"` : ''} x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${viewBox}" preserveAspectRatio="xMidYMax meet" overflow="visible">${inner}</svg>`;
-}
-
-const LINE = [
-  ['egg', 60],
-  ['sprout', 76],
-  ['craft-juvenile', 100],
-  ['craft-adult', 132],
-  ['craft-mythic.shiny', 156],
+const COMMON = [
+  ['Permitir', 'Allow'],
+  ['Sempre', 'Always'],
+  ['Recusar', 'Deny'],
+  ['Forja', 'Craft'],
 ];
 
-function banner(lang) {
-  const pt = lang === 'pt';
-  const W = 1280;
-  const H = 440;
-  const ground = 372;
-  const tagline = pt ? 'Um bichinho de desktop que cresce com o trabalho do seu agente de IA.' : 'A desktop pet that grows from the work your AI coding agent does.';
-  const sub = pt ? 'Ele avisa quando o agente precisa de você, evolui em 40 formas e nunca sai do seu computador.' : 'It tells you when your agent needs you, evolves into 40 forms and never leaves your computer.';
-  const chips = pt ? ['Claude Code', '100% local', '40 formas', 'PT · EN'] : ['Claude Code', '100% local', '40 forms', 'EN · PT'];
-  let x = 610;
-  const creatures = [];
-  const arrows = [];
-  LINE.forEach(([name, size], i) => {
-    const w = size * 1.05;
-    creatures.push(nest(path.join(ART, `${name}.svg`), x, ground - size, w, size));
-    if (i < LINE.length - 1) arrows.push(`<path d="M${x + w + 6} ${ground - 40} l14 0 m-6 -6 l6 6 l-6 6" fill="none" stroke="#c7baff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>`);
-    x += w + 22;
-  });
-  const chipSvg = chips
-    .map((c, i) => {
-      const cw = c.length * 9.4 + 28;
-      const cx = 70 + chips.slice(0, i).reduce((a, s) => a + s.length * 9.4 + 28 + 10, 0);
-      return `<g transform="translate(${cx} 318)"><rect width="${cw}" height="32" rx="16" fill="#ffffff" fill-opacity=".1" stroke="#c7baff" stroke-opacity=".5"/><text x="${cw / 2}" y="21.5" text-anchor="middle" font-size="15" font-weight="700" fill="#efeaff">${c}</text></g>`;
-    })
-    .join('');
-  // Wrap the subtitle in two lines.
-  const words = sub.split(' ');
-  const lines = [''];
-  for (const w of words) {
-    if ((lines[lines.length - 1] + ' ' + w).length > 52) lines.push(w);
-    else lines[lines.length - 1] = `${lines[lines.length - 1]} ${w}`.trim();
-  }
-  const sparkles = [[1180, 70], [610, 92], [1225, 210], [690, 150], [960, 60]]
-    .map(([sx, sy], i) => `<path d="M${sx} ${sy - 9} L${sx + 3} ${sy - 3} L${sx + 9} ${sy} L${sx + 3} ${sy + 3} L${sx} ${sy + 9} L${sx - 3} ${sy + 3} L${sx - 9} ${sy} L${sx - 3} ${sy - 3}Z" fill="#ffe156" opacity="${0.5 + (i % 3) * 0.2}"/>`)
-    .join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" role="img" aria-label="Openmon">
-<defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2140"/><stop offset="1" stop-color="#43327a"/></linearGradient>
-  <radialGradient id="glow" cx=".72" cy=".75" r=".55"><stop offset="0" stop-color="#7c6cf2" stop-opacity=".45"/><stop offset="1" stop-color="#7c6cf2" stop-opacity="0"/></radialGradient>
-</defs>
-<rect width="${W}" height="${H}" rx="28" fill="url(#bg)"/>
-<rect width="${W}" height="${H}" rx="28" fill="url(#glow)"/>
-${sparkles}
-${nest(path.join(ROOT, 'assets', 'brand', 'logo-full-white.svg'), 62, 56, 470, 112)}
-<text x="70" y="214" font-size="26" font-weight="700" fill="#ffffff">${tagline.length > 46 ? '' : tagline}</text>
-${tagline.length > 46 ? (() => {
-    const t = tagline.split(' ');
-    const a = [''];
-    for (const w of t) {
-      if ((a[a.length - 1] + ' ' + w).length > 40) a.push(w);
-      else a[a.length - 1] = `${a[a.length - 1]} ${w}`.trim();
+const FILES = {
+  'openmon-banner.svg': {
+    label: 'Openmon animation: an egg hatches in the corner of the screen; the creature reads, hammers and tests along with your AI agent; when the agent needs permission it jumps with a sign and you answer with one click; it evolves with the work and becomes a collection of 40 forms, with rare ones and legendaries. Your agent works. Your Openmon grows.',
+    title: 'Openmon: the little creature that keeps your AI agent company',
+    texts: [
+      ['corrija o total do carrinho e publique', 'fix the cart total and publish'],
+      ['● Pronto! Total corrigido e versão publicada.', '● Done! Total fixed and version published.'],
+      ['Nível 12', 'Level 12'],
+      ['Nível 33', 'Level 33'],
+      ['Nível 60', 'Level 60'],
+      ['jovem', 'juvenile'],
+      ['adulto', 'adult'],
+      ['mítico', 'mythic'],
+      ['rumo a Forgemaw', 'next: Forgemaw'],
+      ['rumo a Archsmith', 'next: Archsmith'],
+      ['forma final ✦', 'final form ✦'],
+      ['O tipo vem do trabalho que o agente mais faz:', 'Its type comes from the work your agent does most:'],
+      ['Saber', 'Lore'],
+      ['Teste', 'Test'],
+      ['Escriba', 'Docs'],
+      ['(editar)', '(edit)'],
+      ['(ler)', '(read)'],
+      ['(testar)', '(test)'],
+      ['(documentar)', '(write docs)'],
+      ['★ mais feito', '★ done most'],
+      ['Cada ação do agente vale XP.', 'Every agent action is worth XP.'],
+      ['Todas as formas que seu Openmon pode ter.', 'Every form your Openmon can take.'],
+      ['formas vistas', 'forms seen'],
+      ['☾ Noturno', '☾ Night'],
+      ['★ Lendário', '★ Legendary'],
+      ['Time · 3 na tela', 'Party · 3 on screen'],
+      ['Precisa de você · alpha', 'Needs you · alpha'],
+      ['Quer permissão para rodar: npm publish', 'Wants permission to run: npm publish'],
+      ['Um bichinho no canto da sua tela.', 'A little creature in the corner of your screen.'],
+      ['Ele lê, martela e testa junto com o seu agente.', 'It reads, hammers and tests along with your agent.'],
+      ['Precisa de você? Ele avisa. Um clique e você responde.', 'Needs you? It tells you. One click and you answer.'],
+      ['Ele evolui conforme o trabalho que o agente mais faz.', 'It evolves into the kind of work your agent does most.'],
+      ['40 formas, raras e lendárias. Até 3 na tela.', '40 forms, rare ones and legendaries. Up to 3 on screen.'],
+      ['Seu agente trabalha. Seu Openmon cresce.', 'Your agent works. Your Openmon grows.'],
+      ['40 formas', '40 forms'],
+      ['PT · EN · ES', 'EN · PT · ES'],
+    ],
+  },
+  'openmon-dentro.svg': {
+    label: 'How Openmon works inside: AI agents report each step through hooks; a local server at 127.0.0.1:4747 turns each notice into a signal; the pet picks a pose, earns experience and logs what the agent did; everything shows up in the corner of your screen without leaving your computer.',
+    title: 'How Openmon works inside',
+    texts: [
+      ['Escuta. Cresce. Avisa.', 'Listens. Grows. Tells you.'],
+      ['1 · O AGENTE AVISA', '1 · THE AGENT REPORTS'],
+      ['Os agentes já avisam o que fazem (hooks).', 'Agents already report what they do (hooks).'],
+      ['2 · VIRA SINAL', '2 · IT BECOMES A SIGNAL'],
+      ['Um servidor local transforma cada aviso em sinal.', 'A local server turns each notice into a signal.'],
+      ['3 · O PET DECIDE', '3 · THE PET DECIDES'],
+      ['Ele decide a pose, ganha XP e anota o que o agente fez.', 'It picks a pose, earns XP and keeps a log of the work.'],
+      ['4 · APARECE NA TELA', '4 · IT SHOWS UP ON SCREEN'],
+      ['Tudo aparece no canto da tela. Nada sai do seu PC.', 'Everything shows up in the corner. Nothing leaves your PC.'],
+      ['Agentes', 'Agents'],
+      ['Servidor local', 'Local server'],
+      ['só no seu PC', 'only on your PC'],
+      ['O pet decide', 'The pet decides'],
+      ['Pose', 'Pose'],
+      ['dormir', 'sleep'],
+      ['trabalhar', 'work'],
+      ['pedir ajuda', 'ask for help'],
+      ['comemorar', 'cheer'],
+      ['XP e tipo', 'XP and type'],
+      ['Poderes', 'Powers'],
+      ['Diário de arquivos', 'Forge log'],
+      ['Placar de testes', 'Test tracker'],
+      ['Diário de consertos', 'Fix log'],
+      ['Na sua tela', 'On your screen'],
+      ['Precisa de você', 'Needs you'],
+      ['opcional, ntfy', 'optional, ntfy'],
+    ],
+  },
+};
+
+const escapeXml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function translate(name) {
+  const spec = FILES[name];
+  let svg = fs.readFileSync(path.join(ASSETS, name), 'utf8');
+  svg = svg.replace(/aria-label="[^"]*"/, `aria-label="${escapeXml(spec.label)}"`);
+  svg = svg.replace(/<title>[^<]*<\/title>/, `<title>${escapeXml(spec.title)}</title>`);
+  // Only whole text nodes are swapped: ">Forja<" changes, "Forjando" never.
+  const missing = [];
+  for (const [pt, en] of [...spec.texts, ...COMMON]) {
+    const from = `>${escapeXml(pt)}<`;
+    if (!svg.includes(from)) {
+      if (spec.texts.some(([p]) => p === pt)) missing.push(pt);
+      continue;
     }
-    return a.map((l, i) => `<text x="70" y="${206 + i * 32}" font-size="26" font-weight="700" fill="#ffffff">${l}</text>`).join('');
-  })() : ''}
-${lines.map((l, i) => `<text x="70" y="${282 + i * 22}" font-size="16.5" fill="#d9d2f2">${l}</text>`).join('')}
-${chipSvg}
-<ellipse cx="${(610 + x - 22) / 2}" cy="${ground + 4}" rx="${(x - 610) / 2 + 10}" ry="14" fill="#000" opacity=".25"/>
-${arrows.join('')}
-${creatures.join('\n')}
-</svg>
-`;
+    svg = svg.split(from).join(`>${escapeXml(en)}<`);
+  }
+  if (missing.length) throw new Error(`${name}: texts not found (the designer's file changed?): ${missing.join(' | ')}`);
+  return svg.replace(/lang="pt-BR"/g, 'lang="en"');
 }
 
-fs.writeFileSync(path.join(OUT, 'openmon-banner.svg'), banner('pt'));
-fs.writeFileSync(path.join(OUT, 'openmon-banner.en.svg'), banner('en'));
-console.log('assets/openmon-banner.svg, assets/openmon-banner.en.svg');
+if (require.main === module) {
+  const check = process.argv.includes('--check');
+  let stale = 0;
+  for (const name of Object.keys(FILES)) {
+    const out = path.join(ASSETS, name.replace(/\.svg$/, '.en.svg'));
+    const text = translate(name);
+    if (check) {
+      if (!fs.existsSync(out) || fs.readFileSync(out, 'utf8') !== text) {
+        console.error(`out of date: ${path.basename(out)}`);
+        stale++;
+      }
+    } else {
+      fs.writeFileSync(out, text);
+      console.log(path.relative(process.cwd(), out));
+    }
+  }
+  if (stale) process.exit(1);
+}
+
+module.exports = { translate, FILES };

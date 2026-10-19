@@ -10,7 +10,7 @@
 ![100% local](https://img.shields.io/badge/dados-100%25%20local-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue?style=flat-square)
 
-<img width="100%" alt="Openmon: um ovo que choca e evolui com o trabalho do seu agente de IA" src="assets/openmon-banner.svg" />
+<img width="100%" alt="Animação do Openmon: um ovo choca no canto da tela, o bichinho lê, martela e testa junto com o agente de IA, pula com uma placa quando precisa de você e evolui com o trabalho. Seu agente trabalha. Seu Openmon cresce." src="assets/openmon-banner.svg" />
 
 O Openmon é um pet de desktop, no espírito de Pokémon e Tamagotchi, que vive no canto da tela enquanto o Claude Code trabalha. Ele lê quando o agente lê, martela quando o agente edita, levanta um escudo quando os testes rodam e pula segurando uma placa quando o agente **precisa de você**. Um clique nele e a janela do agente vem para a frente, pronta para você aprovar ou responder. Com os dias, o ovo choca, cresce e evolui para uma de 40 formas, decidida pelo tipo de trabalho que o seu agente mais faz.
 
@@ -246,6 +246,15 @@ Claude Code ──hook (async)──▶ src/hook.js ──POST /event──▶ d
 O servidor só escuta em `127.0.0.1` e recusa pedidos de outras páginas da web (checagem de Origin e Host). O hook nunca imprime nada, sempre sai com 0 e desiste em até 1,5 s. `openmon start` roda o pet com um supervisor que o traz de volta em dois segundos se ele cair.
 
 </details>
+
+## Como funciona por dentro
+
+<img width="100%" alt="Como o Openmon funciona por dentro: os agentes avisam cada passo por hooks, um servidor local em 127.0.0.1:4747 transforma cada aviso em sinal, o pet decide a pose, ganha XP e anota o que o agente fez, e tudo aparece no canto da tela" src="assets/openmon-dentro.svg" />
+
+1. **O agente avisa.** Claude Code, Gemini CLI, Cursor, OpenCode e Aider já avisam cada passo que dão (hooks). O Openmon só escuta, sem bloquear nada.
+2. **Vira sinal.** Um servidor local em `127.0.0.1:4747` transforma cada aviso em um sinal simples: ferramenta usada, teste verde ou vermelho, "precisa de você".
+3. **O pet decide.** Ele escolhe a pose, ganha experiência no tipo de trabalho certo e anota o que o agente fez nos Poderes.
+4. **Aparece na tela.** Tudo fica no canto da sua tela. Nada sai do seu computador (o aviso no celular é opcional e só manda "Seu agente precisa de você").
 
 ## Desenvolver
 

@@ -10,7 +10,7 @@
 ![100% local](https://img.shields.io/badge/data-100%25%20local-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-<img width="100%" alt="Openmon: an egg that hatches and evolves from your AI agent's work" src="assets/openmon-banner.en.svg" />
+<img width="100%" alt="Openmon animation: an egg hatches in the corner of the screen, the creature reads, hammers and tests along with your AI agent, jumps with a sign when it needs you and evolves with the work. Your agent works. Your Openmon grows." src="assets/openmon-banner.en.svg" />
 
 Openmon is a desktop pet, in the spirit of Pokémon and Tamagotchi, that lives in the corner of your screen while Claude Code works. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps holding a sign when the agent **needs you**. Click it and the agent's window comes to the front, ready for you to approve or reply. Over the days, the egg hatches, grows and evolves into one of 40 forms, decided by the kind of work your agent does most.
 
@@ -246,6 +246,15 @@ Claude Code ──hook (async)──▶ src/hook.js ──POST /event──▶ d
 The server only listens on `127.0.0.1` and refuses requests from other web pages (Origin and Host checks). The hook never prints, always exits 0 and gives up within 1.5 s. `openmon start` runs the pet under a supervisor that brings it back within two seconds if it ever falls over.
 
 </details>
+
+## How it works inside
+
+<img width="100%" alt="How Openmon works inside: agents report each step through hooks, a local server at 127.0.0.1:4747 turns each notice into a signal, the pet picks a pose, earns XP and logs the work, and everything shows up in the corner of your screen" src="assets/openmon-dentro.en.svg" />
+
+1. **The agent reports.** Claude Code, Gemini CLI, Cursor, OpenCode and Aider already report every step they take (hooks). Openmon only listens and never blocks anything.
+2. **It becomes a signal.** A local server at `127.0.0.1:4747` turns each notice into a simple signal: a tool used, a green or red test, "needs you".
+3. **The pet decides.** It picks a pose, earns experience in the right kind of work and logs what the agent did in its Powers.
+4. **It shows up on screen.** Everything stays in the corner of your screen. Nothing leaves your computer (phone alerts are optional and only send "Your agent needs you").
 
 ## Develop
 
