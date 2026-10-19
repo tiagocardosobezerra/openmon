@@ -47,6 +47,8 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 
 Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. Até 6 andam no **Time**; os outros esperam na **Caixa**, com 12 papéis de parede para escolher. Até 3 podem ficar na tela ao mesmo tempo: no Time, use "Também na tela"; cada um mostra o que o agente do seu projeto está fazendo. Cada um cresce só com o trabalho do seu projeto, e a Mochila, a Opendex e as insígnias são suas, de treinador, e valem para todos. Na página **Time** você escolhe quem fica na tela, ou liga "Mostrar o Openmon do projeto em que o agente está trabalhando". Pastas temporárias (a pasta temporária do sistema ou a área de rascunho de um app) não contam como projeto. Todo trabalho sem um Openmon próprio no Time (pasta temporária, projeto novo, pet descansando na Caixa) treina o **Openmon principal**, o da tela: para treinar um ovo, faça dele o principal. Com mais de um Openmon na tela, cada sessão de agente sem pet próprio vai para um deles, o que tiver menos sessões, e fica com ele: esse pet ganha o XP dela e a mostra no seu card. Na Caixa, eles descansam e não ganham XP.
 
+**Quem acompanha o quê.** Quem acompanha cada conversa, nesta ordem: 1) uma conversa que você fixou num Openmon (botão direito → Agentes → clique no nome do pet ao lado da conversa); 2) um projeto que você fixou num Openmon (Time → "Acompanha"); 3) o Openmon do próprio projeto, enquanto ele está no Time; 4) a fila: com mais de um na tela, cada conversa nova vai para um deles, na vez de cada um. Em Configurações → Pet dá para desligar a divisão; aí tudo fica com o principal, menos o que você fixou. Na Caixa, os pets descansam e não ganham XP.
+
 **Formas regionais**: um Openmon criado principalmente numa linguagem evolui com as cores daquela região e uma pequena marca: *Chaves* (JavaScript/TypeScript), *Serpente* (Python), *Ferrugem* (Rust), *Correnteza* (Go), *Grão* (Java/Kotlin) e *Sustenido* (C#/.NET). A Opendex registra as que você viu.
 
 ## Todo dia tem algo
@@ -57,11 +59,11 @@ Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. At�
 * **Presente do dia e sequência**: um Biscoito por dia de uso, uma Pedra de tipo a cada 3 dias seguidos, uma Bala de nível a cada 7, um Amuleto de XP a cada 14 e um Ovo misterioso a cada 30.
 * **Opendex, insígnias e Hall da Fama**: quando o seu chega a Ancião, aposente-o no Hall da Fama e comece uma nova geração; a Mochila, a Opendex e as insígnias continuam.
 
-## Poderes: utilidades que a evolução libera
+## Habilidades: utilidades que a evolução libera
 
 Cada tipo em que seu Openmon evolui libera, para sempre, um painel útil sobre as sessões do agente:
 
-| Poder | Tipo | Mostra |
+| Habilidade | Tipo | Mostra |
 |---|---|---|
 | Diário da forja | Forja | cada arquivo alterado, quantas vezes, linhas que entraram e saíram |
 | Lista de leitura | Saber | o que o agente leu e buscou antes de agir |
@@ -77,4 +79,4 @@ Cada tipo em que seu Openmon evolui libera, para sempre, um painel útil sobre a
 
 Para todo mundo: o **Diário** dos últimos 14 dias e o **contador de espera**, quanto tempo seus agentes esperaram por você hoje.
 
-<img width="100%" alt="Os Poderes, com o diário dos últimos 14 dias" src="screens/powers.pt-BR.png" />
+<img width="100%" alt="As Habilidades, com o diário dos últimos 14 dias" src="screens/powers.pt-BR.png" />

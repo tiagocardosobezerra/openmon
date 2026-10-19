@@ -5,7 +5,7 @@
 // a person uses them: they open on screen, transparent and on top; clicks
 // pass through except over the pet and its card, also after the pointer
 // leaves; a drag moves the right window and is remembered; a right-click
-// opens that pet's own card; the card's More button opens the menu.
+// opens that pet's own card; the card's More button opens its panel of pages and modes.
 //
 //   npm run e2e
 //
@@ -340,19 +340,23 @@ function runScenario(scenario) {
   }
 
   async function cardFooter(w, label) {
-    const ids = ['card-powers', 'card-bag', 'card-more'];
+    const ids = ['card-powers', 'card-party', 'card-bag', 'card-more'];
     const buttons = [];
     for (const id of ids) buttons.push(await buttonBox(w, id));
-    check(`${label}: card footer shows Powers, Bag, More`, buttons.map((b) => b && b.w > 0 && b.text).join(',') === 'Powers,Bag,More', JSON.stringify(buttons.map((b) => b && b.text)));
-    const more = buttons[2];
+    check(`${label}: card footer shows Skills, Party, Bag, More`, buttons.map((b) => b && b.w > 0 && b.text).join(',') === 'Skills,Party,Bag,More', JSON.stringify(buttons.map((b) => b && b.text)));
+    const cut = await js(w, `[...document.querySelectorAll('.card-actions .btn span')].filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent)`);
+    check(`${label}: no footer label is cut off`, cut.length === 0, JSON.stringify(cut));
+    const more = buttons[3];
     if (!more || !more.w) return;
     move(w, more.x, more.y);
     check(`${label}: card takes clicks`, await until(() => w.__e2eIgnore === false, 1500));
     const before = menus.length;
     await click(w, more.x, more.y);
-    const shown = await until(() => menus.length > before && menus[menus.length - 1], 1500);
-    check(`${label}: More opens the menu`, shown && shown.labels.includes('Settings') && shown.labels.includes('Quit'), JSON.stringify(shown));
-    check(`${label}: menu opens on that pet's window`, shown && shown.window === w);
+    const panel = await until(() => js(w, `(() => { const p = document.querySelector('.more-panel'); return p && !p.hidden && p.getBoundingClientRect().height > 40 ? [...p.querySelectorAll('.more-pages .btn')].map((b) => b.textContent) : null; })()`), 1500);
+    check(`${label}: More opens its panel inside the card`, Array.isArray(panel) && panel.includes('Opendex') && panel.includes('Settings'), JSON.stringify(panel));
+    check(`${label}: More opens no native menu`, menus.length === before);
+    await click(w, more.x, more.y);
+    check(`${label}: a second click on More closes the panel`, await until(() => js(w, `document.querySelector('.more-panel').hidden`), 1500));
   }
 
   app.whenReady().then(async () => {

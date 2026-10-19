@@ -101,7 +101,7 @@ const FILES = {
       ['pedir ajuda', 'ask for help', 'pedir ayuda'],
       ['comemorar', 'cheer', 'celebrar'],
       ['XP e tipo', 'XP and type', 'XP y tipo'],
-      ['Poderes', 'Powers', 'Poderes'],
+      ['Habilidades', 'Skills', 'Habilidades'],
       ['Diário de arquivos', 'Forge log', 'Diario de archivos'],
       ['Placar de testes', 'Test tracker', 'Marcador de pruebas'],
       ['Diário de consertos', 'Fix log', 'Diario de arreglos'],

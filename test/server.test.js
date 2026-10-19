@@ -489,3 +489,51 @@ test('with two pets on screen, agent sessions without a pet of their own are sha
     await daemon.close();
   }
 });
+
+test('who follows what: a pinned conversation, a pinned project, then the queue in turn; sharing off keeps the rest on the main pet', async () => {
+  const party = require('../src/party');
+  const petMod = require('../src/pet');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-home-'));
+  const store = createStore({ dir, delay: 10 });
+  const root = party.ensure(petMod.createPet(Date.now()));
+  party.hatchMystery(root, Date.now(), () => 0.9);
+  party.hatchMystery(root, Date.now(), () => 0.9);
+  const [a, b] = root.others;
+  store.save(root);
+  store.flush();
+  const daemon = createDaemon({ port: 0, store, hooksInstalled: () => true, bundledArt: null, configFile: path.join(dir, 'config.json'), focus: createFocus({ driver: null }) });
+  const port = await daemon.listen();
+  const post = (p, body) => fetch(`http://127.0.0.1:${port}${p}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json());
+  try {
+    daemon.setConfig({ companions: [a.id] });
+    const edit = (session, cwd = '/tmp/scratch') => daemon.ingest({ session_id: session, cwd, hook_event_name: 'PostToolUse', tool_name: 'Edit', tool_input: { file_path: `${cwd}/a.js`, old_string: 'a', new_string: 'b' } });
+    const owner = (sid) => (daemon.state().owners[sid] || {}).pet;
+    const mainId = daemon.state().party.members.find((m) => m.active).id;
+    // The queue: first to the main pet, then the next one on screen, then back.
+    edit('q1');
+    edit('q2');
+    edit('q3');
+    assert.deepEqual([owner('q1'), owner('q2'), owner('q3')], [mainId, a.id, mainId]);
+    // Pin a conversation to the pet on screen beside the main one.
+    assert.equal((await post('/api/follow', { session: 'q1', pet: a.id })).ok, true);
+    edit('q1');
+    assert.equal(owner('q1'), a.id);
+    assert.equal(daemon.state().owners.q1.pinned, true);
+    // Pin a project to a pet that is not even on screen: its conversations train it.
+    assert.equal((await post('/api/follow', { pet: b.id, project: 'shop' })).ok, true);
+    const before = daemon.state().party.members.find((m) => m.id === b.id).xp;
+    edit('s1', '/work/shop');
+    assert.equal(owner('s1'), b.id);
+    assert.ok(daemon.state().party.members.find((m) => m.id === b.id).xp > before);
+    // Back to automatic.
+    assert.equal((await post('/api/follow', { session: 'q1', pet: null })).ok, true);
+    assert.equal(daemon.state().owners.q1.pinned, false);
+    // Sharing off: new conversations stay with the main pet.
+    daemon.setConfig({ shareSessions: false });
+    edit('n1');
+    edit('n2');
+    assert.deepEqual([owner('n1'), owner('n2')], [mainId, mainId]);
+  } finally {
+    await daemon.close();
+  }
+});

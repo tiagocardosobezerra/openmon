@@ -47,6 +47,8 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 
 Every project your agent works on enough gets **its own egg**. Up to 6 travel in your **Party**; the rest wait in the **Box**, with 12 wallpapers to pick from. Up to 3 can be on screen at once: on the Party page, use "Also on screen"; each one shows what its own project's agent is doing. Each one grows only from its project's work, while the Bag, Opendex and badges belong to you as a trainer and count for all of them. On the **Party** page you pick who is on screen, or turn on "Show the Openmon of the project your agent is working in". Temporary folders (the system temp folder or an app's scratch workspace) are not projects. Any work without its own Openmon in the Party (a temporary folder, a new project, a pet resting in the Box) trains the **main Openmon**, the one on screen: to train an egg, make it the main one. With more than one Openmon on screen, each agent session without a pet of its own goes to one of them, the one with the fewest sessions, and stays with it: that pet earns its XP and shows it on its card. In the Box, pets rest and earn no XP.
 
+**Who follows what.** Who follows each conversation, in this order: 1) a conversation you pinned to an Openmon (right-click → Agents → click the pet's name next to the conversation); 2) a project you pinned to an Openmon (Party → "Follows"); 3) the project's own Openmon, while it is in the Party; 4) the queue: with more than one on screen, each new conversation goes to one of them, in turn. In Settings → Pet you can turn sharing off; then everything stays with the main one, except what you pinned. In the Box, pets rest and earn no XP.
+
 **Regional forms**: an Openmon raised mostly on one language evolves into that region's colours with a small mark: *Brace* (JavaScript/TypeScript), *Serpent* (Python), *Rust*, *Current* (Go), *Bean* (Java/Kotlin) and *Sharp* (C#/.NET). The Opendex records the ones you have seen.
 
 ## Something every day
@@ -57,7 +59,7 @@ Every project your agent works on enough gets **its own egg**. Up to 6 travel in
 * **Daily gift and streak**: a Snack per day of use, a Type stone every 3 days in a row, a Level candy every 7, an XP charm every 14 and a Mystery egg every 30.
 * **Opendex, badges and Hall of Fame**: once yours becomes an Elder, retire it to the Hall of Fame and start a new generation; the Bag, Opendex and badges carry over.
 
-## Powers: tools that evolution unlocks
+## Skills: tools that evolution unlocks
 
 Each type your Openmon evolves into unlocks, for good, a useful panel about your agent's sessions:
 
@@ -77,4 +79,4 @@ Each type your Openmon evolves into unlocks, for good, a useful panel about your
 
 For everyone: the **Journal** of the last 14 days and the **waiting counter**, how long your agents waited for you today.
 
-<img width="100%" alt="Powers, with the journal of the last 14 days" src="screens/powers.en.png" />
+<img width="100%" alt="Skills, with the journal of the last 14 days" src="screens/powers.en.png" />

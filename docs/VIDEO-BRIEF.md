@@ -133,7 +133,7 @@ Um diagrama animado, como o `vegapunk-sonar.svg` e o `zasatsu-dominio.svg`: quat
 | --- | --- | --- | --- | --- |
 | 1 · O agente avisa | 0–7 s | Ícones do Claude Code, Gemini CLI, Cursor, OpenCode e Aider em coluna; de um deles sai um evento `PostToolUse · Edit cart.ts` | "Os agentes já avisam o que fazem (hooks)." | "Agents already report what they do (hooks)." |
 | 2 · Vira sinal | 7–14 s | O pacote entra numa caixa `127.0.0.1:4747` com um cadeado ("só no seu PC") e sai como etiquetas: `tool-done · craft`, `test-end ✓`, `attention` | "Um servidor local transforma cada aviso em sinal." | "A local server turns each notice into a signal." |
-| 3 · O pet decide | 14–22 s | Três trilhas acendendo: **Pose** (dormir, trabalhar, pedir ajuda, comemorar), **XP e tipo** (barra enche, chip "Forja"), **Poderes** (diário de arquivos, testes, consertos) | "Ele decide a pose, ganha XP e anota o que o agente fez." | "It picks a pose, earns XP and keeps a log of the work." |
+| 3 · O pet decide | 14–22 s | Três trilhas acendendo: **Pose** (dormir, trabalhar, pedir ajuda, comemorar), **XP e tipo** (barra enche, chip "Forja"), **Habilidades** (diário de arquivos, testes, consertos) | "Ele decide a pose, ganha XP e anota o que o agente fez." | "It picks a pose, earns XP and keeps a log of the work." |
 | 4 · Aparece na tela | 22–30 s | O pet na área de trabalho com o balão; um ramo opcional, tracejado, para o celular ("opcional, ntfy") | "Tudo aparece no canto da tela. Nada sai do seu PC." | "Everything shows up in the corner. Nothing leaves your PC." |
 
 Faixa fixa no topo (como no Vegapunk): **"Escuta. Cresce. Avisa."** / EN: **"Listens. Grows. Tells you."**
@@ -151,7 +151,7 @@ Faixa fixa no topo (como no Vegapunk): **"Escuta. Cresce. Avisa."** / EN: **"Lis
 * **Shiny:** os arquivos `.shiny` vêm sem o brilho (o app desenha). Na animação, desenhe o brilho por cima, como na prancha "shiny" do seu arquivo: halo `#fff1b8` com 45% de opacidade, anel pontilhado `#f2b632` e estrelas de 4 pontas `#fffbe0` com contorno `#e9a92a`, piscando uma depois da outra.
 * **Movimento do pet (para ficar igual ao app):** respiração (escala 1 → 1,03 em 2,4 s), pulinho na troca de pose, piscar a cada 3–4 s, tremidinha no erro, giro na evolução.
 * Acessórios (`acessorios/`) e itens (`itens/`) podem enfeitar a cena 5, mas não são obrigatórios.
-* `telas/` tem prints atuais da interface (card, balão, Opendex, Time, Mochila, Poderes, Configurações) em PT e EN, para copiar o visual dos balões e cards.
+* `telas/` tem prints atuais da interface (card, balão, Opendex, Time, Mochila, Habilidades, Configurações) em PT e EN, para copiar o visual dos balões e cards.
 
 ---
 

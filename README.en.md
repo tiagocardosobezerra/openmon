@@ -28,7 +28,7 @@ The agent notices run with [Node.js](https://nodejs.org), which Claude Code user
 
 **Privacy:** everything stays on your computer, with no account and no internet; phone alerts and GitHub are optional.
 
-Behind it there is a game: the egg hatches, grows and evolves into one of 40 forms, shaped by your agent's work. Types, items, accessories, regional forms, legendaries, powers and missions are in [docs/GAME.en.md](docs/GAME.en.md).
+Behind it there is a game: the egg hatches, grows and evolves into one of 40 forms, shaped by your agent's work. Types, items, accessories, regional forms, legendaries, skills and missions are in [docs/GAME.en.md](docs/GAME.en.md).
 
 ## More it does
 
@@ -191,7 +191,7 @@ The server only listens on `127.0.0.1` and refuses requests from other web pages
 
 1. **The agent reports.** Claude Code, Gemini CLI, Cursor, OpenCode and Aider already report every step they take (hooks). Openmon only listens and never blocks anything.
 2. **It becomes a signal.** A local server at `127.0.0.1:4747` turns each notice into a simple signal: a tool used, a green or red test, "needs you".
-3. **The pet decides.** It picks a pose, earns experience in the right kind of work and logs what the agent did in its Powers.
+3. **The pet decides.** It picks a pose, earns experience in the right kind of work and logs what the agent did in its Skills.
 4. **It shows up on screen.** Everything stays in the corner of your screen. Nothing leaves your computer (phone alerts and GitHub are optional: one only sends "Your agent needs you", the other keeps your pet in a secret Gist in your account).
 
 ## Develop

@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="ui.css">
 <style>
   main { padding-bottom: 48px; }
+  .item.none .icon, .item.none h3 { opacity: 0.55; }
+  .none-note { font-size: 12.5px; color: var(--muted); font-style: italic; }
   .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
   .item { display: grid; grid-template-columns: 56px 1fr; gap: 4px 12px; align-items: center; padding: 12px 14px; }
   .item .icon { grid-row: span 3; width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--line); }
@@ -129,6 +131,12 @@
       else if (top) btn.title = tr('bag.maxLevel');
     }
     btn.onclick = () => act('/api/use', { item: id });
+    // None left: say so plainly instead of a button that looks pressable.
+    if (!n && !holding && !(HELD(id) && held[id])) {
+      card.classList.add('none');
+      card.append(el('span', 'none-note', tr('bag.none')));
+      return card;
+    }
     card.append(btn);
     return card;
   }

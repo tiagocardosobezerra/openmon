@@ -790,7 +790,7 @@
   function setCardTab(t) {
     cardTab = t;
     try {
-      localStorage.setItem('openmon.cardTab', t);
+      if (t !== 'more') localStorage.setItem('openmon.cardTab', t);
     } catch {}
     renderCard();
   }
@@ -877,6 +877,8 @@
       b.setAttribute('aria-selected', String(id === tab));
     }
     for (const sec of card.querySelectorAll('.tab-body')) sec.hidden = sec.dataset.tab !== tab;
+    $('card-more').setAttribute('aria-pressed', String(tab === 'more'));
+    if (tab === 'more') renderMore();
 
     // Agents.
     const list = $('sessions');
@@ -892,7 +894,18 @@
         li.title = tr('session.jump');
       }
       const detail = x.state === 'attention' ? trDetail(x.detail) || tr('session.needsYou') : x.state === 'working' ? trDetail(x.detail) || tr('session.working') : tr(x.state === 'done' ? 'session.done' : 'session.idle');
-      li.append(el('i', 'dot'), el('b', '', x.label), el('span', '', detail), el('em', 'go', demo ? '' : x.state === 'attention' ? tr('session.go') : '↗'));
+      li.append(el('i', 'dot'), el('b', '', x.label), el('span', '', detail));
+      // With more than one Openmon on screen: who follows this conversation.
+      if (!demo && onScreen.length > 1) {
+        const own = owners[x.id];
+        const who = own && onScreen.find((p) => p.id === own.pet);
+        const b = el('button', `owner${own && own.pinned ? ' pinned' : ''}`, `${own && own.pinned ? '📌 ' : ''}${who ? who.name : tr('follow.auto')}`);
+        b.type = 'button';
+        b.dataset.owner = x.id;
+        b.title = tr('follow.help');
+        li.appendChild(b);
+      } else li.appendChild(el('i', ''));
+      li.append(el('em', 'go', demo ? '' : x.state === 'attention' ? tr('session.go') : '↗'));
       list.appendChild(li);
       // A permission the pet can answer: Allow / Deny on the row itself.
       const req = permissions.find((p) => p.session === x.id);
@@ -1002,7 +1015,23 @@
     return { pose: s ? poseOf[s.state] : mine.length ? 'idle' : 'sleep', focus: s ? { id: s.id, label: s.label, detail: s.detail, since: 0 } : null, sessions: mine, counts: {}, family: null };
   }
 
+  // Who is on screen and which pet follows each conversation (for the
+  // "follows" button on the Agents rows).
+  let onScreen = [];
+  let owners = {};
+  function noteTeam(msg) {
+    owners = msg.owners || {};
+    const members = (msg.party && msg.party.members) || [];
+    const main = members.find((m) => m.active);
+    const name = (m) => m.nickname || m.name;
+    onScreen = [
+      ...(main ? [{ id: main.id, name: name(main) }] : []),
+      ...Object.entries(msg.companions || {}).map(([id, c]) => ({ id, name: c.nickname || c.name })),
+    ];
+  }
+
   function onState(msg) {
+    noteTeam(msg);
     if (companionId) {
       const c = msg.companions && msg.companions[companionId];
       if (!c) return;
@@ -1323,6 +1352,7 @@
   // dragging the pet. A waiting agent opens it on the Agents tab.
   function setHover(on, tab = null) {
     if (on && !hovering) {
+      if (cardTab === 'more') cardTab = 'agents';
       const waiting = (live.sessions || []).some((x) => x.state === 'attention');
       if (tab || waiting) cardTab = tab || 'agents';
     } else if (on && tab) cardTab = tab;
@@ -1370,8 +1400,52 @@
     if (e.key === 'Escape' && hovering) setHover(false);
   });
 
-  // "More": the menu with every page, focus, quiet mode and Settings.
-  $('card-more').addEventListener('click', () => (desktop ? desktop.menu() : openPage('settings')));
+  // "More" opens a panel inside the card: the other pages, focus and quiet
+  // mode. A second click goes back to the tab you were on.
+  let tabBeforeMore = 'agents';
+  $('card-more').addEventListener('click', () => {
+    if (cardTab === 'more') return setCardTab(tabBeforeMore);
+    tabBeforeMore = cardTab;
+    setCardTab('more');
+  });
+  function renderMore() {
+    const pages = $('more-pages');
+    pages.textContent = '';
+    for (const [page, label] of [['dex', 'Opendex'], ['card', tr('nav.card')], ['help', tr('nav.help')], ['settings', tr('card.settings')]]) {
+      const b = el('button', 'btn sm', label);
+      b.type = 'button';
+      b.onclick = () => openPage(page);
+      pages.appendChild(b);
+    }
+    const until = (ms) => new Date(ms).toLocaleTimeString(window.OpenmonI18n.lang, { hour: '2-digit', minute: '2-digit' });
+    const mode = (box, name, active, untilMs, choices, key) => {
+      box.textContent = '';
+      box.appendChild(el('b', '', name));
+      const set = (minutes) => post('/api/config', { [key]: minutes }).then(() => setTimeout(renderCard, 200));
+      if (active) {
+        box.appendChild(el('span', 'on', tr('more.until', { t: until(untilMs) })));
+        const end = el('button', 'btn sm', tr('more.end'));
+        end.type = 'button';
+        end.onclick = () => set(0);
+        box.appendChild(end);
+        return;
+      }
+      for (const [label, minutes] of choices) {
+        const b = el('button', 'btn sm', label);
+        b.type = 'button';
+        b.onclick = () => set(minutes);
+        box.appendChild(b);
+      }
+    };
+    const tomorrow = () => {
+      const d = new Date();
+      d.setHours(24, 0, 0, 0);
+      return Math.ceil((d - Date.now()) / 60000) + 8 * 60;
+    };
+    mode($('more-focus'), tr('more.focus'), config.focus, config.focusUntil, [['25 min', 25], ['50 min', 50], ['90 min', 90]], 'focusMinutes');
+    mode($('more-quiet'), tr('more.quiet'), config.quiet, config.quietUntil, [['30 min', 30], ['1 h', 60], [tr('more.tomorrow'), tomorrow()]], 'quietMinutes');
+  }
+  $('card-party').addEventListener('click', () => openPage('party'));
   $('badge').addEventListener('click', () => setHover(!(hovering && cardTab === 'agents'), 'agents'));
   $('card-close').addEventListener('click', () => setHover(false));
   $('card-tabs').addEventListener('click', (e) => {
@@ -1402,6 +1476,16 @@
       post('/api/permission/decide', { id: answer.dataset.perm, decision: answer.dataset.decision });
       permissions = permissions.filter((p) => p.id !== answer.dataset.perm);
       renderCard();
+      return;
+    }
+    // The follows button cycles: automatic, then each pet on screen (pinned).
+    const owner = e.target.closest && e.target.closest('[data-owner]');
+    if (owner) {
+      const own = owners[owner.dataset.owner];
+      const ids = [null, ...onScreen.map((p) => p.id)];
+      const at = own && own.pinned ? ids.indexOf(own.pet) : 0;
+      const next = ids[(at + 1) % ids.length];
+      post('/api/follow', { session: owner.dataset.owner, pet: next });
       return;
     }
     const li = e.target.closest('li.jump');
@@ -1499,6 +1583,7 @@
   $('lbl-powers').textContent = tr('act.powers');
   $('lbl-bag').textContent = tr('act.bag');
   $('lbl-more').textContent = tr('act.more');
+  $('lbl-party').textContent = tr('act.party');
   function openPowers() {
     if (desktop && desktop.openPowers) desktop.openPowers();
     else window.open('/powers.html', '_blank');

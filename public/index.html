@@ -36,12 +36,18 @@
         <div id="card-wait" class="card-wait"></div>
         <ul id="missions" class="missions"></ul>
       </section>
+      <section class="tab-body more-panel" data-tab="more" hidden>
+        <div class="more-pages" id="more-pages"></div>
+        <div class="more-row" id="more-focus"></div>
+        <div class="more-row" id="more-quiet"></div>
+      </section>
       <section class="tab-body" data-tab="stats" hidden>
         <p id="stat-info" class="stat-info"></p>
         <div id="stats" class="stats"></div>
       </section>
       <footer class="card-actions">
         <button id="card-powers" class="btn primary sm" type="button"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg><span id="lbl-powers"></span></button>
+        <button id="card-party" class="btn sm" type="button"><span id="lbl-party"></span></button>
         <button id="card-bag" class="btn sm" type="button"><span id="lbl-bag"></span></button>
         <button id="card-more" class="btn sm" type="button"><span id="lbl-more"></span></button>
       </footer>

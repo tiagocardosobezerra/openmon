@@ -138,7 +138,7 @@
 <rect class="a xp fl" x="676" y="370" width="160" height="12" rx="6" fill="#7c6cf2"/>
 <g class="a fj"><rect x="850.0" y="362.0" width="63.2" height="28.0" rx="14.0" fill="#ff9f43" stroke="#2a2140" stroke-width="2"/><text x="881.6" y="381.0" text-anchor="middle" class="f" font-size="14" font-weight="700" fill="#2a2140">Craft</text></g>
 <rect x="662" y="414" width="272" height="132" rx="14" fill="#251d3d" stroke="#3a2f5c" stroke-width="2"/>
-<text x="676" y="438" class="f" font-size="15" font-weight="600" fill="#fffdf7">Powers</text>
+<text x="676" y="438" class="f" font-size="15" font-weight="600" fill="#fffdf7">Skills</text>
 <circle cx="688" cy="457" r="9" fill="#2f2650" stroke="#5a4c8a" stroke-width="2"/>
 <g class="a pw0"><circle cx="688" cy="457" r="9" fill="#5bd18b" stroke="#2a2140" stroke-width="2"/><path d="M684 457 l3 3 l5 -6" fill="none" stroke="#2a2140" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></g>
 <text x="706" y="462" class="f" font-size="16" font-weight="500" fill="#d9d2ff">Forge log</text>

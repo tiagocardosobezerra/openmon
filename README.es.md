@@ -28,7 +28,7 @@ Los avisos del agente corren con [Node.js](https://nodejs.org), que quien usa Cl
 
 **Privacidad:** todo queda en tu computadora, sin cuenta y sin internet; el aviso en el celular y GitHub son opcionales.
 
-Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 40 formas según el trabajo del agente. Tipos, objetos, accesorios, formas regionales, legendarios, poderes y misiones están en [docs/GAME.es.md](docs/GAME.es.md).
+Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 40 formas según el trabajo del agente. Tipos, objetos, accesorios, formas regionales, legendarios, habilidades y misiones están en [docs/GAME.es.md](docs/GAME.es.md).
 
 ## Más de lo que hace
 
@@ -191,7 +191,7 @@ El servidor solo escucha en `127.0.0.1` y rechaza pedidos de otras páginas web 
 
 1. **El agente avisa.** Claude Code, Gemini CLI, Cursor, OpenCode y Aider ya avisan cada paso que dan (hooks). Openmon solo escucha, sin bloquear nada.
 2. **Se vuelve señal.** Un servidor local en `127.0.0.1:4747` convierte cada aviso en una señal simple: herramienta usada, prueba en verde o en rojo, "te necesita".
-3. **La mascota decide.** Elige la pose, gana experiencia en el tipo de trabajo correcto y anota lo que hizo el agente en los Poderes.
+3. **La mascota decide.** Elige la pose, gana experiencia en el tipo de trabajo correcto y anota lo que hizo el agente en las Habilidades.
 4. **Aparece en pantalla.** Todo queda en la esquina de tu pantalla. Nada sale de tu computadora (el aviso en el celular y GitHub son opcionales: uno solo envía "Tu agente te necesita", el otro guarda tu mascota en un Gist secreto de tu cuenta).
 
 ## Desarrollar

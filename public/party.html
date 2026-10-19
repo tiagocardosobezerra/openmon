@@ -21,6 +21,8 @@
   .mon .bar { width: 80%; height: 6px; margin-top: 4px; }
   .empty-slot { display: grid; place-items: center; align-content: center; gap: 6px; min-height: 250px; border: 2px dashed var(--line); border-radius: var(--r-lg); color: var(--muted); text-align: center; padding: 16px; font-size: 13px; }
   .empty-slot img { width: 104px; height: 104px; opacity: 0.9; }
+  .follow { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); width: 100%; justify-content: center; }
+  .follow select { font: inherit; color: var(--text); background: var(--surface-2); border: 1.5px solid var(--line); border-radius: var(--r-sm); padding: 2px 6px; max-width: 150px; }
   .section-title img { width: 30px; height: 30px; vertical-align: -7px; margin-right: 6px; }
   /* Project tag: the designer's plaque, a type-coloured dot with eyes and the name. */
   .ptag { display: inline-flex; align-items: center; gap: 7px; max-width: 170px; height: 34px; box-sizing: border-box; margin-top: 6px; padding: 0 10px 0 6px; border: 3px solid #2a2140; border-radius: 12px; background: #fffdf7; color: #2a2140; font: 600 14px var(--font-display); }
@@ -99,6 +101,24 @@
     bar.append(fill);
     c.append(bar);
     if (p.active || (cfg.companions || []).includes(p.id)) c.append(el('span', 'tag chip sun', tr('party.onScreen')));
+    // Which project this pet follows: automatic, or a project pinned to it.
+    if (p.place === 'party' && !p.legend) {
+      const row = el('label', 'follow');
+      row.append(el('span', '', tr('party.follows')));
+      const sel = el('select');
+      const projects = [...new Set([...data.members, ...data.box].map((m) => m.project).concat(data.upcoming.map((u) => u.project)).filter((x) => x && !x.startsWith('mystery:') && !x.startsWith('legend:')))].sort();
+      const current = (cfg.follows || {})[p.id] || '';
+      for (const [value, text] of [['', tr('party.followsAuto')], ...projects.map((x) => [x, x])]) {
+        const o = el('option', '', text);
+        o.value = value;
+        o.selected = value === current;
+        sel.append(o);
+      }
+      sel.title = tr('party.followsHelp');
+      sel.onchange = () => post('/api/follow', { pet: p.id, project: sel.value || null });
+      row.append(sel);
+      c.append(row);
+    }
     const actions = el('div', 'actions');
     if (!p.active) {
       const show = el('button', 'btn sm primary', tr('party.show'));
@@ -139,9 +159,11 @@
     const party = $('party');
     party.textContent = '';
     for (const p of data.members) party.append(card(p, data.size));
-    for (let i = data.members.length; i < data.size; i++) {
+    // One quiet card for the free places, not a wall of empty ones.
+    const free = data.size - data.members.length;
+    if (free > 0) {
       const slot = el('div', 'empty-slot');
-      slot.append(Object.assign(el('img'), { src: '/ui/slot-empty.svg', alt: '' }), el('span', '', tr('party.emptySlot')));
+      slot.append(Object.assign(el('img'), { src: '/ui/slot-empty.svg', alt: '' }), el('span', '', tr('party.emptySlots', { n: free })));
       party.append(slot);
     }
     $('party-count').textContent = `${data.members.length}/${data.size}`;

@@ -28,7 +28,7 @@ Os avisos do agente rodam com o [Node.js](https://nodejs.org), que quem usa o Cl
 
 **Privacidade:** tudo fica no seu computador, sem conta e sem internet; o aviso no celular e o GitHub são opcionais.
 
-Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 40 formas conforme o trabalho do agente. Tipos, itens, acessórios, formas regionais, lendários, poderes e missões estão em [docs/GAME.md](docs/GAME.md).
+Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 40 formas conforme o trabalho do agente. Tipos, itens, acessórios, formas regionais, lendários, habilidades e missões estão em [docs/GAME.md](docs/GAME.md).
 
 ## Mais do que ele faz
 
@@ -191,7 +191,7 @@ O servidor só escuta em `127.0.0.1` e recusa pedidos de outras páginas da web 
 
 1. **O agente avisa.** Claude Code, Gemini CLI, Cursor, OpenCode e Aider já avisam cada passo que dão (hooks). O Openmon só escuta, sem bloquear nada.
 2. **Vira sinal.** Um servidor local em `127.0.0.1:4747` transforma cada aviso em um sinal simples: ferramenta usada, teste verde ou vermelho, "precisa de você".
-3. **O pet decide.** Ele escolhe a pose, ganha experiência no tipo de trabalho certo e anota o que o agente fez nos Poderes.
+3. **O pet decide.** Ele escolhe a pose, ganha experiência no tipo de trabalho certo e anota o que o agente fez nas Habilidades.
 4. **Aparece na tela.** Tudo fica no canto da sua tela. Nada sai do seu computador (o aviso no celular e o GitHub são opcionais: um manda só "Seu agente precisa de você", o outro guarda seu pet num Gist secreto da sua conta).
 
 ## Desenvolver

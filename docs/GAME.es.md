@@ -47,6 +47,8 @@ El trabajo raro vale más, así que cualquier tipo puede ganar. Y hay un linaje 
 
 Cada proyecto en el que el agente trabaja bastante gana **su propio huevo**. Hasta 6 van en el **Equipo**; los demás esperan en la **Caja**, con 12 fondos para elegir. Hasta 3 pueden estar en pantalla a la vez: en el Equipo, usa "También en pantalla"; cada uno muestra lo que hace el agente de su proyecto. Cada uno crece solo con el trabajo de su proyecto, y la Mochila, la Opendex y las insignias son tuyas, de entrenador, y valen para todos. En la página **Equipo** eliges quién está en pantalla, o activas "Mostrar el Openmon del proyecto en el que trabaja el agente". Las carpetas temporales (la carpeta temporal del sistema o el área de borrador de una app) no cuentan como proyecto. Todo trabajo sin un Openmon propio en el Equipo (carpeta temporal, proyecto nuevo, mascota descansando en la Caja) entrena al **Openmon principal**, el de la pantalla: para entrenar un huevo, hazlo el principal. Con más de un Openmon en pantalla, cada sesión de agente sin mascota propia va a uno de ellos, el que tenga menos sesiones, y se queda con él: esa mascota gana su XP y la muestra en su tarjeta. En la Caja descansan y no ganan XP.
 
+**Quién acompaña qué.** Quién acompaña cada conversación, en este orden: 1) una conversación que fijaste en un Openmon (clic derecho → Agentes → clic en el nombre de la mascota junto a la conversación); 2) un proyecto que fijaste en un Openmon (Equipo → "Acompaña"); 3) el Openmon del propio proyecto, mientras está en el Equipo; 4) la fila: con más de uno en pantalla, cada conversación nueva va a uno de ellos, por turno. En Ajustes → Mascota puedes apagar el reparto; entonces todo queda con el principal, salvo lo que fijaste. En la Caja, las mascotas descansan y no ganan XP.
+
 **Formas regionales**: un Openmon criado sobre todo en un lenguaje evoluciona con los colores de esa región y una pequeña marca: *Llaves* (JavaScript/TypeScript), *Serpiente* (Python), *Óxido* (Rust), *Corriente* (Go), *Grano* (Java/Kotlin) y *Sostenido* (C#/.NET). La Opendex registra las que viste.
 
 ## Todos los días hay algo
@@ -57,11 +59,11 @@ Cada proyecto en el que el agente trabaja bastante gana **su propio huevo**. Has
 * **Regalo del día y racha**: una Galleta por día de uso, una Piedra de tipo cada 3 días seguidos, un Caramelo de nivel cada 7, un Amuleto de XP cada 14 y un Huevo misterioso cada 30.
 * **Opendex, insignias y Salón de la Fama**: cuando el tuyo llega a Anciano, retíralo al Salón de la Fama y empieza una nueva generación; la Mochila, la Opendex y las insignias se quedan.
 
-## Poderes: utilidades que libera la evolución
+## Habilidades: utilidades que libera la evolución
 
 Cada tipo al que evoluciona tu Openmon libera, para siempre, un panel útil sobre las sesiones del agente:
 
-| Poder | Tipo | Muestra |
+| Habilidad | Tipo | Muestra |
 |---|---|---|
 | Diario de la forja | Forja | cada archivo cambiado, cuántas veces, líneas que entraron y salieron |
 | Lista de lectura | Saber | lo que el agente leyó y buscó antes de actuar |
@@ -77,4 +79,4 @@ Cada tipo al que evoluciona tu Openmon libera, para siempre, un panel útil sobr
 
 Para todos: el **Diario** de los últimos 14 días y el **contador de espera**, cuánto tiempo te esperaron hoy tus agentes.
 
-<img width="100%" alt="Los Poderes, con el diario de los últimos 14 días" src="screens/powers.es.png" />
+<img width="100%" alt="Las Habilidades, con el diario de los últimos 14 días" src="screens/powers.es.png" />

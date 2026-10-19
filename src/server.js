@@ -108,7 +108,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25, seasons: false, companions: [] };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, followProject: false, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25, seasons: false, companions: [], shareSessions: true, follows: {} };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -176,20 +176,76 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const t = now();
     return [...sessionPet].filter(([, a]) => a.pet === id && t - a.at < SESSION_IDLE_MS).map(([s]) => s);
   }
-  function petForSession(signal) {
-    const ids = onScreenIds();
-    if (ids.length < 2 || party.petFor(real.pet, party.projectOf(signal)) !== real.pet) return null;
-    const t = now();
-    const had = sessionPet.get(signal.session);
-    let id = had && ids.includes(had.pet) ? had.pet : null;
-    if (!id) {
-      const load = (x) => sessionsOf(x).length;
-      id = ids.reduce((best, x) => (load(x) < load(best) ? x : best), ids[0]);
-    }
-    sessionPet.delete(signal.session);
-    if (signal.kind !== 'session-end') sessionPet.set(signal.session, { pet: id, at: t });
+  // Which pet follows a session, in this order:
+  //   1. a conversation you pinned to a pet (card → Agents);
+  //   2. a project you pinned to a pet (Party → "Follows");
+  //   3. the project's own pet, while it is in the Party;
+  //   4. the queue: with sharing on, new conversations go to the pets on
+  //      screen in turn (1st to the main pet, 2nd to the next one, …).
+  // With sharing off, everything else stays with the main pet.
+  const sessionPins = new Map();
+  let queueTurn = 0;
+  const inParty = (id) => id === real.pet.id || real.pet.others.some((m) => m.id === id && m.place === 'party');
+  function followerOf(project) {
+    if (!project) return null;
+    const hit = Object.entries(config.follows || {}).find(([id, p]) => p === project && inParty(id));
+    return hit ? hit[0] : null;
+  }
+  function remember(session, id, pinned) {
+    sessionPet.delete(session);
+    sessionPet.set(session, { pet: id, at: now(), pinned });
     if (sessionPet.size > 200) sessionPet.delete(sessionPet.keys().next().value);
-    return id;
+  }
+  function petForSession(signal) {
+    const ending = signal.kind === 'session-end';
+    const pin = sessionPins.get(signal.session);
+    const project = party.projectOf(signal);
+    let id = pin && inParty(pin) ? pin : followerOf(project);
+    let pinned = Boolean(id);
+    if (!id && party.petFor(real.pet, project) !== real.pet) return null;
+    if (!id) {
+      const ids = onScreenIds();
+      if (!config.shareSessions || ids.length < 2) id = real.pet.id;
+      else {
+        const had = sessionPet.get(signal.session);
+        id = had && !had.pinned && ids.includes(had.pet) ? had.pet : ids[queueTurn++ % ids.length];
+      }
+      pinned = false;
+    }
+    if (ending) {
+      sessionPet.delete(signal.session);
+      sessionPins.delete(signal.session);
+    } else remember(signal.session, id, pinned);
+    return id === real.pet.id ? null : id;
+  }
+  // Pins a conversation to a pet (or back to automatic with pet = null).
+  function pinSession(session, id) {
+    if (!session) return false;
+    if (id && !inParty(id)) return false;
+    if (id) {
+      sessionPins.set(session, id);
+      remember(session, id, true);
+    } else {
+      sessionPins.delete(session);
+      const had = sessionPet.get(session);
+      if (had) remember(session, had.pet, false);
+    }
+    pushState(true);
+    return true;
+  }
+  // Pins a project to a pet (or clears it with project = null).
+  function followProjectWith(id, project) {
+    if (!id || !inParty(id)) return false;
+    const follows = Object.fromEntries(Object.entries(config.follows || {}).filter(([pid, p]) => pid !== id && p !== project));
+    if (project) follows[id] = String(project).slice(0, 120);
+    setConfig({ follows });
+    return true;
+  }
+  function sessionOwners() {
+    const out = {};
+    const t = now();
+    for (const [sid, a] of sessionPet) if (t - a.at < SESSION_IDLE_MS) out[sid] = { pet: a.pet, pinned: Boolean(a.pinned) };
+    return out;
   }
 
   // Puts a team member on screen as the main pet. A companion swaps places
@@ -221,6 +277,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       config: publicConfig(),
       restoreOffer: restoreOffer ? restoreOffer.summary : null,
       cloud: cloudView(),
+      owners: world === real ? sessionOwners() : {},
       permissions: permissionView(),
     });
   }
@@ -751,6 +808,14 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         return json(res, 200, backups ? { dir: backups.dir, lastAt: backups.lastAt(), items: backups.list() } : { dir: null, items: [] });
       case 'POST /api/backup':
         return json(res, 200, { ok: backups ? backups.maybe(real.pet, config, true) : false });
+      case 'POST /api/follow':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          const pet = typeof body.pet === 'string' && /^[a-f0-9]{6,32}$/.test(body.pet) ? body.pet : null;
+          if (typeof body.session === 'string') return json(res, 200, { ok: pinSession(body.session.slice(0, 120), pet) });
+          if (pet && 'project' in body) return json(res, 200, { ok: followProjectWith(pet, typeof body.project === 'string' && body.project ? body.project : null) });
+          res.writeHead(400).end();
+        });
       case 'GET /api/cloud':
         return json(res, 200, cloudView() || { off: true });
       case 'POST /api/cloud/connect':
@@ -826,6 +891,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           // Other Openmons of the team standing next to the main one (2 at most).
           if (Array.isArray(body.companions)) patch.companions = [...new Set(body.companions.filter((id) => typeof id === 'string' && /^[a-f0-9]{6,32}$/.test(id)))].slice(0, MAX_COMPANIONS);
           if (typeof body.followProject === 'boolean') patch.followProject = body.followProject;
+          if (typeof body.shareSessions === 'boolean') patch.shareSessions = body.shareSessions;
           if (typeof body.present === 'boolean') patch.present = body.present;
           if (typeof body.lang === 'string' && /^(en|pt-BR|es)$/.test(body.lang)) patch.lang = body.lang;
           if ([0, 50, 90].includes(body.breakEvery)) patch.breakEvery = body.breakEvery;
