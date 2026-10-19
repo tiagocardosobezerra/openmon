@@ -181,8 +181,25 @@ function uninstallCursor({ settingsPath = cursorHooksPath() } = {}) {
   return { settingsPath, removed };
 }
 
+// OpenCode loads plugins from ~/.config/opencode/plugins (all systems).
+function openCodePluginPath() {
+  return path.join(os.homedir(), '.config', 'opencode', 'plugins', 'openmon.js');
+}
+
+function installOpenCode({ pluginPath = openCodePluginPath() } = {}) {
+  fs.mkdirSync(path.dirname(pluginPath), { recursive: true });
+  fs.copyFileSync(path.join(__dirname, 'opencode-plugin.js').replace(`app.asar${path.sep}`, `app.asar.unpacked${path.sep}`), pluginPath);
+  return { settingsPath: pluginPath };
+}
+
+function uninstallOpenCode({ pluginPath = openCodePluginPath() } = {}) {
+  if (!fs.existsSync(pluginPath)) return { settingsPath: pluginPath, removed: 0 };
+  fs.rmSync(pluginPath);
+  return { settingsPath: pluginPath, removed: 1 };
+}
+
 function aiderLine() {
   return `aider --notifications --notifications-command "${hookCommand()} --aider"`;
 }
 
-module.exports = { installGemini, installCursor, uninstallCursor, geminiSettingsPath, cursorHooksPath, aiderLine, GEMINI_HOOK_EVENTS, CURSOR_HOOK_EVENTS, install, uninstall, isInstalled, hasPermissionHook, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT };
+module.exports = { installOpenCode, uninstallOpenCode, openCodePluginPath, installGemini, installCursor, uninstallCursor, geminiSettingsPath, cursorHooksPath, aiderLine, GEMINI_HOOK_EVENTS, CURSOR_HOOK_EVENTS, install, uninstall, isInstalled, hasPermissionHook, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT };

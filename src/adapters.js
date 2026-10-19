@@ -6,6 +6,7 @@
 //   Gemini CLI  https://github.com/google-gemini/gemini-cli/blob/main/docs/hooks/reference.md
 //   Cursor      https://cursor.com/docs/agent/hooks
 //   Aider       --notifications-command (runs when Aider waits for you)
+//   OpenCode    src/opencode-plugin.js already sends the Claude Code shape
 
 const GEMINI_EVENTS = {
   BeforeTool: 'PreToolUse',

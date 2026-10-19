@@ -78,7 +78,8 @@
     "asarUnpack": [
       "src/hook.js",
       "src/focus.js",
-      "src/adapters.js"
+      "src/adapters.js",
+      "src/opencode-plugin.js"
     ],
     "win": {
       "target": [

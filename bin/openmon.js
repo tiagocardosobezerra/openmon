@@ -37,7 +37,7 @@ const HELP = `
   openmon autostart on|off|status   open the pet when you log in
   openmon serve        daemon only; open ${base}/ in a browser or add it to OBS
   openmon codex        print the line that connects Codex CLI
-  openmon install --agent gemini|cursor|aider   connect Gemini CLI, Cursor or Aider
+  openmon install --agent gemini|cursor|opencode|aider   connect another agent
   openmon status       is the daemon running? are hooks installed?
   openmon uninstall    remove our hooks (your pet is kept in ~/.openmon)
 
@@ -251,6 +251,10 @@ async function main() {
     case 'install': {
       const agent = option('agent');
       if (agent === 'aider') return console.log(`Start Aider with:\n\n  ${installer.aiderLine()}\n`);
+      if (agent === 'opencode') {
+        const r = installer.installOpenCode();
+        return console.log(`Plugin added: ${r.settingsPath}\nNew OpenCode sessions will feed your Openmon.`);
+      }
       if (agent === 'gemini' || agent === 'cursor') {
         const r = agent === 'gemini' ? installer.installGemini() : installer.installCursor();
         console.log(`Hooks added to ${r.settingsPath}`);
@@ -296,6 +300,10 @@ async function main() {
     }
 
     case 'uninstall': {
+      if (option('agent') === 'opencode') {
+        const r = installer.uninstallOpenCode();
+        return console.log(r.removed ? `Removed ${r.settingsPath}.` : 'No Openmon plugin found for OpenCode.');
+      }
       if (option('agent') === 'gemini') {
         const r = installer.uninstall({ settingsPath: installer.geminiSettingsPath() });
         return console.log(r.removed ? `Removed ${r.removed} Openmon hooks from ${r.settingsPath}.` : 'No Openmon hooks found for Gemini CLI.');

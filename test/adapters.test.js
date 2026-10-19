@@ -66,3 +66,33 @@ test('installs into Gemini CLI settings and Cursor hooks.json, keeping what was 
   assert.equal(installer.uninstallCursor({ settingsPath: cursor }).removed, installer.CURSOR_HOOK_EVENTS.length);
   assert.deepEqual(JSON.parse(fs.readFileSync(cursor, 'utf8')).hooks.stop, [{ command: './audit.sh' }]);
 });
+
+test('OpenCode: the plugin sends Claude Code-shaped events and never throws', async () => {
+  const sent = [];
+  global.fetch = async (url, opts) => {
+    sent.push(JSON.parse(opts.body));
+    return { ok: true };
+  };
+  const { Openmon } = await import('../src/opencode-plugin.js');
+  const hooks = await Openmon({ directory: '/w/shop' });
+  await hooks['tool.execute.before']({ tool: 'read', sessionID: 's9' }, { args: { filePath: 'a.ts' } });
+  await hooks.event({ event: { type: 'session.idle', properties: { sessionID: 's9' } } });
+  await hooks.event({ event: { type: 'permission.asked', properties: {} } });
+  await hooks['tool.execute.after'](undefined, undefined);
+  assert.equal(sent[0].tool_name, 'Read');
+  assert.equal(sent[0].tool_input.file_path, 'a.ts');
+  assert.equal(classify(sent[0]).label, 'shop');
+  assert.equal(classify(sent[0]).agent, 'opencode');
+  assert.equal(classify(sent[1]).kind, 'turn-end');
+  assert.equal(classify(sent[2]).kind, 'attention');
+  delete global.fetch;
+});
+
+test('OpenCode plugin installs and uninstalls', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-oc-'));
+  const pluginPath = path.join(dir, 'plugins', 'openmon.js');
+  installer.installOpenCode({ pluginPath });
+  assert.ok(fs.readFileSync(pluginPath, 'utf8').includes('export const Openmon'));
+  assert.equal(installer.uninstallOpenCode({ pluginPath }).removed, 1);
+  assert.ok(!fs.existsSync(pluginPath));
+});
