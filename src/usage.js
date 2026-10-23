@@ -10,6 +10,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { costOf } = require('./pricing');
 
 // Only conversation files inside a .claude folder, never any other path a
 // local process might send.
@@ -41,7 +42,7 @@ function createUsage({ maxFiles = 50 } = {}) {
       entry.offset = 0;
       entry.rest = '';
     }
-    if (size === entry.offset) return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+    if (size === entry.offset) return { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, usd: 0 };
     const fd = fs.openSync(file, 'r');
     const buf = Buffer.alloc(Math.min(size - entry.offset, 64 * 1024 * 1024));
     try {
@@ -53,7 +54,7 @@ function createUsage({ maxFiles = 50 } = {}) {
     const text = entry.rest + buf.toString('utf8');
     const lines = text.split('\n');
     entry.rest = lines.pop();
-    const delta = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+    const delta = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, usd: 0 };
     for (const line of lines) {
       if (!line.includes('"usage"')) continue;
       let row;
@@ -67,7 +68,13 @@ function createUsage({ maxFiles = 50 } = {}) {
       if (!u || !msg.id) continue;
       const now = { input: u.input_tokens || 0, output: u.output_tokens || 0, cacheRead: u.cache_read_input_tokens || 0, cacheWrite: u.cache_creation_input_tokens || 0 };
       const before = entry.seen.get(msg.id) || { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
-      for (const k of Object.keys(delta)) delta[k] += Math.max(0, now[k] - before[k]);
+      const grew = {};
+      for (const k of ['input', 'output', 'cacheRead', 'cacheWrite']) {
+        grew[k] = Math.max(0, now[k] - before[k]);
+        delta[k] += grew[k];
+      }
+      // At list price for the model that answered (an estimate; see pricing.js).
+      delta.usd += costOf(msg.model, grew) || 0;
       entry.seen.set(msg.id, { input: Math.max(now.input, before.input), output: Math.max(now.output, before.output), cacheRead: Math.max(now.cacheRead, before.cacheRead), cacheWrite: Math.max(now.cacheWrite, before.cacheWrite) });
     }
     return delta;

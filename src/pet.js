@@ -249,7 +249,7 @@ function view(pet) {
     leaning: pet.stage === 'egg' ? null : topStats(pet.stats)[0],
     progress: progress(pet),
     counters: pet.counters,
-    today: { tokens: pet.daily.tokens || 0, waitMs: pet.daily.waitMs || 0, waits: pet.daily.waits || 0, fastestMs: pet.daily.fastestMs ?? null, day: pet.daily.day, missions: missionView(pet), perfect: Boolean(pet.daily.perfect) },
+    today: { tokens: pet.daily.tokens || 0, usd: pet.daily.usd || 0, waitMs: pet.daily.waitMs || 0, waits: pet.daily.waits || 0, fastestMs: pet.daily.fastestMs ?? null, day: pet.daily.day, missions: missionView(pet), perfect: Boolean(pet.daily.perfect) },
     achievements: pet.achievements,
     history: pet.history,
     hallOfFame: pet.hallOfFame || [],
@@ -397,6 +397,14 @@ function addTokens(pet, delta, now, project = null, limit = 0) {
     pet.daily.tokensBy = pet.daily.tokensBy || {};
     pet.daily.tokensBy[project] = (pet.daily.tokensBy[project] || 0) + n;
   }
+  // What it would cost at API list prices (an estimate).
+  if (delta.usd > 0) {
+    pet.daily.usd = (pet.daily.usd || 0) + delta.usd;
+    if (project) {
+      pet.daily.usdBy = pet.daily.usdBy || {};
+      pet.daily.usdBy[project] = (pet.daily.usdBy[project] || 0) + delta.usd;
+    }
+  }
   if (limit > 0 && before < limit && pet.daily.tokens >= limit) events.push({ type: 'token-limit', tokens: pet.daily.tokens, limit });
   return events;
 }
@@ -520,6 +528,8 @@ function journalEntry(d) {
     fixes: d.fixes || 0,
     agentMs: { ...(d.agentMs || {}) },
     tokensBy: { ...(d.tokensBy || {}) },
+    usd: d.usd || 0,
+    usdBy: { ...(d.usdBy || {}) },
     families: { ...(d.families || {}) },
     projects: { ...(d.projects || {}) },
   };

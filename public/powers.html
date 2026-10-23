@@ -118,6 +118,8 @@
     for (const k of kids.flat()) if (k != null) e.append(k instanceof Node ? k : document.createTextNode(String(k)));
     return e;
   };
+  // Dollars at API list price: cents when small, whole dollars when large.
+  const money = (usd) => new Intl.NumberFormat(lang, { style: 'currency', currency: 'USD', maximumFractionDigits: usd < 10 ? 2 : 0 }).format(usd);
   const dur = (ms) => {
     if (ms == null) return '–';
     const s = Math.round(ms / 1000);
@@ -381,6 +383,7 @@
       h('div', {}, h('b', {}, dur(sum('waitMs'))), h('small', {}, tr('journal.weekWait'))),
       // Some agents report no tokens: a dash, not a zero that looks like a bug.
       h('div', { title: tr('today.tokensHelp') }, h('b', {}, sum('tokens') ? new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 }).format(sum('tokens')) : tr('journal.noData')), h('small', {}, tr('journal.weekTokens'))),
+      h('div', { title: tr('cost.help') }, h('b', {}, sum('usd') ? money(sum('usd')) : tr('journal.noData')), h('small', {}, tr('journal.weekCost'))),
       h('div', {}, h('b', { style: 'font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, top ? top[0] : '–'), h('small', {}, tr('journal.weekTop'))));
     // A ready-to-paste update for your daily stand-up.
     const standup = h('button', { class: 'btn sm', style: 'margin-top:10px', title: tr('standup.copyHelp') }, tr('standup.copy'));
@@ -400,13 +403,14 @@
       for (const [p, n] of Object.entries(e.projects || {})) (byProject[p] = byProject[p] || { actions: 0, ms: 0, tokens: 0 }).actions += n;
       for (const [p, ms] of Object.entries(e.agentMs || {})) (byProject[p] = byProject[p] || { actions: 0, ms: 0, tokens: 0 }).ms += ms;
       for (const [p, n] of Object.entries(e.tokensBy || {})) (byProject[p] = byProject[p] || { actions: 0, ms: 0, tokens: 0 }).tokens += n;
+      for (const [p, n] of Object.entries(e.usdBy || {})) (byProject[p] = byProject[p] || { actions: 0, ms: 0, tokens: 0 }).usd = ((byProject[p] || {}).usd || 0) + n;
     }
     const compact = new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 });
     const rows = Object.entries(byProject).sort((a, b) => b[1].ms - a[1].ms || b[1].actions - a[1].actions).slice(0, 8);
     const projTable = rows.length
       ? h('div', { class: 'by-project' }, h('h4', {}, tr('journal.byProject')), h('table', {},
-          h('tr', {}, h('th', {}, tr('journal.colProject')), h('th', { class: 'n' }, tr('journal.colActions')), h('th', { class: 'n' }, tr('journal.colTime')), h('th', { class: 'n' }, tr('journal.colTokens'))),
-          rows.map(([p, v]) => h('tr', {}, h('td', {}, h('code', {}, p)), h('td', { class: 'n' }, String(v.actions)), h('td', { class: 'n' }, v.ms ? dur(v.ms) : '–'), h('td', { class: 'n' }, v.tokens ? compact.format(v.tokens) : '–')))))
+          h('tr', {}, h('th', {}, tr('journal.colProject')), h('th', { class: 'n' }, tr('journal.colActions')), h('th', { class: 'n' }, tr('journal.colTime')), h('th', { class: 'n' }, tr('journal.colTokens')), h('th', { class: 'n', title: tr('cost.help') }, tr('journal.colCost'))),
+          rows.map(([p, v]) => h('tr', {}, h('td', {}, h('code', {}, p)), h('td', { class: 'n' }, String(v.actions)), h('td', { class: 'n' }, v.ms ? dur(v.ms) : '–'), h('td', { class: 'n' }, v.tokens ? compact.format(v.tokens) : '–'), h('td', { class: 'n' }, v.usd ? money(v.usd) : '–')))))
       : null;
     box.append(head, chart, labels, legend, detail, totals, ...(projTable ? [projTable] : []), standup, csv);
   }

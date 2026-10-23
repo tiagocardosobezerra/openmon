@@ -985,7 +985,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'GET /api/powers':
         {
           const v = pet.view(world.pet);
-          if (config.present) return json(res, 200, { unlocked: unlockedPowers(world.pet), featured: v.featured, today: v.today, journal: v.journal.map((e) => ({ ...e, projects: {}, agentMs: {}, tokensBy: {} })), streak: v.streak, sessions: [], present: true });
+          if (config.present) return json(res, 200, { unlocked: unlockedPowers(world.pet), featured: v.featured, today: v.today, journal: v.journal.map((e) => ({ ...e, projects: {}, agentMs: {}, tokensBy: {}, usdBy: {} })), streak: v.streak, sessions: [], present: true });
           return json(res, 200, { unlocked: unlockedPowers(world.pet), featured: v.featured, today: v.today, journal: v.journal, streak: v.streak, sessions: powers.view() });
         }
       case 'GET /api/playground':
