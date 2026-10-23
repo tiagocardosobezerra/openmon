@@ -137,7 +137,8 @@ body.page {
 body.page * { box-sizing: border-box; }
 .page h1, .page h2, .page h3, .display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.005em; }
 
-/* Top bar with the same navigation on every page. */
+/* Top bar with the same navigation on every page. The brand stays at the
+   left edge and the places at the right edge, whatever the window width. */
 .topbar {
   position: sticky;
   top: 0;
@@ -145,7 +146,7 @@ body.page * { box-sizing: border-box; }
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 10px max(16px, calc((100vw - 1060px) / 2));
+  padding: 10px 16px;
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(10px);
   border-bottom: var(--bw) solid var(--line);
