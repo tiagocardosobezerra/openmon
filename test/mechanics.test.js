@@ -14,6 +14,7 @@ const http = require('node:http');
 process.env.OPENMON_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-test-home-'));
 const pet = require('../src/pet');
 const party = require('../src/party');
+const wild = require('../src/wild');
 const species = require('../src/species');
 const { createDaemon } = require('../src/server');
 const { createStore } = require('../src/store');
@@ -49,8 +50,8 @@ function step(p, now = T0) {
 
 // --- items -----------------------------------------------------------------
 
-test('there are 17 items: 5 to use, the Steady stone and 11 type stones', () => {
-  assert.equal(Object.keys(ITEMS).length, 17);
+test('there are 18 items: 5 to use, the Steady stone, 11 type stones and the Openball', () => {
+  assert.equal(Object.keys(ITEMS).length, 18);
   assert.equal(Object.values(ITEMS).filter((i) => i.stone).length, 11);
   for (const s of STATS) assert.equal(ITEMS[`stone-${s}`].stone, s);
 });
@@ -473,7 +474,30 @@ const ACHIEVE = {
     party.applySignal(root, tool('app'), {}, T0);
     return root;
   },
+  'first-catch': () => catchSome(1),
+  'catch-shiny': () => catchSome(1, true),
+  'catch-10': () => catchSome(10),
+  'wild-all': () => {
+    const root = party.ensure(mk());
+    species.STATS.forEach((s, i) => wild.roll(root, done(s), T0 + i * DAY, seq(0, 0, 0.9)));
+    return root;
+  },
 };
+
+// Fixed dice for the wild encounters: each call takes the next value.
+function seq(...values) {
+  let i = 0;
+  return () => values[i++ % values.length];
+}
+function catchSome(n, shiny = false) {
+  const root = party.ensure(mk());
+  root.bag.openball = n;
+  for (let i = 0; i < n; i++) {
+    wild.roll(root, done('craft'), T0 + i * DAY, seq(0, 0, shiny ? 0 : 0.9));
+    wild.throwBall(root, T0 + i * DAY + 1000, party.addMember, seq(0));
+  }
+  return root;
+}
 
 test('every achievement has a path that unlocks it', () => {
   assert.deepEqual(Object.keys(ACHIEVE).sort(), Object.keys(ACHIEVEMENTS).sort());
@@ -520,7 +544,7 @@ const WEAR = {
   pearls: (p) => (p.counters.perfectDays = 7),
   cape: (p) => (p.legends = { mergeon: T0 }),
   bell: (p) => (p.counters.pets = 100),
-  backpack: (p) => (p.bagSeen = { snack: true, candy: true, 'friend-candy': true, 'xp-charm': true, 'mystery-egg': true, everstone: true, 'stone-swarm': true }),
+  backpack: (p) => (p.bagSeen = { snack: true, candy: true, 'friend-candy': true, 'xp-charm': true, 'mystery-egg': true, everstone: true, 'stone-swarm': true, openball: true }),
 };
 
 test('every accessory has a path that unlocks it, and none comes for free', () => {

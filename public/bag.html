@@ -113,6 +113,14 @@
       card.append(el('p', '', text));
     }
     let btn;
+    // The Openball is thrown from the pet's bubble when a wild one shows up.
+    if (id === 'openball') {
+      if (!n) {
+        card.classList.add('none');
+        card.append(el('span', 'none-note', tr('bag.none')));
+      }
+      return card;
+    }
     if (HELD(id)) {
       btn = el('button', `btn sm${holding ? ' brand' : ''}`, holding ? tr('bag.letGo') : tr('bag.hold'));
       // Legendaries and Elders never evolve again, so they hold nothing.
@@ -144,7 +152,7 @@
   function renderItems() {
     const box = $('items');
     box.textContent = '';
-    for (const id of ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone']) box.append(itemCard(id, false));
+    for (const id of ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone', 'openball']) box.append(itemCard(id, false));
     const stones = $('stones');
     stones.textContent = '';
     for (const t of TYPES) stones.append(itemCard(`stone-${t}`, true));

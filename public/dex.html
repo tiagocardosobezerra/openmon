@@ -131,7 +131,9 @@
     const grid = document.getElementById('grid');
     let seen = 0;
     for (const entry of species.dex) {
-      const known = revealAll || Boolean(dex[entry.key]);
+      // A Juvenile met in the wild counts as seen, even if it got away.
+      const metWild = !dex[entry.key] && entry.stage === 'juvenile' && pet && pet.wildSeen && pet.wildSeen[entry.lineage];
+      const known = revealAll || Boolean(dex[entry.key]) || Boolean(metWild);
       if (known) seen++;
       // ?shiny previews the shiny colours (dev aid, like ?all).
       // Legendaries draw at Elder size.
@@ -142,7 +144,7 @@
       el.className = `cell${known ? '' : ' unseen'}${current ? ' current' : ''}`;
       el.innerHTML = `<span class="no">${pad(entry.no)}</span>${current ? `<span class="you">${tr('dex.you')}</span>` : ''}<canvas></canvas><div class="name"></div><div class="sub"></div>`;
       el.querySelector('.name').textContent = known ? entry.name : '???';
-      el.querySelector('.sub').textContent = known ? (entry.lineage ? `${lineageName(entry.lineage)} · ${tr(`stage.${entry.stage}`)}` : tr(`stage.${entry.stage}`)) : entry.hidden ? tr('dex.hiddenForm') : entry.lineage ? tr('dex.growsFrom', { work: WORK(entry.lineage) }) : '';
+      el.querySelector('.sub').textContent = metWild && !revealAll ? tr('dex.wildSeen') : known ? (entry.lineage ? `${lineageName(entry.lineage)} · ${tr(`stage.${entry.stage}`)}` : tr(`stage.${entry.stage}`)) : entry.hidden ? tr('dex.hiddenForm') : entry.lineage ? tr('dex.growsFrom', { work: WORK(entry.lineage) }) : '';
       el.addEventListener('click', () => show(entry, spec, known));
       grid.appendChild(el);
       cells.push({ canvas: el.querySelector('canvas'), spec, known, offset: entry.no * 0.7 });

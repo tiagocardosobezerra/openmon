@@ -736,3 +736,31 @@ test('a brand-new trainer can talk to the agent through the egg, then pick a sta
     await daemon.close();
   }
 });
+
+test('a wild Openmon on screen: shown in the state, caught or let go through the API; off in Settings means none', async () => {
+  const party = require('../src/party');
+  const petMod = require('../src/pet');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-home-'));
+  const store = createStore({ dir, delay: 10 });
+  const root = party.ensure(petMod.createPet(Date.now()));
+  root.bag.openball = 50;
+  root.wild = { lineage: 'roam', shiny: false, name: 'Wisp', at: Date.now(), until: Date.now() + 600000, tries: 0 };
+  store.save(root);
+  store.flush();
+  const daemon = createDaemon({ port: 0, store, hooksInstalled: () => true, bundledArt: null, configFile: path.join(dir, 'config.json'), focus: createFocus({ driver: null }) });
+  const port = await daemon.listen();
+  try {
+    assert.equal(daemon.state().config.wild, true);
+    assert.equal(daemon.state().pet.wild.name, 'Wisp');
+    // Throw until it is caught or runs off: either way it leaves the screen.
+    let events = [];
+    for (let i = 0; i < 50 && daemon.state().pet.wild; i++) events = JSON.parse((await request(port, 'POST', '/api/wild/throw')).body).events;
+    assert.equal(daemon.state().pet.wild, null);
+    assert.ok(events.some((e) => e.type === 'wild-caught' || e.type === 'wild-fled'));
+    assert.deepEqual(JSON.parse((await request(port, 'POST', '/api/wild/release')).body).events, []);
+    await request(port, 'POST', '/api/config', { body: JSON.stringify({ wild: false }), headers: { 'Content-Type': 'application/json' } });
+    assert.equal(daemon.state().config.wild, false);
+  } finally {
+    await daemon.close();
+  }
+});

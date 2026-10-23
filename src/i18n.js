@@ -28,6 +28,10 @@ const PT_BR = {
     shiny: { title: 'Brilhante!', text: 'Nasceu um Openmon brilhante, chance de 1 em 128.' },
     hidden: { title: 'Quem é esse Openmon?', text: 'Encontrou uma forma oculta.' },
     legend: { title: 'Lendário', text: 'Um Openmon lendário entrou no seu time.' },
+    'first-catch': { title: 'Peguei!', text: 'Capturou o primeiro Openmon selvagem.' },
+    'catch-shiny': { title: 'Brilhante na mão', text: 'Capturou um Openmon selvagem brilhante.' },
+    'catch-10': { title: 'Colecionador', text: 'Capturou 10 Openmons selvagens.' },
+    'wild-all': { title: 'Guia de campo', text: 'Encontrou selvagens dos 11 tipos.' },
   },
   dex: {
     egg: 'Quentinho ao toque. Escuta cada tecla e choca quando já ouviu o bastante.',
@@ -97,6 +101,10 @@ const ES = {
     shiny: { title: '¡Brillante!', text: 'Nació un Openmon brillante, una posibilidad entre 128.' },
     hidden: { title: '¿Quién es ese Openmon?', text: 'Encontraste una forma oculta.' },
     legend: { title: 'Legendario', text: 'Un Openmon legendario se unió a tu equipo.' },
+    'first-catch': { title: '¡Atrapado!', text: 'Atrapaste tu primer Openmon salvaje.' },
+    'catch-shiny': { title: 'Brillo atrapado', text: 'Atrapaste un Openmon salvaje brillante.' },
+    'catch-10': { title: 'Coleccionista', text: 'Atrapaste 10 Openmon salvajes.' },
+    'wild-all': { title: 'Guía de campo', text: 'Encontraste salvajes de los 11 tipos.' },
   },
   dex: {
     egg: 'Tibio al tacto. Escucha cada tecla y se abre cuando ya oyó lo suficiente.',

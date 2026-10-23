@@ -19,6 +19,7 @@ const { localizeSpecies } = require('./i18n');
 const { createPlayground } = require('./playground');
 const { createFocus } = require('./focus');
 const party = require('./party');
+const wild = require('./wild');
 const { createUsage } = require('./usage');
 const adapters = require('./adapters');
 const { createBackups, unwrap } = require('./backup');
@@ -132,7 +133,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, companions: [], shareSessions: true, follows: {} };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, wild: true, companions: [], shareSessions: true, follows: {} };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -358,6 +359,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // pet is a single egg.
     const events = target === real ? party.applySignal(real.pet, signal, ctx, t, petForSession(signal)) : pet.applySignal(target.pet, signal, ctx, t);
     if (target === real) events.push(...target.sessions.takeNotices());
+    // Now and then a wild Openmon shows up (never in quiet or presentation mode).
+    if (target === real) events.push(...wild.roll(real.pet, signal, t, Math.random, config.wild !== false && !config.present && !(config.quietUntil && config.quietUntil > t)));
     if (target === real) noteActivity(t);
     // Agent time per project: the gap since this session's previous event.
     if (target === real && signal.label) {
@@ -658,6 +661,16 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   }
 
   // The player picks the starter of the egg that waits for one.
+  // An Openball at the wild Openmon, or letting it go.
+  function wildAction(fn) {
+    const events = fn();
+    if (!events.length) return events;
+    persist(true);
+    pushEvents(events);
+    pushState(true);
+    return events;
+  }
+
   function chooseStarter(lineage) {
     const events = party.chooseStarter(real.pet, String(lineage || ''), now());
     if (!events.length) return events;
@@ -1102,6 +1115,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         });
       case 'POST /api/party/rename':
         return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { events: partyAction(() => party.renameMember(real.pet, String(body.id || ''), body.name)) })));
+      case 'POST /api/wild/throw':
+        return json(res, 200, { events: wildAction(() => wild.throwBall(party.ensure(real.pet), now(), party.addMember)) });
+      case 'POST /api/wild/release':
+        return json(res, 200, { events: wildAction(() => wild.release(real.pet, now())) });
       case 'POST /api/starter':
         return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { events: chooseStarter(body.lineage) })));
       case 'POST /api/lay-egg':
@@ -1136,6 +1153,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           // Turning on "answer from the pet" brings older hooks up to date.
           if (body.answerFromPet === true && hooksInstalled()) upgradeHooks();
           if (typeof body.answerFromPet === 'boolean') patch.answerFromPet = body.answerFromPet;
+          if (typeof body.wild === 'boolean') patch.wild = body.wild;
           if (typeof body.answerWaitSec === 'number' && body.answerWaitSec >= 5 && body.answerWaitSec <= 60) patch.answerWaitSec = Math.round(body.answerWaitSec);
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
           // One-time tips, remembered so they are never shown twice.

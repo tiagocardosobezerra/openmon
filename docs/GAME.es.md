@@ -33,6 +33,7 @@ El trabajo raro vale más, así que cualquier tipo puede ganar. Y hay un linaje 
 * **Rarezas**: 1 de cada 128 nace con colores brillantes (shiny), siempre con brillo y estrellitas alrededor. Cada forma tiene las 5 poses también en shiny.
 * **Línea oculta**: cuando dos tipos de trabajo empatan casi exactamente, aparece la Chimera.
 * **Legendarios**: tres, cada uno ligado a una hazaña. *Mergeon* aparece con tu primer pull request aceptado, *Aeonbyte* después de un año de Openmon y *Zeroday* después de 100 arreglos. Entran en tu Equipo y nunca evolucionan.
+* **Encuentros salvajes**: de vez en cuando (1 de cada 1.024 acciones del agente, como máximo uno al día) un Openmon salvaje aparece junto a tu mascota durante 10 minutos. Siempre es un Joven, casi siempre del tipo de la acción que lo llamó, y puede ser brillante (1 de cada 128). Lanza una *Openball* para intentar atraparlo: 3 de cada 4. Si se suelta, la mitad de las veces se queda para otro intento. Atrapado, entra en tu Equipo sin proyecto y conserva su tipo. Ganas 3 Openballs con tu primer Openmon, una por día perfecto y una cada 5 días seguidos. Se pueden desactivar en la Configuración.
 * **Forma de foco**: en un pedido largo (50 acciones o más), crece dentro de un anillo de energía hasta que el pedido termina.
 * **Apodo**: sin apodo usa el nombre de la especie. Al eclosionar, pregunta si quieres ponerle uno.
 * Nunca muere, nunca se enferma y nunca pierde lo que ganó.

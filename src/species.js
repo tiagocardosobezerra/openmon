@@ -159,6 +159,10 @@ const ACHIEVEMENTS = {
   shiny: { title: 'Shiny!', text: 'A one-in-128 shiny Openmon hatched.' },
   hidden: { title: "Who's that Openmon?", text: 'Found a hidden form.', secret: true },
   legend: { title: 'Legendary', text: 'A legendary Openmon joined your team.' },
+  'first-catch': { title: 'Gotcha', text: 'Caught your first wild Openmon.' },
+  'catch-shiny': { title: 'Shiny catch', text: 'Caught a shiny wild Openmon.' },
+  'catch-10': { title: 'Collector', text: 'Caught 10 wild Openmon.' },
+  'wild-all': { title: 'Field guide', text: 'Met wild Openmon of all 11 types.' },
 };
 
 // Accessories: earned by playing, kept forever (across generations), worn
@@ -209,6 +213,8 @@ const ITEMS = {
   'xp-charm': { use: 'eat' },
   'mystery-egg': { use: 'hatch' },
   everstone: { use: 'hold' },
+  // Thrown at a wild Openmon (see wild.js), never used from the Bag.
+  openball: { use: 'throw' },
 };
 for (const t of STATS) ITEMS[`stone-${t}`] = { use: 'hold', stone: t };
 

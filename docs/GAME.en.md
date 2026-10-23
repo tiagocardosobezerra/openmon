@@ -33,6 +33,7 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 * **Rarities**: 1 in 128 hatches in shiny colours, always with a glow and little stars around it. Every form has its 5 poses in shiny colours too.
 * **Hidden line**: when two kinds of work are almost exactly tied, the Chimera appears.
 * **Legendaries**: three, each tied to a feat. *Mergeon* appears when your first pull request is merged, *Aeonbyte* after a year of Openmon and *Zeroday* after 100 fixes. They join your Party and never evolve.
+* **Wild encounters**: now and then (1 in 1,024 agent actions, at most one a day) a wild Openmon shows up next to your pet for 10 minutes. It is always a Juvenile, almost always of the type of the action that called it, and it can be shiny (1 in 128). Throw an *Openball* to try to catch it: 3 in 4. If it breaks free, half the time it stays for another try. Caught, it joins your Party with no project and keeps its type. You get 3 Openballs with your first Openmon, one per perfect day and one every 5 days in a row. You can turn them off in Settings.
 * **Focus form**: during a long request (50 actions or more) it grows inside a ring of energy until the request ends.
 * **Nickname**: without one it goes by its species name. When it hatches, it asks whether you want to give it one.
 * It never dies, never gets sick and never loses what it earned.

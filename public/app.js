@@ -439,6 +439,28 @@
     ctx.restore();
   }
 
+  // A wild Openmon next to the pet, on the side with more room.
+  function wildNow() {
+    const w = !companionId && pet && pet.wild;
+    return w && w.until > Date.now() ? w : null;
+  }
+  function wildX() {
+    return petCX() > W / 2 ? 56 : W - 56;
+  }
+  function drawWild(t) {
+    const w = wildNow();
+    if (!w) return;
+    const fade = Math.min(1, (Date.now() - w.at) / 900);
+    const anim = OpenmonMotion.poseAnim({ nature: 'curious', pose: 'idle', t: t + 7, since: 0, stage: 'juvenile' });
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.translate(wildX() + (1 - fade) * (wildX() < W / 2 ? -40 : 40), GROUND);
+    // It faces the pet.
+    if (wildX() > petCX()) ctx.scale(-1, 1);
+    OpenmonArt.drawCreature(ctx, { stage: 'juvenile', lineage: w.lineage, shiny: w.shiny, t, size: SIZE * 0.82, pose: 'idle', anim });
+    ctx.restore();
+  }
+
   let emote = null;
   let nearSince = null;
   let lastEmote = 0;
@@ -552,6 +574,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     life(t, dt);
     ambient(t);
+    drawWild(t);
     drawPet(t, dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawParticles(dt);
@@ -783,6 +806,15 @@
       }
       return setBubble(cls, title + waited, trDetail(f.detail), { ...answer, eyebrow: f.label || tr('yourAgent'), buttons: write });
     }
+    // A wild Openmon: try an Openball or let it go. The agent comes first.
+    const w = wildNow();
+    if (w) {
+      const balls = (pet.bag && pet.bag.openball) || 0;
+      const title = tr(w.shiny ? 'wild.titleShiny' : 'wild.title', { name: w.name || w.lineage });
+      const buttons = balls ? [[{ wild: 'throw' }, tr('wild.throw', { n: balls }), 'primary'], [{ wild: 'release' }, tr('wild.release'), '']] : [[{ wild: 'release' }, tr('wild.release'), '']];
+      const left = Math.max(0, Math.ceil((w.until - Date.now()) / 60000));
+      return setBubble('toast', title, balls ? tr('wild.sub') : tr('wild.noBall'), { buttons, note: tr('wild.left', { m: left }), id: `wild|${w.at}` });
+    }
     if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent'), id: `error|${f.id}|${f.since}` });
     // Mid-task and silent for minutes, or one command running very long.
     const stuck = (live.sessions || []).find((x) => x.stuck);
@@ -890,7 +922,7 @@
       [pet.holding === 'everstone' ? tr(pr.next && pet.xp >= 0 && pr.ratio >= 1 ? 'card.everstoneReady' : 'card.everstone') : null, 'brand'],
       // Legendaries and mystery eggs have no project of their own.
       // With a team, every card names its project (the first Openmon has none).
-      [pet.legend ? tr('party.legendTag') : pet.project && /^mystery:/.test(pet.project) ? tr('party.mysteryTag') : pet.project ? tr('party.project', { project: pet.project }) : teamSize > 1 ? tr('party.general') : null, 'brand'],
+      [pet.legend ? tr('party.legendTag') : pet.project && /^mystery:/.test(pet.project) ? tr('party.mysteryTag') : pet.project && /^wild:/.test(pet.project) ? tr('party.wildTag') : pet.project ? tr('party.project', { project: pet.project }) : teamSize > 1 ? tr('party.general') : null, 'brand'],
       [nature ? tr('card.nature', { nature }) : null, ''],
       [(pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null, ''],
     ]) if (text) chips.appendChild(el('span', `chip ${cls}`.trim(), text));
@@ -1221,6 +1253,21 @@
         case 'mystery-hatch':
           pushToast(tr('toast.mystery'), tr('toast.mysterySub'), 6000);
           play('level');
+          break;
+        case 'wild':
+          showEmote('!', now());
+          play('cry');
+          break;
+        case 'wild-caught':
+          burst('confetti', 22, wildX(), GROUND - 40, 2.2, { colors: CONFETTI, gravity: 260 });
+          pushToast(tr(e.shiny ? 'wild.caughtShiny' : 'wild.caught', { name: e.name }), tr(e.place === 'box' ? 'wild.caughtBox' : 'wild.caughtSub'), 6000);
+          play('evolve');
+          break;
+        case 'wild-missed':
+          pushToast(tr('wild.missed'), tr('wild.missedSub'), 3500);
+          break;
+        case 'wild-fled':
+          pushToast(tr('wild.fled'), tr('wild.fledSub'), 4500);
           break;
         case 'wear':
           burst('spark', 10, petCX(), top - 6, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 50 });
@@ -1556,6 +1603,13 @@
     if (li) jumpTo(li.dataset.id);
   });
   $('bubble').addEventListener('click', (e) => {
+    // A wild Openmon: an Openball, or let it go.
+    const wildBtn = e.target.closest && e.target.closest('[data-wild]');
+    if (wildBtn) {
+      post(`/api/wild/${wildBtn.dataset.wild === 'throw' ? 'throw' : 'release'}`);
+      if (wildBtn.dataset.wild === 'throw') play('pet');
+      return;
+    }
     // A question's option: the answer goes straight to the agent.
     const answer = e.target.closest && e.target.closest('[data-answer]');
     const question = questions[0];

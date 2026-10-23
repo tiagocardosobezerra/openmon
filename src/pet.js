@@ -258,6 +258,8 @@ function view(pet) {
     bag: pet.bag,
     holding: pet.holding,
     streak: pet.streak || { days: 0, best: 0 },
+    wild: pet.wild && pet.wild.until > Date.now() ? { ...pet.wild } : null,
+    wildSeen: pet.wildSeen || {},
     project: pet.project ?? null,
     id: pet.id || null,
     journal: [...(pet.journal || []), journalEntry(pet.daily)].filter((e) => e.day),
@@ -302,7 +304,7 @@ const UNLOCKS = {
 };
 // The backpack asks for every kind of item, not every type stone: which
 // stone you get depends on your agent's work, so one of any type counts.
-const ITEM_KINDS = ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone', 'stone'];
+const ITEM_KINDS = ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone', 'stone', 'openball'];
 const bagKindsSeen = (p) => ITEM_KINDS.filter((k) => Object.keys(p.bagSeen || {}).some((id) => id === k || (k === 'stone' && ITEMS[id] && ITEMS[id].stone))).length;
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 // The first briefing's forms (#001 to #021), hidden ones included.
@@ -397,7 +399,7 @@ function wear(pet, slot, id) {
 // stone one pet holds cannot be held by another.
 function useItem(pet, item, now, reserved = 0) {
   const events = [];
-  if (!ITEMS[item]) return events;
+  if (!ITEMS[item] || ITEMS[item].use === 'throw') return events;
   rollDay(pet, now, events);
   // Held items: the Steady stone and the type stones. One at a time.
   if (ITEMS[item].use === 'hold') {
@@ -523,6 +525,8 @@ function rollDay(pet, now, events) {
     if (pet.streak.days % 3 === 0) giveItem(pet, `stone-${stoneFor(pet, day)}`, 1, events);
     if (pet.streak.days % 14 === 0) giveItem(pet, 'xp-charm', 1, events);
     if (pet.streak.days % 30 === 0) giveItem(pet, 'mystery-egg', 1, events);
+    // Every fifth day an Openball for wild encounters.
+    if (pet.streak.days % 5 === 0) giveItem(pet, 'openball', 1, events);
   }
 }
 
@@ -568,6 +572,7 @@ function checkMissions(pet, now, events) {
     events.push({ type: 'missions-all', xp: PERFECT_DAY_XP });
     pet.counters.perfectDays = (pet.counters.perfectDays || 0) + 1;
     giveItem(pet, 'candy', 1, events);
+    giveItem(pet, 'openball', 1, events);
   }
 }
 
@@ -772,6 +777,12 @@ function chooseStarter(pet, lineage, now) {
   pet.awaitingStarter = false;
   pet.starter = lineage;
   events.push({ type: 'starter', lineage });
+  // The first starter comes with three Openballs, once per trainer.
+  if (!pet.gifts) pet.gifts = {};
+  if (!pet.gifts.openballs) {
+    pet.gifts.openballs = now;
+    giveItem(pet, 'openball', 3, events);
+  }
   evolve(pet, now, events);
   checkCosmetics(pet, now, events);
   return events;

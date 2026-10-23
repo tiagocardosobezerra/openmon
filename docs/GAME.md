@@ -33,6 +33,7 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 * **Raridades**: 1 em 128 nasce brilhante, com outras cores e sempre com brilho e estrelinhas em volta. Cada forma tem as 5 poses também na versão brilhante.
 * **Linha oculta**: quando dois tipos de trabalho empatam quase exatamente, aparece a Chimera.
 * **Lendários**: três, cada um ligado a um feito. *Mergeon* aparece no seu primeiro pull request aceito, *Aeonbyte* depois de um ano de Openmon e *Zeroday* depois de 100 consertos. Eles entram no seu Time e nunca evoluem.
+* **Encontros selvagens**: de vez em quando (1 em 1.024 ações do agente, no máximo um por dia) um Openmon selvagem aparece ao lado do seu pet por 10 minutos. Ele é sempre um Jovem, quase sempre do tipo da ação que o chamou, e pode vir brilhante (1 em 128). Jogue uma *Openball* para tentar capturar: 3 em 4. Se escapar, metade das vezes ele fica para mais uma tentativa. Capturado, ele entra no Time sem projeto e com o tipo dele. Você ganha 3 Openballs com o primeiro Openmon, uma por dia perfeito e uma a cada 5 dias seguidos. Dá para desligar nas Configurações.
 * **Forma de foco**: num pedido longo (50 ações ou mais), ele cresce dentro de um anel de energia até o pedido acabar.
 * **Apelido**: sem apelido ele usa o nome da espécie. Ao chocar, ele pergunta se você quer dar um.
 * Ele nunca morre, nunca adoece e nunca perde o que conquistou.

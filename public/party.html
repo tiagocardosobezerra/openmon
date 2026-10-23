@@ -83,7 +83,7 @@
     c.append(canvas, el('span', 'name', p.shiny && p.stage !== 'egg' ? `${p.name} ★` : p.name), el('span', 'meta', `${tr('card.level', { n: p.level })} · ${p.form}`));
     const tag = el('span', 'ptag');
     // Legendaries and mystery eggs belong to no project.
-    const special = p.legend ? tr('party.legendTag') : p.project && p.project.startsWith('mystery:') ? tr('party.mysteryTag') : null;
+    const special = p.legend ? tr('party.legendTag') : p.project && p.project.startsWith('mystery:') ? tr('party.mysteryTag') : p.project && p.project.startsWith('wild:') ? tr('party.wildTag') : null;
     const label = special || p.project || tr('party.general');
     const mystery = !p.legend && p.project && p.project.startsWith('mystery:');
     tag.title = mystery ? tr('party.mysteryHow') : special || (p.project ? tr('party.project', { project: p.project }) : tr('party.general'));
@@ -101,7 +101,7 @@
       const row = el('label', 'follow');
       row.append(el('span', '', tr('party.follows')));
       const sel = el('select');
-      const projects = [...new Set([...data.members, ...data.box].map((m) => m.project).concat(data.upcoming.map((u) => u.project)).filter((x) => x && !x.startsWith('mystery:') && !x.startsWith('legend:')))].sort();
+      const projects = [...new Set([...data.members, ...data.box].map((m) => m.project).concat(data.upcoming.map((u) => u.project)).filter((x) => x && !x.startsWith('mystery:') && !x.startsWith('wild:') && !x.startsWith('legend:')))].sort();
       const current = (cfg.follows || {})[p.id] || '';
       for (const [value, text] of [['', tr('party.followsAuto')], ...projects.map((x) => [x, x])]) {
         const o = el('option', '', text);
