@@ -249,7 +249,7 @@ function view(pet) {
     leaning: pet.stage === 'egg' ? null : topStats(pet.stats)[0],
     progress: progress(pet),
     counters: pet.counters,
-    today: { tokens: pet.daily.tokens || 0, usd: pet.daily.usd || 0, waitMs: pet.daily.waitMs || 0, waits: pet.daily.waits || 0, fastestMs: pet.daily.fastestMs ?? null, day: pet.daily.day, missions: missionView(pet), perfect: Boolean(pet.daily.perfect) },
+    today: { tokens: pet.daily.tokens || 0, usd: pet.daily.usd || 0, requests: pet.daily.requests || [], waitMs: pet.daily.waitMs || 0, waits: pet.daily.waits || 0, fastestMs: pet.daily.fastestMs ?? null, day: pet.daily.day, missions: missionView(pet), perfect: Boolean(pet.daily.perfect) },
     achievements: pet.achievements,
     history: pet.history,
     hallOfFame: pet.hallOfFame || [],

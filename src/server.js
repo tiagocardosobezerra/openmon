@@ -336,7 +336,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const signal = classify(payload);
     if (!signal) return [];
     if (target === real && permissions.size && payload.hook_event_name !== 'PermissionRequest') {
-      for (const p of [...permissions.values()]) if (p.session === signal.session && (signal.kind === 'tool-start' || signal.kind === 'tool-done' || signal.kind === 'tool-fail' || signal.kind === 'turn-start' || signal.kind === 'turn-end')) settlePermission(p.id, null);
+      for (const p of [...permissions.values()]) if (p.session === signal.session && (signal.kind === 'tool-start' || signal.kind === 'tool-done' || signal.kind === 'tool-fail' || signal.kind === 'turn-start' || signal.kind === 'turn-end')) settlePermission(p.id, null, { how: 'agent' });
     }
     // A question ends with the turn (you pressed Esc, or the agent moved on).
     // Not on tool events: the question tool's own PreToolUse arrives with it.
@@ -492,7 +492,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // "Always allow" button possible.
     const suggestions = Array.isArray(body.permission_suggestions) && body.permission_suggestions.length ? body.permission_suggestions : null;
     const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), label: signal ? signal.label : null, detail: signal ? signal.detail : null, until: now() + waitMs, waiters: [], decision: null, suggestions, preview: permissionPreview(body.tool_name, body.tool_input), full: permissionPreview(body.tool_name, body.tool_input, 400, 400) };
-    entry.timer = setTimeout(() => settlePermission(id, null), waitMs + 500);
+    entry.timer = setTimeout(() => settlePermission(id, null, { how: 'timeout' }), waitMs + 500);
     if (entry.timer.unref) entry.timer.unref();
     permissions.set(id, entry);
     pushState(true);
@@ -513,6 +513,13 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     if (decision === 'deny' && extra.interrupt) reply.interrupt = true;
     settled.set(id, reply);
     for (const res of entry.waiters) json(res, 200, reply);
+    // Today's requests, for "what did I allow?" (the short preview only).
+    const day = real.pet.daily;
+    if (day) {
+      const how = decision || extra.how || 'agent';
+      day.requests = [...(day.requests || []), { at: now(), label: entry.label, detail: entry.detail, how, preview: entry.preview || null }].slice(-100);
+      persist(false);
+    }
     pushState(true);
     return true;
   }
@@ -985,7 +992,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'GET /api/powers':
         {
           const v = pet.view(world.pet);
-          if (config.present) return json(res, 200, { unlocked: unlockedPowers(world.pet), featured: v.featured, today: v.today, journal: v.journal.map((e) => ({ ...e, projects: {}, agentMs: {}, tokensBy: {}, usdBy: {} })), streak: v.streak, sessions: [], present: true });
+          if (config.present) return json(res, 200, { unlocked: unlockedPowers(world.pet), featured: v.featured, today: { ...v.today, requests: [] }, journal: v.journal.map((e) => ({ ...e, projects: {}, agentMs: {}, tokensBy: {}, usdBy: {} })), streak: v.streak, sessions: [], present: true });
           return json(res, 200, { unlocked: unlockedPowers(world.pet), featured: v.featured, today: v.today, journal: v.journal, streak: v.streak, sessions: powers.view() });
         }
       case 'GET /api/playground':
@@ -1018,7 +1025,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         return readJson(req, (err, body) => {
           if (err || !body || !['allow', 'deny', 'always', 'release'].includes(body.decision)) return res.writeHead(400).end();
           // "Open": you answer in the agent's window, which asks right away.
-          if (body.decision === 'release') return json(res, 200, { ok: settlePermission(String(body.id || ''), null) });
+          if (body.decision === 'release') return json(res, 200, { ok: settlePermission(String(body.id || ''), null, { how: 'agent' }) });
           const pendingEntry = permissions.get(String(body.id || ''));
           if (body.decision === 'always' && pendingEntry && !pendingEntry.suggestions) return json(res, 200, { ok: false });
           // A reason for the agent, or stopping it, needs the desktop key.

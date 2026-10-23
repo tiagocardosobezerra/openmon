@@ -23,6 +23,22 @@
   .journal h3 { margin: 0; font-size: 16px; }
   .journal .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
   .journal .head p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .requests { margin-top: 14px; padding: 14px 16px; }
+  .requests .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .requests h3 { margin: 0; font-size: 16px; }
+  .requests .head p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .req-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .req-list li { display: grid; grid-template-columns: 48px auto auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 13px; }
+  .req-list li.has-diff { cursor: pointer; }
+  .req-list time, .req-list small { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .req-list code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .req-list .how { padding: 0 8px; border-radius: 99px; font: 600 12px/1.6 var(--font-display); background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .req-list .how.allow, .req-list .how.always { background: var(--ok-soft); color: var(--ok); box-shadow: none; }
+  .req-list .how.deny { background: var(--bad-soft); color: var(--bad); box-shadow: none; }
+  .req-list .mini-diff { grid-column: 1 / -1; margin: 4px 0 0; padding: 6px 0; border-radius: 8px; background: var(--sunken); }
+  .req-list .mini-diff code { display: block; padding: 0 10px; font: 500 12px/1.45 var(--font-mono); white-space: pre; }
+  .req-list .mini-diff .del { background: color-mix(in srgb, #e5484d 20%, transparent); }
+  .req-list .mini-diff .add { background: color-mix(in srgb, #3fb8a6 22%, transparent); }
   .by-project { margin-top: 14px; }
   .by-project h4 { margin: 0 0 6px; font: 600 14px var(--font-display); }
   .by-project table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -87,6 +103,7 @@
   <div class="tabs" id="tabs"></div>
   <section class="panel panel-body" id="panel"></section>
   <section class="journal panel soft" id="journal"></section>
+  <section class="requests panel soft" id="requests" hidden></section>
   <div class="top">
     <section class="wait panel" id="wait"></section>
     <section class="sessions-box panel soft"><h3 id="h-sessions"></h3><div class="sessions" id="sessions"></div></section>
@@ -99,7 +116,7 @@
 <script src="i18n.js"></script>
 <script src="nav.js"></script>
 <script>
-  const { t: tr, lang } = window.OpenmonI18n;
+  const { t: tr, lang, detail: trDetail } = window.OpenmonI18n;
   document.documentElement.lang = lang;
   document.getElementById('title').textContent = tr('powers.title');
   document.getElementById('sub').textContent = tr('powers.sub');
@@ -453,9 +470,41 @@
     return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
   }
 
+  // Today's permission requests: what was asked, and what happened to it.
+  function renderRequests() {
+    const box = $('requests');
+    const list = ((data.today && data.today.requests) || []).slice().reverse();
+    box.hidden = !list.length;
+    if (!list.length) return;
+    box.textContent = '';
+    box.append(h('div', { class: 'head' }, h('h3', {}, tr('requests.title')), h('p', {}, tr('requests.sub'))));
+    const ul = h('ul', { class: 'req-list' });
+    for (const r of list) {
+      const counts = r.preview ? `${r.preview.file ? `${r.preview.file} · ` : ''}+${r.preview.lines.filter((l) => l.t === '+').length} −${r.preview.lines.filter((l) => l.t === '-').length}` : '';
+      const li = h('li', {},
+        h('time', {}, new Date(r.at).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })),
+        h('span', { class: `how ${r.how}` }, tr(`requests.${r.how}`)),
+        h('b', {}, r.label || ''),
+        h('code', {}, trDetail(r.detail) || ''),
+        h('small', {}, counts));
+      if (r.preview) {
+        li.classList.add('has-diff');
+        li.title = tr('requests.showDiff');
+        li.onclick = () => {
+          const open = li.querySelector('pre');
+          if (open) return open.remove();
+          li.append(h('pre', { class: 'mini-diff' }, r.preview.lines.map((l) => h('code', { class: l.t === '-' ? 'del' : 'add' }, `${l.t} ${l.s}`))));
+        };
+      }
+      ul.append(li);
+    }
+    box.append(ul);
+  }
+
   function render() {
     if (!data) return;
     renderJournal();
+    renderRequests();
     renderTimeline();
     renderWait();
     renderSessions();

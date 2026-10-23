@@ -237,6 +237,36 @@ function installCodex({ configPath = codexConfigPath() } = {}) {
   return { settingsPath: configPath, backupPath: text ? `${configPath}.openmon-backup` : null };
 }
 
+// Quick permission rules for Claude Code, written into its own settings
+// (permissions.allow / permissions.ask), so Claude Code itself applies them
+// in every session. Turning one off removes exactly what it added.
+const RULES = {
+  // Read files and search without asking.
+  read: { list: 'allow', entries: ['Read', 'Grep', 'Glob', 'LS'] },
+  // Run the tests without asking.
+  tests: { list: 'allow', entries: ['Bash(npm test:*)', 'Bash(npm run test:*)', 'Bash(pnpm test:*)', 'Bash(yarn test:*)', 'Bash(pytest:*)', 'Bash(go test:*)', 'Bash(cargo test:*)'] },
+  // Always ask before deleting or publishing, whatever else is allowed.
+  careful: { list: 'ask', entries: ['Bash(rm:*)', 'Bash(git push:*)', 'Bash(npm publish:*)', 'Bash(git reset --hard:*)'] },
+};
+
+function rulesStatus({ settingsPath = defaultSettingsPath() } = {}) {
+  const { settings } = readSettings(settingsPath);
+  const p = settings.permissions || {};
+  return Object.fromEntries(Object.entries(RULES).map(([id, r]) => [id, r.entries.every((e) => (p[r.list] || []).includes(e))]));
+}
+
+function setRule(id, on, { settingsPath = defaultSettingsPath() } = {}) {
+  const rule = RULES[id];
+  if (!rule) return rulesStatus({ settingsPath });
+  const { settings, existed } = readSettings(settingsPath);
+  if (existed) fs.copyFileSync(settingsPath, `${settingsPath}.openmon-backup`);
+  const permissions = { ...(settings.permissions || {}) };
+  const list = (permissions[rule.list] || []).filter((e) => !rule.entries.includes(e));
+  permissions[rule.list] = on ? [...list, ...rule.entries] : list;
+  write(settingsPath, { ...settings, permissions });
+  return rulesStatus({ settingsPath });
+}
+
 // Which other agents already feed the pet (for Settings).
 function otherAgents() {
   const has = (file, needle) => {
@@ -258,4 +288,4 @@ function aiderLine() {
   return `aider --notifications --notifications-command "${hookCommand()} --aider"`;
 }
 
-module.exports = { installCodex, codexConfigPath, otherAgents, installOpenCode, uninstallOpenCode, openCodePluginPath, installGemini, installCursor, uninstallCursor, geminiSettingsPath, cursorHooksPath, aiderLine, GEMINI_HOOK_EVENTS, CURSOR_HOOK_EVENTS, install, uninstall, isInstalled, hasPermissionHook, hasContactHooks, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT, QUESTION_TOOL, LISTEN_EVENTS, LISTEN_SEC };
+module.exports = { rulesStatus, setRule, PERMISSION_RULES: RULES, installCodex, codexConfigPath, otherAgents, installOpenCode, uninstallOpenCode, openCodePluginPath, installGemini, installCursor, uninstallCursor, geminiSettingsPath, cursorHooksPath, aiderLine, GEMINI_HOOK_EVENTS, CURSOR_HOOK_EVENTS, install, uninstall, isInstalled, hasPermissionHook, hasContactHooks, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT, QUESTION_TOOL, LISTEN_EVENTS, LISTEN_SEC };

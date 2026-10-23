@@ -107,6 +107,7 @@
       project: 'Incluir o nome do projeto', projectSub: 'Desligado: o aviso não diz em que projeto.',
       login: 'Iniciar com o computador', loginSub: 'Ele aparece sozinho quando você liga o computador.',
       claude: 'Claude Code', claudeOk: 'Conectado ✓', claudeSub: 'O pet escuta os avisos que o Claude Code já manda.', connect: 'Conectar',
+      rulesTitle: 'Permissões do Claude Code', ruleRead: 'Ler e buscar sem perguntar', ruleReadSub: 'Ler arquivos e buscar (Read, Grep, Glob) nunca pede permissão.', ruleTests: 'Rodar os testes sem perguntar', ruleTestsSub: 'npm test, pytest, go test, cargo test e parecidos.', ruleCareful: 'Sempre perguntar antes de apagar ou publicar', ruleCarefulSub: 'rm, git push, git reset --hard e npm publish pedem permissão, mesmo com outras regras.',
       agentSub: 'As próximas sessões alimentam seu Openmon.', aiderSub: 'O Aider liga pelo comando de início: copie e use.', copyLine: 'Copiar comando', codexConflict: 'Seu config.toml do Codex já tem um notify: adicione o do Openmon à mão (openmon codex).',
       backups: 'Cópias do seu pet', backupsSub: 'Ele faz cópias sozinho em Documentos/Openmon Backups. Aqui você faz na hora ou leva para outro computador.',
       copyNow: 'Fazer cópia agora', copied: 'Cópia feita ✓', exportFile: 'Exportar…', importFile: 'Trazer de um arquivo…', openFolder: 'Abrir pasta',
@@ -157,6 +158,7 @@
       project: 'Incluir el nombre del proyecto', projectSub: 'Apagado: el aviso no dice en qué proyecto.',
       login: 'Iniciar con la computadora', loginSub: 'Aparece solo cuando enciendes la computadora.',
       claude: 'Claude Code', claudeOk: 'Conectado ✓', claudeSub: 'La mascota escucha los avisos que Claude Code ya envía.', connect: 'Conectar',
+      rulesTitle: 'Permisos de Claude Code', ruleRead: 'Leer y buscar sin preguntar', ruleReadSub: 'Leer archivos y buscar (Read, Grep, Glob) nunca pide permiso.', ruleTests: 'Correr las pruebas sin preguntar', ruleTestsSub: 'npm test, pytest, go test, cargo test y parecidos.', ruleCareful: 'Preguntar siempre antes de borrar o publicar', ruleCarefulSub: 'rm, git push, git reset --hard y npm publish piden permiso, aun con otras reglas.',
       agentSub: 'Las próximas sesiones alimentan a tu Openmon.', aiderSub: 'Aider se conecta con el comando de inicio: cópialo y úsalo.', copyLine: 'Copiar comando', codexConflict: 'Tu config.toml de Codex ya tiene un notify: agrega el de Openmon a mano (openmon codex).',
       backups: 'Copias de tu mascota', backupsSub: 'Hace copias solo en Documentos/Openmon Backups. Aquí haces una al instante o la llevas a otra computadora.',
       copyNow: 'Hacer copia ahora', copied: 'Copia hecha ✓', exportFile: 'Exportar…', importFile: 'Traer de un archivo…', openFolder: 'Abrir carpeta',
@@ -207,6 +209,7 @@
       project: 'Include the project name', projectSub: 'Off: the alert does not say which project.',
       login: 'Start with the computer', loginSub: 'It shows up on its own when you turn on your computer.',
       claude: 'Claude Code', claudeOk: 'Connected ✓', claudeSub: 'The pet listens to the notices Claude Code already sends.', connect: 'Connect',
+      rulesTitle: 'Claude Code permissions', ruleRead: 'Read and search without asking', ruleReadSub: 'Reading files and searching (Read, Grep, Glob) never asks.', ruleTests: 'Run the tests without asking', ruleTestsSub: 'npm test, pytest, go test, cargo test and the like.', ruleCareful: 'Always ask before deleting or publishing', ruleCarefulSub: 'rm, git push, git reset --hard and npm publish ask, even with other rules.',
       agentSub: 'New sessions feed your Openmon.', aiderSub: 'Aider connects with its start command: copy it and use it.', copyLine: 'Copy command', codexConflict: 'Your Codex config.toml already has a notify line: add the Openmon one by hand (openmon codex).',
       backups: 'Copies of your pet', backupsSub: 'It makes copies on its own in Documents/Openmon Backups. Here you make one now or take it to another computer.',
       copyNow: 'Make a copy now', copied: 'Copy made ✓', exportFile: 'Export…', importFile: 'Bring back from a file…', openFolder: 'Open folder',
@@ -484,6 +487,19 @@
           row('Aider', T.aiderSub, btn(T.copyLine, (b) => openmonCopyInto(b, desktop.aider || '', '✓'), 'btn sm')),
           row(T.position, T.positionSub, btn(T.reset, () => desk.call('reset-position'))),
         ]),
+        // Claude Code's own permission rules, one switch each.
+        card(T.rulesTitle, [['read', T.ruleRead, T.ruleReadSub], ['tests', T.ruleTests, T.ruleTestsSub], ['careful', T.ruleCareful, T.ruleCarefulSub]].map(([id, title, sub]) => {
+          const sw = el('label', 'switch');
+          const c = el('input');
+          c.type = 'checkbox';
+          c.checked = Boolean(desktop.rules && desktop.rules[id]);
+          c.onchange = async () => {
+            desktop = await desk.call('rule', { id, on: c.checked });
+            render();
+          };
+          sw.append(c, el('span'));
+          return row(title, sub, sw);
+        })),
         cloudCard(),
         card(T.backups, [
           row('', T.backupsSub, [

@@ -111,3 +111,17 @@ test('Codex: the notify line goes at the top of config.toml, once, and never ove
   assert.equal(installer.installCodex({ configPath: other }).conflict, true);
   assert.equal(fs.readFileSync(other, 'utf8'), 'notify = ["say", "done"]\n');
 });
+
+test('quick permission rules: added to Claude Code\'s own lists, and removed exactly, keeping the user\'s entries', () => {
+  const settingsPath = tmpSettings({ permissions: { allow: ['Bash(make:*)'] }, hooks: {} });
+  assert.deepEqual(installer.rulesStatus({ settingsPath }), { read: false, tests: false, careful: false });
+  installer.setRule('read', true, { settingsPath });
+  installer.setRule('careful', true, { settingsPath });
+  let p = JSON.parse(fs.readFileSync(settingsPath, 'utf8')).permissions;
+  assert.ok(p.allow.includes('Read') && p.allow.includes('Bash(make:*)'));
+  assert.ok(p.ask.includes('Bash(git push:*)'));
+  assert.deepEqual(installer.rulesStatus({ settingsPath }), { read: true, tests: false, careful: true });
+  installer.setRule('read', false, { settingsPath });
+  p = JSON.parse(fs.readFileSync(settingsPath, 'utf8')).permissions;
+  assert.deepEqual(p.allow, ['Bash(make:*)']);
+});

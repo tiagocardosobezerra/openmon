@@ -1888,6 +1888,19 @@
       b.onclick = () => openPage(page);
       pages.appendChild(b);
     }
+    // Everything at once: every working agent that can hear the pet is asked
+    // to pause and wait (before a meeting, or when something went wrong).
+    const busy = canTalk && !demo ? (live.sessions || []).filter((s) => s.state === 'working' && inbox[s.id] && inbox[s.id].canSend) : [];
+    if (busy.length) {
+      const pause = el('button', 'btn sm', `${tr('stop.pauseAll')} (${busy.length})`);
+      pause.type = 'button';
+      pause.onclick = async () => {
+        await Promise.all(busy.map((s) => postKeyed('/api/inbox/send', { session: s.id, text: tr('stop.pauseAllMessage') })));
+        pushToast(tr('stop.pausedN', { n: busy.length }), '', 3500, 'done');
+        setHover(false);
+      };
+      pages.appendChild(pause);
+    }
     const until = (ms) => new Date(ms).toLocaleTimeString(window.OpenmonI18n.lang, { hour: '2-digit', minute: '2-digit' });
     const mode = (box, name, active, untilMs, choices, key) => {
       box.textContent = '';

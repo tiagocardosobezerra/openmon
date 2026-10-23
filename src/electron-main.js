@@ -892,7 +892,7 @@ function wireIpc() {
   // Settings page actions that need the desktop (only from the app window).
   ipcMain.handle('settings', async (e, cmd, arg) => {
     if (!powersWin || powersWin.isDestroyed() || e.sender !== powersWin.webContents) return null;
-    const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled(), agents: installer.otherAgents(), aider: installer.aiderLine() });
+    const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled(), agents: installer.otherAgents(), aider: installer.aiderLine(), rules: installer.rulesStatus() });
     switch (cmd) {
       case 'info':
         return info();
@@ -907,6 +907,14 @@ function wireIpc() {
         }
         daemon.recheckHooks();
         refreshTray();
+        return info();
+      // Claude Code's quick permission rules (Settings → Computer).
+      case 'rule':
+        try {
+          installer.setRule(String(arg && arg.id), Boolean(arg && arg.on));
+        } catch (err) {
+          dialog.showErrorBox('Openmon', String(err.message || err));
+        }
         return info();
       // The other agents, one click each (Aider is a command line to copy).
       case 'connect-agent': {

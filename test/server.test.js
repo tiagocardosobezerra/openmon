@@ -542,6 +542,11 @@ test('a permission to edit shows what would change (only the changed lines, secr
     assert.equal(JSON.parse((await request(port, 'GET', '/api/permission?id=nope')).body).gone, true);
     await request(port, 'POST', '/api/permission/decide', { body: JSON.stringify({ id: p.id, decision: 'allow' }), headers: { 'Content-Type': 'application/json' } });
     assert.equal(JSON.parse((await hook).out).hookSpecificOutput.decision.behavior, 'allow');
+    // Today's requests remember it, with its short preview.
+    const today = JSON.parse((await request(port, 'GET', '/api/powers')).body).today;
+    const last = today.requests[today.requests.length - 1];
+    assert.equal(last.how, 'allow');
+    assert.equal(last.preview.file, 'app.js');
   } finally {
     stream.destroy();
     await daemon.close();
