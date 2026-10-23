@@ -199,6 +199,13 @@ const COSMETICS = {
   cape: { slot: 'neck', svg: true },
   bell: { slot: 'neck', svg: true },
   backpack: { slot: 'neck', svg: true },
+  // Wild encounters and the Nest.
+  'catcher-sash': { slot: 'neck', svg: true },
+  binoculars: { slot: 'face', svg: true },
+  'sparkle-clip': { slot: 'head', svg: true },
+  'collector-badge': { slot: 'neck', svg: true },
+  'nest-hat': { slot: 'head', svg: true },
+  'shell-bow': { slot: 'head', svg: true },
 };
 
 const WEAR_SLOTS = ['head', 'face', 'neck'];
@@ -213,8 +220,15 @@ const ITEMS = {
   'xp-charm': { use: 'eat' },
   'mystery-egg': { use: 'hatch' },
   everstone: { use: 'hold' },
-  // Thrown at a wild Openmon (see wild.js), never used from the Bag.
-  openball: { use: 'throw' },
+  // Thrown at a wild Openmon (see wild.js), never used from the Bag:
+  // the plain one catches 3 in 4, the Plus 7 in 8, the Master always.
+  openball: { use: 'throw', catchOdds: 3 / 4 },
+  'openball-plus': { use: 'throw', catchOdds: 7 / 8 },
+  'openball-master': { use: 'throw', catchOdds: 1 },
+  // Field items, used from the Bag for the next wild encounters.
+  lure: { use: 'field' },
+  lantern: { use: 'field' },
+  'field-map': { use: 'field' },
 };
 for (const t of STATS) ITEMS[`stone-${t}`] = { use: 'hold', stone: t };
 

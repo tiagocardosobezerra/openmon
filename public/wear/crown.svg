@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -120 140 160" width="140" height="160"><title>Coroa</title>
+<g class="o"><path stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" d="M-38 4 L-42 -40 L-22 -22 L-10 -50 L0 -26 L10 -50 L22 -22 L42 -40 L38 4 Q0 10 -38 4 Z" fill="#4a2c08"/><path stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" d="M22 -22 L42 -40 L38 4 Q30 6 22 7 Z" fill="#4a2c08"/><rect stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" x="-40" y="-8" width="80" height="12" rx="5" fill="#4a2c08"/><circle stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" cx="-42" cy="-42" r="4.5" fill="#4a2c08"/><circle stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" cx="42" cy="-42" r="4.5" fill="#4a2c08"/><circle stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" cx="-10" cy="-53" r="4.5" fill="#4a2c08"/><circle stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" cx="10" cy="-53" r="4.5" fill="#4a2c08"/><polygon stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" points="0.0,-10.0 6.0,-2.0 0.0,6.0 -6.0,-2.0" fill="#4a2c08"/><circle stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" cx="-22" cy="-2" r="4" fill="#4a2c08"/><circle stroke="#4a2c08" stroke-width="8.0" stroke-linejoin="round" cx="22" cy="-2" r="4" fill="#4a2c08"/></g>
+<path d="M-38 4 L-42 -40 L-22 -22 L-10 -50 L0 -26 L10 -50 L22 -22 L42 -40 L38 4 Q0 10 -38 4 Z" fill="#ffcf4a"/>
+<path d="M22 -22 L42 -40 L38 4 Q30 6 22 7 Z" fill="#e0a21f"/>
+<rect x="-40" y="-8" width="80" height="12" rx="5" fill="#e0a21f"/>
+<circle cx="-42" cy="-42" r="4.5" fill="#ffcf4a"/>
+<circle cx="42" cy="-42" r="4.5" fill="#ffcf4a"/>
+<circle cx="-10" cy="-53" r="4.5" fill="#ffcf4a"/>
+<circle cx="10" cy="-53" r="4.5" fill="#ffcf4a"/>
+<polygon points="0.0,-10.0 6.0,-2.0 0.0,6.0 -6.0,-2.0" fill="#e5484d"/>
+<circle cx="-22" cy="-2" r="4" fill="#4fb6e8"/>
+<circle cx="22" cy="-2" r="4" fill="#4fb6e8"/>
+<ellipse cx="-26" cy="-22" rx="3" ry="9" fill="#ffffff" opacity="0.55" transform="rotate(15 -26 -22)"/>
+</svg>

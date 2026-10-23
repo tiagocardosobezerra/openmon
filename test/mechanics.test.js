@@ -50,8 +50,10 @@ function step(p, now = T0) {
 
 // --- items -----------------------------------------------------------------
 
-test('there are 18 items: 5 to use, the Steady stone, 11 type stones and the Openball', () => {
-  assert.equal(Object.keys(ITEMS).length, 18);
+test('there are 23 items: 5 to use, the Steady stone, 11 type stones, 3 Openballs and 3 field items', () => {
+  assert.equal(Object.keys(ITEMS).length, 23);
+  assert.deepEqual(Object.keys(ITEMS).filter((i) => ITEMS[i].use === 'throw'), ['openball', 'openball-plus', 'openball-master']);
+  assert.deepEqual(Object.keys(ITEMS).filter((i) => ITEMS[i].use === 'field'), ['lure', 'lantern', 'field-map']);
   assert.equal(Object.values(ITEMS).filter((i) => i.stone).length, 11);
   for (const s of STATS) assert.equal(ITEMS[`stone-${s}`].stone, s);
 });
@@ -545,6 +547,12 @@ const WEAR = {
   cape: (p) => (p.legends = { mergeon: T0 }),
   bell: (p) => (p.counters.pets = 100),
   backpack: (p) => (p.bagSeen = { snack: true, candy: true, 'friend-candy': true, 'xp-charm': true, 'mystery-egg': true, everstone: true, 'stone-swarm': true, openball: true }),
+  'catcher-sash': (p) => (p.achievements['first-catch'] = T0),
+  binoculars: (p) => (p.achievements['wild-all'] = T0),
+  'sparkle-clip': (p) => (p.achievements['catch-shiny'] = T0),
+  'collector-badge': (p) => (p.counters.catches = 10),
+  'nest-hat': (p) => (p.others = Array.from({ length: 6 }, () => ({ place: 'box' }))),
+  'shell-bow': (p) => (p.counters.hatches = 5),
 };
 
 test('every accessory has a path that unlocks it, and none comes for free', () => {

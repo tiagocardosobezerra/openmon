@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="40" height="40"><title>Isca</title>
+<g class="o"><path d="M30 30 Q26 25 30 20 Q34 15 30 10" fill="none" stroke="#3e1a08" stroke-width="11.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M70 30 Q66 25 70 20 Q74 15 70 10" fill="none" stroke="#3e1a08" stroke-width="11.2" stroke-linecap="round" stroke-linejoin="round"/><path stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" d="M50 19.4 C42.2 14.6 44 8.6 50 11.9 C56 8.6 57.8 14.6 50 19.4 Z" fill="#3e1a08"/><path stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" d="M50 34 C72 34 86 52 86 66 C86 84 70 94 50 94 C30 94 14 84 14 66 C14 52 28 34 50 34 Z" fill="#3e1a08"/><path stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" d="M84 70 C80 86 66 92 50 92 C34 92 22 86 17 74 C30 84 50 88 66 84 C76 80 82 76 84 70 Z" fill="#3e1a08"/><circle stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" cx="36" cy="62" r="3" fill="#3e1a08"/><circle stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" cx="52" cy="70" r="3" fill="#3e1a08"/><circle stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" cx="66" cy="58" r="3" fill="#3e1a08"/><circle stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" cx="44" cy="82" r="2.6" fill="#3e1a08"/><circle stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" cx="66" cy="78" r="2.6" fill="#3e1a08"/><path stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" d="M50 38 C44 30 46 22 54 18 C60 24 58 32 50 38 Z" fill="#3e1a08"/><path stroke="#3e1a08" stroke-width="8.0" stroke-linejoin="round" d="M50 38 C62 40 70 34 72 28 C64 26 56 30 50 38 Z" fill="#3e1a08"/></g>
+<path d="M30 30 Q26 25 30 20 Q34 15 30 10" fill="none" stroke="#ff9fbd" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M70 30 Q66 25 70 20 Q74 15 70 10" fill="none" stroke="#ff9fbd" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50 19.4 C42.2 14.6 44 8.6 50 11.9 C56 8.6 57.8 14.6 50 19.4 Z" fill="#ff9fbd"/>
+<path d="M50 34 C72 34 86 52 86 66 C86 84 70 94 50 94 C30 94 14 84 14 66 C14 52 28 34 50 34 Z" fill="#ff8a3d"/>
+<path d="M84 70 C80 86 66 92 50 92 C34 92 22 86 17 74 C30 84 50 88 66 84 C76 80 82 76 84 70 Z" fill="#d9601d"/>
+<circle cx="36" cy="62" r="3" fill="#ffc28a"/>
+<circle cx="52" cy="70" r="3" fill="#ffc28a"/>
+<circle cx="66" cy="58" r="3" fill="#ffc28a"/>
+<circle cx="44" cy="82" r="2.6" fill="#ffc28a"/>
+<circle cx="66" cy="78" r="2.6" fill="#ffc28a"/>
+<path d="M50 38 C44 30 46 22 54 18 C60 24 58 32 50 38 Z" fill="#5fbf6a"/>
+<path d="M50 38 C62 40 70 34 72 28 C64 26 56 30 50 38 Z" fill="#3c8f48"/>
+<ellipse cx="32" cy="48" rx="8" ry="4" fill="#ffffff" opacity="0.55" transform="rotate(-30 32 48)"/>
+<ellipse cx="70" cy="46" rx="2.2" ry="1.5" fill="#ffffff" opacity="0.7" transform="rotate(0 70 46)"/>
+</svg>

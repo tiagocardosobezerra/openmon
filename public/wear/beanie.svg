@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -120 140 160" width="140" height="160"><title>Gorro</title>
+<g class="o"><path stroke="#14301f" stroke-width="8.0" stroke-linejoin="round" d="M-46 -6 C-48 -40 -26 -60 0 -60 C26 -60 48 -40 46 -6 Z" fill="#14301f"/><path stroke="#14301f" stroke-width="8.0" stroke-linejoin="round" d="M24 -54 C40 -44 48 -28 46 -6 L32 -6 C36 -24 34 -40 24 -54 Z" fill="#14301f"/><path d="M-24 -14 L-26 -44 M-8 -14 L-8 -54 M8 -14 L8 -54 M24 -14 L26 -44" fill="none" stroke="#14301f" stroke-width="11.0" stroke-linecap="round" stroke-linejoin="round"/><rect stroke="#14301f" stroke-width="8.0" stroke-linejoin="round" x="-50" y="-16" width="100" height="20" rx="9" fill="#14301f"/><path d="M-38 -12 L-38 0 M-26 -12 L-26 0 M-14 -12 L-14 0 M-2 -12 L-2 0 M10 -12 L10 0 M22 -12 L22 0 M34 -12 L34 0" fill="none" stroke="#14301f" stroke-width="11.0" stroke-linecap="round" stroke-linejoin="round"/><circle stroke="#14301f" stroke-width="8.0" stroke-linejoin="round" cx="0" cy="-66" r="12" fill="#14301f"/><circle stroke="#14301f" stroke-width="8.0" stroke-linejoin="round" cx="5" cy="-63" r="6" fill="#14301f"/></g>
+<path d="M-46 -6 C-48 -40 -26 -60 0 -60 C26 -60 48 -40 46 -6 Z" fill="#4e9f6b"/>
+<path d="M24 -54 C40 -44 48 -28 46 -6 L32 -6 C36 -24 34 -40 24 -54 Z" fill="#3a7d52"/>
+<path d="M-24 -14 L-26 -44 M-8 -14 L-8 -54 M8 -14 L8 -54 M24 -14 L26 -44" fill="none" stroke="#3a7d52" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="-50" y="-16" width="100" height="20" rx="9" fill="#f4e4c1"/>
+<path d="M-38 -12 L-38 0 M-26 -12 L-26 0 M-14 -12 L-14 0 M-2 -12 L-2 0 M10 -12 L10 0 M22 -12 L22 0 M34 -12 L34 0" fill="none" stroke="#dcc596" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="0" cy="-66" r="12" fill="#f4e4c1"/>
+<circle cx="5" cy="-63" r="6" fill="#dcc596"/>
+<ellipse cx="-22" cy="-40" rx="10" ry="5" fill="#ffffff" opacity="0.5" transform="rotate(-35 -22 -40)"/>
+</svg>

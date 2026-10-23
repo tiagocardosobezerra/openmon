@@ -4,11 +4,14 @@
 // to catch it. Odds are powers of two, like the shiny's 1 in 128.
 
 const pet = require('./pet');
-const { STATS, STAGES, SHINY_ODDS, ACHIEVEMENTS, formName, formKey } = require('./species');
+const { STATS, STAGES, SHINY_ODDS, ACHIEVEMENTS, ITEMS, formName, formKey } = require('./species');
 
 const WILD_ODDS = 1024; // one finished action in 1,024 (2^10) starts an encounter
+const LURE_ODDS = 256; // with a Lure on: 1 in 256 (2^8)
+const LANTERN_ODDS = 16; // a Lantern makes the next one brilhante 1 in 16 (2^4)
+const BALLS = ['openball', 'openball-plus', 'openball-master'];
 const SAME_TYPE = 3 / 4; // the wild one is of the triggering action's type
-const CATCH = 3 / 4; // one Openball, one try
+const CATCH = ITEMS.openball.catchOdds; // one Openball, one try: 3 in 4
 const STAY = 1 / 2; // after a miss it stays for another try, or runs off
 const STAY_MS = 10 * 60 * 1000;
 const GAP_MS = 2 * 60 * 60 * 1000;
@@ -35,6 +38,12 @@ function expire(root, now) {
   return [];
 }
 
+function give(root, item, n, events) {
+  root.bag[item] = (root.bag[item] || 0) + n;
+  root.bagSeen = { ...(root.bagSeen || {}), [item]: true };
+  events.push({ type: 'item', item, n, total: root.bag[item] });
+}
+
 function unlock(root, id, now, events) {
   if (root.achievements[id] || !ACHIEVEMENTS[id]) return;
   root.achievements[id] = now;
@@ -48,28 +57,39 @@ function roll(root, signal, now, rng = Math.random, allowed = true) {
   if (!allowed || signal.kind !== 'tool-done' || current(root, now)) return events;
   const log = root.wildLog || { day: null, today: 0, last: 0 };
   const today = log.day === dayKey(now) ? log.today : 0;
-  if (today >= PER_DAY || now - (log.last || 0) < GAP_MS) return events;
-  if (rng() >= 1 / WILD_ODDS) return events;
+  // A Lure makes them more common and lifts the daily limits while it lasts.
+  const lured = root.lureUntil && root.lureUntil > now;
+  if (!lured && (today >= PER_DAY || now - (log.last || 0) < GAP_MS)) return events;
+  if (rng() >= 1 / (lured ? LURE_ODDS : WILD_ODDS)) return events;
   const own = STATS.includes(signal.family) ? signal.family : null;
-  const lineage = own && rng() < SAME_TYPE ? own : STATS[Math.floor(rng() * STATS.length) % STATS.length];
-  const shiny = rng() < 1 / SHINY_ODDS;
+  // A Field map picks the type; otherwise the work that called it, mostly.
+  let lineage;
+  if (root.fieldMap && STATS.includes(root.fieldMap)) lineage = root.fieldMap;
+  else lineage = own && rng() < SAME_TYPE ? own : STATS[Math.floor(rng() * STATS.length) % STATS.length];
+  root.fieldMap = null;
+  const shiny = rng() < 1 / (root.lantern ? LANTERN_ODDS : SHINY_ODDS);
+  root.lantern = false;
   root.wild = { lineage, shiny, name: formName('juvenile', lineage), at: now, until: now + STAY_MS, tries: 0 };
   root.wildLog = { day: dayKey(now), today: today + 1, last: now };
   root.wildSeen = { ...(root.wildSeen || {}), [lineage]: root.wildSeen && root.wildSeen[lineage] ? root.wildSeen[lineage] : now };
   events.push({ type: 'wild', lineage, shiny, name: formName('juvenile', lineage), until: root.wild.until });
-  if (STATS.every((s) => root.wildSeen[s])) unlock(root, 'wild-all', now, events);
+  if (STATS.every((s) => root.wildSeen[s]) && !root.achievements['wild-all']) {
+    unlock(root, 'wild-all', now, events);
+    // The guide is complete: the one Openball Master.
+    give(root, 'openball-master', 1, events);
+  }
   return events;
 }
 
 // One Openball at the wild one. `addMember` puts the caught one in the team
 // (party.js passes its own, so this module does not depend on it).
-function throwBall(root, now, addMember, rng = Math.random) {
+function throwBall(root, now, addMember, rng = Math.random, ball = 'openball') {
   const events = expire(root, now);
   const w = current(root, now);
-  if (!w || !((root.bag && root.bag.openball) > 0)) return events;
-  root.bag.openball--;
+  if (!w || !BALLS.includes(ball) || !((root.bag && root.bag[ball]) > 0)) return events;
+  root.bag[ball]--;
   w.tries++;
-  if (rng() < CATCH) {
+  if (rng() < ITEMS[ball].catchOdds) {
     root.wild = null;
     const mon = pet.createPet(now);
     const key = formKey('juvenile', w.lineage);
@@ -91,7 +111,10 @@ function throwBall(root, now, addMember, rng = Math.random) {
     events.push({ type: 'wild-caught', lineage: w.lineage, shiny: w.shiny, name: formName('juvenile', w.lineage), memberId: member.id, place: member.place });
     unlock(root, 'first-catch', now, events);
     if (w.shiny) unlock(root, 'catch-shiny', now, events);
-    if (root.counters.catches >= MANY) unlock(root, 'catch-10', now, events);
+    if (root.counters.catches >= MANY && !root.achievements['catch-10']) {
+      unlock(root, 'catch-10', now, events);
+      give(root, 'lantern', 1, events);
+    }
     return events;
   }
   if (rng() < STAY) {
@@ -110,4 +133,4 @@ function release(root, now) {
   return [{ type: 'wild-left' }];
 }
 
-module.exports = { roll, throwBall, release, current, expire, WILD_ODDS, CATCH, STAY, STAY_MS, GAP_MS, PER_DAY, SAME_TYPE };
+module.exports = { roll, throwBall, release, current, expire, BALLS, WILD_ODDS, LURE_ODDS, LANTERN_ODDS, CATCH, STAY, STAY_MS, GAP_MS, PER_DAY, SAME_TYPE };

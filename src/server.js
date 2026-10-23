@@ -1091,7 +1091,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           // A stone another member holds is not free to take.
           const item = String(body.item || '');
           const reserved = world === real ? party.heldByOthers(real.pet)[item] || 0 : 0;
-          const events = change((p) => pet.useItem(p, item, now(), reserved));
+          const events = change((p) => pet.useItem(p, item, now(), reserved, body.lineage ? String(body.lineage) : null));
           // A mystery egg hatches into a new member of the team.
           if (events.some((e) => e.type === 'mystery-egg') && world === real) {
             const hatched = partyAction(() => party.hatchMystery(real.pet, now()));
@@ -1116,7 +1116,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'POST /api/party/rename':
         return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { events: partyAction(() => party.renameMember(real.pet, String(body.id || ''), body.name)) })));
       case 'POST /api/wild/throw':
-        return json(res, 200, { events: wildAction(() => wild.throwBall(party.ensure(real.pet), now(), party.addMember)) });
+        return json(res, 200, { events: wildAction(() => wild.throwBall(party.ensure(real.pet), now(), party.addMember, Math.random, String(new URL(req.url, 'http://x').searchParams.get('ball') || 'openball'))) });
       case 'POST /api/wild/release':
         return json(res, 200, { events: wildAction(() => wild.release(real.pet, now())) });
       case 'POST /api/starter':

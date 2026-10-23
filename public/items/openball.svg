@@ -1,1 +1,15 @@
-<svg class="cr" viewBox="0 0 40 40" aria-label="Openball" xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect fill="#7c6cf2" x="9" y="5" width="22" height="30" rx="11" stroke="rgb(42, 33, 64)" stroke-width="2.5"></rect><path fill="#fffdf7" d="M9.6 20 H30.4 V24 C30.4 30 26 33.8 20 33.8 C14 33.8 9.6 30 9.6 24 Z" stroke="none"></path><path class="ln" stroke="rgb(42, 33, 64)" stroke-width="2.2" d="M9.5 20 H30.5" fill="none"></path><rect fill="#ffe156" x="16" y="17" width="8" height="6" rx="2" stroke="rgb(42, 33, 64)" stroke-width="2"></rect><path class="ln" stroke="#2a2140" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M18.6 18.8 L17.6 20 L18.6 21.2 M21.4 18.8 L22.4 20 L21.4 21.2" fill="none"></path><rect rx="1.4" fill="rgb(255, 255, 255)" opacity=".7" x="13" y="8" width="2.8" height="8" stroke="none"></rect></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="40" height="40"><title>Openball</title>
+<g class="o"><path d="M41 14 C41 3 59 3 59 14" fill="none" stroke="#163a35" stroke-width="14.0" stroke-linecap="round" stroke-linejoin="round"/><path stroke="#163a35" stroke-width="8.0" stroke-linejoin="round" d="M26 56 L74 56 L74 72 C74 86 64 94 50 94 C36 94 26 86 26 72 Z" fill="#163a35"/><path stroke="#163a35" stroke-width="8.0" stroke-linejoin="round" d="M74 64 L74 72 C74 86 64 94 50 94 C40 94 32 90 29 84 C40 88 56 88 66 80 C72 75 74 70 74 64 Z" fill="#163a35"/><path stroke="#163a35" stroke-width="8.0" stroke-linejoin="round" d="M26 54 L26 40 C26 22 37 12 50 12 C63 12 74 22 74 40 L74 54 Z" fill="#163a35"/><path stroke="#163a35" stroke-width="8.0" stroke-linejoin="round" d="M66 22 C71 28 74 34 74 42 L74 54 L62 54 C66 44 68 32 66 22 Z" fill="#163a35"/><rect stroke="#163a35" stroke-width="8.0" stroke-linejoin="round" x="23" y="51" width="54" height="8" rx="4" fill="#163a35"/><rect stroke="#163a35" stroke-width="8.0" stroke-linejoin="round" x="68" y="47" width="13" height="17" rx="4" fill="#163a35"/><rect stroke="#163a35" stroke-width="8.0" stroke-linejoin="round" x="74" y="50" width="7" height="11" rx="3" fill="#163a35"/><circle stroke="#163a35" stroke-width="8.0" stroke-linejoin="round" cx="74.5" cy="55.5" r="3.2" fill="#163a35"/></g>
+<path d="M41 14 C41 3 59 3 59 14" fill="none" stroke="#245a52" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26 56 L74 56 L74 72 C74 86 64 94 50 94 C36 94 26 86 26 72 Z" fill="#fff6e6"/>
+<path d="M74 64 L74 72 C74 86 64 94 50 94 C40 94 32 90 29 84 C40 88 56 88 66 80 C72 75 74 70 74 64 Z" fill="#e8d6b8"/>
+<path d="M26 54 L26 40 C26 22 37 12 50 12 C63 12 74 22 74 40 L74 54 Z" fill="#3fb8a6"/>
+<path d="M66 22 C71 28 74 34 74 42 L74 54 L62 54 C66 44 68 32 66 22 Z" fill="#2a8f80"/>
+<rect x="23" y="51" width="54" height="8" rx="4" fill="#245a52"/>
+<rect x="68" y="47" width="13" height="17" rx="4" fill="#ffd166"/>
+<rect x="74" y="50" width="7" height="11" rx="3" fill="#d9a035"/>
+<circle cx="74.5" cy="55.5" r="3.2" fill="#ff8a64"/>
+<ellipse cx="38" cy="28" rx="7" ry="13" fill="#ffffff" opacity="0.6" transform="rotate(20 38 28)"/>
+<ellipse cx="36" cy="70" rx="4" ry="8" fill="#ffffff" opacity="0.5" transform="rotate(15 36 70)"/>
+<ellipse cx="62" cy="18" rx="2.4" ry="1.6" fill="#ffffff" opacity="0.8" transform="rotate(0 62 18)"/>
+</svg>

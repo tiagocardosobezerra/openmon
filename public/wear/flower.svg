@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -120 140 160" width="140" height="160"><title>Flor</title>
+<g class="o"><path stroke="#4a1830" stroke-width="8.0" stroke-linejoin="round" d="M20 -6 Q-2 2 -6 -12 Q8 -16 20 -6 Z" fill="#4a1830"/><ellipse stroke="#4a1830" stroke-width="8.0" stroke-linejoin="round" cx="24" cy="-25" rx="10" ry="12" fill="#4a1830"/><ellipse stroke="#4a1830" stroke-width="8.0" stroke-linejoin="round" cx="36.3637" cy="-16.0172" rx="10" ry="12" fill="#4a1830" transform="rotate(72 36.3637 -16.0172)"/><ellipse stroke="#4a1830" stroke-width="8.0" stroke-linejoin="round" cx="31.6412" cy="-1.48278" rx="10" ry="12" fill="#4a1830" transform="rotate(144 31.6412 -1.48278)"/><ellipse stroke="#4a1830" stroke-width="8.0" stroke-linejoin="round" cx="16.3588" cy="-1.48278" rx="10" ry="12" fill="#4a1830" transform="rotate(216 16.3588 -1.48278)"/><ellipse stroke="#4a1830" stroke-width="8.0" stroke-linejoin="round" cx="11.6363" cy="-16.0172" rx="10" ry="12" fill="#4a1830" transform="rotate(288 11.6363 -16.0172)"/><ellipse stroke="#4a1830" stroke-width="8.0" stroke-linejoin="round" cx="31.6412" cy="-1.48278" rx="10" ry="12" fill="#4a1830" transform="rotate(144 31.6412 -1.48278)"/><circle stroke="#4a1830" stroke-width="8.0" stroke-linejoin="round" cx="24" cy="-12" r="9" fill="#4a1830"/><circle stroke="#4a1830" stroke-width="8.0" stroke-linejoin="round" cx="26" cy="-10" r="4.5" fill="#4a1830"/></g>
+<path d="M20 -6 Q-2 2 -6 -12 Q8 -16 20 -6 Z" fill="#5bbd6b"/>
+<ellipse cx="24" cy="-25" rx="10" ry="12" fill="#ff8fb8"/>
+<ellipse cx="36.3637" cy="-16.0172" rx="10" ry="12" fill="#ff8fb8" transform="rotate(72 36.3637 -16.0172)"/>
+<ellipse cx="31.6412" cy="-1.48278" rx="10" ry="12" fill="#ff8fb8" transform="rotate(144 31.6412 -1.48278)"/>
+<ellipse cx="16.3588" cy="-1.48278" rx="10" ry="12" fill="#ff8fb8" transform="rotate(216 16.3588 -1.48278)"/>
+<ellipse cx="11.6363" cy="-16.0172" rx="10" ry="12" fill="#ff8fb8" transform="rotate(288 11.6363 -16.0172)"/>
+<ellipse cx="31.6412" cy="-1.48278" rx="10" ry="12" fill="#e8649a" transform="rotate(144 31.6412 -1.48278)"/>
+<circle cx="24" cy="-12" r="9" fill="#ffd23f"/>
+<circle cx="26" cy="-10" r="4.5" fill="#e8a91f"/>
+<ellipse cx="16" cy="-26" rx="4" ry="2" fill="#ffffff" opacity="0.6" transform="rotate(-30 16 -26)"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -30 140 120" width="140" height="120"><title>Gravata-borboleta</title>
+<g class="o"><path stroke="#0f1f3a" stroke-width="9.0" stroke-linejoin="round" d="M-3 4 L-26 -8 Q-31 -9 -31 -3 L-31 13 Q-31 19 -26 17 L-3 6 Z" fill="#0f1f3a"/><path stroke="#0f1f3a" stroke-width="9.0" stroke-linejoin="round" d="M3 4 L26 -8 Q31 -9 31 -3 L31 13 Q31 19 26 17 L3 6 Z" fill="#0f1f3a"/><path stroke="#0f1f3a" stroke-width="9.0" stroke-linejoin="round" d="M-26 -8 Q-31 -9 -31 -3 L-31 13 Q-31 19 -26 17 Q-22 5 -26 -8 Z" fill="#0f1f3a"/><path stroke="#0f1f3a" stroke-width="9.0" stroke-linejoin="round" d="M26 -8 Q31 -9 31 -3 L31 13 Q31 19 26 17 Q22 5 26 -8 Z" fill="#0f1f3a"/><rect stroke="#0f1f3a" stroke-width="9.0" stroke-linejoin="round" x="-6" y="-2" width="12" height="12" rx="4" fill="#0f1f3a"/><circle stroke="#0f1f3a" stroke-width="9.0" stroke-linejoin="round" cx="-17" cy="1" r="2" fill="#0f1f3a"/><circle stroke="#0f1f3a" stroke-width="9.0" stroke-linejoin="round" cx="-12" cy="9" r="2" fill="#0f1f3a"/><circle stroke="#0f1f3a" stroke-width="9.0" stroke-linejoin="round" cx="17" cy="1" r="2" fill="#0f1f3a"/><circle stroke="#0f1f3a" stroke-width="9.0" stroke-linejoin="round" cx="12" cy="9" r="2" fill="#0f1f3a"/></g>
+<path d="M-3 4 L-26 -8 Q-31 -9 -31 -3 L-31 13 Q-31 19 -26 17 L-3 6 Z" fill="#3a7bd5"/>
+<path d="M3 4 L26 -8 Q31 -9 31 -3 L31 13 Q31 19 26 17 L3 6 Z" fill="#3a7bd5"/>
+<path d="M-26 -8 Q-31 -9 -31 -3 L-31 13 Q-31 19 -26 17 Q-22 5 -26 -8 Z" fill="#2a5aa8"/>
+<path d="M26 -8 Q31 -9 31 -3 L31 13 Q31 19 26 17 Q22 5 26 -8 Z" fill="#2a5aa8"/>
+<rect x="-6" y="-2" width="12" height="12" rx="4" fill="#2a5aa8"/>
+<circle cx="-17" cy="1" r="2" fill="#ffffff"/>
+<circle cx="-12" cy="9" r="2" fill="#ffffff"/>
+<circle cx="17" cy="1" r="2" fill="#ffffff"/>
+<circle cx="12" cy="9" r="2" fill="#ffffff"/>
+<ellipse cx="-18" cy="-3" rx="4" ry="1.4" fill="#ffffff" opacity="0.5" transform="rotate(25 -18 -3)"/>
+</svg>

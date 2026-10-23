@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -120 140 160" width="140" height="160"><title>Presilha brilhante</title>
+<g class="o"><rect stroke="#3a2a5a" stroke-width="8.0" stroke-linejoin="round" x="-2" y="-13" width="30" height="7" rx="3.5" fill="#3a2a5a"/><rect stroke="#3a2a5a" stroke-width="8.0" stroke-linejoin="round" x="-2" y="-9" width="30" height="3" rx="1.5" fill="#3a2a5a"/><polygon stroke="#3a2a5a" stroke-width="8.0" stroke-linejoin="round" points="26.0,-30.0 30.3,-16.3 44.0,-12.0 30.3,-7.7 26.0,6.0 21.7,-7.7 8.0,-12.0 21.7,-16.3" fill="#3a2a5a"/><polygon stroke="#3a2a5a" stroke-width="8.0" stroke-linejoin="round" points="26.0,-20.0 27.9,-13.9 34.0,-12.0 27.9,-10.1 26.0,-4.0 24.1,-10.1 18.0,-12.0 24.1,-13.9" fill="#3a2a5a"/><polygon stroke="#3a2a5a" stroke-width="8.0" stroke-linejoin="round" points="8.0,-33.0 9.7,-27.7 15.0,-26.0 9.7,-24.3 8.0,-19.0 6.3,-24.3 1.0,-26.0 6.3,-27.7" fill="#3a2a5a"/><circle stroke="#3a2a5a" stroke-width="8.0" stroke-linejoin="round" cx="26" cy="-12" r="3" fill="#3a2a5a"/></g>
+<rect x="-2" y="-13" width="30" height="7" rx="3.5" fill="#c9d4f2"/>
+<rect x="-2" y="-9" width="30" height="3" rx="1.5" fill="#9aa8d6"/>
+<polygon points="26.0,-30.0 30.3,-16.3 44.0,-12.0 30.3,-7.7 26.0,6.0 21.7,-7.7 8.0,-12.0 21.7,-16.3" fill="#ffe066"/>
+<polygon points="26.0,-20.0 27.9,-13.9 34.0,-12.0 27.9,-10.1 26.0,-4.0 24.1,-10.1 18.0,-12.0 24.1,-13.9" fill="#f2b630"/>
+<polygon points="8.0,-33.0 9.7,-27.7 15.0,-26.0 9.7,-24.3 8.0,-19.0 6.3,-24.3 1.0,-26.0 6.3,-27.7" fill="#ffe066"/>
+<circle cx="26" cy="-12" r="3" fill="#ffffff"/>
+<ellipse cx="20" cy="-22" rx="2" ry="4" fill="#ffffff" opacity="0.7" transform="rotate(0 20 -22)"/>
+</svg>

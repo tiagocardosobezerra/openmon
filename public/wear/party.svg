@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -120 140 160" width="140" height="160"><title>Chapéu de festa</title>
+<g class="o"><path stroke="#16304a" stroke-width="8.0" stroke-linejoin="round" d="M-30 2 L-2 -78 Q0 -82 2 -78 L30 2 Q0 8 -30 2 Z" fill="#16304a"/><path stroke="#16304a" stroke-width="8.0" stroke-linejoin="round" d="M2 -78 L30 2 Q20 4 12 5 L0 -76 Z" fill="#16304a"/><path stroke="#16304a" stroke-width="8.0" stroke-linejoin="round" d="M-22 -22 L22 -22 L26 -10 L-26 -10 Z" fill="#16304a"/><circle stroke="#16304a" stroke-width="8.0" stroke-linejoin="round" cx="-10" cy="-46" r="4" fill="#16304a"/><circle stroke="#16304a" stroke-width="8.0" stroke-linejoin="round" cx="8" cy="-36" r="4" fill="#16304a"/><circle stroke="#16304a" stroke-width="8.0" stroke-linejoin="round" cx="-14" cy="-4" r="3.6" fill="#16304a"/><path d="M-31 1 Q0 8 31 1" fill="none" stroke="#16304a" stroke-width="14.0" stroke-linecap="round" stroke-linejoin="round"/><circle stroke="#16304a" stroke-width="8.0" stroke-linejoin="round" cx="0" cy="-84" r="10" fill="#16304a"/><circle stroke="#16304a" stroke-width="8.0" stroke-linejoin="round" cx="4" cy="-82" r="5" fill="#16304a"/></g>
+<path d="M-30 2 L-2 -78 Q0 -82 2 -78 L30 2 Q0 8 -30 2 Z" fill="#4fb6e8"/>
+<path d="M2 -78 L30 2 Q20 4 12 5 L0 -76 Z" fill="#2f8fc4"/>
+<path d="M-22 -22 L22 -22 L26 -10 L-26 -10 Z" fill="#ff6f91"/>
+<circle cx="-10" cy="-46" r="4" fill="#ffd23f"/>
+<circle cx="8" cy="-36" r="4" fill="#ffd23f"/>
+<circle cx="-14" cy="-4" r="3.6" fill="#ffd23f"/>
+<path d="M-31 1 Q0 8 31 1" fill="none" stroke="#ffd23f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="0" cy="-84" r="10" fill="#ff6f91"/>
+<circle cx="4" cy="-82" r="5" fill="#d94a70"/>
+<ellipse cx="-10" cy="-52" rx="3" ry="12" fill="#ffffff" opacity="0.55" transform="rotate(18 -10 -52)"/>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -30 140 120" width="140" height="120"><title>Cachecol</title>
+<g class="o"><path stroke="#3a1410" stroke-width="9.0" stroke-linejoin="round" d="M14 6 Q22 26 18 52 L30 50 Q34 28 24 4 Z" fill="#3a1410"/><path d="M19 44 L31 42" fill="none" stroke="#3a1410" stroke-width="12.0" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 34 L29 31" fill="none" stroke="#3a1410" stroke-width="12.0" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 52 L17 57 M22 52 L22 58 M26 51 L26.5 57 M30 50 L31 56" fill="none" stroke="#3a1410" stroke-width="11.6" stroke-linecap="round" stroke-linejoin="round"/><path stroke="#3a1410" stroke-width="9.0" stroke-linejoin="round" d="M-44 -2 Q0 8 44 -2 L44 8 Q0 20 -44 8 Z" fill="#3a1410"/><path d="M-30 4 Q0 13 30 4" fill="none" stroke="#3a1410" stroke-width="12.0" stroke-linecap="round" stroke-linejoin="round"/><path stroke="#3a1410" stroke-width="9.0" stroke-linejoin="round" d="M12 2 Q24 2 26 12 Q18 18 10 14 Q8 6 12 2 Z" fill="#3a1410"/></g>
+<path d="M14 6 Q22 26 18 52 L30 50 Q34 28 24 4 Z" fill="#b83a30"/>
+<path d="M19 44 L31 42" fill="none" stroke="#fff1dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17 34 L29 31" fill="none" stroke="#fff1dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 52 L17 57 M22 52 L22 58 M26 51 L26.5 57 M30 50 L31 56" fill="none" stroke="#b83a30" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M-44 -2 Q0 8 44 -2 L44 8 Q0 20 -44 8 Z" fill="#e8574a"/>
+<path d="M-30 4 Q0 13 30 4" fill="none" stroke="#fff1dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12 2 Q24 2 26 12 Q18 18 10 14 Q8 6 12 2 Z" fill="#b83a30"/>
+<ellipse cx="-26" cy="1" rx="8" ry="1.8" fill="#ffffff" opacity="0.5" transform="rotate(8 -26 1)"/>
+</svg>

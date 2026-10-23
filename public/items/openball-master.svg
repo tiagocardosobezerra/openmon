@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="40" height="40"><title>Openball Mestra</title>
+<g class="o"><path d="M41 14 C41 3 59 3 59 14" fill="none" stroke="#22124a" stroke-width="14.0" stroke-linecap="round" stroke-linejoin="round"/><path stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" d="M26 56 L74 56 L74 72 C74 86 64 94 50 94 C36 94 26 86 26 72 Z" fill="#22124a"/><path stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" d="M74 64 L74 72 C74 86 64 94 50 94 C40 94 32 90 29 84 C40 88 56 88 66 80 C72 75 74 70 74 64 Z" fill="#22124a"/><path stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" d="M26 54 L26 40 C26 22 37 12 50 12 C63 12 74 22 74 40 L74 54 Z" fill="#22124a"/><path stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" d="M66 22 C71 28 74 34 74 42 L74 54 L62 54 C66 44 68 32 66 22 Z" fill="#22124a"/><rect stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" x="23" y="51" width="54" height="8" rx="4" fill="#22124a"/><path d="M28 36 C32 22 42 16 50 16 C58 16 68 22 72 36" fill="none" stroke="#22124a" stroke-width="11.2" stroke-linecap="round" stroke-linejoin="round"/><polygon stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" points="36.0,30.0 40.0,20.0 45.0,28.0 50.0,17.0 55.0,28.0 60.0,20.0 64.0,30.0" fill="#22124a"/><path d="M34 80 Q50 88 66 80" fill="none" stroke="#22124a" stroke-width="11.2" stroke-linecap="round" stroke-linejoin="round"/><rect stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" x="68" y="47" width="13" height="17" rx="4" fill="#22124a"/><rect stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" x="74" y="50" width="7" height="11" rx="3" fill="#22124a"/><circle stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" cx="74.5" cy="55.5" r="3.2" fill="#22124a"/><polygon stroke="#22124a" stroke-width="8.0" stroke-linejoin="round" points="50.0,64.0 52.4,69.7 58.6,70.2 53.9,74.3 55.3,80.3 50.0,77.0 44.7,80.3 46.1,74.3 41.4,70.2 47.6,69.7" fill="#22124a"/></g>
+<path d="M41 14 C41 3 59 3 59 14" fill="none" stroke="#e8b84a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26 56 L74 56 L74 72 C74 86 64 94 50 94 C36 94 26 86 26 72 Z" fill="#fff3d6"/>
+<path d="M74 64 L74 72 C74 86 64 94 50 94 C40 94 32 90 29 84 C40 88 56 88 66 80 C72 75 74 70 74 64 Z" fill="#ecd29a"/>
+<path d="M26 54 L26 40 C26 22 37 12 50 12 C63 12 74 22 74 40 L74 54 Z" fill="#6b3fc4"/>
+<path d="M66 22 C71 28 74 34 74 42 L74 54 L62 54 C66 44 68 32 66 22 Z" fill="#4e2a9a"/>
+<rect x="23" y="51" width="54" height="8" rx="4" fill="#e8b84a"/>
+<path d="M28 36 C32 22 42 16 50 16 C58 16 68 22 72 36" fill="none" stroke="#ffd166" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="36.0,30.0 40.0,20.0 45.0,28.0 50.0,17.0 55.0,28.0 60.0,20.0 64.0,30.0" fill="#ffd166"/>
+<path d="M34 80 Q50 88 66 80" fill="none" stroke="#ffd166" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="68" y="47" width="13" height="17" rx="4" fill="#ffd166"/>
+<rect x="74" y="50" width="7" height="11" rx="3" fill="#d9a035"/>
+<circle cx="74.5" cy="55.5" r="3.2" fill="#5fe0e0"/>
+<polygon points="50.0,64.0 52.4,69.7 58.6,70.2 53.9,74.3 55.3,80.3 50.0,77.0 44.7,80.3 46.1,74.3 41.4,70.2 47.6,69.7" fill="#ffd166"/>
+<ellipse cx="38" cy="28" rx="7" ry="13" fill="#ffffff" opacity="0.6" transform="rotate(20 38 28)"/>
+<ellipse cx="36" cy="70" rx="4" ry="8" fill="#ffffff" opacity="0.5" transform="rotate(15 36 70)"/>
+<ellipse cx="62" cy="18" rx="2.4" ry="1.6" fill="#ffffff" opacity="0.8" transform="rotate(0 62 18)"/>
+</svg>

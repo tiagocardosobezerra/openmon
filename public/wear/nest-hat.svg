@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -120 140 160" width="140" height="160"><title>Chapéu de ninho</title>
+<g class="o"><ellipse stroke="#2e1a0c" stroke-width="8.0" stroke-linejoin="round" cx="-14" cy="-18" rx="10" ry="13" fill="#2e1a0c"/><ellipse stroke="#2e1a0c" stroke-width="8.0" stroke-linejoin="round" cx="0" cy="-22" rx="10" ry="13" fill="#2e1a0c"/><ellipse stroke="#2e1a0c" stroke-width="8.0" stroke-linejoin="round" cx="14" cy="-18" rx="10" ry="13" fill="#2e1a0c"/><ellipse stroke="#2e1a0c" stroke-width="8.0" stroke-linejoin="round" cx="4" cy="-18" rx="4" ry="7" fill="#2e1a0c"/><circle stroke="#2e1a0c" stroke-width="8.0" stroke-linejoin="round" cx="-2" cy="-26" r="1.8" fill="#2e1a0c"/><circle stroke="#2e1a0c" stroke-width="8.0" stroke-linejoin="round" cx="16" cy="-20" r="1.8" fill="#2e1a0c"/><path stroke="#2e1a0c" stroke-width="8.0" stroke-linejoin="round" d="M-46 -14 Q0 -6 46 -14 Q44 4 0 6 Q-44 4 -46 -14 Z" fill="#2e1a0c"/><path stroke="#2e1a0c" stroke-width="8.0" stroke-linejoin="round" d="M-46 -14 Q0 -6 46 -14 Q46 -6 40 -2 Q0 4 -40 -2 Q-46 -6 -46 -14 Z" fill="#2e1a0c"/><path d="M-40 -10 Q-10 -2 22 -12 M-24 -4 Q6 2 40 -8 M-42 -2 L-30 -12 M30 -2 L44 -12" fill="none" stroke="#2e1a0c" stroke-width="10.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-46 -14 L-54 -22 M46 -14 L54 -24" fill="none" stroke="#2e1a0c" stroke-width="11.0" stroke-linecap="round" stroke-linejoin="round"/></g>
+<ellipse cx="-14" cy="-18" rx="10" ry="13" fill="#fff3dc"/>
+<ellipse cx="0" cy="-22" rx="10" ry="13" fill="#fff3dc"/>
+<ellipse cx="14" cy="-18" rx="10" ry="13" fill="#fff3dc"/>
+<ellipse cx="4" cy="-18" rx="4" ry="7" fill="#e8d2ac"/>
+<circle cx="-2" cy="-26" r="1.8" fill="#c9a46a"/>
+<circle cx="16" cy="-20" r="1.8" fill="#c9a46a"/>
+<path d="M-46 -14 Q0 -6 46 -14 Q44 4 0 6 Q-44 4 -46 -14 Z" fill="#b07a46"/>
+<path d="M-46 -14 Q0 -6 46 -14 Q46 -6 40 -2 Q0 4 -40 -2 Q-46 -6 -46 -14 Z" fill="#8a5a30"/>
+<path d="M-40 -10 Q-10 -2 22 -12 M-24 -4 Q6 2 40 -8 M-42 -2 L-30 -12 M30 -2 L44 -12" fill="none" stroke="#6e4424" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M-46 -14 L-54 -22 M46 -14 L54 -24" fill="none" stroke="#6e4424" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="-17" cy="-24" rx="3" ry="4" fill="#ffffff" opacity="0.7" transform="rotate(-20 -17 -24)"/>
+<ellipse cx="-3" cy="-28" rx="3" ry="4" fill="#ffffff" opacity="0.7" transform="rotate(-20 -3 -28)"/>
+<ellipse cx="11" cy="-24" rx="3" ry="4" fill="#ffffff" opacity="0.7" transform="rotate(-20 11 -24)"/>
+</svg>

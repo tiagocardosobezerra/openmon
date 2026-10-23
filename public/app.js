@@ -809,9 +809,11 @@
     // A wild Openmon: try an Openball or let it go. The agent comes first.
     const w = wildNow();
     if (w) {
-      const balls = (pet.bag && pet.bag.openball) || 0;
+      const bag = pet.bag || {};
+      const owned = [['openball', 'wild.throw'], ['openball-plus', 'wild.throwPlus'], ['openball-master', 'wild.throwMaster']].filter(([id]) => bag[id] > 0);
+      const balls = owned.length;
       const title = tr(w.shiny ? 'wild.titleShiny' : 'wild.title', { name: w.name || w.lineage });
-      const buttons = balls ? [[{ wild: 'throw' }, tr('wild.throw', { n: balls }), 'primary'], [{ wild: 'release' }, tr('wild.release'), '']] : [[{ wild: 'release' }, tr('wild.release'), '']];
+      const buttons = [...owned.map(([id, key], i) => [{ wild: 'throw', ball: id }, tr(key, { n: bag[id] }), i === 0 ? 'primary' : '']), [{ wild: 'release' }, tr('wild.release'), '']];
       const left = Math.max(0, Math.ceil((w.until - Date.now()) / 60000));
       return setBubble('toast', title, balls ? tr('wild.sub') : tr('wild.noBall'), { buttons, note: tr('wild.left', { m: left }), id: `wild|${w.at}` });
     }
@@ -1266,6 +1268,15 @@
         case 'wild-missed':
           pushToast(tr('wild.missed'), tr('wild.missedSub'), 3500);
           break;
+        case 'lure':
+          pushToast(tr('field.lure'), tr('field.lureSub'), 5000);
+          break;
+        case 'lantern':
+          pushToast(tr('field.lantern'), tr('field.lanternSub'), 5000);
+          break;
+        case 'field-map':
+          pushToast(tr('field.map'), tr('field.mapSub', { type: statLabels[e.lineage] || e.lineage }), 5000);
+          break;
         case 'wild-fled':
           pushToast(tr('wild.fled'), tr('wild.fledSub'), 4500);
           break;
@@ -1606,7 +1617,7 @@
     // A wild Openmon: an Openball, or let it go.
     const wildBtn = e.target.closest && e.target.closest('[data-wild]');
     if (wildBtn) {
-      post(`/api/wild/${wildBtn.dataset.wild === 'throw' ? 'throw' : 'release'}`);
+      post(wildBtn.dataset.wild === 'throw' ? `/api/wild/throw?ball=${encodeURIComponent(wildBtn.dataset.ball || 'openball')}` : '/api/wild/release');
       if (wildBtn.dataset.wild === 'throw') play('pet');
       return;
     }

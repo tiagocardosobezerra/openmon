@@ -258,6 +258,9 @@ function view(pet) {
     bag: pet.bag,
     holding: pet.holding,
     streak: pet.streak || { days: 0, best: 0 },
+    lureUntil: pet.lureUntil && pet.lureUntil > Date.now() ? pet.lureUntil : null,
+    lantern: Boolean(pet.lantern),
+    fieldMap: pet.fieldMap || null,
     wild: pet.wild && pet.wild.until > Date.now() ? { ...pet.wild } : null,
     wildSeen: pet.wildSeen || {},
     project: pet.project ?? null,
@@ -301,7 +304,14 @@ const UNLOCKS = {
   cape: (p) => Object.keys(p.legends || {}).length > 0,
   bell: (p) => (p.counters.pets || 0) >= 100,
   backpack: (p) => bagKindsSeen(p) >= ITEM_KINDS.length,
+  'catcher-sash': (p) => Boolean(p.achievements['first-catch']),
+  binoculars: (p) => Boolean(p.achievements['wild-all']),
+  'sparkle-clip': (p) => Boolean(p.achievements['catch-shiny']),
+  'collector-badge': (p) => (p.counters.catches || 0) >= 10,
+  'nest-hat': (p) => nestCount(p) >= 6,
+  'shell-bow': (p) => (p.counters.hatches || 0) >= 5,
 };
+const nestCount = (p) => (p.others || []).filter((m) => m.place === 'box').length;
 // The backpack asks for every kind of item, not every type stone: which
 // stone you get depends on your agent's work, so one of any type counts.
 const ITEM_KINDS = ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone', 'stone', 'openball'];
@@ -313,6 +323,9 @@ const ORIGINAL_DEX = () => dexEntries().slice(0, ORIGINAL_DEX_SIZE).map((e) => e
 
 // Progress toward each locked accessory, for the bag's hints.
 const UNLOCK_PROGRESS = {
+  'collector-badge': (p) => [p.counters.catches || 0, 10],
+  'nest-hat': (p) => [nestCount(p), 6],
+  'shell-bow': (p) => [p.counters.hatches || 0, 5],
   beanie: (p) => [p.daily.activeDays || 0, 7],
   headphones: (p) => [p.counters.testsGreen, 50],
   flower: (p) => [p.bond, 50],
@@ -397,7 +410,7 @@ function wear(pet, slot, id) {
 // hold it to stop evolving (hold again to let go). `reserved` is how many of
 // this item other members of the team are holding: the Bag is shared, so a
 // stone one pet holds cannot be held by another.
-function useItem(pet, item, now, reserved = 0) {
+function useItem(pet, item, now, reserved = 0, choice = null) {
   const events = [];
   if (!ITEMS[item] || ITEMS[item].use === 'throw') return events;
   rollDay(pet, now, events);
@@ -416,6 +429,26 @@ function useItem(pet, item, now, reserved = 0) {
   if (item === 'mystery-egg') {
     pet.bag[item]--;
     events.push({ type: 'mystery-egg' });
+    return events;
+  }
+  // Field items: for the next wild encounters, whatever the pet is.
+  if (ITEMS[item].use === 'field') {
+    if (item === 'lantern' && pet.lantern) return [];
+    if (item === 'field-map' && !STATS.includes(choice)) return [];
+    pet.bag[item]--;
+    if (item === 'lure') {
+      // An hour of wild encounters four times as common.
+      pet.lureUntil = Math.max(pet.lureUntil || 0, now) + 60 * 60 * 1000;
+      events.push({ type: 'lure', until: pet.lureUntil });
+    } else if (item === 'lantern') {
+      // The next wild one: brilhante 1 in 16.
+      pet.lantern = true;
+      events.push({ type: 'lantern' });
+    } else {
+      // The next wild one is of the type picked on the map.
+      pet.fieldMap = choice;
+      events.push({ type: 'field-map', lineage: choice });
+    }
     return events;
   }
   if (pet.stage === 'egg' || pet.legend) return [];
@@ -527,6 +560,8 @@ function rollDay(pet, now, events) {
     if (pet.streak.days % 30 === 0) giveItem(pet, 'mystery-egg', 1, events);
     // Every fifth day an Openball for wild encounters.
     if (pet.streak.days % 5 === 0) giveItem(pet, 'openball', 1, events);
+    // Every tenth day an Openball Plus.
+    if (pet.streak.days % 10 === 0) giveItem(pet, 'openball-plus', 1, events);
   }
 }
 
@@ -573,6 +608,9 @@ function checkMissions(pet, now, events) {
     pet.counters.perfectDays = (pet.counters.perfectDays || 0) + 1;
     giveItem(pet, 'candy', 1, events);
     giveItem(pet, 'openball', 1, events);
+    // Every third perfect day a Lure; every eighth a Field map.
+    if (pet.counters.perfectDays % 3 === 0) giveItem(pet, 'lure', 1, events);
+    if (pet.counters.perfectDays % 8 === 0) giveItem(pet, 'field-map', 1, events);
   }
 }
 
@@ -641,7 +679,10 @@ function evolve(pet, now, events) {
     const firstTime = !pet.dex[key];
     if (firstTime) pet.dex[key] = now;
     events.push({ type: 'evolve', from, to: form(pet), hatched: hatching, stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, shiny: pet.shiny, newDex: firstTime });
-    if (hatching) unlock(pet, 'hatch', now, events);
+    if (hatching) {
+      pet.counters.hatches = (pet.counters.hatches || 0) + 1;
+      unlock(pet, 'hatch', now, events);
+    }
     if (hatching && pet.shiny) unlock(pet, 'shiny', now, events);
     if (pet.stage === 'adult') unlock(pet, 'first-evolution', now, events);
     if (pet.stage === 'juvenile') {

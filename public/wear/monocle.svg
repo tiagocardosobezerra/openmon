@@ -1,1 +1,7 @@
-<svg class="cr" viewBox="-55 -32 110 64" aria-label="Monóculo" xmlns="http://www.w3.org/2000/svg" width="110" height="64"><circle fill="#dff4ff" opacity=".6" cx="20" cy="0" r="14" stroke="none"></circle><circle class="tl ink s9" cx="20" cy="0" r="14" fill="none" stroke="rgb(42, 33, 64)" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"></circle><circle class="tl s4" stroke="#f4d35e" cx="20" cy="0" r="14" fill="none" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"></circle><path class="a t ln" d="M32 7 Q40 18 34 30" fill="none" stroke="rgb(42, 33, 64)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path><circle class="a t" fill="#f4d35e" cx="34" cy="30" r="2.5" stroke="rgb(42, 33, 64)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></circle><path class="tl s3" stroke="#fff" d="M11 -6 Q14 -10 20 -10" fill="none" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -40 140 80" width="140" height="80"><title>Monóculo</title>
+<g class="o"><path d="M32 8 Q44 18 40 28" fill="none" stroke="#3a2608" stroke-width="11.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="0" r="13" fill="none" stroke="#3a2608" stroke-width="13.8"/><circle stroke="#3a2608" stroke-width="9.0" stroke-linejoin="round" cx="33" cy="7" r="3" fill="#3a2608"/></g>
+<path d="M32 8 Q44 18 40 28" fill="none" stroke="#b5862a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="20" cy="0" r="13" fill="none" stroke="#e2b34c" stroke-width="4.8"/>
+<circle cx="33" cy="7" r="3" fill="#e2b34c"/>
+<ellipse cx="13" cy="-6" rx="3.4" ry="1.4" fill="#ffffff" opacity="0.85" transform="rotate(-40 13 -6)"/>
+</svg>

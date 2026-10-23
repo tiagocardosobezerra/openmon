@@ -94,6 +94,9 @@
 
   // Held items: the Steady stone and the type stones (one held at a time).
   const HELD = (id) => id === 'everstone' || id.startsWith('stone-');
+  const THROW = (id) => id === 'openball' || id === 'openball-plus' || id === 'openball-master';
+  // Field items work for the next wild encounters, whatever the pet is.
+  const FIELD = (id) => id === 'lure' || id === 'lantern' || id === 'field-map';
   const TYPES = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm', 'docs', 'git', 'debug', 'data', 'style'];
 
   function itemCard(id, small) {
@@ -116,8 +119,8 @@
       card.append(el('p', '', text));
     }
     let btn;
-    // The Openball is thrown from the pet's bubble when a wild one shows up.
-    if (id === 'openball') {
+    // Openballs are thrown from the pet's bubble when a wild one shows up.
+    if (THROW(id)) {
       if (!n) {
         card.classList.add('none');
         card.append(el('span', 'none-note', tr('bag.none')));
@@ -131,6 +134,22 @@
       btn.disabled = !holding && (!n || final);
       if (!holding && final) btn.title = tr('bag.noEvolve');
       else if (!holding && !n && held[id]) btn.title = tr('bag.heldElsewhere');
+    } else if (FIELD(id)) {
+      btn = el('button', 'btn sm primary', tr('bag.use'));
+      const lit = id === 'lantern' && pet.lantern;
+      const lured = id === 'lure' && pet.lureUntil;
+      btn.disabled = !n || lit;
+      if (lit) btn.title = tr('bag.lanternOn');
+      if (lured) card.append(el('p', 'muted', tr('bag.lureOn', { t: new Date(pet.lureUntil).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }) })));
+      if (id === 'field-map' && pet.fieldMap) card.append(el('p', 'muted', tr('bag.mapOn', { type: tr(`power.${pet.fieldMap}`) })));
+      if (id === 'field-map') {
+        // The map asks which type the next wild one is.
+        const pickType = el('select');
+        pickType.setAttribute('aria-label', tr('bag.mapPick'));
+        for (const t of TYPES) pickType.append(Object.assign(el('option', '', tr(`power.${t}`)), { value: t }));
+        card.append(pickType);
+        btn.onclick = () => act('/api/use', { item: id, lineage: pickType.value });
+      }
     } else {
       btn = el('button', 'btn sm primary', tr(id === 'mystery-egg' ? 'bag.hatch' : 'bag.use'));
       const eggNo = pet.stage === 'egg' && id !== 'mystery-egg';
@@ -141,7 +160,7 @@
       else if (full) btn.title = tr('bag.fullBond');
       else if (top) btn.title = tr('bag.maxLevel');
     }
-    btn.onclick = () => act('/api/use', { item: id });
+    if (!btn.onclick) btn.onclick = () => act('/api/use', { item: id });
     // None left: say so plainly instead of a button that looks pressable.
     if (!n && !holding && !(HELD(id) && held[id])) {
       card.classList.add('none');
@@ -155,7 +174,7 @@
   function renderItems() {
     const box = $('items');
     box.textContent = '';
-    for (const id of ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone', 'openball']) box.append(itemCard(id, false));
+    for (const id of ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone', 'openball', 'openball-plus', 'openball-master', 'lure', 'lantern', 'field-map']) box.append(itemCard(id, false));
     const stones = $('stones');
     stones.textContent = '';
     for (const t of TYPES) stones.append(itemCard(`stone-${t}`, true));
