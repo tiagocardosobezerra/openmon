@@ -78,8 +78,8 @@
 
   function render(t) {
     const p = data.pet;
-    const key = p.stage === 'sprout' || !p.lineage ? 'sprout' : p.lineage;
-    const pal = (p.shiny && p.stage !== 'egg' && OpenmonArt.SHINY[key]) || OpenmonArt.PALETTES[key] || OpenmonArt.PALETTES.sprout;
+    const key = p.lineage || 'plain';
+    const pal = (p.shiny && p.stage !== 'egg' && OpenmonArt.SHINY[key]) || OpenmonArt.PALETTES[key] || OpenmonArt.PALETTES.plain;
     // Background.
     const g = ctx.createLinearGradient(0, 0, 1200, 630);
     g.addColorStop(0, pal.glow);

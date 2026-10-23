@@ -15,13 +15,22 @@ function feed(p, signal, n, start = T0, step = 6000) {
   return events;
 }
 
-test('an egg hatches into a baby (the Sprout form) at 30 XP', () => {
+test('an egg hatches straight into the Juvenile of its work at 400 XP', () => {
   const p = pet.createPet(T0);
-  const events = feed(p, done('craft'), 30);
-  assert.equal(p.stage, 'sprout');
-  assert.equal(pet.form(p), 'Sprout');
-  assert.ok(events.some((e) => e.type === 'evolve' && e.to === 'Sprout'));
+  const events = feed(p, done('craft'), 400);
+  assert.equal(p.stage, 'juvenile');
+  assert.equal(pet.form(p), 'Tinkit');
+  assert.ok(events.some((e) => e.type === 'evolve' && e.from === 'Egg' && e.to === 'Tinkit' && e.hatched));
   assert.ok(p.achievements.hatch);
+});
+
+test('a chosen starter hatches after 30 XP as the chosen form', () => {
+  const p = pet.newTrainer(T0);
+  pet.chooseStarter(p, 'shell', T0);
+  const events = feed(p, done('craft'), 30);
+  assert.equal(p.stage, 'juvenile');
+  assert.equal(pet.form(p), 'Sparkle');
+  assert.ok(events.some((e) => e.type === 'evolve' && e.to === 'Sparkle'));
 });
 
 test('the top stat decides the lineage, the second the trait', () => {
@@ -137,20 +146,20 @@ test('nature and shiny are rolled at birth', () => {
 });
 
 test('migrated pets get a stable nature and are never made shiny', () => {
-  const old = { name: 'Rex', bornAt: 123456, xp: 50, stage: 'sprout', history: [{ stage: 'egg', at: 1 }, { stage: 'sprout', at: 2 }] };
+  const old = { name: 'Rex', bornAt: 123456, xp: 500, stage: 'juvenile', lineage: 'lore', history: [{ stage: 'egg', at: 1 }, { stage: 'juvenile', lineage: 'lore', at: 2 }] };
   const a = pet.migrate(old, T0);
   const b = pet.migrate(old, T0 + 999);
   assert.equal(a.nature, b.nature);
   assert.equal(a.shiny, false);
-  assert.deepEqual(Object.keys(a.dex).sort(), ['egg', 'sprout']);
+  assert.deepEqual(Object.keys(a.dex).sort(), ['egg', 'lore-juvenile']);
 });
 
 test('evolving fills the Opendex and flags new entries', () => {
   const p = pet.createPet(T0, 'Byte', () => 0.5);
-  const events = feed(p, done('craft'), 30);
+  const events = feed(p, done('craft'), 400);
   const evo = events.find((e) => e.type === 'evolve');
   assert.equal(evo.newDex, true);
-  assert.ok(p.dex.sprout);
+  assert.ok(p.dex['craft-juvenile']);
   assert.equal(pet.view(p).dexNo, 2);
 });
 
@@ -191,12 +200,12 @@ test('a near-perfect tie between two kinds of work grows the hidden Chimera', ()
   assert.deepEqual(p.chimera, ['craft', 'test']);
   assert.equal(pet.form(p), 'Chimera');
   assert.ok(events.some((e) => e.type === 'achievement' && e.id === 'hidden'));
-  assert.equal(pet.view(p).dexNo, 21);
+  assert.equal(pet.view(p).dexNo, 20);
 });
 
 test('evolving at night gives the Nocturne variant; by day it does not', () => {
   const night = pet.createPet(T0, 'Byte', () => 0.5);
-  Object.assign(night, { xp: 399, stage: 'sprout' });
+  Object.assign(night, { xp: 399, stage: 'egg' });
   night.stats.craft = 10;
   const events = pet.applySignal(night, { kind: 'turn-end' }, {}, new Date(2026, 9, 19, 3, 0).getTime());
   assert.equal(night.stage, 'juvenile');
@@ -204,7 +213,7 @@ test('evolving at night gives the Nocturne variant; by day it does not', () => {
   assert.ok(night.seenNight['craft-juvenile']);
   assert.ok(events.some((e) => e.type === 'achievement' && e.id === 'nocturne'));
   const day = pet.createPet(T0, 'Byte', () => 0.5);
-  Object.assign(day, { xp: 399, stage: 'sprout' });
+  Object.assign(day, { xp: 399, stage: 'egg' });
   pet.applySignal(day, { kind: 'turn-end' }, {}, T0);
   assert.equal(day.nocturne, false);
 });
@@ -286,7 +295,7 @@ test('items: missions give snacks, snacks build bond, the Steady stone stops evo
   // Eggs do not eat.
   p.stage = 'egg';
   assert.deepEqual(pet.useItem(p, 'snack', T0), []);
-  p.stage = 'sprout';
+  Object.assign(p, { stage: 'juvenile', lineage: 'craft' });
   const bond = p.bond;
   pet.useItem(p, 'snack', T0);
   assert.equal(p.bond, bond + 2);
@@ -299,9 +308,9 @@ test('items: missions give snacks, snacks build bond, the Steady stone stops evo
   p.bag.everstone = 1;
   pet.useItem(p, 'everstone', T0);
   assert.equal(p.holding, 'everstone');
-  p.xp = 500;
+  p.xp = 3100;
   pet.applySignal(p, done('craft'), {}, T0 + 5000);
-  assert.equal(p.stage, 'sprout');
+  assert.equal(p.stage, 'juvenile');
   const ev = pet.useItem(p, 'everstone', T0 + 6000);
   assert.equal(p.holding, null);
   assert.ok(ev.some((e) => e.type === 'evolve'));
@@ -362,7 +371,6 @@ test('old pets get the new stats at zero', () => {
 
 test('a held type stone decides the next evolution and is spent', () => {
   const p = pet.createPet(T0);
-  p.stage = 'sprout';
   p.xp = 399;
   p.stats.craft = 500;
   p.bag['stone-data'] = 1;

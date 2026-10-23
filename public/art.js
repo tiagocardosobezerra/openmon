@@ -15,7 +15,8 @@
 
   const PALETTES = {
     egg: { body: '#fff4e0', dark: '#efd9b4', belly: '#fffaf0', accent: '#f2b880', glow: '#fff1c9' },
-    sprout: { body: '#f6e7c9', dark: '#dcc59c', belly: '#fff8ea', accent: '#78c86b', glow: '#fff3d1' },
+    // Fallback for a form without a lineage of its own.
+    plain: { body: '#f6e7c9', dark: '#dcc59c', belly: '#fff8ea', accent: '#78c86b', glow: '#fff3d1' },
     craft: { body: '#ff9f43', dark: '#d9762b', belly: '#ffe2bd', accent: '#7a5440', glow: '#ffc56e', extra: '#9aa3b5' },
     lore: { body: '#9381f2', dark: '#6c5bcf', belly: '#e6e0ff', accent: '#f5d35f', glow: '#c7baff', extra: '#4b3f8f' },
     shell: { body: '#35d0bf', dark: '#1fa496', belly: '#d5fff8', accent: '#ffe156', glow: '#9dfff2', extra: '#1d6f73' },
@@ -32,7 +33,6 @@
 
   // Shiny variants: same form, rare colours (1 in 128, decided at birth).
   const SHINY = {
-    sprout: { body: '#dff1ff', dark: '#a9cbe6', belly: '#f6fbff', accent: '#ff8fb8', glow: '#e9f6ff' },
     craft: { body: '#5d6d8f', dark: '#3f4c69', belly: '#cbd7f0', accent: '#e9c46a', glow: '#9fb6e8', extra: '#e9c46a' },
     lore: { body: '#f2c14e', dark: '#c9962c', belly: '#fff2c6', accent: '#7e5bd6', glow: '#ffe69a', extra: '#8a5a00' },
     shell: { body: '#ff6b8a', dark: '#d4466a', belly: '#ffe0e7', accent: '#7dffb0', glow: '#ffb3c3', extra: '#7a1f38' },
@@ -49,7 +49,7 @@
 
   // Body proportions per lineage: width, top height, bottom height, tip.
   const SHAPES = {
-    sprout: { w: 1.0, top: 0.95, bottom: 0.8, tip: 0 },
+    plain: { w: 1.0, top: 0.95, bottom: 0.8, tip: 0 },
     craft: { w: 1.08, top: 0.92, bottom: 0.85, tip: 0 },
     lore: { w: 0.92, top: 1.12, bottom: 0.82, tip: 0.05 },
     shell: { w: 1.18, top: 0.82, bottom: 0.8, tip: 0 },
@@ -70,12 +70,12 @@
 
   const EYE_STYLE = { craft: 'fierce', lore: 'owl', shell: 'cat', test: 'kind', roam: 'sparkle', swarm: 'bead' };
 
-  const STAGE_SCALE = { egg: 0.78, sprout: 0.66, juvenile: 0.82, adult: 1, mythic: 1.08 };
+  const STAGE_SCALE = { egg: 0.78, juvenile: 0.82, adult: 1, mythic: 1.08 };
 
   function palette(spec) {
     if (spec.stage === 'egg') return PALETTES.egg;
-    const key = spec.stage === 'sprout' || !spec.lineage ? 'sprout' : spec.lineage;
-    const base = (spec.shiny && SHINY[key]) || PALETTES[key] || PALETTES.sprout;
+    const key = spec.lineage || 'plain';
+    const base = (spec.shiny && SHINY[key]) || PALETTES[key] || PALETTES.plain;
     return spec.nocturne ? nightify(base) : base;
   }
 
@@ -118,9 +118,9 @@
   }
 
   function shapeOf(spec) {
-    if (spec.stage === 'sprout' || !spec.lineage) return SHAPES.sprout;
-    if (stageN(spec.stage) >= 2) return GROWN_SHAPES[spec.lineage] || SHAPES.sprout;
-    return SHAPES[spec.lineage] || SHAPES.sprout;
+    if (!spec.lineage) return SHAPES.plain;
+    if (stageN(spec.stage) >= 2) return GROWN_SHAPES[spec.lineage] || SHAPES.plain;
+    return SHAPES[spec.lineage] || SHAPES.plain;
   }
 
   function stroke(ctx, width = LINE) {
@@ -648,26 +648,6 @@
 
   function headFeatures(ctx, spec, R, top, pal, t) {
     const n = stageN(spec.stage);
-    if (spec.stage === 'sprout') {
-      // Leaf sprout.
-      const sway = Math.sin(t * 2) * 0.15;
-      ctx.save();
-      ctx.translate(0, top + 2);
-      ctx.rotate(sway);
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, -R * 0.35);
-      stroke(ctx);
-      for (const side of [-1, 1]) {
-        ctx.beginPath();
-        ctx.moveTo(0, -R * 0.32);
-        ctx.quadraticCurveTo(side * R * 0.35, -R * 0.62, side * R * 0.42, -R * 0.3);
-        ctx.quadraticCurveTo(side * R * 0.2, -R * 0.22, 0, -R * 0.32);
-        fillStroke(ctx, pal.accent);
-      }
-      ctx.restore();
-      return;
-    }
     switch (spec.lineage) {
       case 'craft': {
         // Little horns, longer each stage.
@@ -1157,7 +1137,7 @@
 
   function spriteKey(spec) {
     if (spec.legend) return spec.legend;
-    return spec.stage === 'egg' || spec.stage === 'sprout' || !spec.lineage ? spec.stage : `${spec.lineage}-${spec.stage}`;
+    return spec.stage === 'egg' || !spec.lineage ? spec.stage : `${spec.lineage}-${spec.stage}`;
   }
 
   // The colouring a pet wears, strongest first: night, shiny, the friendship
@@ -1208,7 +1188,7 @@
       if (regional) return pick(regional, { regional: true });
       return pick(base, { region: spec.region });
     }
-    if (spec.season && !v && tints.seasons[spec.season] && spec.stage !== 'egg') return pick(base, { tint: `season:${spec.season}:${spec.legend ? '' : spec.lineage || 'sprout'}` });
+    if (spec.season && !v && tints.seasons[spec.season] && spec.stage !== 'egg') return pick(base, { tint: `season:${spec.season}:${spec.legend ? '' : spec.lineage || 'plain'}` });
     return pick(base);
   }
 
@@ -1743,7 +1723,7 @@
   // forehead. A pack file "<form>.region-<region>.svg" replaces both.
   const TYPE_COLORS = {
     craft: ['#ff9f43', '#d9762b'], lore: ['#9381f2', '#6c5bcf'], shell: ['#35d0bf', '#1fa496'], test: ['#74cc63', '#4e9f42'],
-    roam: ['#5fb3ff', '#3d88d8'], swarm: ['#ff80b8', '#e0579b'], chimera: ['#b9a6ff', '#8b74e6'], sprout: ['#f6e7c9', '#dcc59c'],
+    roam: ['#5fb3ff', '#3d88d8'], swarm: ['#ff80b8', '#e0579b'], chimera: ['#b9a6ff', '#8b74e6'],
     docs: ['#f3ead6', '#d9c9a6'], git: ['#c7835a', '#9c5e3b'], debug: ['#e5484d', '#b8323a'], data: ['#5fc8e8', '#3a98bd'], style: ['#ffb3d1', '#e787b0'],
   };
   const REGIONS = {
@@ -1776,7 +1756,7 @@
   }
   function seasonMap(season, lineage) {
     const to = tints.seasons[season];
-    const from = PALETTES[lineage] || PALETTES.sprout;
+    const from = PALETTES[lineage] || PALETTES.plain;
     if (!to) return {};
     const map = {};
     for (const role of ['body', 'dark', 'belly', 'accent']) if (from[role] && to[role]) map[from[role].toLowerCase()] = to[role];
@@ -1989,7 +1969,7 @@
     if (spec.shiny && spec.stage !== 'egg') shine(ctx, 0, -h * 0.5, Math.max(w, h) * 0.56, t, 'back');
     ctx.drawImage(img, -w / 2, -h, w, h);
     const anchors = spec.wear && spec.stage !== 'egg' ? wearAnchors(sprite, spec, w, h) : null;
-    if (region && !sprite.regional && spec.stage !== 'egg' && spec.stage !== 'sprout') drawRegionMark(ctx, sprite, region, h);
+    if (region && !sprite.regional && spec.stage !== 'egg') drawRegionMark(ctx, sprite, region, h);
     if (anchors) drawWear(ctx, spec.wear, anchors, t);
     ctx.restore();
     if (a.motes) motes(ctx, a.motes, R, -h * 0.45, palette(spec), t);

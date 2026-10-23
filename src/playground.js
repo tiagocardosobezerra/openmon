@@ -42,7 +42,8 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
       const chimera = Array.isArray(body.chimera) && body.chimera.length === 2 ? body.chimera : null;
       p.stage = STAGES[i - 1].id;
       if (stageIndex(p.stage) >= stageIndex('juvenile')) p.lineage = chimera ? chimera[0] : body.lineage || p.lineage || 'craft';
-      if (p.stage === 'sprout' || p.stage === 'egg') p.lineage = null;
+      if (p.stage === 'egg') p.lineage = null;
+      p.awaitingStarter = false;
       p.stats = statsFor({ lineage: body.lineage || 'craft', trait: body.trait, chimera });
       p.xp = STAGES[i].xp - 1;
       p.xpLog = [];
@@ -60,7 +61,7 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
       if (stageIndex(stage) < 0) return [];
       p.stage = stage;
       p.chimera = Array.isArray(body.chimera) ? body.chimera : null;
-      p.lineage = stage === 'egg' || stage === 'sprout' ? null : p.chimera ? 'chimera' : body.lineage || p.lineage || 'craft';
+      p.lineage = stage === 'egg' ? null : p.chimera ? 'chimera' : body.lineage || p.lineage || 'craft';
       p.trait = stageIndex(stage) >= stageIndex('adult') ? body.trait || null : null;
       p.shiny = Boolean(body.shiny);
       p.nocturne = Boolean(body.nocturne);

@@ -8,7 +8,7 @@ This page explains the game. For what Openmon does for you and how to install it
 
 ## How it grows
 
-Everything your agent does is worth **experience (XP)**. With enough, it evolves: egg, baby, juvenile, adult and elder, over weeks of use. Its **type** comes from the work your agent does most:
+Everything your agent does is worth **experience (XP)**. With enough, it evolves: egg, juvenile, adult and elder, over weeks of use. The egg hatches straight into the juvenile of the **type** your agent's work decides:
 
 | Type | Comes from | Juvenile | Adult | Elder |
 |---|---|---|---|---|
@@ -23,6 +23,8 @@ Everything your agent does is worth **experience (XP)**. With enough, it evolves
 | Debug | fixing what failed | Mitey | Beetlock | Bugbane |
 | Data | data: SQL, CSV, notebooks, databases | Cubit | Prismora | Datanaut |
 | Style | stylesheets (.css, .scss) | Dabbit | Palettail | Chromancer |
+
+**You choose your first Openmon.** The first egg, and the egg of every new generation, lets you pick one of three starters, the three most common kinds of agent work: **Tinkit** (Craft), **Owlet** (Lore) and **Sparkle** (Shell). It hatches after a few minutes of work, with its type's Skill already unlocked, and keeps that type for life: it becomes the same lineage's Adult and Elder, and all XP counts. A type stone can still redirect the next evolution. Every other egg (project eggs and mystery eggs) hatches into the type of the work, at 400 XP.
 
 Rare work counts more, so every type can win. And there is a hidden line few will find: *some say balance is the key.*
 
@@ -57,7 +59,7 @@ Every project your agent works on enough gets **its own egg**. Up to 6 travel in
 * **Bag**: *Snack* (+2 friendship), *Level candy* (one level up), *Friendship candy* (+10), *XP charm* (double experience for a day), *Mystery egg* (hatches a new member, with better shiny odds), *Steady stone* (while it holds it, it does not evolve) and 11 *Type stones* (hold one and the next evolution goes to that type).
 * **30 accessories** for the head, face and neck: cap, crown, scarf, round glasses, sunglasses, monocle, hero mask, hard hat, leaf crown, explorer hat, chef hat, ribbon bow, star tiara, pumpkin hat, Santa hat, necktie, pearl necklace, cape, little bell, little backpack and more, each unlocked by an achievement (100 commits, 50 fixes, 200 pages read…). They show on the pet, in the Bag and on the trainer card.
 * **Daily gift and streak**: a Snack per day of use, a Type stone every 3 days in a row, a Level candy every 7, an XP charm every 14 and a Mystery egg every 30.
-* **Opendex, badges and Hall of Fame**: once yours becomes an Elder, retire it to the Hall of Fame and start a new generation; the Bag, Opendex and badges carry over.
+* **Opendex, badges and Hall of Fame**: once yours becomes an Elder, retire it to the Hall of Fame and start a new generation, picking a starter again; the Bag, Opendex and badges carry over.
 
 ## Skills: tools that evolution unlocks
 

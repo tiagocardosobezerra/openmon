@@ -56,7 +56,7 @@ test('there are 17 items: 5 to use, the Steady stone and 11 type stones', () => 
 });
 
 test('snack: +2 friendship; not for eggs, legendaries or a full friendship', () => {
-  const p = mk({ stage: 'sprout', bond: 10, bag: { snack: 3 } });
+  const p = mk({ stage: 'juvenile', lineage: 'craft', bond: 10, bag: { snack: 3 } });
   pet.useItem(p, 'snack', T0);
   assert.equal(p.bond, 12);
   assert.equal(p.bag.snack, 2);
@@ -68,7 +68,7 @@ test('snack: +2 friendship; not for eggs, legendaries or a full friendship', () 
 });
 
 test('level candy: exactly one level; kept at level 100', () => {
-  const p = mk({ stage: 'sprout', xp: 100, bag: { candy: 2 } });
+  const p = mk({ stage: 'juvenile', lineage: 'craft', xp: 500, bag: { candy: 2 } });
   const lv = pet.level(p.xp);
   pet.useItem(p, 'candy', T0);
   assert.equal(pet.level(p.xp), lv + 1);
@@ -79,15 +79,15 @@ test('level candy: exactly one level; kept at level 100', () => {
 });
 
 test('a candy that crosses a stage threshold evolves on the spot', () => {
-  const p = mk({ stage: 'sprout', xp: 390, bag: { candy: 1 } });
+  const p = mk({ stage: 'juvenile', lineage: 'lore', xp: 2990, bag: { candy: 1 } });
   p.stats.lore = 10;
   const events = pet.useItem(p, 'candy', T0);
-  assert.equal(p.stage, 'juvenile');
+  assert.equal(p.stage, 'adult');
   assert.ok(events.some((e) => e.type === 'evolve'));
 });
 
 test('friendship candy: +10, capped at 100 and kept when friendship is full', () => {
-  const p = mk({ stage: 'sprout', bond: 95, bag: { 'friend-candy': 2 } });
+  const p = mk({ stage: 'juvenile', lineage: 'craft', bond: 95, bag: { 'friend-candy': 2 } });
   pet.useItem(p, 'friend-candy', T0);
   assert.equal(p.bond, 100);
   assert.ok(p.achievements['best-friends']);
@@ -96,10 +96,10 @@ test('friendship candy: +10, capped at 100 and kept when friendship is full', ()
 });
 
 test('XP charm: doubles work XP and the 10-minute limit for 24 hours; another adds 24 more', () => {
-  const p = missions(mk({ stage: 'sprout', xp: 100, bag: { 'xp-charm': 2 } }));
+  const p = missions(mk({ stage: 'juvenile', lineage: 'craft', xp: 500, bag: { 'xp-charm': 2 } }));
   // Without a charm: 120 per 10 minutes.
   for (let i = 0; i < 300; i++) pet.applySignal(p, done('craft'), {}, T0);
-  assert.equal(p.xp, 100 + pet.XP_WINDOW_CAP);
+  assert.equal(p.xp, 500 + pet.XP_WINDOW_CAP);
   // With a charm: double, up to 240 in a fresh window.
   pet.useItem(p, 'xp-charm', T0);
   const t1 = T0 + pet.XP_WINDOW_MS;
@@ -117,7 +117,7 @@ test('XP charm: doubles work XP and the 10-minute limit for 24 hours; another ad
 });
 
 test('XP charm: mission rewards are not doubled', () => {
-  const p = missions(mk({ stage: 'sprout', xp: 100, bag: { 'xp-charm': 1 } }), [{ id: 'turns', done: false }]);
+  const p = missions(mk({ stage: 'juvenile', lineage: 'craft', xp: 100, bag: { 'xp-charm': 1 } }), [{ id: 'turns', done: false }]);
   pet.useItem(p, 'xp-charm', T0);
   p.daily.turns = 4;
   pet.applySignal(p, { kind: 'turn-end' }, {}, T0 + 1000);
@@ -141,18 +141,18 @@ test('Steady stone: stops evolving while held, an egg still hatches, letting go 
   const p = mk({ xp: 0, bag: { everstone: 1 } });
   pet.useItem(p, 'everstone', T0);
   assert.equal(p.holding, 'everstone');
-  p.xp = 499;
+  p.xp = 3100;
   pet.applySignal(p, { kind: 'tool-done', family: null }, {}, T0);
-  assert.equal(p.stage, 'sprout', 'the egg hatched but went no further');
+  assert.equal(p.stage, 'juvenile', 'the egg hatched but went no further');
   const events = pet.useItem(p, 'everstone', T0);
   assert.equal(p.holding, null);
-  assert.equal(p.stage, 'juvenile');
+  assert.equal(p.stage, 'adult');
   assert.ok(events.some((e) => e.type === 'evolve'));
   assert.equal(p.bag.everstone, 1, 'the Steady stone is never used up');
 });
 
 test('Steady stone: a gift once, at the first evolution', () => {
-  const p = mk({ stage: 'sprout' });
+  const p = mk();
   p.stats.craft = 10;
   const events = step(p);
   assert.ok(events.some((e) => e.type === 'item' && e.item === 'everstone'));
@@ -163,7 +163,7 @@ test('Steady stone: a gift once, at the first evolution', () => {
 
 for (const s of STATS) {
   test(`type stone ${s}: the next evolution goes to ${s}, and the stone is spent`, () => {
-    const p = mk({ stage: 'sprout', bag: { [`stone-${s}`]: 1 } });
+    const p = mk({ bag: { [`stone-${s}`]: 1 } });
     // Work points the other way.
     p.stats[s === 'craft' ? 'lore' : 'craft'] = 500;
     pet.useItem(p, `stone-${s}`, T0);
@@ -176,16 +176,164 @@ for (const s of STATS) {
   });
 }
 
-test('type stone: kept through hatching, used at the first real evolution', () => {
+test('type stone: an egg hatches into the stone\'s type', () => {
   const p = mk({ bag: { 'stone-roam': 1 } });
+  p.stats.craft = 100;
   pet.useItem(p, 'stone-roam', T0);
   step(p);
-  assert.equal(p.stage, 'sprout');
-  assert.equal(p.holding, 'stone-roam');
-  assert.equal(p.bag['stone-roam'], 1);
-  p.stats.craft = 100;
-  step(p);
+  assert.equal(p.stage, 'juvenile');
   assert.equal(p.lineage, 'roam');
+  assert.equal(p.bag['stone-roam'], 0);
+});
+
+// --- starters ------------------------------------------------------------------
+
+test('starters: Tinkit, Owlet and Sparkle, the three most common kinds of work', () => {
+  assert.deepEqual(species.STARTERS, ['craft', 'lore', 'shell']);
+  assert.deepEqual(species.STARTERS.map((l) => LINEAGES[l].juvenile), ['Tinkit', 'Owlet', 'Sparkle']);
+});
+
+test('starter: a new trainer\'s egg waits for the choice and does not hatch before it', () => {
+  const p = pet.newTrainer(T0, () => 0.5);
+  assert.equal(p.awaitingStarter, true);
+  assert.equal(pet.view(p).awaitingStarter, true);
+  assert.equal(pet.view(p).progress.needsStarter, true);
+  p.stats.lore = 500;
+  p.xp = 5000;
+  pet.applySignal(p, { kind: 'tool-done', family: null }, {}, T0);
+  assert.equal(p.stage, 'egg');
+});
+
+test('starter: only one of the three, and only once', () => {
+  const p = pet.newTrainer(T0, () => 0.5);
+  for (const bad of ['chimera', 'test', 'mergeon', '', null]) assert.deepEqual(pet.chooseStarter(p, bad, T0), []);
+  assert.equal(p.awaitingStarter, true);
+  assert.ok(pet.chooseStarter(p, 'shell', T0).some((e) => e.type === 'starter' && e.lineage === 'shell'));
+  assert.deepEqual(pet.chooseStarter(p, 'lore', T0), [], 'chosen already');
+  assert.equal(p.starter, 'shell');
+  // Eggs that are not a starter never take one.
+  assert.deepEqual(pet.chooseStarter(mk(), 'lore', T0), []);
+});
+
+test('starter: hatches after a few minutes of work, as the chosen Juvenile, with its Skill', () => {
+  const p = missions(pet.newTrainer(T0, () => 0.5));
+  // The agent's work points elsewhere: the choice wins.
+  p.stats.shell = 300;
+  pet.chooseStarter(p, 'lore', T0);
+  assert.equal(p.stage, 'egg', 'no XP yet');
+  assert.equal(pet.progress(p).xpToGo, species.STARTER_HATCH_XP);
+  let events = [];
+  for (let i = 0; i < species.STARTER_HATCH_XP && p.stage === 'egg'; i++) events = pet.applySignal(p, done('shell'), {}, T0 + i * 1000);
+  assert.ok(species.STARTER_HATCH_XP < species.STAGES[1].xp);
+  assert.equal(p.stage, 'juvenile');
+  assert.equal(p.lineage, 'lore');
+  assert.equal(pet.form(p), 'Owlet');
+  assert.ok(events.some((e) => e.type === 'evolve' && e.hatched && e.to === 'Owlet'));
+  assert.ok(p.achievements.hatch);
+  assert.ok(p.dex['lore-juvenile']);
+  assert.deepEqual(require('../src/powers').unlockedPowers(p), ['lore']);
+});
+
+test('starter: an egg that already has the XP hatches as soon as it is chosen', () => {
+  const p = pet.newTrainer(T0, () => 0.5);
+  p.xp = 200;
+  const events = pet.chooseStarter(p, 'craft', T0);
+  assert.equal(p.stage, 'juvenile');
+  assert.equal(p.lineage, 'craft');
+  assert.ok(events.some((e) => e.type === 'evolve'));
+});
+
+test('starter: the lineage is kept for life, all XP counts, no Chimera', () => {
+  const p = pet.newTrainer(T0, () => 0.5);
+  pet.chooseStarter(p, 'shell', T0);
+  // An exact tie between two other kinds of work.
+  Object.assign(p.stats, { craft: 1000, test: 1000 });
+  for (const stage of ['juvenile', 'adult', 'mythic']) {
+    step(p);
+    assert.equal(p.stage, stage);
+    assert.equal(p.lineage, 'shell');
+    assert.equal(p.chimera, null);
+    assert.equal(pet.form(p), LINEAGES.shell[stage]);
+  }
+  assert.equal(p.trait, 'craft', 'the trait still comes from the work');
+});
+
+test('starter: a held type stone waits for the next evolution, then redirects it for good', () => {
+  const p = pet.newTrainer(T0, () => 0.5);
+  p.bag['stone-data'] = 1;
+  pet.useItem(p, 'stone-data', T0);
+  pet.chooseStarter(p, 'craft', T0);
+  step(p);
+  assert.equal(p.lineage, 'craft', 'the starter hatches as chosen');
+  assert.equal(p.holding, 'stone-data');
+  step(p);
+  assert.equal(p.lineage, 'data');
+  assert.equal(p.bag['stone-data'], 0);
+  step(p);
+  assert.equal(p.lineage, 'data', 'the new lineage is kept');
+});
+
+test('starter: the shiny roll still happens at hatch, in secret', () => {
+  const p = pet.newTrainer(T0, () => 0);
+  assert.equal(p.shiny, true, 'rolled at birth');
+  pet.chooseStarter(p, 'lore', T0);
+  step(p);
+  assert.ok(p.achievements.shiny);
+  assert.ok(!pet.newTrainer(T0, () => 0.5).shiny);
+});
+
+test('starter: a new generation chooses again; project and mystery eggs never do', () => {
+  const elder = mk({ stage: 'mythic', lineage: 'craft', xp: 16000, starter: 'craft' });
+  const { pet: egg } = pet.layEgg(elder, T0);
+  assert.equal(egg.awaitingStarter, true);
+  assert.equal(egg.starter, null);
+  const root = party.ensure(team());
+  party.hatchMystery(root, T0);
+  for (let i = 0; i < party.EGG_AFTER_ACTIONS; i++) party.applySignal(root, tool('proj'), {}, T0 + i * 6000);
+  assert.equal(root.others.length, 2);
+  for (const m of root.others) assert.ok(!m.awaitingStarter);
+});
+
+test('starter: an egg moved off screen can still be chosen, from the Party', () => {
+  const root = party.ensure(pet.newTrainer(T0, () => 0.5));
+  missions(root);
+  for (let i = 0; i < party.EGG_AFTER_ACTIONS; i++) party.applySignal(root, tool('proj'), {}, T0 + i * 6000);
+  const other = root.others[0];
+  const next = party.setActive(root, other.id);
+  assert.equal(next.awaitingStarter, false);
+  const events = party.chooseStarter(next, 'lore', T0);
+  assert.ok(events.some((e) => e.type === 'starter' && e.petId === root.id));
+  const egg = next.others.find((m) => m.id === root.id);
+  assert.equal(egg.starter, 'lore');
+  assert.equal(egg.awaitingStarter, false);
+});
+
+test('no Sprout: other eggs hatch straight into the Juvenile their work decides', () => {
+  assert.ok(!species.STAGES.some((s) => s.id === 'sprout'));
+  assert.deepEqual(Object.keys(species.BASE_FORMS), ['egg']);
+  assert.ok(!species.dexEntries().some((e) => e.key === 'sprout'));
+  const p = mk();
+  p.stats.git = 50;
+  const events = step(p);
+  assert.equal(p.stage, 'juvenile');
+  assert.equal(p.lineage, 'git');
+  assert.ok(events.some((e) => e.type === 'evolve' && e.hatched && e.to === 'Twiglet'));
+  assert.ok(p.achievements.hatch);
+  assert.ok(!p.achievements['first-evolution'], 'hatching is not an evolution');
+});
+
+test('an old save with a Sprout loads as an egg about to hatch', () => {
+  const old = pet.migrate({ bornAt: T0, xp: 380, stage: 'sprout', lineage: null, dex: { egg: T0, sprout: T0 }, history: [{ stage: 'egg', form: 'Egg', at: T0 }, { stage: 'sprout', form: 'Sprout', at: T0 }] }, T0);
+  assert.equal(old.stage, 'egg');
+  assert.equal(old.dex.sprout, undefined);
+  assert.ok(!old.history.some((h) => h.stage === 'sprout'));
+  assert.equal(pet.form(old), 'Egg');
+  assert.doesNotThrow(() => pet.view(old));
+  const root = party.ensure(mk({ stage: 'juvenile', lineage: 'craft' }));
+  root.others.push({ id: 'dddddd', project: 'x', stage: 'sprout', xp: 40, stats: { ...root.stats }, bond: 0, history: [] });
+  party.ensure(root);
+  assert.equal(root.others[0].stage, 'egg');
+  assert.doesNotThrow(() => party.view(root));
 });
 
 test('type stone: wins over the hidden Chimera', () => {
@@ -210,8 +358,8 @@ test('nothing to hold for a pet that no longer evolves', () => {
 });
 
 test('the Bag is shared: a stone another member holds is not free', () => {
-  const root = party.ensure(mk({ stage: 'sprout', bag: { 'stone-data': 1 } }));
-  root.others.push({ id: 'aaaaaa', place: 'party', project: 'x', stage: 'sprout', xp: 30, stats: { ...root.stats }, holding: 'stone-data' });
+  const root = party.ensure(mk({ bag: { 'stone-data': 1 } }));
+  root.others.push({ id: 'aaaaaa', place: 'party', project: 'x', stage: 'egg', xp: 30, stats: { ...root.stats }, holding: 'stone-data' });
   party.ensure(root);
   assert.deepEqual(party.heldByOthers(root), { 'stone-data': 1 });
   assert.deepEqual(party.view(root).held, { 'stone-data': 1 });
@@ -267,7 +415,7 @@ const ACHIEVE = {
     return p;
   },
   'first-evolution': () => {
-    const p = mk({ stage: 'sprout' });
+    const p = mk({ stage: 'juvenile', lineage: 'craft' });
     step(p);
     return p;
   },
@@ -304,7 +452,7 @@ const ACHIEVE = {
     return p;
   },
   'best-friends': () => {
-    const p = mk({ stage: 'sprout', bond: 99, bag: { snack: 1 } });
+    const p = mk({ stage: 'juvenile', lineage: 'craft', bond: 99, bag: { snack: 1 } });
     pet.useItem(p, 'snack', T0);
     return p;
   },
@@ -320,7 +468,7 @@ const ACHIEVE = {
     return p;
   },
   nocturne: () => {
-    const p = mk({ stage: 'sprout' });
+    const p = mk();
     p.stats.craft = 5;
     step(p, NIGHT);
     return p;
@@ -373,7 +521,7 @@ const WEAR = {
   'chef-hat': (p) => (p.counters.missionDays = 30),
   bow: (p) => (p.bond = 100),
   'star-tiara': (p) => {
-    for (const e of species.dexEntries().slice(0, 22)) p.dex[e.key] = T0;
+    for (const e of species.dexEntries().slice(0, 21)) p.dex[e.key] = T0;
   },
   'pumpkin-hat': () => OCT,
   'santa-hat': () => DEC,
@@ -422,7 +570,7 @@ test('the counters behind accessories and legendaries grow from real agent work'
 
 for (const s of STATS) {
   test(`lineage ${s}: juvenile, adult and elder from ${s} work`, () => {
-    const p = mk({ stage: 'sprout' });
+    const p = mk();
     p.stats[s] = 100;
     for (const stage of ['juvenile', 'adult', 'mythic']) {
       step(p);
@@ -435,7 +583,7 @@ for (const s of STATS) {
 }
 
 test('the type is decided again at every evolution', () => {
-  const p = mk({ stage: 'sprout' });
+  const p = mk();
   p.stats.craft = 100;
   step(p);
   assert.equal(p.lineage, 'craft');
@@ -456,7 +604,7 @@ test('hidden Chimera: adult and elder only from an almost exact tie; it can drif
   assert.equal(pet.form(p), 'Paragon');
   assert.ok(p.dex['chimera-adult'] && p.dex['chimera-mythic']);
   // Not at juvenile, and not when the tie is gone.
-  const j = mk({ stage: 'sprout' });
+  const j = mk();
   Object.assign(j.stats, { craft: 100, lore: 200 });
   step(j);
   assert.notEqual(j.lineage, 'chimera');
@@ -483,7 +631,7 @@ test('friendship forms: only Craft and Lore, only with friendship 100 at the Eld
 });
 
 test('night forms: evolving between midnight and 5 am, decided again at every evolution', () => {
-  const p = mk({ stage: 'sprout' });
+  const p = mk();
   p.stats.test = 100;
   step(p, NIGHT);
   assert.equal(p.nocturne, true);
@@ -494,7 +642,7 @@ test('night forms: evolving between midnight and 5 am, decided again at every ev
 });
 
 test('regional forms: 60% of 50+ files in one language at the evolution', () => {
-  const p = mk({ stage: 'sprout' });
+  const p = mk();
   p.stats.craft = 100;
   p.langs = { rs: 30, js: 19 };
   step(p);
@@ -529,7 +677,7 @@ test('legendaries: each joins once from its feat, at the Elder stage, and never 
 });
 
 test('every Opendex entry has a reachable form', () => {
-  const seen = new Set(['egg', 'sprout', 'chimera-adult', 'chimera-mythic', ...Object.keys(species.LEGENDS)]);
+  const seen = new Set(['egg', 'chimera-adult', 'chimera-mythic', ...Object.keys(species.LEGENDS)]);
   for (const s of STATS) for (const st of ['juvenile', 'adult', 'mythic']) seen.add(`${s}-${st}`);
   for (const e of species.dexEntries()) assert.ok(seen.has(e.key), e.key);
 });
@@ -551,7 +699,7 @@ test('mystery egg: no project, so it grows only on screen (main or companion); t
   assert.equal(egg().xp, 0);
   // Next to the main pet, an agent session handed to it trains it.
   for (let i = 0; i < 30; i++) party.applySignal(root, tool('newproj'), {}, T0 + i * 6000, petId);
-  assert.equal(egg().stage, 'sprout');
+  assert.equal(egg().xp, 30);
   // In the Box it rests, even if a session was handed to it.
   assert.equal(party.move(root, petId, 'box'), true);
   const xp = egg().xp;
@@ -655,9 +803,9 @@ function request(port, method, pathname, body) {
 const hook = (cwd, event = 'PostToolUse') => ({ hook_event_name: event, session_id: 's1', cwd, tool_name: 'Read', tool_input: { file_path: `${cwd}/a.js` } });
 
 test('daemon: a stone held by another member cannot be held again', async () => {
-  const save = party.ensure(mk({ stage: 'sprout', xp: 40, bag: { 'stone-style': 1 } }));
+  const save = party.ensure(mk({ xp: 40, bag: { 'stone-style': 1 } }));
   const fresh = pet.createPet(T0, null, () => 0.5);
-  save.others.push({ id: 'cccccc', place: 'party', project: 'x', stage: 'sprout', xp: 40, stats: fresh.stats, bond: 0, nature: fresh.nature, history: fresh.history, holding: 'stone-style' });
+  save.others.push({ id: 'cccccc', place: 'party', project: 'x', stage: 'egg', xp: 40, stats: fresh.stats, bond: 0, nature: fresh.nature, history: fresh.history, holding: 'stone-style' });
   const { daemon, port } = await boot(save);
   try {
     const r = await request(port, 'POST', '/api/use', { item: 'stone-style' });
@@ -698,6 +846,7 @@ test('daemon: retiring keeps the team and the streak; a legendary on screen cann
     assert.equal(events[0].type, 'new-egg');
     let s = daemon.state();
     assert.equal(s.pet.stage, 'egg');
+    assert.equal(s.pet.awaitingStarter, true, 'the new generation picks its starter');
     assert.equal(s.pet.hallOfFame.length, 1);
     assert.equal(s.pet.streak.days, 9);
     assert.equal(s.pet.project, null);

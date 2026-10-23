@@ -83,12 +83,11 @@ Bond unlocks the final stage and cosmetic reactions (hearts, small gifts).
 | Stage | Reached at | Form decided by |
 | --- | --- | --- |
 | Egg | start | — |
-| Sprout | 30 XP (inside your first real session) | — |
-| Juvenile | 400 XP (about a day) | Top stat at that moment |
+| Juvenile | 400 XP (about a day); 30 XP for a chosen starter | Top stat at that moment, or the starter the player picked |
 | Adult | 3 000 XP (about a week) | Top stat at that moment (a lineage switch is possible) |
 | Elder | 15 000 XP and bond ≥ 60 (about a month) | Top stat, plus the second stat as a trait |
 
-Six lineages times three evolved stages give 18 forms, plus egg and sprout. The second-highest stat adds a visible trait (an accessory) from Adult on, so two Craft pets rarely look the same.
+Six lineages times three evolved stages give 18 forms, plus the egg. The trainer's first egg, and the egg of every new generation, lets the player pick a starter (Tinkit, Owlet or Sparkle) that hatches within the first session and keeps its lineage for life. The second-highest stat adds a visible trait (an accessory) from Adult on, so two Craft pets rarely look the same.
 
 | Lineage (top stat) | Juvenile | Adult | Elder |
 | --- | --- | --- | --- |

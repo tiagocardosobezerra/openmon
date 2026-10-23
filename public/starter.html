@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Choose your first Openmon</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  .starters { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; padding-bottom: 32px; }
+  .starters[hidden] { display: none; }
+  .starter { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px 16px; background: var(--surface); border: var(--bw) solid var(--line); border-top: 6px solid var(--c); border-radius: var(--r-lg); text-align: center; transition: transform 0.08s ease, border-color 0.12s ease; }
+  .starter:hover { border-color: var(--outline); transform: translateY(-2px); box-shadow: var(--lift); }
+  .starter canvas { width: 180px; aspect-ratio: 1; margin: 0 auto; display: block; background: radial-gradient(circle at 50% 60%, var(--surface-2), transparent 70%); border-radius: 50%; }
+  .starter h3 { margin: 0; font-size: 22px; }
+  .starter .type-chip { align-self: center; display: inline-flex; padding: 1px 12px; border-radius: 99px; background: var(--c); color: #2a2140; font: 600 12px/1.6 var(--font-display); box-shadow: 0 0 0 1.5px var(--outline); }
+  .starter .work { font-weight: 700; margin: 2px 0 0; }
+  .starter .lore { color: var(--muted); font-style: italic; margin: 0; flex: 1; }
+  .starter .meta { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .starter .btn { margin-top: 8px; }
+  .done { text-align: center; padding: 24px 0 40px; }
+  .done canvas { width: 200px; aspect-ratio: 1; display: block; margin: 0 auto 6px; }
+  .done h2 { margin: 0 0 4px; }
+  .done p { color: var(--muted); margin: 0 0 14px; }
+</style>
+</head>
+<body class="page" data-page="starter">
+<main class="wrap">
+  <div class="hero"><div><h1 id="title"></h1><p id="intro"></p></div></div>
+  <div class="starters" id="starters"></div>
+  <div class="done" id="done" hidden>
+    <canvas id="done-art"></canvas>
+    <h2 id="done-title"></h2>
+    <p id="done-sub"></p>
+    <a class="btn primary" id="done-card" href="/card.html"></a>
+  </div>
+</main>
+<script src="i18n.js"></script>
+<script src="nav.js"></script>
+<script src="art.js"></script>
+<script src="motion.js"></script>
+<script>
+  const { t: tr, lang } = window.OpenmonI18n;
+  document.documentElement.lang = lang;
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  // Canvases to animate, each with the form it shows.
+  const drawn = [];
+
+  function draw(canvas, spec, t) {
+    const dpr = window.devicePixelRatio || 1;
+    const size = canvas.clientWidth;
+    if (!size) return;
+    if (canvas.width !== Math.round(size * dpr)) {
+      canvas.width = Math.round(size * dpr);
+      canvas.height = Math.round(size * dpr);
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const k = canvas.width / 200;
+    ctx.setTransform(k, 0, 0, k, 100 * k, 168 * k);
+    const anim = OpenmonMotion.poseAnim({ ...spec, pose: 'idle', t, since: 0 });
+    OpenmonArt.drawCreature(ctx, { ...spec, t, size: 44, pose: 'idle', anim });
+  }
+  function frame(ms) {
+    const t = ms / 1000;
+    drawn.forEach(({ canvas, spec }, i) => draw(canvas, spec, t + i * 0.7));
+    requestAnimationFrame(frame);
+  }
+
+  // Never shiny here: a shiny is rolled in secret and only shows at hatch.
+  const specOf = (lineage) => ({ stage: 'juvenile', lineage, trait: null, progress: 0.3, shiny: false });
+
+  function showDone(lineage, name, title, sub) {
+    $('starters').hidden = true;
+    $('done').hidden = false;
+    $('done-title').textContent = title;
+    $('done-sub').textContent = sub;
+    $('done-card').textContent = tr('starter.card');
+    drawn.length = 0;
+    if (lineage) drawn.push({ canvas: $('done-art'), spec: specOf(lineage) });
+    else $('done-art').hidden = true;
+  }
+
+  async function choose(lineage, name) {
+    const r = await fetch('/api/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lineage }) });
+    const { events = [] } = r.ok ? await r.json() : {};
+    if (events.some((e) => e.type === 'starter')) showDone(lineage, name, tr('starter.done', { name }), tr('starter.doneSub'));
+    else showDone(null, name, tr('starter.already'), tr('starter.alreadySub'));
+  }
+
+  async function main() {
+    const [species, state] = await Promise.all([fetch(`/api/species?lang=${lang}`).then((r) => r.json()), fetch('/api/state').then((r) => r.json()).catch(() => null)]);
+    const pet = state && state.pet;
+    // The egg waiting for a starter may be on screen or in the Party.
+    const waiting = pet && (pet.awaitingStarter || ((state.party && [...state.party.members, ...state.party.box]) || []).some((m) => m.awaitingStarter));
+    const gen = (pet && pet.generation) || 1;
+    $('title').textContent = tr('starter.title');
+    document.title = `${tr('starter.title')} · Openmon`;
+    $('intro').textContent = gen > 1 ? tr('starter.subGen', { gen }) : tr('starter.sub');
+    if (!waiting) {
+      $('intro').textContent = '';
+      // Chosen already: the egg that waits to hatch shows what it will be.
+      const chosen = pet && pet.stage === 'egg' && pet.starter;
+      if (chosen) showDone(chosen, null, tr('starter.done', { name: species.lineages[chosen].juvenile }), tr('starter.doneSub'));
+      else showDone(null, null, tr('starter.already'), tr('starter.alreadySub'));
+      requestAnimationFrame(frame);
+      return;
+    }
+    const lore = Object.fromEntries(species.dex.map((e) => [e.key, e.text]));
+    for (const lineage of species.starters || ['craft', 'lore', 'shell']) {
+      const forms = species.lineages[lineage];
+      const card = el('div', 'starter');
+      card.style.setProperty('--c', `var(--${lineage})`);
+      const canvas = el('canvas');
+      const chip = el('span', 'type-chip', species.statLabels[lineage] || lineage);
+      const button = el('button', 'btn primary', tr('starter.choose', { name: forms.juvenile }));
+      button.type = 'button';
+      button.addEventListener('click', () => {
+        for (const b of document.querySelectorAll('.starter .btn')) b.disabled = true;
+        choose(lineage, forms.juvenile);
+      });
+      card.append(
+        canvas,
+        el('h3', '', forms.juvenile),
+        chip,
+        el('p', 'work', tr('starter.grows', { work: tr(`work.${lineage}`) })),
+        el('p', 'lore', lore[`${lineage}-juvenile`] || ''),
+        el('p', 'meta', tr('starter.skill', { skill: tr(`power.${lineage}.title`) })),
+        button,
+      );
+      $('starters').appendChild(card);
+      drawn.push({ canvas, spec: specOf(lineage) });
+    }
+    requestAnimationFrame(frame);
+  }
+
+  OpenmonArt.loadPack();
+  main();
+</script>
+</body>
+</html>

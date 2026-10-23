@@ -47,7 +47,7 @@
   const auraFocus = new Image();
   auraFocus.src = '/ui/aura-focus.svg';
   let focusK = 0;
-  const STAGE_SCALE = { egg: 0.78, sprout: 0.66, juvenile: 0.82, adult: 1, mythic: 1.08 };
+  const STAGE_SCALE = { egg: 0.78, juvenile: 0.82, adult: 1, mythic: 1.08 };
   const now = () => performance.now() / 1000;
   // The pet strolls a little when it has nothing to do; petX is how far
   // from the middle it is right now.
@@ -130,14 +130,14 @@
     cry: () => {
       // Every lineage has its own little call, like a species cry.
       const spec = currentSpec();
-      const c = CRIES[spec.stage === 'egg' || spec.stage === 'sprout' ? spec.stage : spec.lineage] || CRIES.sprout;
+      const c = CRIES[spec.stage === 'egg' ? 'egg' : spec.lineage] || CRIES.plain;
       const scale = spec.stage === 'mythic' ? 0.8 : spec.stage === 'adult' ? 0.9 : 1;
       c.notes.forEach(([f, at, dur], i) => slide(f * scale, f * scale * c.slide, at, dur, c.wave, i === 0 ? 0.09 : 0.07));
     },
   };
   const CRIES = {
     egg: { wave: 'triangle', slide: 0.7, notes: [[420, 0, 0.06], [380, 0.14, 0.07]] },
-    sprout: { wave: 'sine', slide: 1.25, notes: [[880, 0, 0.12], [1100, 0.1, 0.16]] },
+    plain: { wave: 'sine', slide: 1.25, notes: [[880, 0, 0.12], [1100, 0.1, 0.16]] },
     craft: { wave: 'square', slide: 0.8, notes: [[330, 0, 0.1], [392, 0.09, 0.1], [262, 0.18, 0.2]] },
     lore: { wave: 'triangle', slide: 1.15, notes: [[523, 0, 0.18], [659, 0.16, 0.26]] },
     shell: { wave: 'sawtooth', slide: 1.6, notes: [[700, 0, 0.06], [700, 0.08, 0.06], [940, 0.16, 0.14]] },
@@ -318,7 +318,7 @@
           const name = pet ? pet.name : 'Your Openmon';
           const dexLine = evolveFx.newDex && pet ? tr('scene.newDex', { no: String(pet.dexNo).padStart(3, '0') }) : '';
           toast = null;
-          if (evolveFx.toStage === 'sprout') {
+          if (evolveFx.hatched) {
             nicknameOffer = { until: Date.now() + 120_000 };
             // After the nickname question, where to find help.
             tip('help', tr('tip.help'), tr('tip.help.sub'), 130_000);
@@ -717,6 +717,10 @@
     if (nicknameOffer && Date.now() < nicknameOffer.until && pet && !pet.nickname && pose !== 'attention') {
       return setBubble('toast', tr('nick.title', { form: pet.form }), tr('nick.sub'), { jump: 'nickname', action: tr('nick.action') });
     }
+    // A new trainer (or a new generation) picks the egg's starter first.
+    if (pet && pet.awaitingStarter && pose !== 'attention' && !hovering) {
+      return setBubble('toast', tr('starter.bubble'), tr('starter.bubbleSub'), { jump: 'starter', action: tr('starter.action') });
+    }
     if (hovering) return setBubble(null);
     if (!connected && !preview) return setBubble(null);
     if (!connected) return setBubble('error', tr('offline'), tr('offline.sub'));
@@ -836,7 +840,7 @@
     $('card-level').title = tr('card.levelHelp');
     $('card-stage').textContent = tr(`stage.${pet.stage}`);
     const pr = pet.progress;
-    const soon = pr.next && pr.ratio >= 0.9 && !pr.needsBond;
+    const soon = pr.next && pr.ratio >= 0.9 && !pr.needsBond && !pr.needsStarter;
     const nature = natures[pet.nature] ? natures[pet.nature].label : '';
     const quiet = config.quiet && config.quietUntil ? tr('card.quiet', { t: new Date(config.quietUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : '';
     const chips = $('card-sub');
@@ -857,7 +861,7 @@
     ]) if (text) chips.appendChild(el('span', `chip ${cls}`.trim(), text));
 
     $('xp-bar').style.width = `${Math.round(pr.ratio * 100)}%`;
-    $('xp-text').textContent = !pr.next ? tr('card.max') : pr.needsBond && pr.xpToGo === 0 ? tr('card.needsBond', { n: pr.bondNeeded }) : tr(pet.stage === 'egg' ? 'card.hatchesIn' : 'card.toEvolve', { n: pr.xpToGo.toLocaleString(window.OpenmonI18n.lang) });
+    $('xp-text').textContent = !pr.next ? tr('card.max') : pr.needsStarter ? tr('card.pickStarter') : pr.needsBond && pr.xpToGo === 0 ? tr('card.needsBond', { n: pr.bondNeeded }) : tr(pet.stage === 'egg' ? 'card.hatchesIn' : 'card.toEvolve', { n: pr.xpToGo.toLocaleString(window.OpenmonI18n.lang) });
     // What the two bars mean, for anyone new to games.
     $('xp-bar').parentElement.parentElement.title = tr('meter.xp.help');
     $('bond-bar').parentElement.parentElement.title = tr('meter.bond.help');
@@ -1057,6 +1061,8 @@
       // A brand-new egg explains itself once; everyone else gets a greeting.
       if (msg.restoreOffer) {
         // The restore offer speaks first.
+      } else if (msg.pet.awaitingStarter) {
+        // The starter bubble speaks first (see renderBubble).
       } else if (msg.pet.stage === 'egg' && msg.pet.counters.tools === 0 && (!msg.setup || msg.setup.hooks)) {
         setTimeout(() => pushToast(tr('intro'), tr('intro.sub'), 7000, 'say'), 1500);
       } else setTimeout(() => chatter('greet'), 2500);
@@ -1100,11 +1106,11 @@
     // The evolution reveal comes first; achievements from the same batch wait for it.
     const evolve = events.find((e) => e.type === 'evolve');
     if (evolve) {
-      evolveFx = { start: t, from: specOf(pet), to: { stage: evolve.stage, lineage: evolve.lineage, trait: evolve.trait, chimera: evolve.chimera || null, nocturne: Boolean(evolve.nocturne), shiny: Boolean(evolve.shiny), friend: Boolean(evolve.friend), region: evolve.region || null, wear: pet && pet.wear, season: seasonNow() }, toName: evolve.to, toStage: evolve.stage, shiny: Boolean(evolve.shiny), newDex: evolve.newDex, after: [] };
+      evolveFx = { start: t, from: specOf(pet), to: { stage: evolve.stage, lineage: evolve.lineage, trait: evolve.trait, chimera: evolve.chimera || null, nocturne: Boolean(evolve.nocturne), shiny: Boolean(evolve.shiny), friend: Boolean(evolve.friend), region: evolve.region || null, wear: pet && pet.wear, season: seasonNow() }, toName: evolve.to, toStage: evolve.stage, hatched: Boolean(evolve.hatched), shiny: Boolean(evolve.shiny), newDex: evolve.newDex, after: [] };
       const name = pet ? pet.name : 'Your Openmon';
       toasts.length = 0;
       toast = null;
-      pushToast(evolve.stage === 'sprout' ? tr('scene.hatching') : tr('scene.evolving', { name }), '', 2400, 'scene');
+      pushToast(evolve.hatched ? tr('scene.hatching') : tr('scene.evolving', { name }), '', 2400, 'scene');
     }
     const newWear = events.filter((e) => e.type === 'cosmetic');
     if (newWear.length > 1) {
@@ -1324,7 +1330,8 @@
         const id = live.focus.id;
         dismissBubble();
         jumpTo(id);
-      } else post('/api/pet');
+      } else if (pet && pet.awaitingStarter) openPage('starter');
+      else post('/api/pet');
     }
     down = null;
   });
@@ -1509,6 +1516,10 @@
       pushToast(tr('setup.done'), tr('setup.doneSub'), 6000, 'say');
       return;
     }
+    if (bubbleJump === 'starter') {
+      openPage('starter');
+      return;
+    }
     if (bubbleJump === 'nickname') {
       nicknameOffer = null;
       if (desktop && desktop.openName) desktop.openName();
@@ -1555,7 +1566,6 @@
         select.appendChild(o);
       };
       add('egg', 'Egg');
-      add('sprout', 'Sprout');
       for (const [lineage, forms] of Object.entries(s.lineages)) {
         const trait = stats.find((x) => x !== lineage);
         for (const stage of ['juvenile', 'adult', 'mythic']) add(`${stage}:${lineage}:${trait}`, `${forms[stage]} (${lineage} ${stage})`);

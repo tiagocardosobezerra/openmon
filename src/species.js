@@ -28,10 +28,10 @@ const STAT_LABELS = {
 // Shell; Debug only grows when a failure is fixed, so it is the rarest.
 const STAT_WEIGHTS = { craft: 1, lore: 0.5, shell: 0.7, test: 1, roam: 3, swarm: 5, docs: 1.3, git: 1.6, debug: 3, data: 2, style: 1.4 };
 
-// Ordered. `xp` is the total XP needed; `bond` is an extra gate.
+// Ordered. `xp` is the total XP needed; `bond` is an extra gate. An egg
+// hatches straight into the Juvenile of the lineage its work decides.
 const STAGES = [
   { id: 'egg', xp: 0 },
-  { id: 'sprout', xp: 30 },
   { id: 'juvenile', xp: 400 },
   { id: 'adult', xp: 3000 },
   { id: 'mythic', xp: 15000, bond: 60 },
@@ -58,7 +58,14 @@ const LINEAGES = {
 const CHIMERA_GAP = 0.04;
 const CHIMERA_MIN = 0.2;
 
-const BASE_FORMS = { egg: 'Egg', sprout: 'Sprout' };
+const BASE_FORMS = { egg: 'Egg' };
+
+// The trainer's first egg (and the egg of every new generation) lets the
+// player pick one of these: the three most common kinds of agent work.
+// The chosen lineage is kept for life, and the egg hatches after a few
+// minutes of work instead of waiting for the Juvenile threshold.
+const STARTERS = ['craft', 'lore', 'shell'];
+const STARTER_HATCH_XP = 30;
 
 // Legendaries: one form each, never evolving. Each joins your Party (or
 // Box) once, the first time its feat is done.
@@ -71,7 +78,6 @@ const LEGENDS = {
 // The Opendex: one entry per form, numbered like a field guide.
 const DEX = [
   { key: 'egg', text: 'Warm to the touch. It listens to every keystroke and hatches when it has heard enough.' },
-  { key: 'sprout', text: 'Newly hatched and endlessly curious. The leaf on its head turns toward whatever the agent is doing.' },
   { key: 'craft-juvenile', text: 'Taps on anything it can reach. Its stubby horns warm up after a long edit.' },
   { key: 'craft-adult', text: 'Hammers rough code into shape on a tiny anvil. Wears its goggles even while asleep.' },
   { key: 'craft-mythic', text: 'Said to have forged the first compiler. A crown of embers burns brighter with every clean build.' },
@@ -242,6 +248,8 @@ module.exports = {
   STAGES,
   LINEAGES,
   BASE_FORMS,
+  STARTERS,
+  STARTER_HATCH_XP,
   NATURES,
   SHINY_ODDS,
   MISSIONS,

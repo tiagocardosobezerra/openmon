@@ -151,7 +151,9 @@
   }
 
   function specFor(wear) {
-    return { stage: pet.stage === 'egg' ? 'sprout' : pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera, nocturne: pet.nocturne, shiny: pet.shiny, region: pet.region, legend: pet.legend, friend: pet.friend, season: (cfg && cfg.seasons ? { 1: 'fev', 9: 'out', 11: 'dez' }[new Date().getMonth()] || null : null), wear };
+    // An egg with a chosen starter shows what will hatch; any other egg, the egg.
+    const hatchling = pet.stage === 'egg' && pet.starter;
+    return { stage: hatchling ? 'juvenile' : pet.stage, lineage: hatchling ? pet.starter : pet.lineage, trait: pet.trait, chimera: pet.chimera, nocturne: pet.nocturne, shiny: pet.shiny, region: pet.region, legend: pet.legend, friend: pet.friend, season: (cfg && cfg.seasons ? { 1: 'fev', 9: 'out', 11: 'dez' }[new Date().getMonth()] || null : null), wear };
   }
 
   function drawPreview(canvas, spec) {
