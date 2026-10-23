@@ -14,7 +14,8 @@ const FULL = new Set([2, 3, 4, 7]);
 
 const SCRIPT = [
   "Add-Type -Namespace Om -Name Q -MemberDefinition '[DllImport(\"shell32.dll\")] public static extern int SHQueryUserNotificationState(out int state);'",
-  'while ($true) { $s = 0; [void][Om.Q]::SHQueryUserNotificationState([ref]$s); [Console]::Out.WriteLine($s); [Console]::Out.Flush(); Start-Sleep -Milliseconds 1500 }',
+  // Ends by itself if Openmon is gone (even after a crash).
+  'while ($true) { if (-not (Get-Process -Id $env:OPENMON_PARENT -ErrorAction SilentlyContinue)) { exit }; $s = 0; [void][Om.Q]::SHQueryUserNotificationState([ref]$s); [Console]::Out.WriteLine($s); [Console]::Out.Flush(); Start-Sleep -Milliseconds 1500 }',
 ].join('; ');
 
 function watchFullscreen(onChange) {
@@ -25,7 +26,7 @@ function watchFullscreen(onChange) {
   let buffer = '';
   const start = () => {
     if (stopped) return;
-    child = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', SCRIPT], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+    child = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', SCRIPT], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'], env: { ...process.env, OPENMON_PARENT: String(process.pid) } });
     child.stdout.on('data', (d) => {
       buffer += d;
       const lines = buffer.split(/\r?\n/);
