@@ -274,6 +274,8 @@
       const cell = { canvas: el.querySelector('canvas'), spec, known, offset: entry.no * 0.7, visible: false };
       cells.push(cell);
       onScreen.observe(cell.canvas);
+      // Drawn once at once; then only the cells on screen move.
+      draw(cell.canvas, spec, cell.offset, !known);
     }
     renderTypes(species, dex);
     document.getElementById('seen').textContent = `${seen}/${species.dex.length}`;
