@@ -107,6 +107,7 @@
       project: 'Incluir o nome do projeto', projectSub: 'Desligado: o aviso não diz em que projeto.',
       login: 'Iniciar com o computador', loginSub: 'Ele aparece sozinho quando você liga o computador.',
       claude: 'Claude Code', claudeOk: 'Conectado ✓', claudeSub: 'O pet escuta os avisos que o Claude Code já manda.', connect: 'Conectar',
+      updates: 'Avisar sobre versões novas', updatesSub: 'Uma vez por dia o Openmon pergunta ao GitHub qual é a versão mais nova. Nada seu é enviado.',
       rulesTitle: 'Permissões do Claude Code', ruleRead: 'Ler e buscar sem perguntar', ruleReadSub: 'Ler arquivos e buscar (Read, Grep, Glob) nunca pede permissão.', ruleTests: 'Rodar os testes sem perguntar', ruleTestsSub: 'npm test, pytest, go test, cargo test e parecidos.', ruleCareful: 'Sempre perguntar antes de apagar ou publicar', ruleCarefulSub: 'rm, git push, git reset --hard e npm publish pedem permissão, mesmo com outras regras.',
       agentSub: 'As próximas sessões alimentam seu Openmon.', aiderSub: 'O Aider liga pelo comando de início: copie e use.', copyLine: 'Copiar comando', codexConflict: 'Seu config.toml do Codex já tem um notify: adicione o do Openmon à mão (openmon codex).',
       backups: 'Cópias do seu pet', backupsSub: 'Ele faz cópias sozinho em Documentos/Openmon Backups. Aqui você faz na hora ou leva para outro computador.',
@@ -158,6 +159,7 @@
       project: 'Incluir el nombre del proyecto', projectSub: 'Apagado: el aviso no dice en qué proyecto.',
       login: 'Iniciar con la computadora', loginSub: 'Aparece solo cuando enciendes la computadora.',
       claude: 'Claude Code', claudeOk: 'Conectado ✓', claudeSub: 'La mascota escucha los avisos que Claude Code ya envía.', connect: 'Conectar',
+      updates: 'Avisar de versiones nuevas', updatesSub: 'Una vez al día Openmon le pregunta a GitHub cuál es la versión más nueva. No se envía nada tuyo.',
       rulesTitle: 'Permisos de Claude Code', ruleRead: 'Leer y buscar sin preguntar', ruleReadSub: 'Leer archivos y buscar (Read, Grep, Glob) nunca pide permiso.', ruleTests: 'Correr las pruebas sin preguntar', ruleTestsSub: 'npm test, pytest, go test, cargo test y parecidos.', ruleCareful: 'Preguntar siempre antes de borrar o publicar', ruleCarefulSub: 'rm, git push, git reset --hard y npm publish piden permiso, aun con otras reglas.',
       agentSub: 'Las próximas sesiones alimentan a tu Openmon.', aiderSub: 'Aider se conecta con el comando de inicio: cópialo y úsalo.', copyLine: 'Copiar comando', codexConflict: 'Tu config.toml de Codex ya tiene un notify: agrega el de Openmon a mano (openmon codex).',
       backups: 'Copias de tu mascota', backupsSub: 'Hace copias solo en Documentos/Openmon Backups. Aquí haces una al instante o la llevas a otra computadora.',
@@ -209,6 +211,7 @@
       project: 'Include the project name', projectSub: 'Off: the alert does not say which project.',
       login: 'Start with the computer', loginSub: 'It shows up on its own when you turn on your computer.',
       claude: 'Claude Code', claudeOk: 'Connected ✓', claudeSub: 'The pet listens to the notices Claude Code already sends.', connect: 'Connect',
+      updates: 'Tell me about new versions', updatesSub: 'Once a day Openmon asks GitHub for the newest version number. Nothing of yours is sent.',
       rulesTitle: 'Claude Code permissions', ruleRead: 'Read and search without asking', ruleReadSub: 'Reading files and searching (Read, Grep, Glob) never asks.', ruleTests: 'Run the tests without asking', ruleTestsSub: 'npm test, pytest, go test, cargo test and the like.', ruleCareful: 'Always ask before deleting or publishing', ruleCarefulSub: 'rm, git push, git reset --hard and npm publish ask, even with other rules.',
       agentSub: 'New sessions feed your Openmon.', aiderSub: 'Aider connects with its start command: copy it and use it.', copyLine: 'Copy command', codexConflict: 'Your Codex config.toml already has a notify line: add the Openmon one by hand (openmon codex).',
       backups: 'Copies of your pet', backupsSub: 'It makes copies on its own in Documents/Openmon Backups. Here you make one now or take it to another computer.',
@@ -486,6 +489,7 @@
           }, 'btn sm'))),
           row('Aider', T.aiderSub, btn(T.copyLine, (b) => openmonCopyInto(b, desktop.aider || '', '✓'), 'btn sm')),
           row(T.position, T.positionSub, btn(T.reset, () => desk.call('reset-position'))),
+          row(T.updates, T.updatesSub, toggle('updateCheck')),
         ]),
         // Claude Code's own permission rules, one switch each.
         card(T.rulesTitle, [['read', T.ruleRead, T.ruleReadSub], ['tests', T.ruleTests, T.ruleTestsSub], ['careful', T.ruleCareful, T.ruleCarefulSub]].map(([id, title, sub]) => {

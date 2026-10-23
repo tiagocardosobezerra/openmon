@@ -163,6 +163,9 @@ const ACHIEVEMENTS = {
   'catch-shiny': { title: 'Shiny catch', text: 'Caught a shiny wild Openmon.' },
   'catch-10': { title: 'Collector', text: 'Caught 10 wild Openmon.' },
   'wild-all': { title: 'Field guide', text: 'Met wild Openmon of all 11 types.' },
+  trader: { title: 'Good trade', text: 'Traded an Openmon with a friend.' },
+  'week-type': { title: 'Theme week', text: '100 actions of the type of the week in one week.' },
+  'month-20': { title: 'Steady month', text: '20 days of work in 30.' },
 };
 
 // Accessories: earned by playing, kept forever (across generations), worn

@@ -484,6 +484,24 @@ const ACHIEVE = {
     species.STATS.forEach((s, i) => wild.roll(root, done(s), T0 + i * DAY, seq(0, 0, 0.9)));
     return root;
   },
+  trader: () => {
+    const root = party.ensure(mk());
+    const m = party.addMember(root, Object.assign(mk(), { stage: 'juvenile', lineage: 'lore' }));
+    party.tradeOut(root, m.id, T0);
+    return root;
+  },
+  'week-type': () => {
+    const p = mk();
+    const type = pet.featuredType(T0);
+    for (let i = 0; i < 100; i++) pet.applySignal(p, { kind: 'tool-done', family: type, detail: 'x' }, {}, T0 + i * 60_000);
+    return p;
+  },
+  'month-20': () => {
+    const p = mk();
+    // One action on each of 21 days in a row: the 21st day closes the 20th.
+    for (let d = 0; d < 21; d++) pet.applySignal(p, { kind: 'tool-done', family: 'craft', detail: 'x' }, {}, T0 + d * DAY);
+    return p;
+  },
 };
 
 // Fixed dice for the wild encounters: each call takes the next value.

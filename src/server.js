@@ -133,7 +133,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, wild: true, hideFullscreen: true, companions: [], shareSessions: true, follows: {} };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, wild: true, hideFullscreen: true, updateCheck: true, companions: [], shareSessions: true, follows: {} };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -1216,6 +1216,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.answerFromPet === 'boolean') patch.answerFromPet = body.answerFromPet;
           if (typeof body.wild === 'boolean') patch.wild = body.wild;
           if (typeof body.hideFullscreen === 'boolean') patch.hideFullscreen = body.hideFullscreen;
+          if (typeof body.updateCheck === 'boolean') patch.updateCheck = body.updateCheck;
           if (typeof body.answerWaitSec === 'number' && body.answerWaitSec >= 5 && body.answerWaitSec <= 60) patch.answerWaitSec = Math.round(body.answerWaitSec);
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
           if (typeof body.tokenLimit === 'number' && body.tokenLimit >= 0 && body.tokenLimit <= 1e10) patch.tokenLimit = Math.round(body.tokenLimit);

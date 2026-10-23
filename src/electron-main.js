@@ -77,6 +77,7 @@ const PT = {
   '{label} needs you': '{label} precisa de você',
   'Your agent is waiting.': 'Seu agente está esperando.',
   '{label} asks for permission': '{label} pede permissão',
+  'Download Openmon {v}': 'Baixar o Openmon {v}',
   'Click to see it and answer.': 'Clique para ver e responder.',
   Allow: 'Permitir',
   Deny: 'Recusar',
@@ -153,6 +154,7 @@ const ES_TEXT = {
   "{label} needs you": "{label} te necesita",
   "Your agent is waiting.": "Tu agente está esperando.",
   "{label} asks for permission": "{label} pide permiso",
+  "Download Openmon {v}": "Descargar Openmon {v}",
   "Click to see it and answer.": "Haz clic para verlo y responder.",
   Allow: "Permitir",
   Deny: "Rechazar",
@@ -406,6 +408,7 @@ function menuTemplate() {
     },
     hooked ? null : { label: L('Connect to Claude Code'), click: () => { installer.install(); daemon.recheckHooks(); refreshTray(); } },
     { label: L('Settings'), click: () => openAppWindow('settings') },
+    update ? { label: L('Download Openmon {v}', { v: update.version }), click: () => shell.openExternal(update.url) } : null,
     {
       label: L('Retire to Hall of Fame and lay a new egg'),
       // Legendaries are at the Elder stage too, but they never retire.
@@ -977,6 +980,8 @@ function wireIpc() {
   ipcMain.on('open-request', (_e, id) => {
     if (/^[a-f0-9]{24}$/.test(String(id))) openAppWindow('request', `?id=${id}`);
   });
+  // The pet's "Download" button for a new version.
+  ipcMain.on('open-update', () => update && shell.openExternal(update.url));
   ipcMain.on('open-page', (_e, page) => {
     openAppWindow(page);
   });
@@ -1147,6 +1152,8 @@ app.whenReady().then(async () => {
   createWindow();
   for (const ev of ['display-removed', 'display-metrics-changed']) screen.on(ev, () => setTimeout(keepPetsOnScreen, 300));
   if (!PLAYGROUND) stopFullscreen = require('./fullscreen').watchFullscreen(onFullscreen);
+  setTimeout(checkUpdate, 60_000).unref();
+  setInterval(checkUpdate, 24 * 60 * 60 * 1000).unref();
   if (PLAYGROUND) openControlPanel();
   // Keyboard: Ctrl+Alt+O opens the card, Ctrl+Alt+J jumps to the agent that waits.
   if (!PLAYGROUND) {
@@ -1176,6 +1183,34 @@ app.whenReady().then(async () => {
 
 app.on('second-instance', () => win && showPets(true));
 app.on('window-all-closed', (e) => e.preventDefault());
+// A new version on GitHub: checked a minute after start and once a day
+// (Settings → Computer can turn it off). Only the version number is asked
+// for; nothing is sent. The pet says so once per version, the tray menu
+// keeps a "Download" item.
+const RELEASES = 'https://api.github.com/repos/tiagocardosobezerra/openmon/releases/latest';
+let update = null;
+const newer = (a, b) => {
+  const pa = String(a).replace(/^v/, '').split('.').map(Number);
+  const pb = String(b).replace(/^v/, '').split('.').map(Number);
+  for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+  return false;
+};
+async function checkUpdate() {
+  if (PLAYGROUND || !daemon || daemon.config().updateCheck === false) return;
+  try {
+    const r = await fetch(RELEASES, { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10_000) });
+    if (!r.ok) return;
+    const j = await r.json();
+    const current = require('../package.json').version;
+    if (!j || !j.tag_name || !newer(j.tag_name, current)) return;
+    const url = typeof j.html_url === 'string' && j.html_url.startsWith('https://github.com/') ? j.html_url : 'https://github.com/tiagocardosobezerra/openmon/releases';
+    const first = !update || update.version !== j.tag_name;
+    update = { version: j.tag_name, url, current };
+    refreshTray();
+    if (first && win && !win.isDestroyed()) win.webContents.send('command', { type: 'update', version: j.tag_name, current: `v${current}` });
+  } catch {}
+}
+
 let stopFullscreen = () => {};
 app.on('before-quit', () => {
   stopFullscreen();

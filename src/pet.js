@@ -560,6 +560,9 @@ function rollDay(pet, now, events) {
   if (previous) {
     const entry = journalEntry(pet.daily);
     pet.journal = [...(pet.journal || []), entry].slice(-JOURNAL_DAYS);
+    // 20 days with work in the last 30: a steady month.
+    const since = dayKey(now - 30 * 24 * 60 * 60 * 1000);
+    if (pet.journal.filter((e) => e.day > since && e.tools > 0).length >= 20) unlock(pet, 'month-20', now, events);
     if (entry.tools || entry.turns) events.push({ type: 'yesterday', entry });
   }
   pet.daily = { day, pets: 0, fastAnswers: 0, waitMs: 0, waits: 0, fastestMs: null, tools: 0, edits: 0, green: 0, turns: 0, missions: missionsFor(day), perfect: false, activeDays: (pet.daily.activeDays || 0) + 1 };
@@ -648,6 +651,15 @@ function featuredType(now) {
   // 1970-01-05 was a Monday.
   const week = Math.floor((now - 4 * 24 * 60 * 60 * 1000) / WEEK_MS);
   return STATS[((week % STATS.length) + STATS.length) % STATS.length];
+}
+
+// Work of the type of the week, counted per week: 100 in one week is a badge.
+function countFeatured(pet, family, now, events) {
+  if (family !== featuredType(now)) return;
+  const week = Math.floor((now - 4 * 24 * 60 * 60 * 1000) / WEEK_MS);
+  if (!pet.featuredWork || pet.featuredWork.week !== week) pet.featuredWork = { week, n: 0 };
+  pet.featuredWork.n++;
+  if (pet.featuredWork.n >= 100) unlock(pet, 'week-type', now, events);
 }
 
 function addXp(pet, amount, now, events) {
@@ -767,6 +779,7 @@ function applySignal(pet, signal, ctx = {}, now) {
       countWork(pet, signal);
       addFix(pet, takeFix(signal, now, false), now);
       addXp(pet, XP.tool * (signal.family === featuredType(now) ? 2 : 1), now, events);
+      countFeatured(pet, signal.family, now, events);
       break;
     case 'tool-fail':
       c.tools++;

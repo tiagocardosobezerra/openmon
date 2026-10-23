@@ -280,6 +280,7 @@ function tradeOut(root, id, now) {
   const code = `${TRADE_PREFIX}.${body}.${tradeSum(body)}`;
   root.others = root.others.filter((m) => m !== member);
   root.outbox = [...(Array.isArray(root.outbox) ? root.outbox : []), { tid, code, at: now, member }];
+  if (root.achievements && !root.achievements.trader) root.achievements.trader = now;
   return code;
 }
 
@@ -348,6 +349,7 @@ function tradeIn(root, code, now) {
   const member = { ...fields, xpLog: [], project: `trade:${fields.name || ''}`, holding: null };
   addMember(root, member);
   root.received = [...root.received, tid];
+  if (root.achievements && !root.achievements.trader) root.achievements.trader = now;
   // A form you had never seen counts as seen.
   const key = `${member.lineage}-${member.stage}`;
   if (root.dex && !root.dex[key]) root.dex[key] = now;

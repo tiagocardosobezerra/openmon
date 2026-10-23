@@ -74,6 +74,8 @@
   let loopAlert = null;
   // Until when a brand-new egg offers the demo.
   let introOffer = 0;
+  // A new version to download (from the desktop shell).
+  let updateOffer = null;
   let landed = 0;
   // How many Openmons the team has (a companion always has company).
   let teamSize = companionId ? 2 : 1;
@@ -1020,6 +1022,9 @@
     }
     if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent'), id: `error|${f.id}|${f.since}` });
     // Mid-task and silent for minutes, or one command running very long.
+    if (updateOffer && Date.now() < updateOffer.until && pose !== 'attention' && !companionId) {
+      return setBubble('toast', tr('update.title', { v: updateOffer.version }), tr('update.sub', { current: updateOffer.current }), { buttons: [[{ update: '1' }, tr('update.get'), 'primary']], id: `update|${updateOffer.version}` });
+    }
     // The very first minute: what this is, and a demo for those without an
     // agent at hand.
     if (introOffer && Date.now() < introOffer && (pose === 'idle' || pose === 'sleep') && !demo && !companionId) {
@@ -2008,6 +2013,12 @@
       else window.open(`/request.html?id=${encodeURIComponent(seeAll.dataset.request)}`, '_blank');
       return;
     }
+    if (e.target.closest && e.target.closest('[data-update]')) {
+      updateOffer = null;
+      if (desktop && desktop.openUpdate) desktop.openUpdate();
+      dismissBubble();
+      return;
+    }
     // The first-run demo: a scripted session on a throwaway egg.
     if (e.target.closest && e.target.closest('[data-demo]')) {
       introOffer = 0;
@@ -2109,6 +2120,11 @@
 
   if (desktop && desktop.onCommand) {
     desktop.onCommand((cmd) => {
+      // A new version on GitHub: said once, with a Download button.
+      if (cmd && cmd.type === 'update') {
+        updateOffer = { ...cmd, until: Date.now() + 5 * 60_000 };
+        return renderBubble();
+      }
       if (cmd === 'card') setHover(!hovering);
       // Clicked somewhere else: the card closes.
       if (cmd === 'close-card') setHover(false);

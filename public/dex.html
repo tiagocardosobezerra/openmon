@@ -83,6 +83,14 @@
   .goal b { display: block; font: 600 15px var(--font-display); }
   .goal .bar { height: 8px; margin: 6px 0 4px; border-width: 1.5px; }
   .goal small { display: block; color: var(--muted); font-size: 12.5px; }
+  /* First steps: a short list with a bar, until everything is done. */
+  .first-steps { margin-top: 14px; padding: 12px 16px; }
+  .steps-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .steps-head b { font: 600 15px var(--font-display); }
+  .steps-head small { color: var(--muted); }
+  .first-steps .bar { height: 8px; margin: 8px 0; border-width: 1.5px; }
+  .first-steps ol { margin: 0; padding-left: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 18px; font-size: 13.5px; }
+  .first-steps li.ok { color: var(--muted); text-decoration: line-through; }
 </style>
 </head>
 <body class="page" data-page="dex">
@@ -91,6 +99,7 @@
     <div><h1>Opendex</h1><p id="intro"></p></div>
     <div class="aside"><div class="big-number" id="seen"></div><div class="muted" id="seen-label"></div><div class="bar progress"><i id="seen-bar"></i></div></div>
   </div>
+  <section class="first-steps panel soft" id="first-steps" hidden></section>
   <section class="goals" id="goals" hidden></section>
   <div class="filters" id="filters" role="toolbar"></div>
   <div class="type-info" id="type-info" hidden></div>
@@ -193,11 +202,42 @@
     box.hidden = false;
   }
 
+  // First steps, until they are all done: connect an agent, a first session,
+  // pick the starter, pet it, a nickname, the first evolution.
+  function renderFirstSteps(state, pet) {
+    const box = document.getElementById('first-steps');
+    if (!pet) return;
+    const steps = [
+      [tr('steps.connect'), Boolean(state.setup && state.setup.hooks) || (pet.counters && pet.counters.tools > 0)],
+      [tr('steps.session'), Boolean(pet.counters && pet.counters.tools > 0)],
+      [tr('steps.starter'), pet.stage !== 'egg' || Boolean(pet.starter)],
+      [tr('steps.pet'), Boolean(pet.counters && pet.counters.pets > 0)],
+      [tr('steps.name'), Boolean(pet.nickname)],
+      [tr('steps.evolve'), Boolean(pet.achievements && pet.achievements['first-evolution'])],
+    ];
+    const done = steps.filter(([, ok]) => ok).length;
+    if (done === steps.length) return;
+    box.textContent = '';
+    const head = document.createElement('div');
+    head.className = 'steps-head';
+    head.append(Object.assign(document.createElement('b'), { textContent: tr('steps.title') }), Object.assign(document.createElement('small'), { textContent: `${done}/${steps.length}` }));
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const fill = document.createElement('i');
+    fill.style.width = `${Math.round((done / steps.length) * 100)}%`;
+    bar.append(fill);
+    const list = document.createElement('ol');
+    for (const [text, ok] of steps) list.append(Object.assign(document.createElement('li'), { className: ok ? 'ok' : '', textContent: text }));
+    box.append(head, bar, list);
+    box.hidden = false;
+  }
+
   async function main() {
     const [species, state] = await Promise.all([fetch(`/api/species?lang=${lang}`).then((r) => r.json()), fetch('/api/state').then((r) => r.json()).catch(() => null)]);
     const pet = state && !state.demo ? state.pet : null;
     labels = species.statLabels || {};
     renderGoals(pet, species);
+    renderFirstSteps(state, pet);
     const dex = (pet && pet.dex) || {};
     const grid = document.getElementById('grid');
     let seen = 0;

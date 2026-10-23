@@ -32,6 +32,9 @@ const PT_BR = {
     'catch-shiny': { title: 'Brilhante na mão', text: 'Capturou um Openmon selvagem brilhante.' },
     'catch-10': { title: 'Colecionador', text: 'Capturou 10 Openmons selvagens.' },
     'wild-all': { title: 'Guia de campo', text: 'Encontrou selvagens dos 11 tipos.' },
+    trader: { title: 'Boa troca', text: 'Trocou um Openmon com um amigo.' },
+    'week-type': { title: 'Semana temática', text: '100 ações do tipo da semana numa mesma semana.' },
+    'month-20': { title: 'Mês constante', text: '20 dias de trabalho em 30.' },
   },
   dex: {
     egg: 'Quentinho ao toque. Escuta cada tecla e choca quando já ouviu o bastante.',
@@ -105,6 +108,9 @@ const ES = {
     'catch-shiny': { title: 'Brillo atrapado', text: 'Atrapaste un Openmon salvaje brillante.' },
     'catch-10': { title: 'Coleccionista', text: 'Atrapaste 10 Openmon salvajes.' },
     'wild-all': { title: 'Guía de campo', text: 'Encontraste salvajes de los 11 tipos.' },
+    trader: { title: 'Buen intercambio', text: 'Intercambiaste un Openmon con un amigo.' },
+    'week-type': { title: 'Semana temática', text: '100 acciones del tipo de la semana en una misma semana.' },
+    'month-20': { title: 'Mes constante', text: '20 días de trabajo en 30.' },
   },
   dex: {
     egg: 'Tibio al tacto. Escucha cada tecla y se abre cuando ya oyó lo suficiente.',
