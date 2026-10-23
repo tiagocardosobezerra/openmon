@@ -30,6 +30,20 @@ Os avisos do agente rodam com o [Node.js](https://nodejs.org), que quem usa o Cl
 
 Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 39 formas conforme o trabalho do agente. Tipos, itens, acessórios, lendários, habilidades e missões estão em [docs/GAME.md](docs/GAME.md).
 
+## Seu assistente pessoal: converse com o Claude sem abrir o Claude
+
+`Ctrl+Alt+C` (ou **Mais → Conversar com o Claude**, ou o ícone da bandeja) abre o chat do Openmon. Ele usa o seu próprio Claude Code, com o seu login, as suas configurações, os seus conectores (MCP) e o seu `CLAUDE.md`. Não precisa de chave de API.
+
+* **Conversas de verdade:** a resposta aparece enquanto é escrita, com uma linha para cada ferramenta usada ("Write: lista.txt", "Bash: npm test"). Escolha a pasta de cada conversa: um projeto, ou a pasta do **Assistente** (Documentos/Openmon Assistente) para assuntos gerais.
+* **Pedidos dentro do chat:** quando o Claude precisa de permissão, o pedido aparece no chat com a mudança, e também no balão do pet, na notificação e nos atalhos. Nada é aprovado sozinho.
+* **Conversas abertas em outro lugar:** as conversas do terminal ou do editor aparecem na lista e são lidas ao vivo. Dá para escrever para elas, ou **Continuar aqui**.
+* **Ações rápidas:** "O que tenho hoje?", "Explicar o que copiei", "Revisar mudanças", "Rodar os testes" e as que você criar. `{clipboard}` vira o que você copiou.
+* **Arquivos e imagens:** arraste para a janela, anexe pelo clipe ou cole uma captura de tela. Imagens vão para o Claude ver.
+* **Lembretes e tarefas:** "daqui a 30 minutos", "hoje às 15h", "todo dia às 9h" ou "dias úteis às 9h". Um lembrete faz o pet avisar; uma tarefa faz o Claude trabalhar na hora, e o pet avisa quando terminar.
+* **Memória do assistente:** o `CLAUDE.md` da pasta do assistente, com o que o Claude deve sempre saber sobre você, editável no próprio chat.
+* **Pelo celular (opcional):** com o aviso no celular ligado, o que você manda no tópico `<seu tópico>-in` do app ntfy vai para o agente que espera você, ou para a sua última conversa.
+* **Custo estimado** de cada conversa pelos preços de tabela da API. Planos mensais não pagam por token.
+
 ## Mais do que ele faz
 
 * **Deixa você responder e falar com o agente ali mesmo.** Com o Claude Code, o balão ganha **Permitir** e **Recusar** nos pedidos de permissão e as opções de cada pergunta do agente; **Mensagem** escreve para a conversa que o pet acompanha, e ela chega na hora se o agente estiver parado. O Claude Code espera sua resposta no pet por até 25 segundos; depois disso ele pergunta como sempre. Nada é aprovado sozinho: só o seu clique responde. Dá para desligar em Configurações → "Responder pelo pet".
@@ -129,7 +143,7 @@ O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa n
 * **Pausar todos os agentes**: no painel **Mais**, um botão pede a todas as conversas que trabalham para parar e esperar você.
 * **Regras de permissão do Claude Code** em Configurações → Computador, uma chave cada: ler e buscar sem perguntar, rodar os testes sem perguntar, e sempre perguntar antes de apagar ou publicar.
 * **Vários agentes esperando?** O card mostra os botões embaixo de cada um.
-* **Atalhos**: `Ctrl+Alt+O` abre o card, `Ctrl+Alt+J` leva ao agente que espera.
+* **Atalhos**: `Ctrl+Alt+O` abre o card, `Ctrl+Alt+J` leva ao agente que espera, `Ctrl+Alt+C` abre o chat com o Claude.
 
 **Números do seu trabalho**
 * **Tokens** usados hoje (no card) e por dia (no Diário), lidos dos arquivos de conversa do próprio Claude Code, no seu computador.

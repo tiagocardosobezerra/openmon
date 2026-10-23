@@ -30,6 +30,20 @@ Los avisos del agente corren con [Node.js](https://nodejs.org), que quien usa Cl
 
 Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas según el trabajo del agente. Tipos, objetos, accesorios, legendarios, habilidades y misiones están en [docs/GAME.es.md](docs/GAME.es.md).
 
+## Tu asistente personal: habla con Claude sin abrir Claude
+
+`Ctrl+Alt+C` (o **Más → Hablar con Claude**, o el ícono de la bandeja) abre el chat de Openmon. Usa tu propio Claude Code, con tu cuenta, tu configuración, tus conectores (MCP) y tu `CLAUDE.md`. No hace falta clave de API.
+
+* **Conversaciones de verdad:** la respuesta aparece mientras se escribe, con una línea por herramienta usada ("Write: lista.txt", "Bash: npm test"). Elige la carpeta de cada conversación: un proyecto, o la carpeta del **Asistente** (Documentos/Openmon Asistente) para temas generales.
+* **Pedidos dentro del chat:** cuando Claude necesita permiso, el pedido aparece en el chat con el cambio, y también en la burbuja de la mascota, la notificación y los atajos. Nada se aprueba solo.
+* **Conversaciones abiertas en otro lugar:** las de la terminal o el editor están en la lista y se leen en vivo. Puedes escribirles, o **Continuar aquí**.
+* **Acciones rápidas:** "¿Qué tengo hoy?", "Explicar lo que copié", "Revisar cambios", "Correr las pruebas" y las tuyas. `{clipboard}` se vuelve lo que copiaste.
+* **Archivos e imágenes:** suéltalos en la ventana, adjúntalos con el clip o pega una captura. Las imágenes van a Claude para que las vea.
+* **Recordatorios y tareas:** "en 30 minutos", "hoy a las 15", "todos los días a las 9" o "días hábiles a las 9". Un recordatorio hace que la mascota te avise; una tarea hace que Claude trabaje a esa hora, y la mascota avisa cuando termina.
+* **Memoria del asistente:** el `CLAUDE.md` de la carpeta del asistente, con lo que Claude debe saber siempre de ti, editable desde el chat.
+* **Desde el celular (opcional):** con el aviso en el celular activado, lo que envíes al tema `<tu tema>-in` en la app ntfy llega al agente que te espera, o a tu última conversación.
+* **Costo estimado** de cada conversación con los precios de lista de la API. Los planes mensuales no pagan por token.
+
 ## Más de lo que hace
 
 * **Te deja responder y hablar con el agente ahí mismo.** Con Claude Code, el globo gana **Permitir** y **Rechazar** en los pedidos de permiso y las opciones de cada pregunta del agente; **Mensaje** escribe a la conversación que sigue la mascota, y llega enseguida si el agente está parado. Claude Code espera tu respuesta en la mascota hasta 25 segundos; después pregunta como siempre. Nada se aprueba solo: solo tu clic responde. Se desactiva en Configuración → "Responder desde la mascota".
@@ -129,7 +143,7 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 * **Pausar todos los agentes**: en el panel **Más**, un botón pide a todas las conversaciones que trabajan que paren y te esperen.
 * **Reglas de permiso de Claude Code** en Configuración → Computadora, un interruptor cada una: leer y buscar sin preguntar, correr las pruebas sin preguntar, y preguntar siempre antes de borrar o publicar.
 * **¿Varios agentes esperando?** La tarjeta muestra los botones debajo de cada uno.
-* **Atajos**: `Ctrl+Alt+O` abre la tarjeta, `Ctrl+Alt+J` te lleva al agente que espera.
+* **Atajos**: `Ctrl+Alt+O` abre la tarjeta, `Ctrl+Alt+J` te lleva al agente que espera, `Ctrl+Alt+C` abre el chat con Claude.
 
 **Números de tu trabajo**
 * **Tokens** usados hoy (en la tarjeta) y por día (en el Diario), leídos de los archivos de conversación del propio Claude Code, en tu computadora.

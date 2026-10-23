@@ -105,6 +105,7 @@
       topic: 'Tópico', topicSub: 'Um nome difícil de adivinhar (8 a 64 letras, números, _ ou -). Quem souber o tópico pode ler os avisos.', random: 'Gerar', test: 'Testar', sent: 'Enviado ✓', failed: 'Não deu: confira o tópico e a internet.',
       after: 'Avisar depois de', afterSub: 'Quanto tempo o agente espera antes do aviso.', seconds: '{n} s', immediately: 'Na hora',
       project: 'Incluir o nome do projeto', projectSub: 'Desligado: o aviso não diz em que projeto.',
+      replies: 'Responder pelo celular', repliesSub: 'O que você mandar no tópico "{topic}-in" do app ntfy vai para o agente que espera você, ou para sua última conversa. Quem souber o nome do tópico também consegue escrever: use um nome aleatório.',
       login: 'Iniciar com o computador', loginSub: 'Ele aparece sozinho quando você liga o computador.',
       claude: 'Claude Code', claudeOk: 'Conectado ✓', claudeSub: 'O pet escuta os avisos que o Claude Code já manda.', connect: 'Conectar',
       updates: 'Avisar sobre versões novas', updatesSub: 'Uma vez por dia o Openmon pergunta ao GitHub qual é a versão mais nova. Nada seu é enviado.',
@@ -157,6 +158,7 @@
       topic: 'Tema', topicSub: 'Un nombre difícil de adivinar (8 a 64 letras, números, _ o -). Quien conozca el tema puede leer los avisos.', random: 'Generar', test: 'Probar', sent: 'Enviado ✓', failed: 'No funcionó: revisa el tema e internet.',
       after: 'Avisar después de', afterSub: 'Cuánto espera el agente antes del aviso.', seconds: '{n} s', immediately: 'Al instante',
       project: 'Incluir el nombre del proyecto', projectSub: 'Apagado: el aviso no dice en qué proyecto.',
+      replies: 'Responder desde el celular', repliesSub: 'Lo que envíes al tema "{topic}-in" en la app ntfy va al agente que te espera, o a tu última conversación. Quien sepa el nombre del tema también puede escribir: usa un nombre aleatorio.',
       login: 'Iniciar con la computadora', loginSub: 'Aparece solo cuando enciendes la computadora.',
       claude: 'Claude Code', claudeOk: 'Conectado ✓', claudeSub: 'La mascota escucha los avisos que Claude Code ya envía.', connect: 'Conectar',
       updates: 'Avisar de versiones nuevas', updatesSub: 'Una vez al día Openmon le pregunta a GitHub cuál es la versión más nueva. No se envía nada tuyo.',
@@ -209,6 +211,7 @@
       topic: 'Topic', topicSub: 'A name hard to guess (8 to 64 letters, digits, _ or -). Anyone who knows the topic can read the alerts.', random: 'Generate', test: 'Test', sent: 'Sent ✓', failed: 'It did not work: check the topic and your internet.',
       after: 'Alert after', afterSub: 'How long the agent waits before the alert.', seconds: '{n} s', immediately: 'Right away',
       project: 'Include the project name', projectSub: 'Off: the alert does not say which project.',
+      replies: 'Answer from the phone', repliesSub: 'What you send to the "{topic}-in" topic in the ntfy app goes to the agent that waits for you, or to your latest conversation. Anyone who knows the topic name can write too: use a random name.',
       login: 'Start with the computer', loginSub: 'It shows up on its own when you turn on your computer.',
       claude: 'Claude Code', claudeOk: 'Connected ✓', claudeSub: 'The pet listens to the notices Claude Code already sends.', connect: 'Connect',
       updates: 'Tell me about new versions', updatesSub: 'Once a day Openmon asks GitHub for the newest version number. Nothing of yours is sent.',
@@ -462,6 +465,7 @@
           row(T.topic, T.topicSub, [topic, gen, test, result], { cls: 'sub wide' }),
           row(T.after, T.afterSub, pick([[0, T.immediately], [30, fill(T.seconds, { n: 30 })], [60, fill(T.seconds, { n: 60 })], [180, fill(T.seconds, { n: 180 })]], config.phoneAfterSec ?? 60, (v) => save({ phoneAfterSec: v }, true)), { cls: 'sub' }),
           row(T.project, T.projectSub, toggle('phoneProject'), { cls: 'sub' }),
+          row(T.replies, fill(T.repliesSub, { topic: config.phoneTopic || 'openmon-…' }), toggle('phoneReplies'), { cls: 'sub' }),
         );
       }
       return [card(null, rows)];

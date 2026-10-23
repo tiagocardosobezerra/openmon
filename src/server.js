@@ -25,6 +25,9 @@ const adapters = require('./adapters');
 const { createBackups, unwrap } = require('./backup');
 const { createPowers, unlockedPowers } = require('./powers');
 const { redact } = require('./redact');
+const { createAssistant } = require('./assistant');
+const { readTranscript } = require('./transcript');
+const { createSchedule } = require('./schedule');
 
 // ntfy.sh topics: letters, digits, _ and -, long enough to be private.
 const PHONE_TOPIC = /^[A-Za-z0-9_-]{8,64}$/;
@@ -118,7 +121,14 @@ function questionsOf(input) {
 
 const MAX_MESSAGE = 4000;
 
-function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus(), backups = playground ? null : createBackups({ now }), cloud = null, contactKey = require('node:crypto').randomBytes(24).toString('hex'), upgradeHooks = defaultUpgradeHooks } = {}) {
+// The assistant's memory (CLAUDE.md in its folder), the first time.
+const MEMORY_TEMPLATE = {
+  pt: '# Assistente pessoal (Openmon)\n\nVocê é meu assistente pessoal. Eu falo com você pelo Openmon, um pet na tela do meu computador.\n\n- Responda em português do Brasil, curto e direto.\n- Quando for uma tarefa, faça; quando faltar algo, pergunte uma coisa só.\n\n## Sobre mim\n\n- (escreva aqui o que o assistente deve saber: seu nome, trabalho, preferências)\n',
+  es: '# Asistente personal (Openmon)\n\nEres mi asistente personal. Hablo contigo desde Openmon, una mascota en la pantalla de mi computadora.\n\n- Responde en español, corto y directo.\n- Si es una tarea, hazla; si falta algo, pregunta una sola cosa.\n\n## Sobre mí\n\n- (escribe aquí lo que el asistente debe saber: tu nombre, trabajo, preferencias)\n',
+  en: '# Personal assistant (Openmon)\n\nYou are my personal assistant. I talk to you from Openmon, a pet on my computer screen.\n\n- Answer short and to the point.\n- When it is a task, do it; when something is missing, ask one thing.\n\n## About me\n\n- (write here what the assistant should know: your name, work, preferences)\n',
+};
+
+function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus(), backups = playground ? null : createBackups({ now }), cloud = null, contactKey = require('node:crypto').randomBytes(24).toString('hex'), upgradeHooks = defaultUpgradeHooks, chatsDir = configFile ? path.join(path.dirname(configFile), 'chats') : path.join(require('node:os').tmpdir(), `openmon-chats-${process.pid}`), spawnClaude = undefined } = {}) {
   const artDirs = [artDir, bundledArt].filter(Boolean);
   const bus = new EventEmitter();
   const powers = createPowers();
@@ -133,7 +143,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, wild: true, hideFullscreen: true, updateCheck: true, companions: [], shareSessions: true, follows: {} };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, wild: true, hideFullscreen: true, updateCheck: true, companions: [], shareSessions: true, follows: {}, quickActions: null, assistantFolder: '', phoneReplies: false };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -307,6 +317,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       permissions: permissionView(),
       questions: questionView(),
       inbox: world === real ? inboxView(live) : {},
+      // Which agent sessions are Openmon's own chats (a click opens the chat).
+      chatSessions: world === real ? Object.fromEntries(assistant.list().map((c) => [c.sessionId, c.id])) : {},
     });
   }
 
@@ -336,7 +348,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const signal = classify(payload);
     if (!signal) return [];
     if (target === real && permissions.size && payload.hook_event_name !== 'PermissionRequest') {
-      for (const p of [...permissions.values()]) if (p.session === signal.session && (signal.kind === 'tool-start' || signal.kind === 'tool-done' || signal.kind === 'tool-fail' || signal.kind === 'turn-start' || signal.kind === 'turn-end')) settlePermission(p.id, null, { how: 'agent' });
+      for (const p of [...permissions.values()]) if (!p.chat && p.session === signal.session && (signal.kind === 'tool-start' || signal.kind === 'tool-done' || signal.kind === 'tool-fail' || signal.kind === 'turn-start' || signal.kind === 'turn-end')) settlePermission(p.id, null, { how: 'agent' });
     }
     // A question ends with the turn (you pressed Esc, or the agent moved on).
     // Not on tool events: the question tool's own PreToolUse arrives with it.
@@ -345,6 +357,12 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     }
     // You typed in the agent's own window: a waiting listener can go.
     if (target === real && (signal.kind === 'turn-start' || signal.kind === 'session-end')) releaseListener(signal.session);
+    // Where each conversation is written, for the chat window.
+    if (target === real && payload.transcript_path && signal.session) {
+      transcripts.delete(signal.session);
+      transcripts.set(signal.session, { file: String(payload.transcript_path), cwd: payload.cwd ? String(payload.cwd) : null });
+      if (transcripts.size > 100) transcripts.delete(transcripts.keys().next().value);
+    }
     if (target === real && signal.kind === 'session-end') {
       inbox.delete(signal.session);
       reachable.delete(signal.session);
@@ -483,6 +501,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   function askPermission(body, signal) {
     if (!config.answerFromPet || !body._permission || !clients.size || world !== real) return null;
+    // One of Openmon's own chats: Claude Code asks Openmon directly.
+    if (assistant.owns(String(body.session_id || ''))) return null;
     // The agent's questions have their own hook (and their own bubble).
     if (body.tool_name === 'AskUserQuestion') return null;
     // Unguessable, so only the pet that shows the request can answer it.
@@ -491,7 +511,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // Claude Code's own suggestions ("allow this from now on") make the
     // "Always allow" button possible.
     const suggestions = Array.isArray(body.permission_suggestions) && body.permission_suggestions.length ? body.permission_suggestions : null;
-    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), label: signal ? signal.label : null, detail: signal ? signal.detail : null, until: now() + waitMs, waiters: [], decision: null, suggestions, preview: permissionPreview(body.tool_name, body.tool_input), full: permissionPreview(body.tool_name, body.tool_input, 400, 400) };
+    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), label: signal ? signal.label : null, detail: signal ? signal.detail : null, since: now(), until: now() + waitMs, waiters: [], decision: null, suggestions, preview: permissionPreview(body.tool_name, body.tool_input), full: permissionPreview(body.tool_name, body.tool_input, 400, 400) };
     entry.timer = setTimeout(() => settlePermission(id, null, { how: 'timeout' }), waitMs + 500);
     if (entry.timer.unref) entry.timer.unref();
     permissions.set(id, entry);
@@ -512,6 +532,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     if (decision === 'deny' && extra.message) reply.message = extra.message;
     if (decision === 'deny' && extra.interrupt) reply.interrupt = true;
     settled.set(id, reply);
+    if (entry.onSettle) entry.onSettle(decision ? { decision, message: reply.message, interrupt: reply.interrupt } : null);
     for (const res of entry.waiters) json(res, 200, reply);
     // Today's requests, for "what did I allow?" (the short preview only).
     const day = real.pet.daily;
@@ -525,7 +546,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   }
 
   function permissionView() {
-    return [...permissions.values()].map((p) => ({ id: p.id, session: p.session, label: p.label, detail: p.detail, until: p.until, canAlways: Boolean(p.suggestions), preview: p.preview || null }));
+    return [...permissions.values()].map((p) => ({ id: p.id, session: p.session, label: p.label, detail: p.detail, until: p.until, canAlways: Boolean(p.suggestions), preview: p.preview || null, chat: p.chat || null, since: p.since || null }));
   }
 
   // The agent's questions (AskUserQuestion) the pet can answer, like
@@ -537,6 +558,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // Only a desktop pet window (it holds the key) can answer, so without
     // one Claude Code asks you at once.
     if (!config.answerFromPet || !talkers.size || world !== real || !body || body.tool_name !== 'AskUserQuestion') return null;
+    if (assistant.owns(String(body.session_id || ''))) return null;
     const list = questionsOf(body.tool_input);
     if (!list) return null;
     const signal = classify({ ...body, hook_event_name: 'PreToolUse' });
@@ -572,6 +594,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     questions.delete(id);
     const reply = { answers };
     settledQuestions.set(id, reply);
+    if (entry.onSettle) entry.onSettle(answers);
     const forget = setTimeout(() => settledQuestions.delete(id), 30_000);
     if (forget.unref) forget.unref();
     for (const res of entry.waiters) json(res, 200, reply);
@@ -586,6 +609,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       session: q.session,
       label: q.label,
       until: q.until,
+      chat: q.chat || null,
       list: q.list.map((x) => ({ ...x, question: redact(x.question), header: redact(x.header), options: x.options.map((o) => ({ label: o.label, shown: redact(o.label), description: redact(o.description) })) })),
     }));
   }
@@ -655,6 +679,209 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const given = Buffer.from(String(req.headers['x-openmon-key'] || ''));
     const want = Buffer.from(contactKey);
     return given.length === want.length && require('node:crypto').timingSafeEqual(given, want);
+  }
+
+  // ---- The assistant: Openmon's own conversations with Claude ----------
+  // Where each Claude Code conversation is written (session -> file, folder).
+  const transcripts = new Map();
+  // Chat windows listening to the conversations as they stream (key holders).
+  const chatClients = new Set();
+  const CHAT_WAIT_MS = 60 * 60 * 1000;
+
+  function chatBroadcast(message) {
+    const data = `data: ${JSON.stringify(message)}\n\n`;
+    for (const res of chatClients) res.write(data);
+  }
+
+  // A request from one of our chats joins the pet's queue: the bubble, the
+  // notification, the hotkeys, the request page and the chat all answer it.
+  // No 25 s clock: nobody else would ask (an hour, then it is a no).
+  function askFromChat(chat, req) {
+    return new Promise((resolve) => {
+      const signal = classify({ session_id: chat.sessionId, cwd: chat.cwd, hook_event_name: 'PermissionRequest', tool_name: req.tool, tool_input: req.input });
+      const id = require('node:crypto').randomBytes(12).toString('hex');
+      const entry = { id, session: chat.sessionId, label: signal ? signal.label : path.basename(chat.cwd), detail: signal ? signal.detail : `Allow ${req.tool}?`, since: now(), until: now() + CHAT_WAIT_MS, waiters: [], decision: null, suggestions: req.suggestions, preview: permissionPreview(req.tool, req.input), full: permissionPreview(req.tool, req.input, 400, 400), chat: chat.id, onSettle: resolve };
+      entry.timer = setTimeout(() => settlePermission(id, null, { how: 'timeout' }), CHAT_WAIT_MS);
+      if (entry.timer.unref) entry.timer.unref();
+      permissions.set(id, entry);
+      // The pet jumps with its sign, as for any "needs you".
+      ingest({ session_id: chat.sessionId, cwd: chat.cwd, hook_event_name: 'Notification', message: entry.detail });
+      pushState(true);
+    });
+  }
+
+  function questionFromChat(chat, req) {
+    const list = questionsOf(req.input);
+    if (!list) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      const id = require('node:crypto').randomBytes(12).toString('hex');
+      const entry = { id, session: chat.sessionId, label: path.basename(chat.cwd), list, until: now() + CHAT_WAIT_MS, waiters: [], chat: chat.id, onSettle: resolve };
+      entry.timer = setTimeout(() => settleQuestion(id, null), CHAT_WAIT_MS);
+      if (entry.timer.unref) entry.timer.unref();
+      questions.set(id, entry);
+      ingest({ session_id: chat.sessionId, cwd: chat.cwd, hook_event_name: 'Notification', message: list[0].question });
+      pushState(true);
+    });
+  }
+
+  const assistant = createAssistant({
+    dir: chatsDir,
+    now,
+    log,
+    ...(spawnClaude ? { spawn: spawnClaude } : {}),
+    onChange: (id, change) => chatBroadcast({ type: 'chat', id, ...change }),
+    askPermission: askFromChat,
+    askQuestion: questionFromChat,
+    onDone: (chat, text) => {
+      // Stuck requests of a finished turn go away with it.
+      for (const p of [...permissions.values()]) if (p.chat === chat.id) settlePermission(p.id, null, { how: 'agent' });
+      const line = config.present ? '' : String(text || '').split('\n').find((l) => l.trim()) || '';
+      pushEvents([{ type: 'chat-done', id: chat.id, title: config.present ? '' : chat.title, line: line.slice(0, 160) }]);
+      bus.emit('chat-done', { id: chat.id, title: chat.title, line: line.slice(0, 160) });
+    },
+  });
+
+  // The assistant's own folder (Documents/Openmon Assistente), with a
+  // CLAUDE.md that is the assistant's memory: who you are, how to answer.
+  function assistantFolder(create = false) {
+    const pt = /^pt/i.test(config.lang || '');
+    const es = /^es/i.test(config.lang || '');
+    const dir = config.assistantFolder || path.join(require('node:os').homedir(), 'Documents', pt ? 'Openmon Assistente' : es ? 'Openmon Asistente' : 'Openmon Assistant');
+    if (create) {
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+        const memory = path.join(dir, 'CLAUDE.md');
+        if (!fs.existsSync(memory)) fs.writeFileSync(memory, MEMORY_TEMPLATE[pt ? 'pt' : es ? 'es' : 'en']);
+      } catch {}
+    }
+    return dir;
+  }
+
+  // Folders for a new conversation: the assistant's, then where you worked lately.
+  function recentFolders() {
+    const seen = new Set();
+    const out = [];
+    const add = (dir) => {
+      if (!dir || seen.has(dir) || out.length >= 8) return;
+      seen.add(dir);
+      try {
+        if (fs.statSync(dir).isDirectory()) out.push(dir);
+      } catch {}
+    };
+    for (const c of assistant.list()) add(c.cwd);
+    for (const t of [...transcripts.values()].reverse()) add(t.cwd);
+    return out;
+  }
+
+  // Files you dropped or picked: pictures go to Claude as images; any other
+  // file is named in the message, for Claude to open.
+  function attachments(files) {
+    const images = [];
+    const named = [];
+    for (const f of Array.isArray(files) ? files.slice(0, 10) : []) {
+      if (typeof f !== 'string' || !path.isAbsolute(f)) continue;
+      let stat;
+      try {
+        stat = fs.statSync(f);
+      } catch {
+        continue;
+      }
+      if (!stat.isFile()) continue;
+      const type = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' }[path.extname(f).toLowerCase()];
+      if (type && stat.size <= 5 * 1024 * 1024) images.push({ type, data: fs.readFileSync(f).toString('base64') });
+      else named.push(f);
+    }
+    return { images, named };
+  }
+
+  function chatInput(body) {
+    const { images, named } = attachments(body.files);
+    for (const img of Array.isArray(body.images) ? body.images.slice(0, 5) : []) {
+      if (img && typeof img.data === 'string' && img.data.length <= 7 * 1024 * 1024 && /^image\/(png|jpeg|gif|webp)$/.test(img.type)) images.push({ type: img.type, data: img.data });
+    }
+    let text = typeof body.text === 'string' ? body.text.trim().slice(0, 20000) : '';
+    if (named.length) text = `${text}\n\n${named.map((f) => `@${f}`).join('\n')}`.trim();
+    return { text, images };
+  }
+
+  // A conversation open elsewhere (terminal, editor, Claude's app), as the
+  // chat shows it: read from Claude Code's own file.
+  function agentView(session) {
+    const live = real.sessions.snapshot(now());
+    const s = (live.sessions || []).find((x) => x.id === session);
+    const t = transcripts.get(session);
+    return { session, label: s ? s.label : t && t.cwd ? path.basename(t.cwd) : session, state: s ? s.state : 'ended', detail: s ? s.detail : null, cwd: t ? t.cwd : null, canSend: reachable.has(session), queued: inbox.has(session), messages: config.present ? [] : (t && readTranscript(t.file)) || [] };
+  }
+
+  function chatList() {
+    const live = real.sessions.snapshot(now());
+    const agents = (live.sessions || []).filter((s) => !assistant.bySession(s.id)).map((s) => ({ session: s.id, label: s.label, state: s.state, detail: s.detail, canSend: reachable.has(s.id), hasTranscript: transcripts.has(s.id) }));
+    return { chats: assistant.list(), agents, folders: recentFolders(), assistantFolder: assistantFolder(), present: Boolean(config.present), schedule: schedule.list() };
+  }
+
+  // Reminders and scheduled tasks.
+  const schedule = createSchedule({
+    file: path.join(chatsDir, 'schedule.json'),
+    now,
+    onReminder: (item) => {
+      pushEvents([{ type: 'reminder', id: item.id, text: item.text }]);
+      bus.emit('reminder', item);
+    },
+    onTask: (item) => {
+      const r = assistant.create({ cwd: item.cwd, text: item.text });
+      pushEvents([{ type: 'task-started', id: r.id || null, text: item.text, ok: Boolean(r.ok) }]);
+      bus.emit('task-started', { ...item, chat: r.id || null, ok: Boolean(r.ok) });
+    },
+  });
+
+  // Answers from your phone (opt-in): what you send to "<topic>-in" in the
+  // ntfy app reaches the agent that waits for you, or your latest chat.
+  let phoneIn = null;
+  function phoneReply(text) {
+    const t = String(text || '').trim().slice(0, MAX_MESSAGE);
+    if (!t) return;
+    const live = real.sessions.snapshot(now());
+    const waiting = live.pose === 'attention' && live.focus ? live.focus.id : null;
+    const ours = waiting && assistant.bySession(waiting);
+    if (ours) assistant.send(ours.id, { text: t });
+    else if (waiting && reachable.has(waiting)) sendMessage(waiting, t);
+    else {
+      const last = assistant.list()[0];
+      if (last) assistant.send(last.id, { text: t });
+      else return;
+    }
+    pushEvents([{ type: 'phone-reply' }]);
+  }
+  function checkPhoneIn() {
+    const want = !playground && world === real && config.phoneReplies && PHONE_TOPIC.test(config.phoneTopic || '');
+    if (!want) {
+      if (phoneIn) {
+        phoneIn.destroy();
+        phoneIn = null;
+      }
+      return;
+    }
+    if (phoneIn) return;
+    const since = Math.floor(now() / 1000);
+    const req = require('node:https').get({ host: 'ntfy.sh', path: `/${config.phoneTopic}-in/json?since=${since}` }, (res) => {
+      let buf = '';
+      res.setEncoding('utf8');
+      res.on('data', (d) => {
+        buf += d;
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          try {
+            const m = JSON.parse(line);
+            if (m.event === 'message') phoneReply(m.message);
+          } catch {}
+        }
+      });
+      res.on('end', () => (phoneIn = null));
+    });
+    req.on('error', () => setTimeout(() => (phoneIn = null), 30_000).unref());
+    req.setTimeout(0);
+    phoneIn = req;
   }
 
   // Brings the window of a waiting agent (or the given session) to the front.
@@ -916,10 +1143,15 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     }
   }
 
+  let slowTick = 0;
   const ticker = setInterval(() => {
     world.sessions.tick(now());
     checkBreak();
     checkPhone();
+    if (++slowTick % 10 === 0) {
+      schedule.tick();
+      checkPhoneIn();
+    }
     if (world === real) {
       real.sessions.snapshot(now());
       const late = real.sessions.takeNotices();
@@ -1019,7 +1251,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'GET /api/permission': {
         const entry = permissions.get(String(url.searchParams.get('id') || ''));
         if (!entry) return json(res, 200, { gone: true });
-        return json(res, 200, { id: entry.id, label: entry.label, detail: entry.detail, until: entry.until, canAlways: Boolean(entry.suggestions), diff: entry.full || null });
+        return json(res, 200, { id: entry.id, label: entry.label, detail: entry.detail, until: entry.until, canAlways: Boolean(entry.suggestions), diff: entry.full || null, chat: entry.chat || null });
       }
       case 'POST /api/permission/decide':
         return readJson(req, (err, body) => {
@@ -1209,6 +1441,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if ([0, 50, 90].includes(body.breakEvery)) patch.breakEvery = body.breakEvery;
           if (typeof body.phoneAlerts === 'boolean') patch.phoneAlerts = body.phoneAlerts;
           if (typeof body.phoneProject === 'boolean') patch.phoneProject = body.phoneProject;
+          if (typeof body.phoneReplies === 'boolean') patch.phoneReplies = body.phoneReplies;
           if (typeof body.phoneTopic === 'string' && (body.phoneTopic === '' || PHONE_TOPIC.test(body.phoneTopic))) patch.phoneTopic = body.phoneTopic;
           if (typeof body.phoneAfterSec === 'number' && body.phoneAfterSec >= 0 && body.phoneAfterSec <= 600) patch.phoneAfterSec = Math.round(body.phoneAfterSec);
           // Turning on "answer from the pet" brings older hooks up to date.
@@ -1255,6 +1488,122 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           }
           return json(res, 200, { files, pack, tints, slots });
         }
+      // ---- The assistant (key holders only: the desktop chat window) ----
+      case 'GET /api/chat/stream': {
+        const given = Buffer.from(String(url.searchParams.get('key') || ''));
+        const want = Buffer.from(contactKey);
+        if (given.length !== want.length || !require('node:crypto').timingSafeEqual(given, want)) return res.writeHead(403).end();
+        res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+        res.write(': hello\n\n');
+        chatClients.add(res);
+        const keepAlive = setInterval(() => res.write(': ping\n\n'), 15000);
+        req.on('close', () => {
+          clearInterval(keepAlive);
+          chatClients.delete(res);
+        });
+        return;
+      }
+      case 'GET /api/chats':
+        if (!keyOk(req)) return res.writeHead(403).end();
+        return json(res, 200, chatList());
+      case 'GET /api/chat': {
+        if (!keyOk(req)) return res.writeHead(403).end();
+        const chat = assistant.get(String(url.searchParams.get('id') || ''));
+        if (!chat) return json(res, 200, { gone: true });
+        return json(res, 200, config.present ? { ...chat, messages: [], present: true } : chat);
+      }
+      case 'GET /api/chat/agent':
+        if (!keyOk(req)) return res.writeHead(403).end();
+        return json(res, 200, agentView(String(url.searchParams.get('session') || '').slice(0, 120)));
+      case 'POST /api/chat/new':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          const cwd = typeof body.cwd === 'string' && body.cwd ? body.cwd : assistantFolder(true);
+          if (cwd === assistantFolder()) assistantFolder(true);
+          json(res, 200, assistant.create({ cwd, ...chatInput(body) }));
+        });
+      case 'POST /api/chat/send':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          json(res, 200, assistant.send(String(body.id || ''), chatInput(body)));
+        });
+      // A conversation from the terminal, continued here (Claude Code
+      // resumes it; if it still runs there, it starts a copy and says so).
+      case 'POST /api/chat/continue':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          const session = String(body.session || '');
+          const t = transcripts.get(session);
+          const mine = assistant.bySession(session);
+          if (mine) return json(res, 200, { ok: true, id: mine.id });
+          if (!t || !t.cwd) return json(res, 200, { ok: false, reason: 'unknown' });
+          json(res, 200, assistant.create({ cwd: t.cwd, sessionId: session, resume: true, title: path.basename(t.cwd), seed: readTranscript(t.file) || [], ...chatInput(body) }));
+        });
+      case 'POST /api/chat/stop':
+      case 'POST /api/chat/delete':
+      case 'POST /api/chat/rename':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          const id = String(body.id || '');
+          if (route.endsWith('stop')) return json(res, 200, { ok: assistant.stop(id) });
+          if (route.endsWith('delete')) return json(res, 200, { ok: assistant.remove(id) });
+          json(res, 200, { ok: assistant.rename(id, body.title) });
+        });
+      case 'GET /api/assistant/memory': {
+        if (!keyOk(req)) return res.writeHead(403).end();
+        const file = path.join(assistantFolder(true), 'CLAUDE.md');
+        let text = '';
+        try {
+          text = fs.readFileSync(file, 'utf8');
+        } catch {}
+        return json(res, 200, { path: file, text });
+      }
+      case 'POST /api/assistant/memory':
+        return readJson(req, (err, body) => {
+          if (err || !body || typeof body.text !== 'string' || body.text.length > 20000) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          try {
+            fs.writeFileSync(path.join(assistantFolder(true), 'CLAUDE.md'), body.text);
+            json(res, 200, { ok: true });
+          } catch (e) {
+            json(res, 200, { ok: false, error: e.message });
+          }
+        });
+      // Settings of the assistant that reach Claude, so the key is needed.
+      case 'POST /api/assistant/config':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          const patch = {};
+          if (body.quickActions === null) patch.quickActions = null;
+          else if (Array.isArray(body.quickActions)) patch.quickActions = body.quickActions.filter((a) => a && typeof a.label === 'string' && typeof a.prompt === 'string' && a.label.trim() && a.prompt.trim()).slice(0, 12).map((a) => ({ label: a.label.trim().slice(0, 40), prompt: a.prompt.trim().slice(0, 2000) }));
+          if (typeof body.assistantFolder === 'string' && (body.assistantFolder === '' || path.isAbsolute(body.assistantFolder))) patch.assistantFolder = body.assistantFolder;
+          if (typeof body.phoneReplies === 'boolean') patch.phoneReplies = body.phoneReplies;
+          setConfig(patch);
+          json(res, 200, publicConfig());
+        });
+      case 'GET /api/schedule':
+        if (!keyOk(req)) return res.writeHead(403).end();
+        return json(res, 200, { items: schedule.list() });
+      case 'POST /api/schedule/add':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          const cwd = body.kind === 'task' ? (typeof body.cwd === 'string' && body.cwd ? body.cwd : assistantFolder(true)) : null;
+          const r = schedule.add({ kind: body.kind, text: body.text, cwd, when: body.when });
+          pushState(true);
+          json(res, 200, r);
+        });
+      case 'POST /api/schedule/remove':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          json(res, 200, { ok: schedule.remove(String(body.id || '')) });
+        });
       case 'GET /health':
         return json(res, 200, { app: 'openmon', clients: clients.size });
       case 'GET /stream': {
@@ -1334,6 +1683,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     state,
     config: publicConfig,
     contactKey: () => contactKey,
+    assistant,
+    schedule,
     upgradeHooks: () => !playground && config.answerFromPet && upgradeHooks(),
     listen: () =>
       new Promise((resolve, reject) => {
@@ -1345,6 +1696,9 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       new Promise((resolve) => {
         stopDemo();
         clearInterval(ticker);
+        assistant.closeAll();
+        if (phoneIn) phoneIn.destroy();
+        for (const res of chatClients) res.end();
         clearInterval(cloudTimer);
         store.flush();
         if (backups && !restoreOffer && !playground) backups.maybe(real.pet, config, true);
