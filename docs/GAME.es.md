@@ -2,7 +2,7 @@
 
 [Português](GAME.md) | [English](GAME.en.md) | **Español**
 
-Openmon es una mascota de escritorio, en el espíritu de los juegos de criaturas y de las mascotas virtuales, que vive en la esquina de la pantalla mientras Claude Code trabaja. Lee cuando el agente lee, martillea cuando el agente edita, levanta un escudo cuando corren las pruebas y salta con un cartel cuando el agente **te necesita**. Un clic en ella y la ventana del agente pasa al frente, lista para que apruebes o respondas. Con los días, el huevo eclosiona, crece y evoluciona a una de 40 formas, según el tipo de trabajo que más hace tu agente.
+Openmon es una mascota de escritorio, en el espíritu de los juegos de criaturas y de las mascotas virtuales, que vive en la esquina de la pantalla mientras Claude Code trabaja. Lee cuando el agente lee, martillea cuando el agente edita, levanta un escudo cuando corren las pruebas y salta con un cartel cuando el agente **te necesita**. Un clic en ella y la ventana del agente pasa al frente, lista para que apruebes o respondas. Con los días, el huevo eclosiona, crece y evoluciona a una de 39 formas, según el tipo de trabajo que más hace tu agente.
 
 Esta página explica el juego. Para lo que Openmon hace por ti y cómo instalarlo, mira el [README](../README.es.md).
 
@@ -30,7 +30,7 @@ El trabajo raro vale más, así que cualquier tipo puede ganar. Y hay un linaje 
 
 * **Amistad** (0 a 100) solo sube: responde rápido al agente, acaríciala con un clic, vuelve todos los días. Llegar a Anciano pide amistad 60.
 * **Personalidad**: cada huevo nace Valiente, Dormilona, Curiosa, Alegre, Tranquila o Pícara, lo que cambia cómo se mueve y lo que dice.
-* **Rarezas**: 1 de cada 128 nace con colores brillantes (shiny), siempre con brillo y estrellitas alrededor. Cada forma tiene las 5 poses también en shiny.
+* **Rarezas**: 1 de cada 128 nace con colores brillantes (shiny), siempre con estrellitas alrededor. Cada forma tiene las 5 poses también en shiny.
 * **Línea oculta**: cuando dos tipos de trabajo empatan casi exactamente, aparece la Chimera.
 * **Legendarios**: tres, cada uno ligado a una hazaña. *Mergeon* aparece con tu primer pull request aceptado, *Aeonbyte* después de un año de Openmon y *Zeroday* después de 100 arreglos. Entran en tu Equipo y nunca evolucionan.
 * **Encuentros salvajes**: de vez en cuando (1 de cada 1.024 acciones del agente, como máximo uno al día) un Openmon salvaje aparece junto a tu mascota durante 10 minutos. Siempre es un Joven, casi siempre del tipo de la acción que lo llamó, y puede ser brillante (1 de cada 128). Lanza una *Openball* para intentar atraparlo: 3 de cada 4. Si se suelta, la mitad de las veces se queda para otro intento. Atrapado, entra en tu Equipo sin proyecto y conserva su tipo. Ganas 3 Openballs con tu primer Openmon, una por día perfecto y una cada 5 días seguidos. Se pueden desactivar en la Configuración. Más objetos de campo: *Openball Plus* (atrapa 7 de cada 8, cada 10 días seguidos), *Openball Maestra* (atrapa siempre; al encontrar salvajes de los 11 tipos), *Cebo* (durante una hora, encuentros 1 de cada 256, cada 3 días perfectos), *Linterna* (el próximo salvaje es brillante 1 de cada 16; en tu captura número 10) y *Mapa de campo* (elige el tipo del próximo salvaje, cada 8 días perfectos).
@@ -40,7 +40,7 @@ El trabajo raro vale más, así que cualquier tipo puede ganar. Y hay un linaje 
 
 <table>
 <tr>
-<td width="50%"><img src="screens/dex.es.png" alt="La Opendex con los tipos y las formas"><br><sub><b>Opendex</b>: los tipos, cómo se gana cada uno y las 40 formas</sub></td>
+<td width="50%"><img src="screens/dex.es.png" alt="La Opendex con los tipos y las formas"><br><sub><b>Opendex</b>: los tipos, cómo se gana cada uno y las 39 formas</sub></td>
 <td width="50%"><img src="screens/bag.es.png" alt="La Mochila con objetos y accesorios"><br><sub><b>Mochila</b>: objetos y accesorios para usar</sub></td>
 </tr>
 </table>

@@ -99,25 +99,25 @@ Mostra, em 6 cenas, o que é o Openmon: um bichinho no canto da tela que acompan
 
 * Uma grade da **Opendex** aparece (inspiração: `telas/dex.*.png`), formas acendendo da silhueta para a cor, rápido.
 * Destaques, um por vez (1,5 s cada):
-  * um **shiny** com estrelinhas em volta (sem halo) (`craft-adult.shiny.svg` + o brilho, ver nota abaixo)
+  * um **shiny** com estrelinhas em volta (sem halo) (`craft-adult.shiny.svg` + as estrelinhas, ver nota abaixo)
   * um **noturno** com a lua (`roam-adult.night.svg`)
   * um **lendário** (`mergeon.svg`)
   * o **Time**: três Openmons lado a lado no canto da tela (`craft-mythic`, `docs-adult`, `git-juvenile`)
-* Legenda: **"40 formas, raras e lendárias. Até 3 na tela."**
-* EN: **"40 forms, rare ones and legendaries. Up to 3 on screen."**
+* Legenda: **"39 formas, raras e lendárias. Até 3 na tela."**
+* EN: **"39 forms, rare ones and legendaries. Up to 3 on screen."**
 
 ### Cena 6 · 42–48 s · fecho
 
 * A tela escurece; o **logo** (`marca/logo-full-white.svg`) aparece no centro, com o Archsmith ao lado.
-* Embaixo, os chips: **Claude Code · 100% local · 40 formas · PT · EN · ES**.
+* Embaixo, os chips: **Claude Code · 100% local · 39 formas · PT · EN · ES**.
 * Frase: **"Seu agente trabalha. Seu Openmon cresce."**
 * EN: **"Your agent works. Your Openmon grows."**
 * Segura 2 s e faz fade para a Cena 1.
 
 ### `aria-label` do banner
 
-* PT: "Animação do Openmon: um ovo choca no canto da tela; o bichinho lê, martela e testa junto com o agente de IA; quando o agente precisa de permissão, ele pula com uma placa e você responde com um clique; ele evolui conforme o trabalho e vira uma coleção de 40 formas, com raros e lendários. Seu agente trabalha. Seu Openmon cresce."
-* EN: "Openmon animation: an egg hatches in the corner of the screen; the creature reads, hammers and tests along with your AI agent; when the agent needs permission it jumps with a sign and you answer with one click; it evolves with the work and becomes a collection of 40 forms, with rare ones and legendaries. Your agent works. Your Openmon grows."
+* PT: "Animação do Openmon: um ovo choca no canto da tela; o bichinho lê, martela e testa junto com o agente de IA; quando o agente precisa de permissão, ele pula com uma placa e você responde com um clique; ele evolui conforme o trabalho e vira uma coleção de 39 formas, com raros e lendários. Seu agente trabalha. Seu Openmon cresce."
+* EN: "Openmon animation: an egg hatches in the corner of the screen; the creature reads, hammers and tests along with your AI agent; when the agent needs permission it jumps with a sign and you answer with one click; it evolves with the work and becomes a collection of 39 forms, with rare ones and legendaries. Your agent works. Your Openmon grows."
 
 ---
 
@@ -147,8 +147,8 @@ Faixa fixa no topo (como no Vegapunk): **"Escuta. Cresce. Avisa."** / EN: **"Lis
 
 ## 5. Notas sobre as criaturas
 
-* Todas as criaturas estão em `criaturas/`, com o nome do arquivo igual ao do app: `<forma>[.shiny][.night][@pose].svg`. Poses: `@sleep`, `@working`, `@attention`, `@error`, `@done`.
-* **Shiny:** os arquivos `.shiny` vêm sem o brilho (o app desenha). Na animação, desenhe o brilho por cima, como na prancha "shiny" do seu arquivo: halo `#fff1b8` com 45% de opacidade, anel pontilhado `#f2b632` e estrelas de 4 pontas `#fffbe0` com contorno `#e9a92a`, piscando uma depois da outra.
+* Todas as criaturas estão em `criaturas/`, com o nome do arquivo igual ao do app: `<forma>[.shiny][@pose].svg`. Poses: `@sleep`, `@working`, `@attention`, `@error`, `@done`.
+* **Shiny:** os arquivos `.shiny` vêm sem as estrelinhas (o app desenha). Na animação, desenhe só as estrelas de 4 pontas `#fffbe0` com contorno `#e9a92a` em volta, piscando uma depois da outra, sem halo nem anel.
 * **Movimento do pet (para ficar igual ao app):** respiração (escala 1 → 1,03 em 2,4 s), pulinho na troca de pose, piscar a cada 3–4 s, tremidinha no erro, giro na evolução.
 * Acessórios (`acessorios/`) e itens (`itens/`) podem enfeitar a cena 5, mas não são obrigatórios.
 * `telas/` tem prints atuais da interface (card, balão, Opendex, Time, Mochila, Habilidades, Configurações) em PT e EN, para copiar o visual dos balões e cards.

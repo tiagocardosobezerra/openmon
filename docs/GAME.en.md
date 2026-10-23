@@ -2,7 +2,7 @@
 
 [Português](GAME.md) | **English** | [Español](GAME.es.md)
 
-Openmon is a desktop pet, in the spirit of creature-collecting games and virtual pets, that lives in the corner of your screen while Claude Code works. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps holding a sign when the agent **needs you**. Click it and the agent's window comes to the front, ready for you to approve or reply. Over the days, the egg hatches, grows and evolves into one of 40 forms, decided by the kind of work your agent does most.
+Openmon is a desktop pet, in the spirit of creature-collecting games and virtual pets, that lives in the corner of your screen while Claude Code works. It reads when your agent reads, hammers when it edits, raises a shield when the tests run, and jumps holding a sign when the agent **needs you**. Click it and the agent's window comes to the front, ready for you to approve or reply. Over the days, the egg hatches, grows and evolves into one of 39 forms, decided by the kind of work your agent does most.
 
 This page explains the game. For what Openmon does for you and how to install it, see the [README](../README.en.md).
 
@@ -30,7 +30,7 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 
 * **Friendship** (0 to 100) only goes up: answer your agent quickly, pet it with a click, come back every day. Becoming an Elder asks for friendship 60.
 * **Personality**: every egg is born Brave, Sleepy, Curious, Cheerful, Calm or Cheeky, which changes how it moves and what it says.
-* **Rarities**: 1 in 128 hatches in shiny colours, always with a glow and little stars around it. Every form has its 5 poses in shiny colours too.
+* **Rarities**: 1 in 128 hatches in shiny colours, always with little stars around it. Every form has its 5 poses in shiny colours too.
 * **Hidden line**: when two kinds of work are almost exactly tied, the Chimera appears.
 * **Legendaries**: three, each tied to a feat. *Mergeon* appears when your first pull request is merged, *Aeonbyte* after a year of Openmon and *Zeroday* after 100 fixes. They join your Party and never evolve.
 * **Wild encounters**: now and then (1 in 1,024 agent actions, at most one a day) a wild Openmon shows up next to your pet for 10 minutes. It is always a Juvenile, almost always of the type of the action that called it, and it can be shiny (1 in 128). Throw an *Openball* to try to catch it: 3 in 4. If it breaks free, half the time it stays for another try. Caught, it joins your Party with no project and keeps its type. You get 3 Openballs with your first Openmon, one per perfect day and one every 5 days in a row. You can turn them off in Settings. More field items: *Openball Plus* (catches 7 in 8, every 10 days in a row), *Openball Master* (always catches; for meeting wild Openmon of all 11 types), *Lure* (for an hour, encounters 1 in 256, every 3 perfect days), *Lantern* (the next wild one is shiny 1 in 16; for your 10th catch) and *Field map* (pick the next wild one's type, every 8 perfect days).
@@ -40,7 +40,7 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 
 <table>
 <tr>
-<td width="50%"><img src="screens/dex.en.png" alt="The Opendex with types and forms"><br><sub><b>Opendex</b>: the types, how to get each one and the 40 forms</sub></td>
+<td width="50%"><img src="screens/dex.en.png" alt="The Opendex with types and forms"><br><sub><b>Opendex</b>: the types, how to get each one and the 39 forms</sub></td>
 <td width="50%"><img src="screens/bag.en.png" alt="The Bag with items and accessories"><br><sub><b>Bag</b>: items and accessories to wear</sub></td>
 </tr>
 </table>

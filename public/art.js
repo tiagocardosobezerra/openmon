@@ -75,22 +75,17 @@
     ctx.ellipse(x, y, Math.max(0.1, rx), Math.max(0.1, ry), rot, 0, Math.PI * 2);
   }
 
-  // The shine every shiny wears (from the designer's shiny boards): a soft
-  // golden glow with a dotted ring behind the creature, and four-point stars
-  // and dots around it that twinkle one after another. Positions are the
-  // designer's, relative to the glow's centre and radius.
+  // The shine every shiny wears (from the designer's shiny boards): four-point
+  // stars and dots around the creature that twinkle one after another, and
+  // nothing behind it. Positions are the designer's, relative to the
+  // creature's centre and a radius around it.
   const SHINE_STARS = [[-0.81, -0.77, 0.117, 0], [0.81, -0.89, 0.085, 1], [0.94, -0.06, 0.106, 2], [-0.94, 0.13, 0.074, 3], [0.7, 0.7, 0.096, 1], [-0.7, 0.74, 0.064, 2]];
   const SHINE_DOTS = [[0, -1.1, 0.027, 0], [0.53, -0.55, 0.021, 3], [-0.98, -0.43, 0.021, 1]];
-  function shine(ctx, x, y, r, t, layer) {
+  function shine(ctx, x, y, r, t) {
     const k = r / 94;
     const pulse = (d) => 0.45 + 0.55 * Math.max(0, Math.sin(t * 2.2 - d * 1.6));
     ctx.save();
     ctx.translate(x, y);
-    // Shiny is the sparkle alone: no glow disc or ring behind the creature.
-    if (layer === 'back') {
-      ctx.restore();
-      return;
-    }
     for (const [sx, sy, size, d] of SHINE_STARS) {
       const p = pulse(d);
       const s = r * size * (0.75 + 0.25 * p);
@@ -631,15 +626,9 @@
     return entry;
   }
 
-  // Where the eyes sit, from 0 (top of the image) to 1 (bottom). Group
-  // transforms (matrix, translate, scale) are applied by hand: a parsed
-  // document is not rendered, so it has no layout to ask.
-  function eyeHeight(text) {
-    const g = eyeGeometry(text);
-    return g ? g.y : null;
-  }
-
   // Both eyes in image fractions: { y, x0, x1 } (0..1 of width and height).
+  // Group transforms (matrix, translate, scale) are applied by hand: a parsed
+  // document is not rendered, so it has no layout to ask.
   function eyeGeometry(text) {
     try {
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
@@ -782,15 +771,14 @@
     ctx.rotate(a.tilt);
     ctx.scale((a.turn == null ? 1 : a.turn) * (1 + a.squash), 1 - a.squash);
     if (a.glow > 0 || spec.stage === 'mythic') aura(ctx, spec, R, -h * 0.45, palette(spec), t, Math.max(a.glow, spec.stage === 'mythic' ? 0.6 : 0));
-    // A shiny always shines: glow and ring behind, stars in front.
-    if (spec.shiny && spec.stage !== 'egg') shine(ctx, 0, -h * 0.5, Math.max(w, h) * 0.56, t, 'back');
     ctx.drawImage(img, -w / 2, -h, w, h);
     const anchors = spec.wear && spec.stage !== 'egg' ? wearAnchors(sprite, spec, w, h) : null;
     if (anchors) drawWear(ctx, spec.wear, anchors, t);
     ctx.restore();
     if (a.motes) motes(ctx, a.motes, R, -h * 0.45, palette(spec), t);
     if (a.prop) prop(ctx, a.prop, R, -h * 0.45, palette(spec), t);
-    if (spec.shiny && spec.stage !== 'egg') shine(ctx, 0, -h * 0.5, Math.max(w, h) * 0.56, t, 'front');
+    // A shiny always shines: stars around it, in front.
+    if (spec.shiny && spec.stage !== 'egg') shine(ctx, 0, -h * 0.5, Math.max(w, h) * 0.56, t);
   }
 
   // --- main entry --------------------------------------------------------------

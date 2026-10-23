@@ -25,7 +25,6 @@ process.env.OPENMON_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-screen
 const { createDaemon } = require('../src/server');
 const { createStore } = require('../src/store');
 const pet = require('../src/pet');
-const { COSMETICS } = require('../src/species');
 
 app.disableHardwareAcceleration();
 app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-screens-profile-')));

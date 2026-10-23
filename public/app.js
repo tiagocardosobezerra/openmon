@@ -127,7 +127,7 @@
   const chatQuery = (session) => (chatSessions[session] ? `?id=${chatSessions[session]}` : `?session=${encodeURIComponent(session)}`);
   function talk(kind, ref) {
     // A message to a conversation: the chat window, with the whole conversation.
-    if (kind === 'message' && canChat && ref) return desktop.openChat(chatQuery(ref));
+    if (kind === 'message') return canChat && ref ? desktop.openChat(chatQuery(ref)) : undefined;
     if (canTalk && ref) desktop.openTalk(kind, ref);
   }
   const sessionLabel = (id) => ((live.sessions || []).find((s) => s.id === id) || {}).label || '';
