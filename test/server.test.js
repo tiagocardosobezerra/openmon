@@ -17,6 +17,8 @@ const { createStore } = require('../src/store');
 const { createFocus } = require('../src/focus');
 
 const HOOK = path.join(__dirname, '..', 'src', 'hook.js');
+// The desktop key that pet windows send with free text for the agent.
+const KEY = 'k'.repeat(48);
 
 async function boot({ focus = createFocus({ driver: null }) } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-home-'));
@@ -25,7 +27,7 @@ async function boot({ focus = createFocus({ driver: null }) } = {}) {
   fs.mkdirSync(artDir);
   fs.writeFileSync(path.join(artDir, 'craft-adult.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
   fs.writeFileSync(path.join(artDir, 'notes.txt'), 'not art');
-  const daemon = createDaemon({ port: 0, store, hooksInstalled: () => true, artDir, bundledArt: null, configFile: path.join(dir, 'config.json'), focus });
+  const daemon = createDaemon({ port: 0, store, hooksInstalled: () => true, artDir, bundledArt: null, configFile: path.join(dir, 'config.json'), focus, contactKey: KEY, upgradeHooks: () => {} });
   const port = await daemon.listen();
   return { daemon, port, dir, store };
 }
@@ -353,7 +355,8 @@ test('answer permissions from the pet: Allow and Deny reach Claude Code; off mea
     throw new Error('no pending permission');
   };
   try {
-    // Off (the default): the hook prints nothing and returns at once.
+    // Off: the hook prints nothing and returns at once.
+    await request(port, 'POST', '/api/config', { body: JSON.stringify({ answerFromPet: false }), headers: json });
     let r = await runPermissionHook();
     assert.equal(r.code, 0);
     assert.equal(r.out, '');
@@ -404,6 +407,145 @@ test('"Always allow" hands back Claude Code\'s own suggested rule', async () => 
     assert.deepEqual(out.hookSpecificOutput.decision.updatedPermissions, [suggestion]);
   } finally {
     stream.destroy();
+    await daemon.close();
+  }
+});
+
+function spawnHook(port, flags, payload) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [HOOK, '--openmon', ...flags], { env: { ...process.env, OPENMON_PORT: String(port) } });
+    let out = '';
+    let err = '';
+    child.stdout.on('data', (d) => (out += d));
+    child.stderr.on('data', (d) => (err += d));
+    child.on('exit', (code) => resolve({ code, out, err }));
+    child.stdin.end(JSON.stringify(payload));
+  });
+}
+
+async function until(port, pick) {
+  for (let i = 0; i < 60; i++) {
+    const found = pick(JSON.parse((await request(port, 'GET', '/api/state')).body));
+    if (found) return found;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error('never happened');
+}
+
+test('the agent\'s question: picked on the pet, handed back as Claude Code\'s answers', async () => {
+  const { daemon, port } = await boot();
+  // A browser page cannot answer (no key): Claude Code asks at once.
+  const page = await new Promise((resolve) => http.get({ host: '127.0.0.1', port, path: '/stream' }, resolve));
+  const early = await spawnHook(port, ['--question'], { session_id: 'q0', hook_event_name: 'PreToolUse', tool_name: 'AskUserQuestion', tool_input: { questions: [{ question: 'Go?', options: [{ label: 'Yes' }] }] } });
+  assert.deepEqual([early.code, early.out], [0, '']);
+  page.destroy();
+  // The desktop pet window can.
+  const stream = await new Promise((resolve) => http.get({ host: '127.0.0.1', port, path: '/stream?talk=1' }, resolve));
+  const json = { 'Content-Type': 'application/json' };
+  const keyed = { ...json, 'X-Openmon-Key': KEY };
+  const questions = [
+    { question: 'Which framework?', header: 'Framework', multiSelect: false, options: [{ label: 'React', description: 'Components' }, { label: 'Vue', description: '' }] },
+    { question: 'Which extras?', header: 'Extras', multiSelect: true, options: [{ label: 'Tests' }, { label: 'Docs' }] },
+  ];
+  const ask = { session_id: 'q1', hook_event_name: 'PreToolUse', tool_name: 'AskUserQuestion', tool_input: { questions }, cwd: '/tmp/shop' };
+  try {
+    const hook = spawnHook(port, ['--question'], ask);
+    const q = await until(port, (s) => s.questions[0]);
+    assert.equal(q.session, 'q1');
+    assert.equal(q.list.length, 2);
+    assert.equal(q.list[0].options[0].label, 'React');
+    // Without the desktop key, nothing is answered.
+    assert.equal((await request(port, 'POST', '/api/question/answer', { body: JSON.stringify({ id: q.id, answers: ['React', ['Tests']] }), headers: json })).status, 403);
+    // Two picks for a single-choice question are refused.
+    assert.equal(JSON.parse((await request(port, 'POST', '/api/question/answer', { body: JSON.stringify({ id: q.id, answers: [['React', 'Vue'], ['Tests']] }), headers: keyed })).body).ok, false);
+    assert.equal(JSON.parse((await request(port, 'POST', '/api/question/answer', { body: JSON.stringify({ id: q.id, answers: ['Svelte, please', ['Tests', 'Docs']] }), headers: keyed })).body).ok, true);
+    const r = await hook;
+    assert.equal(r.code, 0);
+    const out = JSON.parse(r.out).hookSpecificOutput;
+    assert.equal(out.hookEventName, 'PreToolUse');
+    assert.equal(out.permissionDecision, 'allow');
+    assert.deepEqual(out.updatedInput.questions, questions);
+    assert.deepEqual(out.updatedInput.answers, { 'Which framework?': 'Svelte, please', 'Which extras?': 'Tests, Docs' });
+
+    // "Open" on the pet: the hook ends with no answer, so Claude Code asks.
+    const again = spawnHook(port, ['--question'], ask);
+    const q2 = await until(port, (s) => s.questions[0]);
+    assert.equal(JSON.parse((await request(port, 'POST', '/api/question/release', { body: JSON.stringify({ id: q2.id }), headers: json })).body).ok, true);
+    assert.deepEqual((({ code, out: o }) => [code, o])(await again), [0, '']);
+
+    // The permission hook leaves the question tool to the question hook.
+    const perm = await spawnHook(port, ['--permission'], { ...ask, hook_event_name: 'PermissionRequest' });
+    assert.deepEqual([perm.code, perm.out], [0, '']);
+
+    // Off: the question hook prints nothing, so Claude Code asks as usual.
+    await request(port, 'POST', '/api/config', { body: JSON.stringify({ answerFromPet: false }), headers: json });
+    const off = await spawnHook(port, ['--question'], ask);
+    assert.deepEqual([off.code, off.out], [0, '']);
+  } finally {
+    stream.destroy();
+    await daemon.close();
+  }
+});
+
+test('Deny with a reason, or deny and stop: only with the desktop key', async () => {
+  const { daemon, port } = await boot();
+  const stream = await new Promise((resolve) => http.get({ host: '127.0.0.1', port, path: '/stream' }, resolve));
+  const json = { 'Content-Type': 'application/json' };
+  try {
+    const hook = spawnHook(port, ['--permission'], { session_id: 'd1', hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'rm -rf build' }, cwd: '/tmp/x' });
+    const p = await until(port, (s) => s.permissions[0]);
+    const body = JSON.stringify({ id: p.id, decision: 'deny', message: 'use npm run clean', interrupt: true });
+    assert.equal((await request(port, 'POST', '/api/permission/decide', { body, headers: json })).status, 403);
+    await request(port, 'POST', '/api/permission/decide', { body, headers: { ...json, 'X-Openmon-Key': KEY } });
+    const decision = JSON.parse((await hook).out).hookSpecificOutput.decision;
+    assert.deepEqual(decision, { behavior: 'deny', message: 'Denied from the Openmon pet: use npm run clean', interrupt: true });
+  } finally {
+    stream.destroy();
+    await daemon.close();
+  }
+});
+
+test('a message from the pet reaches the conversation: next hook while working, the waiting hook while idle', async () => {
+  const { daemon, port } = await boot();
+  const json = { 'Content-Type': 'application/json' };
+  const keyed = { ...json, 'X-Openmon-Key': KEY };
+  const send = (session, text, headers = keyed) => request(port, 'POST', '/api/inbox/send', { body: JSON.stringify({ session, text }), headers });
+  const base = { session_id: 'm1', cwd: '/tmp/shop' };
+  try {
+    // Older hooks (no --rewake) cannot deliver: the pet says so.
+    await runHook(port, { ...base, hook_event_name: 'UserPromptSubmit', prompt: 'go' });
+    assert.equal(JSON.parse((await send('m1', 'hello')).body).reason, 'unsupported');
+
+    // Working: the message waits for the session's next hook, which hands it
+    // over on stderr with exit code 2 (asyncRewake).
+    const first = await spawnHook(port, ['--rewake'], { ...base, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'a.js' } });
+    assert.deepEqual([first.code, first.err], [0, '']);
+    assert.deepEqual(JSON.parse((await send('m1', 'also add tests')).body), { ok: true, delivered: false });
+    assert.equal((await send('m1', 'x', json)).status, 403);
+    let s = JSON.parse((await request(port, 'GET', '/api/state')).body);
+    assert.deepEqual(s.inbox.m1, { canSend: true, queued: true, listening: false });
+    assert.ok(!JSON.stringify(s).includes('also add tests'));
+    const next = await spawnHook(port, ['--rewake'], { ...base, hook_event_name: 'PostToolUse', tool_name: 'Read', tool_input: { file_path: 'a.js' } });
+    assert.equal(next.code, 2);
+    assert.match(next.err, /Openmon desktop pet[\s\S]*also add tests$/);
+
+    // Idle: the Stop hook stays in the background until a message comes.
+    const idle = spawnHook(port, ['--rewake'], { ...base, hook_event_name: 'Stop' });
+    await until(port, (st) => st.inbox.m1 && st.inbox.m1.listening);
+    const sent = JSON.parse((await send('m1', 'now deploy')).body);
+    assert.deepEqual(sent, { ok: true, delivered: true });
+    const woke = await idle;
+    assert.equal(woke.code, 2);
+    assert.match(woke.err, /now deploy$/);
+
+    // You typed in the agent's window instead: the waiting hook just ends.
+    const idle2 = spawnHook(port, ['--rewake'], { ...base, hook_event_name: 'Stop' });
+    await until(port, (st) => st.inbox.m1 && st.inbox.m1.listening);
+    await runHook(port, { ...base, hook_event_name: 'UserPromptSubmit', prompt: 'something else' });
+    assert.deepEqual((({ code, err }) => [code, err])(await idle2), [0, '']);
+    s = JSON.parse((await request(port, 'GET', '/api/state')).body);
+    assert.equal(s.inbox.m1.listening, false);
+  } finally {
     await daemon.close();
   }
 });

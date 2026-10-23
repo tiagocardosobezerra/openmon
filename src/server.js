@@ -23,6 +23,7 @@ const { createUsage } = require('./usage');
 const adapters = require('./adapters');
 const { createBackups, unwrap } = require('./backup');
 const { createPowers, unlockedPowers } = require('./powers');
+const { redact } = require('./redact');
 
 // ntfy.sh topics: letters, digits, _ and -, long enough to be private.
 const PHONE_TOPIC = /^[A-Za-z0-9_-]{8,64}$/;
@@ -95,20 +96,46 @@ function listArt(dirs) {
   return { files: Object.keys(where).sort(), pack, tints, where };
 }
 
-function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus(), backups = playground ? null : createBackups({ now }), cloud = null } = {}) {
+// Hooks from before questions and messages on the pet are brought up to
+// date (only Openmon's own entries change; the installer keeps a backup).
+function defaultUpgradeHooks() {
+  try {
+    if (installer.isInstalled() && (!installer.hasPermissionHook() || !installer.hasContactHooks())) installer.install();
+  } catch {}
+}
+
+// What the agent asks, as the pet shows it: 1 to 4 questions, each with
+// its options. Anything else is not a question the pet can answer.
+function questionsOf(input) {
+  const list = input && Array.isArray(input.questions) ? input.questions : null;
+  if (!list || !list.length || list.length > 4) return null;
+  const out = [];
+  for (const q of list) {
+    if (!q || typeof q.question !== 'string' || !q.question || !Array.isArray(q.options)) return null;
+    const options = q.options.filter((o) => o && typeof o.label === 'string' && o.label).slice(0, 8).map((o) => ({ label: o.label, description: typeof o.description === 'string' ? o.description : '' }));
+    out.push({ question: q.question, header: typeof q.header === 'string' ? q.header : '', multiSelect: q.multiSelect === true, options });
+  }
+  return out;
+}
+
+const MAX_MESSAGE = 4000;
+
+function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.now, log = () => {}, hooksInstalled = () => installer.isInstalled(), artDir = path.join(homeDir(), 'art'), bundledArt = process.env.OPENMON_CLASSIC === '1' ? null : BUNDLED_ART, playground = false, configFile = playground ? null : path.join(homeDir(), 'config.json'), focus = createFocus(), backups = playground ? null : createBackups({ now }), cloud = null, contactKey = require('node:crypto').randomBytes(24).toString('hex'), upgradeHooks = defaultUpgradeHooks } = {}) {
   const artDirs = [artDir, bundledArt].filter(Boolean);
   const bus = new EventEmitter();
   const powers = createPowers();
   const usage = createUsage();
   const lastEventOf = new Map();
   const clients = new Set();
+  // Pet windows that can answer the agent's questions (desktop app).
+  const talkers = new Set();
   // A brand-new pet file: if a backup exists, offer to bring that pet back.
   const freshInstall = Boolean(store.file) && !fs.existsSync(store.file);
   const real = createWorld(party.ensure(store.load()));
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: false, answerWaitSec: 25, seasons: false, companions: [], shareSessions: true, follows: {} };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, seasons: false, companions: [], shareSessions: true, follows: {} };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -148,7 +175,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const petView = { ...s.pet, project: s.pet.project ? alias(s.pet.project) : s.pet.project, journal: (s.pet.journal || []).map((e) => ({ ...e, projects: {}, agentMs: {} })) };
     const partyView = s.party ? { ...s.party, members: s.party.members.map((m) => ({ ...m, project: m.project && alias(m.project) })), box: s.party.box.map((m) => ({ ...m, project: m.project && alias(m.project) })), upcoming: [] } : s.party;
     const companions = Object.fromEntries(Object.entries(s.companions || {}).map(([id, c]) => [id, { ...c, project: c.project ? alias(c.project) : c.project, journal: [] }]));
-    return { ...s, live, pet: petView, party: partyView, companions, permissions: (s.permissions || []).map((p) => ({ ...p, label: alias(p.label), detail: null })), present: true };
+    const questions = (s.questions || []).map((q) => ({ ...q, label: alias(q.label) }));
+    return { ...s, live, pet: petView, party: partyView, companions, permissions: (s.permissions || []).map((p) => ({ ...p, label: alias(p.label), detail: null })), questions, present: true };
   }
 
   // The Openmons standing next to the main one: full views, like the main pet.
@@ -279,6 +307,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       cloud: cloudView(),
       owners: world === real ? sessionOwners() : {},
       permissions: permissionView(),
+      questions: questionView(),
+      inbox: world === real ? inboxView(live) : {},
     });
   }
 
@@ -309,6 +339,17 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     if (!signal) return [];
     if (target === real && permissions.size && payload.hook_event_name !== 'PermissionRequest') {
       for (const p of [...permissions.values()]) if (p.session === signal.session && (signal.kind === 'tool-start' || signal.kind === 'tool-done' || signal.kind === 'tool-fail' || signal.kind === 'turn-start' || signal.kind === 'turn-end')) settlePermission(p.id, null);
+    }
+    // A question ends with the turn (you pressed Esc, or the agent moved on).
+    // Not on tool events: the question tool's own PreToolUse arrives with it.
+    if (target === real && questions.size) {
+      for (const q of [...questions.values()]) if (q.session === signal.session && (signal.kind === 'turn-start' || signal.kind === 'turn-end' || signal.kind === 'session-end')) settleQuestion(q.id, null);
+    }
+    // You typed in the agent's own window: a waiting listener can go.
+    if (target === real && (signal.kind === 'turn-start' || signal.kind === 'session-end')) releaseListener(signal.session);
+    if (target === real && signal.kind === 'session-end') {
+      inbox.delete(signal.session);
+      reachable.delete(signal.session);
     }
     const t = now();
     if (target === real) {
@@ -407,6 +448,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   function askPermission(body, signal) {
     if (!config.answerFromPet || !body._permission || !clients.size || world !== real) return null;
+    // The agent's questions have their own hook (and their own bubble).
+    if (body.tool_name === 'AskUserQuestion') return null;
     // Unguessable, so only the pet that shows the request can answer it.
     const id = require('node:crypto').randomBytes(12).toString('hex');
     const waitMs = (config.answerWaitSec || 25) * 1000;
@@ -421,7 +464,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     return { id, waitMs };
   }
 
-  function settlePermission(id, decision) {
+  function settlePermission(id, decision, extra = {}) {
     const entry = permissions.get(id);
     if (!entry) return false;
     clearTimeout(entry.timer);
@@ -430,6 +473,9 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const forget = setTimeout(() => settled.delete(id), 30_000);
     if (forget.unref) forget.unref();
     const reply = decision === 'always' ? { decision: 'allow', updatedPermissions: entry.suggestions || [] } : { decision };
+    // "Deny" can carry what you wrote, and can stop the agent.
+    if (decision === 'deny' && extra.message) reply.message = extra.message;
+    if (decision === 'deny' && extra.interrupt) reply.interrupt = true;
     settled.set(id, reply);
     for (const res of entry.waiters) json(res, 200, reply);
     pushState(true);
@@ -438,6 +484,135 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   function permissionView() {
     return [...permissions.values()].map((p) => ({ id: p.id, session: p.session, label: p.label, detail: p.detail, until: p.until, canAlways: Boolean(p.suggestions) }));
+  }
+
+  // The agent's questions (AskUserQuestion) the pet can answer, like
+  // permissions: same setting, same wait, an unguessable id.
+  const questions = new Map();
+  const settledQuestions = new Map();
+
+  function askQuestion(body) {
+    // Only a desktop pet window (it holds the key) can answer, so without
+    // one Claude Code asks you at once.
+    if (!config.answerFromPet || !talkers.size || world !== real || !body || body.tool_name !== 'AskUserQuestion') return null;
+    const list = questionsOf(body.tool_input);
+    if (!list) return null;
+    const signal = classify({ ...body, hook_event_name: 'PreToolUse' });
+    const id = require('node:crypto').randomBytes(12).toString('hex');
+    const waitMs = (config.answerWaitSec || 25) * 1000;
+    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), label: signal ? signal.label : null, list, until: now() + waitMs, waiters: [] };
+    entry.timer = setTimeout(() => settleQuestion(id, null), waitMs + 500);
+    if (entry.timer.unref) entry.timer.unref();
+    questions.set(id, entry);
+    // The pet jumps with its sign, as for any "needs you".
+    ingest({ session_id: body.session_id, cwd: body.cwd, _projectDir: body._projectDir, hook_event_name: 'Notification', message: list[0].question });
+    pushState(true);
+    return { id, waitMs };
+  }
+
+  // answers: one per question, an array of option labels or your own text.
+  function answersFor(entry, answers) {
+    if (!Array.isArray(answers) || answers.length !== entry.list.length) return null;
+    const out = {};
+    for (let i = 0; i < entry.list.length; i++) {
+      const q = entry.list[i];
+      const picks = (Array.isArray(answers[i]) ? answers[i] : [answers[i]]).filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim().slice(0, MAX_MESSAGE));
+      if (!picks.length || (!q.multiSelect && picks.length > 1)) return null;
+      out[q.question] = picks.join(', ');
+    }
+    return out;
+  }
+
+  function settleQuestion(id, answers) {
+    const entry = questions.get(id);
+    if (!entry) return false;
+    clearTimeout(entry.timer);
+    questions.delete(id);
+    const reply = { answers };
+    settledQuestions.set(id, reply);
+    const forget = setTimeout(() => settledQuestions.delete(id), 30_000);
+    if (forget.unref) forget.unref();
+    for (const res of entry.waiters) json(res, 200, reply);
+    pushState(true);
+    return true;
+  }
+
+  // As the pet shows them: secrets in the text are masked.
+  function questionView() {
+    return [...questions.values()].map((q) => ({
+      id: q.id,
+      session: q.session,
+      label: q.label,
+      until: q.until,
+      list: q.list.map((x) => ({ ...x, question: redact(x.question), header: redact(x.header), options: x.options.map((o) => ({ label: o.label, shown: redact(o.label), description: redact(o.description) })) })),
+    }));
+  }
+
+  // Messages you write on the pet for a conversation. The next hook of
+  // that session delivers it (asyncRewake), or the hook that waits while
+  // the session is idle. Never logged, never in the state.
+  const inbox = new Map(); // session -> { text, at }
+  const listeners = new Map(); // session -> res of the waiting hook
+  const reachable = new Map(); // session -> when its last --rewake hook came
+  const LISTEN_MS = installer.LISTEN_SEC * 1000 - 5000;
+
+  function releaseListener(session, text = null) {
+    const res = listeners.get(session);
+    if (!res) return false;
+    listeners.delete(session);
+    json(res, 200, { text });
+    return true;
+  }
+
+  function delivered(session) {
+    pushEvents([{ type: 'message-delivered', session }]);
+    pushState(true);
+  }
+
+  function sendMessage(session, text) {
+    if (!reachable.has(session)) return { ok: false, reason: 'unsupported' };
+    const before = inbox.get(session);
+    const all = before ? `${before.text}\n\n${text}` : text;
+    if (releaseListener(session, all)) {
+      inbox.delete(session);
+      delivered(session);
+      return { ok: true, delivered: true };
+    }
+    inbox.set(session, { text: all, at: now() });
+    pushState(true);
+    return { ok: true, delivered: false };
+  }
+
+  // What a --rewake hook of this session should do: hand over a waiting
+  // message, or (session idle or new) stay in the background for one.
+  function rewakeReply(body) {
+    if (!body || !body._rewake || world !== real || body.hook_event_name === 'SessionEnd') return null;
+    const session = body.session_id ? String(body.session_id) : 'default';
+    reachable.delete(session);
+    reachable.set(session, now());
+    if (reachable.size > 200) reachable.delete(reachable.keys().next().value);
+    const waiting = inbox.get(session);
+    if (waiting) {
+      inbox.delete(session);
+      delivered(session);
+      return { deliver: waiting.text };
+    }
+    if (installer.LISTEN_EVENTS.includes(body.hook_event_name)) return { listen: { waitMs: LISTEN_MS } };
+    return null;
+  }
+
+  function inboxView(live) {
+    const out = {};
+    for (const s of live.sessions || []) out[s.id] = { canSend: reachable.has(s.id), queued: inbox.has(s.id), listening: listeners.has(s.id) };
+    return out;
+  }
+
+  // Free text that reaches the agent needs the key only the desktop pet
+  // windows have, so another program on this computer cannot type to it.
+  function keyOk(req) {
+    const given = Buffer.from(String(req.headers['x-openmon-key'] || ''));
+    const want = Buffer.from(contactKey);
+    return given.length === want.length && require('node:crypto').timingSafeEqual(given, want);
   }
 
   // Brings the window of a waiting agent (or the given session) to the front.
@@ -734,7 +909,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           const body = adapters.normalize(raw);
           if (!body) return res.writeHead(204).end();
           ingest(body);
-          const reply = {};
+          const reply = { ...rewakeReply(body) };
           // Once per session the hook is asked to find its agent's window.
           const sid = body && body.session_id ? String(body.session_id) : 'default';
           if (body && body._ppid && body.hook_event_name !== 'SessionEnd' && focus.wants(sid)) reply.findWindow = true;
@@ -778,10 +953,74 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       // Your Allow or Deny, from the pet window (same-origin page only).
       case 'POST /api/permission/decide':
         return readJson(req, (err, body) => {
-          if (err || !body || !['allow', 'deny', 'always'].includes(body.decision)) return res.writeHead(400).end();
+          if (err || !body || !['allow', 'deny', 'always', 'release'].includes(body.decision)) return res.writeHead(400).end();
+          // "Open": you answer in the agent's window, which asks right away.
+          if (body.decision === 'release') return json(res, 200, { ok: settlePermission(String(body.id || ''), null) });
           const pendingEntry = permissions.get(String(body.id || ''));
           if (body.decision === 'always' && pendingEntry && !pendingEntry.suggestions) return json(res, 200, { ok: false });
-          json(res, 200, { ok: settlePermission(String(body.id || ''), body.decision) });
+          // A reason for the agent, or stopping it, needs the desktop key.
+          const message = typeof body.message === 'string' ? body.message.trim().slice(0, MAX_MESSAGE) : '';
+          if ((message || body.interrupt === true) && !keyOk(req)) return res.writeHead(403).end();
+          json(res, 200, { ok: settlePermission(String(body.id || ''), body.decision, { message, interrupt: body.interrupt === true }) });
+        });
+      // The question hook asks the pet, then waits for your answer.
+      case 'POST /api/question/ask':
+        return readJson(req, (err, body) => json(res, 200, (!err && askQuestion(adapters.normalize(body))) || {}));
+      case 'POST /api/question/wait':
+        return readJson(req, (err, body) => {
+          const id = !err && body ? String(body.id || '') : '';
+          if (settledQuestions.has(id)) return json(res, 200, settledQuestions.get(id));
+          const entry = questions.get(id);
+          if (!entry) return json(res, 200, { answers: null });
+          entry.waiters.push(res);
+          res.on('close', () => (entry.waiters = entry.waiters.filter((r) => r !== res)));
+        });
+      case 'POST /api/question/release':
+        return readJson(req, (err, body) => json(res, 200, { ok: !err && Boolean(body) && settleQuestion(String(body.id || ''), null) }));
+      case 'POST /api/question/answer':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          const entry = questions.get(String(body.id || ''));
+          const answers = entry ? answersFor(entry, body.answers) : null;
+          json(res, 200, { ok: Boolean(answers) && settleQuestion(entry.id, answers) });
+        });
+      // A message you wrote on the pet, for a conversation.
+      case 'POST /api/inbox/send':
+        return readJson(req, (err, body) => {
+          if (err || !body || typeof body.session !== 'string' || typeof body.text !== 'string') return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          const text = body.text.trim();
+          if (!text || text.length > MAX_MESSAGE) return json(res, 200, { ok: false, reason: 'length' });
+          json(res, 200, sendMessage(body.session.slice(0, 120), text));
+        });
+      case 'POST /api/inbox/cancel':
+        return readJson(req, (err, body) => {
+          if (err || !body || typeof body.session !== 'string') return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          const had = inbox.delete(body.session);
+          pushState(true);
+          json(res, 200, { ok: had });
+        });
+      // The --rewake hook of an idle session waits here for a message.
+      case 'POST /api/inbox/wait':
+        return readJson(req, (err, body) => {
+          const session = !err && body && body.session ? String(body.session) : 'default';
+          const waiting = inbox.get(session);
+          if (waiting) {
+            inbox.delete(session);
+            delivered(session);
+            return json(res, 200, { text: waiting.text });
+          }
+          // One listener per session: a newer one replaces the older.
+          releaseListener(session);
+          listeners.set(session, res);
+          res.on('close', () => {
+            if (listeners.get(session) !== res) return;
+            listeners.delete(session);
+            pushState(true);
+          });
+          pushState(true);
         });
       case 'POST /api/phone/test':
         return phone('Openmon', /^pt/i.test(config.lang || '') ? 'Teste: os alertas no celular funcionam.' : 'Test: phone alerts work.').then((ok) => json(res, 200, { ok }));
@@ -885,11 +1124,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.phoneTopic === 'string' && (body.phoneTopic === '' || PHONE_TOPIC.test(body.phoneTopic))) patch.phoneTopic = body.phoneTopic;
           if (typeof body.phoneAfterSec === 'number' && body.phoneAfterSec >= 0 && body.phoneAfterSec <= 600) patch.phoneAfterSec = Math.round(body.phoneAfterSec);
           // Turning on "answer from the pet" brings older hooks up to date.
-          if (body.answerFromPet === true && hooksInstalled() && !installer.hasPermissionHook()) {
-            try {
-              installer.install();
-            } catch {}
-          }
+          if (body.answerFromPet === true && hooksInstalled()) upgradeHooks();
           if (typeof body.answerFromPet === 'boolean') patch.answerFromPet = body.answerFromPet;
           if (typeof body.answerWaitSec === 'number' && body.answerWaitSec >= 5 && body.answerWaitSec <= 60) patch.answerWaitSec = Math.round(body.answerWaitSec);
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
@@ -925,10 +1160,12 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
         res.write(`data: ${JSON.stringify(state())}\n\n`);
         clients.add(res);
+        if (url.searchParams.get('talk') === '1') talkers.add(res);
         const keepAlive = setInterval(() => res.write(': ping\n\n'), 15000);
         req.on('close', () => {
           clearInterval(keepAlive);
           clients.delete(res);
+          talkers.delete(res);
         });
         return;
       }
@@ -992,6 +1229,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     setQuiet,
     state,
     config: publicConfig,
+    contactKey: () => contactKey,
+    upgradeHooks: () => !playground && config.answerFromPet && upgradeHooks(),
     listen: () =>
       new Promise((resolve, reject) => {
         server.once('error', reject);

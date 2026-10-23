@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Openmon</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  html, body { height: 100%; }
+  body.page { min-height: 0; background: var(--surface); }
+  form { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border: 2.5px solid var(--outline); border-radius: 0; overflow: auto; }
+  h1 { margin: 0; font: 600 17px var(--font-display); }
+  p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .detail { color: var(--text); font-size: 13px; word-break: break-word; }
+  textarea.input { flex: 1; min-height: 70px; resize: none; font: inherit; }
+  fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  legend { font-weight: 600; font-size: 13.5px; margin-bottom: 2px; }
+  legend small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+  label.opt { display: flex; gap: 6px; align-items: baseline; font-size: 13px; }
+  label.opt span { color: var(--muted); font-size: 12px; }
+  .other { display: flex; gap: 6px; align-items: center; }
+  .other .input { flex: 1; min-width: 0; }
+  .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: auto; }
+  .status { min-height: 1em; }
+  .status.bad { color: var(--danger, #c33); }
+</style>
+</head>
+<body class="page">
+<form id="f">
+  <h1 id="title"></h1>
+  <p id="hint"></p>
+  <div id="body"></div>
+  <p id="status" class="status"></p>
+  <div class="row" id="buttons"></div>
+</form>
+<script src="i18n.js"></script>
+<script>
+  // "Write to the agent": answer a question, explain a Deny, or send a
+  // message. Nothing is sent until you click a button here.
+  const { t: tr, detail: trDetail } = window.OpenmonI18n;
+  const params = new URLSearchParams(location.search);
+  const kind = params.get('kind');
+  const ref = params.get('ref') || '';
+  const bridge = window.openmonSettings || null;
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  let key = null;
+
+  function status(text, bad = false) {
+    $('status').textContent = text || '';
+    $('status').classList.toggle('bad', bad);
+  }
+
+  function button(label, style, onClick) {
+    const b = el('button', `btn ${style}`.trim(), label);
+    b.type = 'button';
+    b.addEventListener('click', onClick);
+    $('buttons').appendChild(b);
+    return b;
+  }
+
+  async function send(path, body) {
+    if (!key) return status(tr('talk.desktopOnly'), true), null;
+    try {
+      const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Openmon-Key': key }, body: JSON.stringify(body) });
+      return r.ok ? await r.json() : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function gone() {
+    $('body').textContent = '';
+    $('buttons').textContent = '';
+    status(tr('talk.gone'));
+    button(tr('talk.cancel'), '', () => window.close());
+  }
+
+  function messageForm(state) {
+    const session = (state.live.sessions || []).find((s) => s.id === ref);
+    const box = (state.inbox || {})[ref] || {};
+    $('title').textContent = tr('talk.message.title', { label: session ? session.label : tr('yourAgent') });
+    $('hint').textContent = box.canSend ? tr('talk.message.hint') : tr('talk.unsupported');
+    const text = el('textarea', 'input');
+    text.maxLength = 4000;
+    text.id = 'text';
+    $('body').appendChild(text);
+    if (box.queued) {
+      status(tr('talk.queuedNote'));
+      button(tr('talk.discard'), 'ghost', async () => {
+        await send('/api/inbox/cancel', { session: ref });
+        status('');
+      });
+    }
+    button(tr('talk.cancel'), '', () => window.close());
+    const go = button(tr('talk.send'), 'primary', async () => {
+      if (!text.value.trim()) return text.focus();
+      go.disabled = true;
+      const r = await send('/api/inbox/send', { session: ref, text: text.value });
+      if (r && r.ok) return window.close();
+      go.disabled = false;
+      status(r && r.reason === 'unsupported' ? tr('talk.unsupported') : tr('talk.failed'), true);
+    });
+    go.disabled = !box.canSend;
+    text.focus();
+  }
+
+  function denyForm(state) {
+    const p = (state.permissions || []).find((x) => x.id === ref);
+    if (!p) return gone();
+    $('title').textContent = tr('talk.deny.title');
+    $('hint').textContent = tr('talk.deny.hint');
+    if (p.detail) $('body').appendChild(el('p', 'detail', trDetail(p.detail)));
+    const text = el('textarea', 'input');
+    text.maxLength = 4000;
+    $('body').appendChild(text);
+    const decide = async (interrupt) => {
+      const r = await send('/api/permission/decide', { id: ref, decision: 'deny', message: text.value, interrupt });
+      if (r && r.ok) return window.close();
+      r ? gone() : status(tr('talk.failed'), true);
+    };
+    button(tr('talk.denyStop'), '', () => decide(true));
+    button(tr('perm.deny'), 'primary', () => decide(false));
+    text.focus();
+  }
+
+  function questionForm(state) {
+    const q = (state.questions || []).find((x) => x.id === ref);
+    if (!q) return gone();
+    $('title').textContent = tr('talk.q.title', { label: q.label || tr('yourAgent') });
+    const fields = q.list.map((item, i) => {
+      const set = el('fieldset');
+      const legend = el('legend', '', item.question);
+      if (item.header) legend.appendChild(el('small', '', item.header));
+      set.appendChild(legend);
+      const type = item.multiSelect ? 'checkbox' : 'radio';
+      for (const o of item.options) {
+        const row = el('label', 'opt');
+        const input = document.createElement('input');
+        input.type = type;
+        input.name = `q${i}`;
+        input.value = o.label;
+        row.append(input, el('b', '', o.shown || o.label));
+        if (o.description) row.appendChild(el('span', '', o.description));
+        set.appendChild(row);
+      }
+      const other = el('div', 'other');
+      const pick = document.createElement('input');
+      pick.type = type;
+      pick.name = `q${i}`;
+      pick.value = '';
+      const own = el('input', 'input');
+      own.placeholder = tr('talk.q.other');
+      own.maxLength = 4000;
+      own.addEventListener('input', () => (pick.checked = Boolean(own.value.trim())));
+      other.append(pick, own);
+      set.appendChild(other);
+      $('body').appendChild(set);
+      return () => {
+        const chosen = [...set.querySelectorAll('input:checked')].map((x) => (x === pick ? own.value.trim() : x.value)).filter(Boolean);
+        return item.multiSelect ? chosen : chosen[0] || '';
+      };
+    });
+    button(tr('talk.cancel'), '', () => window.close());
+    button(tr('talk.q.send'), 'primary', async () => {
+      const answers = fields.map((f) => f());
+      if (answers.some((a) => !a || (Array.isArray(a) && !a.length))) return status(tr('talk.q.pick'), true);
+      const r = await send('/api/question/answer', { id: ref, answers });
+      if (r && r.ok) return window.close();
+      r ? gone() : status(tr('talk.failed'), true);
+    });
+  }
+
+  document.addEventListener('keydown', (e) => e.key === 'Escape' && window.close());
+  $('f').addEventListener('submit', (e) => e.preventDefault());
+
+  (async () => {
+    key = bridge && bridge.contactKey ? await bridge.contactKey().catch(() => null) : null;
+    const state = await fetch('/api/state').then((r) => r.json());
+    if (kind === 'message') messageForm(state);
+    else if (kind === 'deny') denyForm(state);
+    else if (kind === 'question') questionForm(state);
+    if (!key) status(tr('talk.desktopOnly'), true);
+  })();
+</script>
+</body>
+</html>

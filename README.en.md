@@ -32,7 +32,7 @@ Behind it there is a game: the egg hatches, grows and evolves into one of 40 for
 
 ## More it does
 
-* **Lets you answer right there (optional).** Turn on "Answer permissions from the pet" in the settings and the bubble gets **Allow** and **Deny**. Claude Code waits for your answer on the pet for up to 25 seconds; after that it asks you as usual. Off by default.
+* **Lets you answer and talk to your agent right there.** With Claude Code, the bubble gets **Allow** and **Deny** on permission requests and the options of each question the agent asks; **Message** writes to the conversation the pet follows, and reaches an idle agent right away. Claude Code waits for your answer on the pet for up to 25 seconds; after that it asks you as usual. Nothing is ever approved on its own: only your click answers. Turn it off in Settings → "Answer from the pet".
 * **Shows what is happening, without watching the terminal.** A hammer is editing, a book reading, a shield testing, a spyglass the web. Several agents at once? The card lists each one and what it is doing.
 * **Keeps a journal.** What your agents did each day, by kind of work and by project, and how long they waited for you.
 * **Never in the way, never leaves your computer.** Clicks pass through its window, it never blocks or slows the agent, uses no internet and no account (unless you turn on phone alerts or GitHub), and passwords and keys show hidden (`•••`).
@@ -120,7 +120,10 @@ The egg appears in the corner of your screen and an icon shows up in the tray. S
 * **Tests green again**: a cheer when tests that were failing pass again.
 
 **Answer without leaving what you are doing**
-* **Allow, Always allow and Deny** on the bubble (off by default). "Always allow" applies the rule Claude Code itself suggests for that request.
+* **Allow, Always allow and Deny** on the bubble. "Always allow" applies the rule Claude Code itself suggests for that request. **Explain…** denies with a reason the agent reads (or denies and stops the agent).
+* **The agent's questions**: their options become buttons on the bubble; **Other…** opens a small window to write your own answer.
+* **Message to the conversation**: on the "All done!" bubble or in the card, **Message** opens a small window. An idle agent wakes up right away; a working one gets it with its next step.
+* **Open** hands the question or request to the agent's window at once, without waiting for the pet.
 * **Several agents waiting?** The card shows the buttons under each one.
 * **Shortcuts**: `Ctrl+Alt+O` opens the card, `Ctrl+Alt+J` takes you to the agent that waits.
 

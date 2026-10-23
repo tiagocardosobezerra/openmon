@@ -498,6 +498,35 @@ function openNameWindow() {
   nameWin.loadURL(`http://127.0.0.1:${port}/name.html`);
 }
 
+// "Write to the agent": a small window you can type in (the pet window
+// never takes the keyboard). It answers a question, explains a Deny, or
+// sends a message to a conversation. It stays open until you send or close.
+let talkWin = null;
+const TALK_KINDS = ['message', 'question', 'deny'];
+function openTalkWindow(ask) {
+  const kind = ask && TALK_KINDS.includes(ask.kind) ? ask.kind : null;
+  const ref = ask && typeof ask.ref === 'string' ? ask.ref.slice(0, 120) : '';
+  if (!kind || !ref) return;
+  if (talkWin && !talkWin.isDestroyed()) talkWin.close();
+  const [x, y] = win.getPosition();
+  talkWin = new BrowserWindow({
+    width: 380,
+    height: kind === 'question' ? 420 : 250,
+    x: x - 40,
+    y: Math.max(0, y + WIN_H - (kind === 'question' ? 520 : 350)),
+    frame: false,
+    resizable: kind === 'question',
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.js') },
+  });
+  talkWin.webContents.on('will-navigate', (e) => e.preventDefault());
+  talkWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  talkWin.once('ready-to-show', () => bringToFront(talkWin));
+  talkWin.loadURL(`http://127.0.0.1:${port}/talk.html?kind=${kind}&ref=${encodeURIComponent(ref)}`);
+}
+
 function refreshTray() {
   if (!tray) return;
   const pet = latest && latest.pet;
@@ -700,6 +729,13 @@ function wireIpc() {
   ipcMain.on('menu', (e) => Menu.buildFromTemplate(menuTemplate()).popup({ window: senderWin(e) || win }));
   ipcMain.on('open-powers', openPowersWindow);
   ipcMain.on('open-name', () => openNameWindow());
+  ipcMain.on('open-talk', (_e, ask) => openTalkWindow(ask));
+  // The key for free text to the agent: only for the pet windows and the
+  // "write to the agent" window, never for other pages.
+  ipcMain.handle('contact-key', (e) => {
+    const ours = [win, talkWin, ...companionWins.values()].some((w) => w && !w.isDestroyed() && e.sender === w.webContents);
+    return ours ? daemon.contactKey() : null;
+  });
   // The "connect Claude Code" bubble: same as the menu item.
   ipcMain.on('install-hooks', () => {
     try {
@@ -830,6 +866,8 @@ app.whenReady().then(async () => {
     app.quit();
     return;
   }
+  // Hooks from an older version learn the agent's questions and messages.
+  daemon.upgradeHooks();
   daemon.bus.on('shutdown', () => app.quit());
   daemon.bus.on('lang', (l) => {
     lang = l;

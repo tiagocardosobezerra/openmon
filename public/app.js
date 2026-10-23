@@ -82,6 +82,18 @@
   let restoreOffer = null;
   // Permission requests the pet can answer (only with the setting on).
   let permissions = [];
+  // The agent's questions the pet can answer, and which conversations can
+  // get a message from the pet (Claude Code with up-to-date hooks).
+  let questions = [];
+  let inbox = {};
+  // Free text and answers for the agent: desktop app only (it holds the key).
+  const canTalk = Boolean(desktop && desktop.openTalk && desktop.contactKey);
+  let contactKey = null;
+  if (canTalk) desktop.contactKey().then((k) => (contactKey = k)).catch(() => {});
+  function talk(kind, ref) {
+    if (canTalk && ref) desktop.openTalk(kind, ref);
+  }
+  const sessionLabel = (id) => ((live.sessions || []).find((s) => s.id === id) || {}).label || '';
   // "Give it a nickname?" after hatching, until answered or for 2 minutes.
   let nicknameOffer = null;
   // The bubble you clicked (Answer / Open): it stays hidden for as long as
@@ -628,7 +640,10 @@
   // line and, when it can jump to the agent's window, an action button.
   const BUBBLE_ICON = { attention: '!', done: '✓', error: '✕', toast: '★', setup: 'i', restore: '↺', warn: '?', notice: 'i' };
   let bubbleJump = null;
-  function setBubble(cls, title, sub, { jump = null, eyebrow = null, action = null, choices = null, note = null, id = null } = {}) {
+  // buttons: extra [data, label, style] on the bubble, data being
+  // { answer } (a question's option) or { talk, ref } (opens the window to
+  // write to the agent).
+  function setBubble(cls, title, sub, { jump = null, eyebrow = null, action = null, choices = null, note = null, id = null, buttons = null } = {}) {
     const b = $('bubble');
     // A toast or the card in between (no id) keeps the dismissal; another
     // agent bubble, or no agent bubble at all (see renderBubble), ends it.
@@ -644,7 +659,7 @@
     // The title is left out of the key: it carries the waiting clock, which
     // ticks every second. Rebuilding the bubble each second swapped its
     // buttons under the cursor, so a click on "Open" could get lost.
-    const key = [cls, sub, jump, eyebrow, action, choices && choices.id].join('|');
+    const key = [cls, sub, jump, eyebrow, action, choices && choices.id, buttons && JSON.stringify(buttons)].join('|');
     if (b.dataset.key === key && !b.hidden) {
       // Same bubble: only the clock and the countdown change, in place.
       const t = b.querySelector('.title');
@@ -682,16 +697,28 @@
         b.textContent = label;
         row.appendChild(b);
       }
-      const go = document.createElement('button');
-      go.type = 'button';
-      go.className = 'btn sm ghost';
-      go.dataset.decide = 'open';
-      go.textContent = tr('jump.open');
-      row.appendChild(go);
+      // Deny with a reason (or deny and stop), written in a small window.
+      if (canTalk) row.appendChild(bubbleButton({ talk: 'deny', ref: choices.id }, tr('perm.reason'), ''));
+      row.appendChild(bubbleButton({ decide: 'open' }, tr('jump.open'), 'ghost'));
+      b.appendChild(row);
+      if (note) add('span', 'note', note);
+    } else if (buttons) {
+      const row = document.createElement('span');
+      row.className = 'choices';
+      for (const [data, label, style] of buttons) row.appendChild(bubbleButton(data, label, style));
+      if (jump) row.appendChild(bubbleButton({ decide: 'open' }, action || tr('jump.open'), 'ghost'));
       b.appendChild(row);
       if (note) add('span', 'note', note);
     } else if (jump) add('span', `btn sm act${kind === 'attention' || kind === 'restore' ? ' primary' : ''}`, action || tr('jump.open'));
     b.hidden = false;
+  }
+  function bubbleButton(data, label, style) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `btn sm ${style}`.trim();
+    for (const [k, v] of Object.entries(data)) btn.dataset[k] = v;
+    btn.textContent = label;
+    return btn;
   }
 
   function renderBubble() {
@@ -726,6 +753,22 @@
       return desktop && desktop.installHooks ? setBubble('setup', tr('setup'), tr('setup.click'), { jump: 'install', action: tr('setup.action') }) : setBubble('setup', tr('setup'), tr('setup.sub'));
     }
     const jump = !demo && f.id ? f.id : null;
+    // The agent asks a question: its options right on the bubble (one
+    // single-choice question), or the small window for the rest.
+    const question = canTalk && questions[0];
+    if (question) {
+      const q = question.list[0];
+      const left = Math.max(0, Math.ceil((question.until - Date.now()) / 1000));
+      const simple = question.list.length === 1 && !q.multiSelect && q.options.length <= 4;
+      const buttons = simple
+        ? [...q.options.map((o, i) => [{ answer: o.label }, o.shown || o.label, i === 0 ? 'primary' : '']), [{ talk: 'question', ref: question.id }, tr('q.other'), '']]
+        : [[{ talk: 'question', ref: question.id }, tr('q.answer'), 'primary']];
+      const sub = question.list.length === 1 ? q.question : question.list.map((x) => x.header || x.question).join(' · ');
+      return setBubble('attention', tr('q.title'), sub, { jump: demo ? null : question.session, eyebrow: question.label || tr('yourAgent'), buttons, note: tr('perm.note', { s: left }), id: `question|${question.id}` });
+    }
+    // A conversation that can get a message from the pet: a "Message" button.
+    const canWrite = canTalk && f.id && inbox[f.id] && inbox[f.id].canSend;
+    const write = canWrite ? [[{ talk: 'message', ref: f.id }, tr('talk.write'), '']] : null;
     if (pose === 'attention') {
       const waiting = (live.sessions || []).filter((s) => s.state === 'attention');
       const answer = { jump, action: tr('jump.answer'), id: `attention|${waiting.length > 1 ? waiting.map((s) => s.id).join(',') : f.id}|${f.since}` };
@@ -740,7 +783,7 @@
         const left = Math.max(0, Math.ceil((pending.until - Date.now()) / 1000));
         return setBubble(cls, title, trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: danger ? tr('danger.note') : tr('perm.note', { s: left }), id: answer.id });
       }
-      return setBubble(cls, title + waited, trDetail(f.detail), { ...answer, eyebrow: f.label || tr('yourAgent') });
+      return setBubble(cls, title + waited, trDetail(f.detail), { ...answer, eyebrow: f.label || tr('yourAgent'), buttons: write });
     }
     if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent'), id: `error|${f.id}|${f.since}` });
     // Mid-task and silent for minutes, or one command running very long.
@@ -749,7 +792,7 @@
     const longTool = (live.sessions || []).find((x) => x.longTool);
     if (longTool && pose === 'working') return setBubble('warn', tr('longTool.title', { t: clock(longTool.longTool.ms) }), trDetail(longTool.longTool.detail), { jump: demo ? null : longTool.id, eyebrow: longTool.label, id: `long|${longTool.id}|${longTool.longTool.detail}` });
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
-    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}` });
+    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}`, buttons: write });
     // Nothing to say about the agents: whatever was dismissed is over.
     dismissed = null;
     return setBubble(null);
@@ -920,6 +963,19 @@
         }
         list.appendChild(row);
       }
+      // Its question, or a message to it, in the small window.
+      const asked = !demo && canTalk && questions.find((q) => q.session === x.id);
+      const box = inbox[x.id];
+      if (!req && (asked || (!demo && canTalk && box && box.canSend))) {
+        const row = el('li', 'perm-row');
+        const b = el('button', `btn sm${asked ? ' primary' : ''}`, asked ? tr('q.answer') : `${tr('talk.write')}${box.queued ? ' ·' : ''}`);
+        b.type = 'button';
+        b.dataset.talk = asked ? 'question' : 'message';
+        b.dataset.ref = asked ? asked.id : x.id;
+        if (box && box.queued) b.title = tr('talk.queued');
+        row.appendChild(b);
+        list.appendChild(row);
+      }
     }
 
     // Today.
@@ -1051,6 +1107,8 @@
     setupInfo = msg.setup || null;
     restoreOffer = msg.restoreOffer || null;
     permissions = msg.permissions || [];
+    questions = msg.questions || [];
+    inbox = msg.inbox || {};
     // Pet size from the settings (a ?scale= in the URL wins, for OBS).
     if (!params.get('scale') && msg.config) document.documentElement.style.setProperty('--scale', String(msg.config.scale || 1));
     if (first) {
@@ -1092,6 +1150,8 @@
       if (e.type === 'evolve') pushToast(tr('party.evolved', { name: e.petName || e.from, form: e.to }), tr('party.project', { project: e.project }), 5000);
     }
     const events = all.filter((e) => !others.includes(e));
+    // A message you wrote on the pet reached its conversation.
+    for (const e of events) if (e.type === 'message-delivered' && !companionId) pushToast(tr('talk.sent'), sessionLabel(e.session) || tr('talk.sent.sub'), 3500, 'say');
     const t = now();
     const stage = currentSpec().stage;
     const top = headY(stage);
@@ -1258,7 +1318,8 @@
   }
 
   function connect() {
-    const es = new EventSource('/stream');
+    // ?talk=1: this pet can answer the agent's questions (desktop app).
+    const es = new EventSource(canTalk && !companionId ? '/stream?talk=1' : '/stream');
     es.onopen = () => {
       connected = true;
       renderAll();
@@ -1292,6 +1353,11 @@
 
   function post(path, body) {
     return fetch(path, { method: 'POST', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined }).catch(() => {});
+  }
+  // Answers for the agent carry the desktop key.
+  async function postKeyed(path, body) {
+    if (!contactKey && canTalk) contactKey = await desktop.contactKey().catch(() => null);
+    return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Openmon-Key': contactKey || '' }, body: JSON.stringify(body) }).catch(() => {});
   }
 
   let down = null;
@@ -1468,6 +1534,8 @@
   $('stats').addEventListener('mouseleave', () => statInfo(null));
 
   $('sessions').addEventListener('click', (e) => {
+    const write = e.target.closest && e.target.closest('[data-talk]');
+    if (write) return talk(write.dataset.talk, write.dataset.ref);
     const answer = e.target.closest && e.target.closest('[data-perm]');
     if (answer) {
       post('/api/permission/decide', { id: answer.dataset.perm, decision: answer.dataset.decision });
@@ -1489,10 +1557,30 @@
     if (li) jumpTo(li.dataset.id);
   });
   $('bubble').addEventListener('click', (e) => {
+    // A question's option: the answer goes straight to the agent.
+    const answer = e.target.closest && e.target.closest('[data-answer]');
+    const question = questions[0];
+    if (answer && question) {
+      postKeyed('/api/question/answer', { id: question.id, answers: [answer.dataset.answer] });
+      questions = questions.filter((q) => q !== question);
+      dismissBubble();
+      showEmote('♥', now());
+      return;
+    }
+    // "Other…", "Explain…", "Message": the small window to write in.
+    const write = e.target.closest && e.target.closest('[data-talk]');
+    if (write) {
+      talk(write.dataset.talk, write.dataset.ref);
+      return;
+    }
     const decide = e.target.closest && e.target.closest('[data-decide]');
     if (decide) {
       const pending = live.focus && permissions.find((p) => p.session === live.focus.id);
       if (decide.dataset.decide === 'open' || !pending) {
+        // Answering in the agent's window: it asks there right away
+        // instead of waiting for the pet.
+        if (question && bubbleId === `question|${question.id}`) post('/api/question/release', { id: question.id });
+        else if (pending) post('/api/permission/decide', { id: pending.id, decision: 'release' });
         const id = bubbleJump;
         dismissBubble();
         return jumpTo(id);

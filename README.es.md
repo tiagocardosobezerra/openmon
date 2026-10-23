@@ -32,7 +32,7 @@ Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 40 formas 
 
 ## Más de lo que hace
 
-* **Te deja responder ahí mismo (opcional).** Activa "Responder permisos desde la mascota" en la configuración y el globo gana **Permitir** y **Rechazar**. Claude Code espera tu respuesta en la mascota hasta 25 segundos; después pregunta como siempre. Desactivado por defecto.
+* **Te deja responder y hablar con el agente ahí mismo.** Con Claude Code, el globo gana **Permitir** y **Rechazar** en los pedidos de permiso y las opciones de cada pregunta del agente; **Mensaje** escribe a la conversación que sigue la mascota, y llega enseguida si el agente está parado. Claude Code espera tu respuesta en la mascota hasta 25 segundos; después pregunta como siempre. Nada se aprueba solo: solo tu clic responde. Se desactiva en Configuración → "Responder desde la mascota".
 * **Muestra lo que pasa, sin mirar la terminal.** Martillo es editar, libro es leer, escudo es probar, catalejo es web. ¿Varios agentes a la vez? La tarjeta lista cada uno, con lo que está haciendo.
 * **Lleva un diario.** Lo que hicieron tus agentes cada día, por tipo de trabajo y por proyecto, y cuánto tiempo te esperaron.
 * **No molesta y no sale de tu computadora.** Los clics atraviesan la ventana, nunca bloquea ni retrasa al agente, no usa internet ni cuenta (salvo que actives el aviso en el celular o GitHub), y las contraseñas y claves aparecen ocultas (`•••`).
@@ -120,7 +120,10 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 * **Pruebas de vuelta en verde**: celebra cuando pruebas que fallaban vuelven a pasar.
 
 **Responder sin dejar lo que haces**
-* **Permitir, Permitir siempre y Rechazar** en el globo (desactivado por defecto). "Permitir siempre" aplica la regla que el propio Claude Code sugiere para ese pedido.
+* **Permitir, Permitir siempre y Rechazar** en el globo. "Permitir siempre" aplica la regla que el propio Claude Code sugiere para ese pedido. **Explicar…** rechaza con un motivo que el agente lee (o rechaza y detiene al agente).
+* **Preguntas del agente**: sus opciones se vuelven botones en el globo; **Otra…** abre una ventanita para escribir tu respuesta.
+* **Mensaje a la conversación**: en el globo de "¡Terminó!" o en la tarjeta, **Mensaje** abre una ventanita. Un agente parado despierta enseguida; uno trabajando lo recibe con su próximo paso.
+* **Abrir** pasa la pregunta o el pedido a la ventana del agente enseguida, sin esperar a la mascota.
 * **¿Varios agentes esperando?** La tarjeta muestra los botones debajo de cada uno.
 * **Atajos**: `Ctrl+Alt+O` abre la tarjeta, `Ctrl+Alt+J` te lleva al agente que espera.
 

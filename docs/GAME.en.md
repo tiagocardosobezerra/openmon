@@ -49,6 +49,8 @@ Every project your agent works on enough gets **its own egg**. Up to 6 travel in
 
 **Who follows what.** Who follows each conversation, in this order: 1) a conversation you pinned to an Openmon (right-click → Agents → click the pet's name next to the conversation); 2) a project you pinned to an Openmon (Party → "Follows"); 3) the project's own Openmon, while it is in the Party; 4) the queue: with more than one on screen, each new conversation goes to one of them, in turn. In Settings → Pet you can turn sharing off; then everything stays with the main one, except what you pinned. In the Box, pets rest and earn no XP.
 
+**Talking to your agent through the pet.** The pet is your point of contact with the conversation it follows, not only an alert. With Claude Code: on a permission request, **Allow**, **Always allow**, **Deny** or **Explain…** (deny with a reason the agent reads, or deny and stop); on a question from the agent, its options become buttons and **Other…** lets you write your own answer; and **Message** (on the "All done!" bubble or in the card) sends a note to the conversation: an idle agent wakes up right away, a working one gets it with its next step. Nothing is ever approved on its own, text only goes out when you click Send, and only the desktop app can write to the agent. With the other agents (Codex, Gemini CLI, Cursor, OpenCode, Aider), a click on the pet still takes you to the agent's window.
+
 **Regional forms**: an Openmon raised mostly on one language evolves into that region's colours with a small mark: *Brace* (JavaScript/TypeScript), *Serpent* (Python), *Rust*, *Current* (Go), *Bean* (Java/Kotlin) and *Sharp* (C#/.NET). The Opendex records the ones you have seen.
 
 ## Something every day

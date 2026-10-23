@@ -21,13 +21,24 @@ test('install keeps other settings and other tools hooks, and backs up', () => {
   const { backupPath } = installer.install({ settingsPath: file });
   const s = JSON.parse(fs.readFileSync(file, 'utf8'));
   assert.equal(s.theme, 'dark');
-  assert.equal(s.hooks.PreToolUse.length, 2);
+  // Theirs, ours for every tool, ours for the agent's questions.
+  assert.equal(s.hooks.PreToolUse.length, 3);
   assert.deepEqual(s.hooks.PreToolUse[0].hooks[0], other);
   for (const event of [...installer.TOOL_EVENTS, ...installer.OTHER_EVENTS]) {
-    const ours = s.hooks[event].flatMap((g) => g.hooks).filter((h) => h.command.includes(installer.MARKER));
+    const ours = s.hooks[event].flatMap((g) => g.hooks).filter((h) => h.command.includes(installer.MARKER) && !h.command.endsWith('--question'));
     assert.equal(ours.length, 1, event);
     assert.equal(ours[0].async, true);
+    // Background hooks can wake the agent with a message from the pet.
+    assert.equal(ours[0].asyncRewake, true);
+    assert.match(ours[0].command, /--rewake$/);
+    assert.equal(ours[0].timeout, installer.LISTEN_EVENTS.includes(event) ? installer.LISTEN_SEC : 5, event);
   }
+  // The agent's questions: one foreground hook, only for AskUserQuestion.
+  const question = s.hooks.PreToolUse.filter((g) => g.matcher === installer.QUESTION_TOOL).flatMap((g) => g.hooks);
+  assert.equal(question.length, 1);
+  assert.equal(question[0].async, undefined);
+  assert.match(question[0].command, /--openmon --question$/);
+  assert.ok(installer.hasContactHooks({ settingsPath: file }));
   // Permission requests: one foreground hook that can hand back your answer.
   const perm = s.hooks.PermissionRequest.flatMap((g) => g.hooks).filter((h) => h.command.includes(installer.MARKER));
   assert.equal(perm.length, 1);
@@ -43,13 +54,23 @@ test('install twice does not duplicate', () => {
   installer.install({ settingsPath: file });
   const s = JSON.parse(fs.readFileSync(file, 'utf8'));
   assert.equal(s.hooks.Stop.length, 1);
+  assert.equal(s.hooks.PreToolUse.length, 2);
+});
+
+test('hooks from before questions and messages are seen as out of date', () => {
+  const old = { type: 'command', command: 'node "x/hook.js" --openmon', async: true, timeout: 5 };
+  const file = tmpSettings({ hooks: { Stop: [{ hooks: [old] }], PermissionRequest: [{ matcher: '*', hooks: [{ type: 'command', command: 'node "x/hook.js" --openmon --permission', timeout: 90 }] }] } });
+  assert.ok(installer.hasPermissionHook({ settingsPath: file }));
+  assert.ok(!installer.hasContactHooks({ settingsPath: file }));
+  installer.install({ settingsPath: file });
+  assert.ok(installer.hasContactHooks({ settingsPath: file }));
 });
 
 test('uninstall removes only ours', () => {
   const file = tmpSettings({ hooks: { Stop: [{ hooks: [other] }] } });
   installer.install({ settingsPath: file });
   const { removed } = installer.uninstall({ settingsPath: file });
-  assert.equal(removed, installer.TOOL_EVENTS.length + installer.OTHER_EVENTS.length + 1);
+  assert.equal(removed, installer.TOOL_EVENTS.length + installer.OTHER_EVENTS.length + 2);
   const s = JSON.parse(fs.readFileSync(file, 'utf8'));
   assert.deepEqual(s.hooks, { Stop: [{ hooks: [other] }] });
   assert.ok(!installer.isInstalled({ settingsPath: file }));

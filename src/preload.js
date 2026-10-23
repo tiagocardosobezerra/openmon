@@ -14,4 +14,7 @@ contextBridge.exposeInMainWorld('openmonDesktop', {
   openPage: (page) => ipcRenderer.send('open-page', String(page)),
   openName: () => ipcRenderer.send('open-name'),
   installHooks: () => ipcRenderer.send('install-hooks'),
+  // "Write to the agent": kind is message, question or deny; ref the session or request id.
+  openTalk: (kind, ref) => ipcRenderer.send('open-talk', { kind: String(kind), ref: String(ref) }),
+  contactKey: () => ipcRenderer.invoke('contact-key'),
 });

@@ -32,7 +32,7 @@ Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 40 formas 
 
 ## Mais do que ele faz
 
-* **Deixa você responder ali mesmo (opcional).** Ligue "Responder permissões pelo pet" nas configurações e o balão ganha **Permitir** e **Recusar**. O Claude Code espera sua resposta no pet por até 25 segundos; depois disso ele pergunta como sempre. Desligado por padrão.
+* **Deixa você responder e falar com o agente ali mesmo.** Com o Claude Code, o balão ganha **Permitir** e **Recusar** nos pedidos de permissão e as opções de cada pergunta do agente; **Mensagem** escreve para a conversa que o pet acompanha, e ela chega na hora se o agente estiver parado. O Claude Code espera sua resposta no pet por até 25 segundos; depois disso ele pergunta como sempre. Nada é aprovado sozinho: só o seu clique responde. Dá para desligar em Configurações → "Responder pelo pet".
 * **Mostra o que está acontecendo, sem você olhar o terminal.** Martelo é editar, livro é ler, escudo é testar, luneta é web. Vários agentes ao mesmo tempo? O card lista cada um, com o que está fazendo.
 * **Guarda um diário.** O que seus agentes fizeram em cada dia, por tipo de trabalho e por projeto, e quanto tempo esperaram por você.
 * **Não atrapalha e não sai do seu computador.** Os cliques passam através da janela, ele nunca bloqueia nem atrasa o agente, não usa internet nem conta (a não ser que você ligue o aviso no celular ou o GitHub), e senhas e chaves aparecem escondidas (`•••`).
@@ -120,7 +120,10 @@ O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa n
 * **Testes de volta ao verde**: comemora quando testes que falhavam voltam a passar.
 
 **Responder sem sair do que está fazendo**
-* **Permitir, Sempre permitir e Recusar** no balão (desligado por padrão). "Sempre permitir" aplica a regra que o próprio Claude Code sugere para aquele pedido.
+* **Permitir, Sempre permitir e Recusar** no balão. "Sempre permitir" aplica a regra que o próprio Claude Code sugere para aquele pedido. **Explicar…** recusa com um motivo que o agente lê (ou recusa e para o agente).
+* **Perguntas do agente**: as opções viram botões no balão; **Outra…** abre uma janelinha para escrever a sua resposta.
+* **Mensagem para a conversa**: no balão de "Terminou!" ou no card, **Mensagem** abre uma janelinha. Agente parado: ela o acorda na hora; trabalhando: vai junto com o próximo passo.
+* **Abrir** passa a pergunta ou o pedido para a janela do agente na hora, sem esperar o pet.
 * **Vários agentes esperando?** O card mostra os botões embaixo de cada um.
 * **Atalhos**: `Ctrl+Alt+O` abre o card, `Ctrl+Alt+J` leva ao agente que espera.
 

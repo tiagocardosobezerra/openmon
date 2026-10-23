@@ -17,6 +17,16 @@ const TOOL_EVENTS = ['PreToolUse', 'PostToolUse', 'PostToolUseFailure'];
 // With the setting off it returns at once and prints nothing.
 const PERMISSION_EVENT = 'PermissionRequest';
 const OTHER_EVENTS = ['SessionStart', 'SessionEnd', 'UserPromptSubmit', 'Notification', 'Stop', 'StopFailure', 'SubagentStart', 'SubagentStop', 'PreCompact'];
+// The agent's questions (AskUserQuestion) get a foreground hook too, so you
+// can pick an answer on the pet. Same setting, same rule: no answer in
+// time and Claude Code asks you as usual.
+const QUESTION_TOOL = 'AskUserQuestion';
+// Background hooks run with asyncRewake: one that exits with code 2 wakes
+// Claude Code with its message. That is how a message you write on the pet
+// reaches the conversation. When a session goes idle (Stop) or starts, the
+// hook stays in the background up to an hour, waiting for one.
+const LISTEN_EVENTS = ['SessionStart', 'Stop'];
+const LISTEN_SEC = 3600;
 
 function defaultSettingsPath() {
   return path.join(os.homedir(), '.claude', 'settings.json');
@@ -74,10 +84,11 @@ function strip(hooks = {}) {
 
 function withHooks(settings, command = hookCommand()) {
   const { hooks } = strip(settings.hooks);
-  const handler = { type: 'command', command, async: true, timeout: 5 };
+  const handler = { type: 'command', command: `${command} --rewake`, async: true, asyncRewake: true, timeout: 5 };
   for (const event of TOOL_EVENTS) (hooks[event] ||= []).push({ matcher: '*', hooks: [handler] });
+  (hooks.PreToolUse ||= []).push({ matcher: QUESTION_TOOL, hooks: [{ type: 'command', command: `${command} --question`, timeout: 90 }] });
   (hooks[PERMISSION_EVENT] ||= []).push({ matcher: '*', hooks: [{ type: 'command', command: `${command} --permission`, timeout: 90 }] });
-  for (const event of OTHER_EVENTS) (hooks[event] ||= []).push({ hooks: [{ ...handler }] });
+  for (const event of OTHER_EVENTS) (hooks[event] ||= []).push({ hooks: [{ ...handler, timeout: LISTEN_EVENTS.includes(event) ? LISTEN_SEC : 5 }] });
   return { ...settings, hooks };
 }
 
@@ -117,6 +128,18 @@ function hasPermissionHook({ settingsPath = defaultSettingsPath() } = {}) {
   try {
     const { settings } = readSettings(settingsPath);
     return ((settings.hooks || {})[PERMISSION_EVENT] || []).some((g) => (g.hooks || []).some((h) => isOurs(h) && / --permission$/.test(h.command) && !h.async));
+  } catch {
+    return false;
+  }
+}
+
+// Whether the hooks for questions and messages from the pet are installed
+// (installs before v0.5 had neither).
+function hasContactHooks({ settingsPath = defaultSettingsPath() } = {}) {
+  try {
+    const hooks = readSettings(settingsPath).settings.hooks || {};
+    const ours = (event) => (hooks[event] || []).flatMap((g) => g.hooks || []).filter(isOurs);
+    return ours('PreToolUse').some((h) => / --question$/.test(h.command) && !h.async) && ours('Stop').some((h) => h.asyncRewake && / --rewake$/.test(h.command));
   } catch {
     return false;
   }
@@ -202,4 +225,4 @@ function aiderLine() {
   return `aider --notifications --notifications-command "${hookCommand()} --aider"`;
 }
 
-module.exports = { installOpenCode, uninstallOpenCode, openCodePluginPath, installGemini, installCursor, uninstallCursor, geminiSettingsPath, cursorHooksPath, aiderLine, GEMINI_HOOK_EVENTS, CURSOR_HOOK_EVENTS, install, uninstall, isInstalled, hasPermissionHook, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT };
+module.exports = { installOpenCode, uninstallOpenCode, openCodePluginPath, installGemini, installCursor, uninstallCursor, geminiSettingsPath, cursorHooksPath, aiderLine, GEMINI_HOOK_EVENTS, CURSOR_HOOK_EVENTS, install, uninstall, isInstalled, hasPermissionHook, hasContactHooks, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT, QUESTION_TOOL, LISTEN_EVENTS, LISTEN_SEC };

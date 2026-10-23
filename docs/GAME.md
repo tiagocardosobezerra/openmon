@@ -49,6 +49,8 @@ Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. At�
 
 **Quem acompanha o quê.** Quem acompanha cada conversa, nesta ordem: 1) uma conversa que você fixou num Openmon (botão direito → Agentes → clique no nome do pet ao lado da conversa); 2) um projeto que você fixou num Openmon (Time → "Acompanha"); 3) o Openmon do próprio projeto, enquanto ele está no Time; 4) a fila: com mais de um na tela, cada conversa nova vai para um deles, na vez de cada um. Em Configurações → Pet dá para desligar a divisão; aí tudo fica com o principal, menos o que você fixou. Na Caixa, os pets descansam e não ganham XP.
 
+**Falar com o agente pelo pet.** O pet é o seu ponto de contato com a conversa que ele acompanha, não só um aviso. Com o Claude Code: num pedido de permissão, **Permitir**, **Sempre permitir**, **Recusar** ou **Explicar…** (recusar com um motivo que o agente lê, ou recusar e parar); numa pergunta do agente, as opções viram botões e **Outra…** deixa você escrever a resposta; e **Mensagem** (no balão de "Terminou!" ou no card) manda um recado para a conversa: se o agente está parado, ele acorda na hora; se está trabalhando, o recado vai junto com o próximo passo. Nada é aprovado sozinho, o texto só sai quando você clica em Enviar, e só o app de desktop pode escrever ao agente. Nos outros agentes (Codex, Gemini CLI, Cursor, OpenCode, Aider), um clique no pet continua levando você à janela do agente.
+
 **Formas regionais**: um Openmon criado principalmente numa linguagem evolui com as cores daquela região e uma pequena marca: *Chaves* (JavaScript/TypeScript), *Serpente* (Python), *Ferrugem* (Rust), *Correnteza* (Go), *Grão* (Java/Kotlin) e *Sustenido* (C#/.NET). A Opendex registra as que você viu.
 
 ## Todo dia tem algo
