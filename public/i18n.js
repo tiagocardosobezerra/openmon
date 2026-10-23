@@ -2407,9 +2407,12 @@
   const wanted = params.get('lang') || navigator.language || 'en';
   const lang = /^pt/i.test(wanted) ? 'pt-BR' : /^es/i.test(wanted) ? 'es' : 'en';
 
+  // On a Mac the shortcuts read ⌘⌥ (Command+Option) instead of Ctrl+Alt.
+  const mac = /Mac/i.test(navigator.platform || navigator.userAgent || '');
   function t(key, vars = {}) {
-    const raw = (STRINGS[lang] && STRINGS[lang][key]) ?? STRINGS.en[key] ?? key;
+    let raw = (STRINGS[lang] && STRINGS[lang][key]) ?? STRINGS.en[key] ?? key;
     if (Array.isArray(raw)) return raw;
+    if (mac) raw = raw.replace(/Ctrl\+Alt\+/g, '⌘⌥');
     return raw.replace(/\{(\w+)\}/g, (_, k) => (vars[k] == null ? '' : String(vars[k])));
   }
 

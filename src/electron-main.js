@@ -675,7 +675,7 @@ function petWindow(place, size = { width: WIN_W, height: WIN_H }) {
   if (pageInFront) w.setAlwaysOnTop(false);
   else w.setAlwaysOnTop(true, 'floating');
   w.__belowPage = pageInFront;
-  w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: !hidesInFullscreen() });
   w.setIgnoreMouseEvents(true, { forward: true });
   // Only our own page, never anything else.
   w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -738,6 +738,19 @@ function showPets(on) {
 // (Settings → Pet can keep them), and come back when it ends, unless you
 // hid them yourself meanwhile.
 let fullscreenHidden = false;
+// macOS: a full-screen app lives in its own Space; the pets simply do not
+// follow it there when "step aside in full screen" is on (no watcher needed).
+// Other systems: always visible on every Space/workspace.
+function hidesInFullscreen() {
+  return process.platform === 'darwin' && (!daemon || daemon.config().hideFullscreen !== false);
+}
+let lastFullscreenRule = null;
+function applyFullscreenRule() {
+  const rule = hidesInFullscreen();
+  if (rule === lastFullscreenRule) return;
+  lastFullscreenRule = rule;
+  for (const w of [win, ...companionWins.values()]) if (w && !w.isDestroyed()) w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: !rule });
+}
 function onFullscreen(full) {
   if (full && !petsHidden && daemon && daemon.config().hideFullscreen !== false) {
     fullscreenHidden = true;
@@ -1130,6 +1143,7 @@ app.whenReady().then(async () => {
   daemon.bus.on('state', (s) => {
     applyScale((s.config && s.config.scale) || 1);
     syncCompanions(s);
+    applyFullscreenRule();
     // The tray icon wears a "!" while an agent waits for you.
     const waiting = s.live.pose === 'attention';
     if (tray && waiting !== trayAlert) {
