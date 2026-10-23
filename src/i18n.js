@@ -33,7 +33,6 @@ const PT_BR = {
   },
   dex: {
     egg: 'Quentinho ao toque. Escuta cada tecla e choca quando já ouviu o bastante.',
-    sprout: 'Recém-nascido e curioso. A folha na cabeça vira para o que o agente estiver fazendo.',
     'craft-juvenile': 'Bate em tudo que alcança. Os chifrinhos esquentam depois de uma edição longa.',
     'craft-adult': 'Martela código bruto até tomar forma numa bigorna minúscula. Dorme de óculos de proteção.',
     'craft-mythic': 'Dizem que forjou o primeiro compilador. A coroa de brasas brilha mais a cada build limpo.',
@@ -105,7 +104,6 @@ const ES = {
   },
   dex: {
     egg: 'Tibio al tacto. Escucha cada tecla y se abre cuando ya oyó lo suficiente.',
-    sprout: 'Recién nacido y curioso. La hoja de su cabeza gira hacia lo que hace el agente.',
     'craft-juvenile': 'Golpea todo lo que alcanza. Sus cuernitos se calientan tras una edición larga.',
     'craft-adult': 'Martilla código en bruto hasta darle forma en un yunque diminuto. Duerme con gafas de protección.',
     'craft-mythic': 'Dicen que forjó el primer compilador. Su corona de brasas brilla más con cada build limpio.',

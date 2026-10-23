@@ -58,7 +58,6 @@
       <select id="region" aria-label="Region"><option value="">Region: none</option><option value="js">js</option><option value="py">py</option><option value="rs">rs</option><option value="go">go</option><option value="jvm">jvm</option><option value="cs">cs</option></select>
     </div>
     <div class="row">
-      <button class="primary" data-evolve="sprout" data-t="hatch">Hatch (scene)</button>
       <button class="primary" data-evolve="juvenile">→ Juvenile</button>
       <button class="primary" data-evolve="adult">→ Adult</button>
       <button class="primary" data-evolve="mythic">→ Elder</button>
@@ -170,8 +169,7 @@
     if (!b) return;
     if (b.dataset.evolve) {
       const stage = b.dataset.evolve;
-      if (stage === 'sprout') dev('nearHatch', { shiny: $('shiny').checked }).then(() => dev('signal', { kind: 'turn-end' }));
-      else dev('evolve', { stage, ...choice() });
+      dev('evolve', { stage, ...choice() });
     }
     if (b.dataset.form) {
       const c = choice();

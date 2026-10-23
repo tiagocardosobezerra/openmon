@@ -42,7 +42,7 @@ test('only the most recent sessions are kept', () => {
 });
 
 test('powers unlock with every lineage ever grown, plus a Chimera pair', () => {
-  assert.deepEqual(unlockedPowers({ dex: { egg: 1, sprout: 2 } }), []);
+  assert.deepEqual(unlockedPowers({ dex: { egg: 1 } }), []);
   assert.deepEqual(unlockedPowers({ dex: { 'test-adult': 1, 'craft-juvenile': 1 } }), ['craft', 'test']);
   assert.deepEqual(unlockedPowers({ dex: { 'chimera-adult': 1 }, chimera: ['roam', 'lore'] }), ['lore', 'roam']);
 });

@@ -65,7 +65,7 @@ Mostra, em 6 cenas, o que é o Openmon: um bichinho no canto da tela que acompan
 ### Cena 1 · 0–7 s · "Ele mora no canto da sua tela"
 
 * Abre na tela vazia. O **ovo** (`criaturas/egg.svg`) aparece no canto com um quique.
-* O ovo balança, racha e choca: vira o **Sprout** (`sprout.svg`) com um brilho.
+* O ovo balança, racha e choca: vira o **Tinkit** (`craft-juvenile.svg`), o inicial escolhido, com um brilho.
 * Legenda: **"Um bichinho no canto da sua tela."**
 * EN: **"A little creature in the corner of your screen."**
 

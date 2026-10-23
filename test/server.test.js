@@ -141,9 +141,10 @@ test('species API serves the Opendex; shutdown is announced on the bus', async (
   const { daemon, port } = await boot();
   try {
     const species = JSON.parse((await request(port, 'GET', '/api/species')).body);
-    assert.equal(species.dex.length, 40);
-    assert.equal(species.dex[36].name, 'Chromancer');
-    assert.equal(species.dex[3].name, 'Forgemaw');
+    assert.equal(species.dex.length, 39);
+    assert.equal(species.dex[35].name, 'Chromancer');
+    assert.equal(species.dex[2].name, 'Forgemaw');
+    assert.deepEqual(species.starters, ['craft', 'lore', 'shell']);
     assert.ok(species.natures.cheeky);
     const state = daemon.state();
     assert.ok(state.pet.nature);
@@ -153,6 +154,24 @@ test('species API serves the Opendex; shutdown is announced on the bus', async (
     await down;
     // Lay-egg is refused before Elder.
     assert.deepEqual(JSON.parse((await request(port, 'POST', '/api/lay-egg')).body).events, []);
+  } finally {
+    await daemon.close();
+  }
+});
+
+test('a new trainer picks a starter through the API, once', async () => {
+  const { daemon, port } = await boot();
+  try {
+    assert.equal(daemon.state().pet.awaitingStarter, true);
+    const post = async (body) => JSON.parse((await request(port, 'POST', '/api/starter', { body: JSON.stringify(body) })).body).events;
+    assert.deepEqual(await post({ lineage: 'chimera' }), []);
+    const events = await post({ lineage: 'lore' });
+    assert.ok(events.some((e) => e.type === 'starter' && e.lineage === 'lore'));
+    assert.deepEqual(await post({ lineage: 'shell' }), []);
+    const s = daemon.state();
+    assert.equal(s.pet.awaitingStarter, false);
+    assert.equal(s.pet.starter, 'lore');
+    assert.equal(s.pet.progress.xpToGo, 30);
   } finally {
     await daemon.close();
   }
@@ -178,8 +197,8 @@ test('species can be served in Brazilian Portuguese', async () => {
     assert.equal(pt.statLabels.craft, 'Forja');
     assert.equal(pt.natures.cheeky.label, 'Atrevida');
     assert.equal(pt.achievements.hatch.title, 'Olá, mundo');
-    assert.equal(pt.dex[3].name, 'Forgemaw');
-    assert.match(pt.dex[3].text, /bigorna/);
+    assert.equal(pt.dex[2].name, 'Forgemaw');
+    assert.match(pt.dex[2].text, /bigorna/);
     const en = JSON.parse((await request(port, 'GET', '/api/species')).body);
     assert.equal(en.statLabels.craft, 'Craft');
   } finally {

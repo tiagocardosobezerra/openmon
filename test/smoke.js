@@ -39,6 +39,8 @@ const PAGES = [
   { path: '/dex.html?lang=pt-BR' },
   { path: '/card.html' },
   { path: '/name.html' },
+  { path: '/starter.html' },
+  { path: '/starter.html?lang=pt-BR' },
   { path: '/playground.html' },
   { path: '/bag.html' },
   { path: '/party.html' },

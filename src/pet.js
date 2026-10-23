@@ -4,7 +4,7 @@
 // Pure functions over a plain JSON object, so it is easy to persist, test
 // and migrate. Nothing here ever takes progress away.
 
-const { MISSIONS, MISSION_XP, PERFECT_DAY_XP, COSMETICS, ITEMS, WEAR_SLOTS, LEGENDS, FRIEND_FORMS } = require('./species');
+const { MISSIONS, MISSION_XP, PERFECT_DAY_XP, COSMETICS, ITEMS, WEAR_SLOTS, LEGENDS, FRIEND_FORMS, STARTERS, STARTER_HATCH_XP } = require('./species');
 const { STATS, STAT_WEIGHTS, STAGES, ACHIEVEMENTS, NATURES, SHINY_ODDS, CHIMERA_GAP, CHIMERA_MIN, stageIndex, formName, formKey, dexEntries } = require('./species');
 
 const VERSION = 1;
@@ -84,6 +84,10 @@ function createPet(now, name = DEFAULT_NAME, rng = Math.random) {
     stage: 'egg',
     lineage: null,
     trait: null,
+    // The lineage the player picked for this egg (see STARTERS), kept for
+    // life. `awaitingStarter`: the egg waits for that choice to hatch.
+    starter: null,
+    awaitingStarter: false,
     counters: { tools: 0, edits: 0, fails: 0, fixes: 0, commits: 0, prs: 0, merges: 0, pages: 0, shell: 0, reads: 0, longestTurn: 0, missionDays: 0, testsGreen: 0, testsRed: 0, turns: 0, answers: 0, fastAnswers: 0, pets: 0, evolutions: 0, waitMs: 0 },
     daily: { day: null, pets: 0, fastAnswers: 0, waitMs: 0, waits: 0, fastestMs: null, activeDays: 0 },
     xpLog: [],
@@ -95,9 +99,28 @@ function createPet(now, name = DEFAULT_NAME, rng = Math.random) {
   };
 }
 
+// A brand-new trainer's first egg: the player picks its starter.
+function newTrainer(now, rng = Math.random) {
+  const egg = createPet(now, DEFAULT_NAME, rng);
+  egg.awaitingStarter = true;
+  return egg;
+}
+
+// The baby stage (Sprout) is gone: a save from before is an egg about to hatch.
+function dropSprout(p) {
+  if (p.stage === 'sprout') {
+    p.stage = 'egg';
+    p.lineage = null;
+  }
+  if (Array.isArray(p.history)) p.history = p.history.filter((h) => h.stage !== 'sprout');
+  if (p.dex) delete p.dex.sprout;
+  return p;
+}
+
 // Fills in fields added by later versions, keeps everything the user had.
 function migrate(raw, now) {
-  if (!raw || typeof raw !== 'object') return createPet(now);
+  if (!raw || typeof raw !== 'object') return newTrainer(now);
+  raw = dropSprout({ ...raw, dex: raw.dex ? { ...raw.dex } : raw.dex });
   const name = !raw.name || OLD_DEFAULTS.has(raw.name) ? DEFAULT_NAME : raw.name;
   const fresh = createPet(raw.bornAt || now, name, () => seeded(raw.bornAt || now));
   // Pets from before shinies existed are not re-rolled.
@@ -144,7 +167,7 @@ function topStats(stats) {
   return [...STATS].sort((x, y) => a[y] - a[x] || STATS.indexOf(x) - STATS.indexOf(y));
 }
 
-// Levels: Lv 9 near the first evolution, Lv 25 at Adult,
+// Levels: Lv 9 near hatching, Lv 25 at Adult,
 // Lv 55 at Elder, Lv 100 at 49,005 XP.
 const MAX_LEVEL = 100;
 function level(xp) {
@@ -169,13 +192,20 @@ function nextStage(pet) {
   return STAGES[stageIndex(pet.stage) + 1] || null;
 }
 
+// Total XP the next stage needs: a chosen starter hatches after a few
+// minutes of work instead of at the Juvenile threshold.
+function stageXp(pet, stage) {
+  return pet.stage === 'egg' && pet.starter && stage.id === 'juvenile' ? STARTER_HATCH_XP : stage.xp;
+}
+
 // Progress toward the next stage, 0..1, and what still blocks it.
 function progress(pet) {
   const current = STAGES[stageIndex(pet.stage)];
   const next = nextStage(pet);
   if (!next) return { ratio: 1, next: null, needsBond: false };
-  const ratio = Math.max(0, Math.min(1, (pet.xp - current.xp) / (next.xp - current.xp)));
-  return { ratio, next: next.id, xpToGo: Math.max(0, next.xp - pet.xp), needsBond: Boolean(next.bond && pet.bond < next.bond), bondNeeded: next.bond || 0 };
+  const need = stageXp(pet, next);
+  const ratio = Math.max(0, Math.min(1, (pet.xp - current.xp) / (need - current.xp)));
+  return { ratio, next: next.id, xpToGo: Math.max(0, need - pet.xp), needsStarter: Boolean(pet.awaitingStarter), needsBond: Boolean(next.bond && pet.bond < next.bond), bondNeeded: next.bond || 0 };
 }
 
 function view(pet) {
@@ -189,6 +219,8 @@ function view(pet) {
     stage: pet.stage,
     lineage: pet.lineage,
     trait: pet.trait,
+    starter: pet.starter || null,
+    awaitingStarter: Boolean(pet.awaitingStarter),
     chimera: pet.chimera || null,
     nocturne: Boolean(pet.nocturne),
     seenNight: pet.seenNight || {},
@@ -268,8 +300,9 @@ const UNLOCKS = {
 const ITEM_KINDS = ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone', 'stone'];
 const bagKindsSeen = (p) => ITEM_KINDS.filter((k) => Object.keys(p.bagSeen || {}).some((id) => id === k || (k === 'stone' && ITEMS[id] && ITEMS[id].stone))).length;
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
-// The first briefing's forms (#001 to #022), hidden ones included.
-const ORIGINAL_DEX = () => dexEntries().slice(0, 22).map((e) => e.key);
+// The first briefing's forms (#001 to #021), hidden ones included.
+const ORIGINAL_DEX_SIZE = 21;
+const ORIGINAL_DEX = () => dexEntries().slice(0, ORIGINAL_DEX_SIZE).map((e) => e.key);
 
 // Progress toward each locked accessory, for the bag's hints.
 const UNLOCK_PROGRESS = {
@@ -289,7 +322,7 @@ const UNLOCK_PROGRESS = {
   'explorer-hat': (p) => [p.counters.pages || 0, 200],
   'chef-hat': (p) => [p.counters.missionDays || 0, 30],
   bow: (p) => [p.bond, 100],
-  'star-tiara': (p) => [ORIGINAL_DEX().filter((k) => p.dex[k]).length, 22],
+  'star-tiara': (p) => [ORIGINAL_DEX().filter((k) => p.dex[k]).length, ORIGINAL_DEX_SIZE],
   necktie: (p) => [p.counters.prs || 0, 50],
   pearls: (p) => [p.counters.perfectDays || 0, 7],
   bell: (p) => [p.counters.pets || 0, 100],
@@ -570,58 +603,61 @@ function regionOf(langs) {
 function evolve(pet, now, events) {
   for (;;) {
     const next = nextStage(pet);
-    if (!next || pet.xp < next.xp || (next.bond && pet.bond < next.bond)) return;
+    // An egg waiting for its starter choice does not hatch yet.
+    if (!next || pet.awaitingStarter || pet.xp < stageXp(pet, next) || (next.bond && pet.bond < next.bond)) return;
     if (pet.holding === 'everstone' && pet.stage !== 'egg') return;
     const from = form(pet);
     const ranked = topStats(pet.stats);
+    const hatching = pet.stage === 'egg';
     pet.stage = next.id;
     // A held type stone decides the type of this evolution, then is spent.
-    const stone = next.id !== 'sprout' && pet.holding && ITEMS[pet.holding] && ITEMS[pet.holding].stone;
+    // A chosen starter always hatches as what was chosen.
+    const stone = !(hatching && pet.starter) && pet.holding && ITEMS[pet.holding] && ITEMS[pet.holding].stone;
     if (stone) {
       pet.bag[pet.holding] = Math.max(0, (pet.bag[pet.holding] || 0) - 1);
       events.push({ type: 'stone-used', item: pet.holding, lineage: stone });
       pet.holding = null;
     }
-    if (next.id !== 'sprout') {
-      const aff = affinity(pet.stats);
-      const grown = stageIndex(next.id) >= stageIndex('adult');
-      if (stone) {
-        pet.lineage = stone;
-        pet.chimera = null;
-        pet.trait = grown ? ranked.find((r) => r !== stone) : null;
-      } else if (grown && aff[ranked[0]] - aff[ranked[1]] < CHIMERA_GAP && aff[ranked[1]] >= CHIMERA_MIN) {
-        pet.lineage = 'chimera';
-        pet.chimera = [ranked[0], ranked[1]];
-        pet.trait = ranked[2];
-      } else {
-        pet.lineage = ranked[0];
-        pet.chimera = null;
-        pet.trait = grown ? ranked[1] : null;
-      }
-      // Evolving between midnight and 5 am gives the Nocturne colouring,
-      // decided again at every evolution (a time-of-day evolution).
-      pet.nocturne = new Date(now).getHours() < 5;
-      // Full friendship when it becomes an Elder: the friendship form.
-      pet.friend = next.id === 'mythic' && pet.bond >= BOND_MAX && FRIEND_FORMS.includes(pet.lineage);
-      if (pet.friend) unlock(pet, 'friendship', now, events);
-      // Regional form: raised mostly on one language (60% of 50+ files).
-      pet.region = regionOf(pet.langs);
-      if (pet.region) pet.dexRegions = { ...(pet.dexRegions || {}), [`${formKey(pet.stage, pet.lineage)}.${pet.region}`]: now };
-      if (pet.nocturne) {
-        pet.seenNight = { ...(pet.seenNight || {}), [formKey(pet.stage, pet.lineage)]: now };
-        unlock(pet, 'nocturne', now, events);
-      }
+    // A starter keeps its lineage: the one chosen, or the one a stone gave it.
+    const locked = pet.starter ? pet.lineage || pet.starter : null;
+    const aff = affinity(pet.stats);
+    const grown = stageIndex(next.id) >= stageIndex('adult');
+    if (stone || locked) {
+      pet.lineage = stone || locked;
+      pet.chimera = null;
+      pet.trait = grown ? ranked.find((r) => r !== pet.lineage) : null;
+    } else if (grown && aff[ranked[0]] - aff[ranked[1]] < CHIMERA_GAP && aff[ranked[1]] >= CHIMERA_MIN) {
+      pet.lineage = 'chimera';
+      pet.chimera = [ranked[0], ranked[1]];
+      pet.trait = ranked[2];
+    } else {
+      pet.lineage = ranked[0];
+      pet.chimera = null;
+      pet.trait = grown ? ranked[1] : null;
+    }
+    // Evolving between midnight and 5 am gives the Nocturne colouring,
+    // decided again at every evolution (a time-of-day evolution).
+    pet.nocturne = new Date(now).getHours() < 5;
+    // Full friendship when it becomes an Elder: the friendship form.
+    pet.friend = next.id === 'mythic' && pet.bond >= BOND_MAX && FRIEND_FORMS.includes(pet.lineage);
+    if (pet.friend) unlock(pet, 'friendship', now, events);
+    // Regional form: raised mostly on one language (60% of 50+ files).
+    pet.region = regionOf(pet.langs);
+    if (pet.region) pet.dexRegions = { ...(pet.dexRegions || {}), [`${formKey(pet.stage, pet.lineage)}.${pet.region}`]: now };
+    if (pet.nocturne) {
+      pet.seenNight = { ...(pet.seenNight || {}), [formKey(pet.stage, pet.lineage)]: now };
+      unlock(pet, 'nocturne', now, events);
     }
     pet.counters.evolutions++;
     pet.history.push({ stage: pet.stage, form: form(pet), lineage: pet.lineage, at: now });
     const key = formKey(pet.stage, pet.lineage);
     const firstTime = !pet.dex[key];
     if (firstTime) pet.dex[key] = now;
-    events.push({ type: 'evolve', from, to: form(pet), stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, nocturne: Boolean(pet.nocturne), shiny: pet.shiny, region: pet.region || null, friend: Boolean(pet.friend), newDex: firstTime });
-    if (pet.stage === 'sprout') unlock(pet, 'hatch', now, events);
-    if (pet.stage === 'sprout' && pet.shiny) unlock(pet, 'shiny', now, events);
+    events.push({ type: 'evolve', from, to: form(pet), hatched: hatching, stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, nocturne: Boolean(pet.nocturne), shiny: pet.shiny, region: pet.region || null, friend: Boolean(pet.friend), newDex: firstTime });
+    if (hatching) unlock(pet, 'hatch', now, events);
+    if (hatching && pet.shiny) unlock(pet, 'shiny', now, events);
+    if (pet.stage === 'adult') unlock(pet, 'first-evolution', now, events);
     if (pet.stage === 'juvenile') {
-      unlock(pet, 'first-evolution', now, events);
       if (!pet.gifts) pet.gifts = {};
       if (!pet.gifts.everstone) {
         pet.gifts.everstone = now;
@@ -745,6 +781,21 @@ function countFeats(pet, signal) {
   if (signal.tool === 'Read') c.reads = (c.reads || 0) + 1;
 }
 
+// The player picks the starter of an egg that waits for one. It hatches as
+// that lineage's Juvenile once it has STARTER_HATCH_XP (at once, if it
+// already has), and keeps the lineage for life.
+function chooseStarter(pet, lineage, now) {
+  const events = [];
+  if (!pet.awaitingStarter || pet.stage !== 'egg' || !STARTERS.includes(lineage)) return events;
+  rollDay(pet, now, events);
+  pet.awaitingStarter = false;
+  pet.starter = lineage;
+  events.push({ type: 'starter', lineage });
+  evolve(pet, now, events);
+  checkCosmetics(pet, now, events);
+  return events;
+}
+
 // The user clicked the pet.
 function petIt(pet, now) {
   const events = [];
@@ -764,7 +815,8 @@ function petIt(pet, now) {
   return events;
 }
 
-// Post-game: an Elder retires to the Hall of Fame and leaves an egg.
+// Post-game: an Elder retires to the Hall of Fame and leaves an egg, whose
+// starter the player picks again.
 // The Opendex, achievements and Hall of Fame carry over, and the egg
 // inherits a tenth of its parent's stats, so the next one starts leaning
 // the same way unless your work changes. Everything that belongs to you as
@@ -774,7 +826,7 @@ function layEgg(pet, now, rng = Math.random) {
   if (pet.stage !== 'mythic' || pet.legend) return { pet, events: [] };
   const retired = { name: displayName(pet), form: form(pet), lineage: pet.lineage, shiny: pet.shiny, nature: pet.nature, generation: pet.generation, bornAt: pet.bornAt, retiredAt: now };
   // A new creature: it starts with no nickname.
-  const egg = createPet(now, DEFAULT_NAME, rng);
+  const egg = newTrainer(now, rng);
   egg.generation = (pet.generation || 1) + 1;
   egg.dex = { ...pet.dex };
   egg.achievements = { ...pet.achievements };
@@ -805,6 +857,9 @@ function displayName(pet) {
 
 module.exports = {
   createPet,
+  newTrainer,
+  dropSprout,
+  chooseStarter,
   migrate,
   applySignal,
   nextStage,

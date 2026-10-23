@@ -20,7 +20,7 @@ const { ACHIEVEMENTS } = require('./species');
 const PARTY_SIZE = 6;
 // Real work in a project before it earns its own egg: one-off folders never do.
 const EGG_AFTER_ACTIONS = 60;
-const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region', 'legend', 'friend', 'xpLog'];
+const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'starter', 'awaitingStarter', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region', 'legend', 'friend', 'xpLog'];
 
 const newId = () => crypto.randomBytes(6).toString('hex');
 
@@ -40,6 +40,7 @@ function ensure(root) {
     if (m.worn.face === undefined) m.worn.face = null;
     // Legendaries arrive at Elder level (older saves gave them level 1).
     if (m.legend && (m.xp || 0) < 15000) m.xp = 15000;
+    pet.dropSprout(m);
   }
   return root;
 }
@@ -214,6 +215,20 @@ function move(root, id, place) {
   return true;
 }
 
+// Picks the starter of the egg that waits for one: the pet on screen, or
+// a member if the player put another pet on screen meanwhile.
+function chooseStarter(root, lineage, now) {
+  ensure(root);
+  if (root.awaitingStarter) return pet.chooseStarter(root, lineage, now);
+  const member = root.others.find((m) => m.awaitingStarter);
+  if (!member) return [];
+  const merged = merge(root, member);
+  const events = pet.chooseStarter(merged, lineage, now);
+  split(root, member, merged);
+  for (const e of events) if (['evolve', 'starter'].includes(e.type)) Object.assign(e, { petId: member.id, project: member.project, petName: pet.displayName(merged) });
+  return events;
+}
+
 function renameMember(root, id, name) {
   ensure(root);
   if (root.id === id) return pet.rename(root, name);
@@ -230,7 +245,7 @@ function view(root) {
   ensure(root);
   const summary = (full, active) => {
     const v = pet.view(full);
-    return { id: full.id, active, place: full.place || 'party', project: full.project ?? null, name: v.name, nickname: v.nickname, form: v.form, formKey: v.formKey, stage: v.stage, lineage: v.lineage, trait: v.trait, chimera: v.chimera, level: v.level, shiny: v.shiny, nocturne: v.nocturne, region: full.region || null, wear: v.wear, progress: v.progress.ratio, xp: v.xp, legend: v.legend, friend: v.friend };
+    return { id: full.id, active, place: full.place || 'party', project: full.project ?? null, name: v.name, nickname: v.nickname, form: v.form, formKey: v.formKey, stage: v.stage, lineage: v.lineage, awaitingStarter: v.awaitingStarter, trait: v.trait, chimera: v.chimera, level: v.level, shiny: v.shiny, nocturne: v.nocturne, region: full.region || null, wear: v.wear, progress: v.progress.ratio, xp: v.xp, legend: v.legend, friend: v.friend };
   };
   const list = [summary(root, true), ...root.others.map((m) => summary(merge(root, m), false))];
   const projects = Object.entries(root.projects || {})
@@ -241,4 +256,4 @@ function view(root) {
   return { held: heldByOthers(root), size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
 }
 
-module.exports = { ensure, applySignal, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, heldByOthers, PARTY_SIZE, EGG_AFTER_ACTIONS };
+module.exports = { ensure, applySignal, chooseStarter, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, heldByOthers, PARTY_SIZE, EGG_AFTER_ACTIONS };

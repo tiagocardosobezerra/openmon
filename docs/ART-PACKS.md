@@ -12,7 +12,7 @@ Put the images in `~/.openmon/art/` (run `openmon art` to print the exact folder
 
 | Part | Values |
 | --- | --- |
-| `<form>` | `egg`, `sprout`, `<lineage>-<stage>` or a legendary (`mergeon`, `aeonbyte`, `zeroday`): lineages `craft`, `lore`, `shell`, `test`, `roam`, `swarm`, `docs`, `git`, `debug`, `data`, `style`, `chimera`; stages `juvenile`, `adult`, `mythic` (Chimera has only `adult` and `mythic`) |
+| `<form>` | `egg`, `<lineage>-<stage>` or a legendary (`mergeon`, `aeonbyte`, `zeroday`): lineages `craft`, `lore`, `shell`, `test`, `roam`, `swarm`, `docs`, `git`, `debug`, `data`, `style`, `chimera`; stages `juvenile`, `adult`, `mythic` (Chimera has only `adult` and `mythic`) |
 | `.shiny` | optional, the rare colour variant |
 | `.night` | optional, the Nocturne colours |
 | `.<variant>` | optional: `.friend` (the friendship Elder), `.craft-lore` and the other 14 pairs on `chimera-adult`, `.region-<js\|py\|rs\|go\|jvm\|cs>` |

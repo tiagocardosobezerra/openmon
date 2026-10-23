@@ -660,6 +660,16 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     return events;
   }
 
+  // The player picks the starter of the egg that waits for one.
+  function chooseStarter(lineage) {
+    const events = party.chooseStarter(real.pet, String(lineage || ''), now());
+    if (!events.length) return events;
+    persist(true);
+    pushEvents(events);
+    pushState(true);
+    return events;
+  }
+
   function layEgg() {
     const old = real.pet;
     const { pet: egg, events } = pet.layEgg(old, now());
@@ -749,6 +759,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     stopDemo();
     const demoPet = pet.createPet(now(), real.pet.name);
     demoPet.xp = DEMO_START_XP;
+    // A chosen starter hatches after a few minutes, so the demo shows a hatch.
+    demoPet.starter = real.pet.starter || 'craft';
     world = createWorld(demoPet);
     const script = demoScript();
     pushState(true);
@@ -1093,6 +1105,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         });
       case 'POST /api/party/rename':
         return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { events: partyAction(() => party.renameMember(real.pet, String(body.id || ''), body.name)) })));
+      case 'POST /api/starter':
+        return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { events: chooseStarter(body.lineage) })));
       case 'POST /api/lay-egg':
         return json(res, 200, { events: layEgg() });
       case 'POST /api/shutdown':
@@ -1144,6 +1158,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           stages: species.STAGES,
           lineages: species.LINEAGES,
           baseForms: species.BASE_FORMS,
+          starters: species.STARTERS,
           achievements: species.ACHIEVEMENTS,
           natures: species.NATURES,
           weights: species.STAT_WEIGHTS,
@@ -1221,6 +1236,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     backupNow: () => (backups ? backups.maybe(real.pet, config, true) : false),
     backupDir: () => (backups ? backups.dir : null),
     rename,
+    chooseStarter,
     layEgg,
     runDemo,
     stopDemo,

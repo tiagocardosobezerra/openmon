@@ -6,7 +6,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { createPet, migrate } = require('./pet');
+const { newTrainer, migrate } = require('./pet');
 
 function homeDir() {
   return process.env.OPENMON_HOME || path.join(os.homedir(), '.openmon');
@@ -41,7 +41,7 @@ function createStore({ dir, delay = 1500, now = Date.now } = {}) {
           fs.renameSync(file, `${file}.broken-${now()}`);
         } catch {}
       }
-      return createPet(now());
+      return newTrainer(now());
     }
   }
 

@@ -8,7 +8,7 @@ Esta página explica el juego. Para lo que Openmon hace por ti y cómo instalarl
 
 ## Cómo crece
 
-Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evoluciona: huevo, bebé, joven, adulto y anciano, en semanas de uso. Su **tipo** viene del trabajo que más hace el agente:
+Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evoluciona: huevo, joven, adulto y anciano, en semanas de uso. El huevo eclosiona directo en el joven del **tipo** que decide el trabajo del agente:
 
 | Tipo | Viene de | Joven | Adulto | Anciano |
 |---|---|---|---|---|
@@ -23,6 +23,8 @@ Cada cosa que hace el agente vale **experiencia (XP)**. Con suficiente, evolucio
 | Cazador | arreglar lo que falló | Mitey | Beetlock | Bugbane |
 | Cristal | datos: SQL, CSV, notebooks, bases de datos | Cubit | Prismora | Datanaut |
 | Pincel | hojas de estilo (.css, .scss) | Dabbit | Palettail | Chromancer |
+
+**Tu primer Openmon lo eliges tú.** El primer huevo, y el huevo de cada nueva generación, te deja elegir entre tres iniciales, los tres trabajos más comunes de un agente: **Tinkit** (Forja), **Owlet** (Saber) y **Sparkle** (Terminal). Eclosiona tras unos minutos de trabajo, ya con la Habilidad de su tipo, y se queda en ese tipo para siempre: llega al Adulto y al Anciano de la misma línea, y todo el XP cuenta. Una Piedra de tipo aún puede cambiar la siguiente evolución. Los demás huevos (de proyecto y misteriosos) eclosionan en el tipo del trabajo, a los 400 XP.
 
 El trabajo raro vale más, así que cualquier tipo puede ganar. Y hay un linaje escondido que poca gente va a encontrar: *dicen que el secreto es el equilibrio.*
 
@@ -59,7 +61,7 @@ Cada proyecto en el que el agente trabaja bastante gana **su propio huevo**. Has
 * **Mochila**: *Galleta* (+2 de amistad), *Caramelo de nivel* (sube un nivel), *Dulce de amistad* (+10), *Amuleto de XP* (experiencia doble por un día), *Huevo misterioso* (eclosiona un nuevo miembro, con más probabilidad de shiny), *Piedra firme* (mientras la sostiene, no evoluciona) y 11 *Piedras de tipo* (sostén una y la próxima evolución va hacia ese tipo).
 * **30 accesorios** en la cabeza, la cara y el cuello: gorra, corona, bufanda, gafas redondas y de sol, monóculo, máscara de héroe, casco de obra, corona de hojas, sombrero de explorador, gorro de chef, lazo, tiara de estrellas, sombrero de calabaza, gorro de Navidad, corbata, collar de perlas, capa, cascabel, mochilita y otros, cada uno ganado con un logro (100 commits, 50 arreglos, 200 páginas leídas…). Aparecen en la mascota, en la Mochila y en la tarjeta de entrenador.
 * **Regalo del día y racha**: una Galleta por día de uso, una Piedra de tipo cada 3 días seguidos, un Caramelo de nivel cada 7, un Amuleto de XP cada 14 y un Huevo misterioso cada 30.
-* **Opendex, insignias y Salón de la Fama**: cuando el tuyo llega a Anciano, retíralo al Salón de la Fama y empieza una nueva generación; la Mochila, la Opendex y las insignias se quedan.
+* **Opendex, insignias y Salón de la Fama**: cuando el tuyo llega a Anciano, retíralo al Salón de la Fama y empieza una nueva generación, eligiendo de nuevo el inicial; la Mochila, la Opendex y las insignias se quedan.
 
 ## Habilidades: utilidades que libera la evolución
 

@@ -428,7 +428,7 @@ function applyScale(scale) {
 let powersWin = null;
 // One app window for Powers, Opendex and the trainer card; the top bar
 // moves between them.
-const APP_PAGES = new Set(['powers', 'dex', 'party', 'bag', 'card', 'help', 'settings']);
+const APP_PAGES = new Set(['powers', 'dex', 'party', 'bag', 'card', 'help', 'settings', 'starter']);
 function openAppWindow(page = 'powers') {
   if (!APP_PAGES.has(page)) page = 'powers';
   const url = `http://127.0.0.1:${port}/${page}.html`;
@@ -825,6 +825,15 @@ function wireIpc() {
   });
 }
 
+// The starter choice opens by itself when an egg starts waiting for one:
+// at the first launch and when a new generation begins.
+let starterOpened = false;
+function watchStarter(state) {
+  const waits = Boolean(state.pet && state.pet.awaitingStarter);
+  if (waits && !starterOpened && !PLAYGROUND && !state.demo) openAppWindow('starter');
+  starterOpened = waits;
+}
+
 // OS notification when an agent has waited a while and the user has not
 // noticed the pet.
 function watchAttention(state) {
@@ -889,6 +898,7 @@ app.whenReady().then(async () => {
     // evolves, is renamed, or comes on or off screen.
     const teamKey = (x) => [x.pet, ...Object.values(x.companions || {})].map((p) => p && `${p.nickname}|${p.form}|${p.level}`).join(',');
     const before = latest ? teamKey(latest) : '';
+    watchStarter(s);
     watchAttention(s);
     if (teamKey(s) !== before || (!waiting && trayWasWaiting)) refreshTray();
     trayWasWaiting = waiting;
@@ -906,6 +916,7 @@ app.whenReady().then(async () => {
   }
   applyScale(daemon.config().scale || 1);
   latest = daemon.state();
+  if (win) win.webContents.once('did-finish-load', () => watchStarter(daemon.state()));
   tray = new Tray(brandTrayIcon() || trayIcon());
   tray.on('click', () => (win.isVisible() ? win.webContents.send('command', 'card') : showPets(true)));
   refreshTray();

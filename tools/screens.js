@@ -49,7 +49,7 @@ function demoPet(now) {
     stage: 'adult', lineage: 'craft', trait: 'lore', xp: 5400, bond: 68, shiny: false, nature: 'cheerful',
     stats: { craft: 2100, lore: 2600, shell: 700, test: 520, roam: 90, swarm: 30 },
   });
-  for (const key of ['egg', 'sprout', 'craft-juvenile', 'craft-adult', 'lore-juvenile', 'test-juvenile', 'roam-juvenile']) p.dex[key] = now - 30 * DAY;
+  for (const key of ['egg', 'craft-juvenile', 'craft-adult', 'lore-juvenile', 'test-juvenile', 'roam-juvenile']) p.dex[key] = now - 30 * DAY;
   for (const a of ['hatch', 'first-evolution', 'first-green', 'night-owl', 'quick-hands']) p.achievements[a] = now - 20 * DAY;
   for (const id of ['cap', 'party', 'beanie', 'headphones', 'flower', 'nightcap', 'scarf', 'bowtie', 'medal']) p.wardrobe.owned[id] = now - 10 * DAY;
   p.wardrobe.head = 'headphones';

@@ -8,7 +8,7 @@ Esta página explica o jogo. Para o que o Openmon faz por você e como instalar,
 
 ## Como ele cresce
 
-Cada coisa que o agente faz vale **experiência (XP)**. Com o bastante, ele evolui: ovo, bebê, jovem, adulto e ancião, em semanas de uso. O **tipo** dele vem do trabalho que o agente mais faz:
+Cada coisa que o agente faz vale **experiência (XP)**. Com o bastante, ele evolui: ovo, jovem, adulto e ancião, em semanas de uso. O ovo choca direto no jovem do **tipo** que o trabalho do agente decide:
 
 | Tipo | Vem de | Jovem | Adulto | Ancião |
 |---|---|---|---|---|
@@ -23,6 +23,8 @@ Cada coisa que o agente faz vale **experiência (XP)**. Com o bastante, ele evol
 | Caçador | consertar o que falhou | Mitey | Beetlock | Bugbane |
 | Cristal | dados: SQL, CSV, notebooks, bancos | Cubit | Prismora | Datanaut |
 | Pincel | folhas de estilo (.css, .scss) | Dabbit | Palettail | Chromancer |
+
+**Seu primeiro Openmon você escolhe.** O primeiro ovo, e o ovo de cada nova geração, deixa você escolher entre três iniciais, os três trabalhos mais comuns de um agente: **Tinkit** (Forja), **Owlet** (Saber) e **Sparkle** (Terminal). Ele choca depois de alguns minutos de trabalho, já com a Habilidade do tipo, e fica nesse tipo para sempre: vira o Adulto e o Ancião da mesma linhagem, e todo XP conta. Uma Pedra de tipo ainda pode mudar a próxima evolução. Os outros ovos (de projeto e misteriosos) chocam no tipo do trabalho, aos 400 XP.
 
 Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem escondida que pouca gente vai achar: *dizem que o segredo é o equilíbrio.*
 
@@ -59,7 +61,7 @@ Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. At�
 * **Mochila**: *Biscoito* (+2 de amizade), *Bala de nível* (sobe um nível), *Doce de amizade* (+10), *Amuleto de XP* (experiência em dobro por um dia), *Ovo misterioso* (choca um novo membro, com mais chance de shiny), *Pedra firme* (enquanto ele segura, não evolui) e 11 *Pedras de tipo* (segure uma e a próxima evolução vai para aquele tipo).
 * **30 acessórios** na cabeça, no rosto e no pescoço: boné, coroa, cachecol, óculos redondos e escuros, monóculo, máscara de herói, capacete de obra, coroa de folhas, chapéu de explorador, gorro de chef, laço, tiara de estrelas, chapéu de abóbora, gorro de Natal, gravata, colar de pérolas, capa, sininho, mochilinha e outros, cada um liberado por uma conquista (100 commits, 50 consertos, 200 páginas lidas…). Aparecem no pet, na Mochila e no cartão de treinador.
 * **Presente do dia e sequência**: um Biscoito por dia de uso, uma Pedra de tipo a cada 3 dias seguidos, uma Bala de nível a cada 7, um Amuleto de XP a cada 14 e um Ovo misterioso a cada 30.
-* **Opendex, insígnias e Hall da Fama**: quando o seu chega a Ancião, aposente-o no Hall da Fama e comece uma nova geração; a Mochila, a Opendex e as insígnias continuam.
+* **Opendex, insígnias e Hall da Fama**: quando o seu chega a Ancião, aposente-o no Hall da Fama e comece uma nova geração, escolhendo de novo o inicial; a Mochila, a Opendex e as insígnias continuam.
 
 ## Habilidades: utilidades que a evolução libera
 
