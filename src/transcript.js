@@ -28,6 +28,19 @@ function toolLine(name, input) {
   return what ? `${name}: ${what}` : String(name || 'Tool');
 }
 
+// A message you wrote on the pet reaches the agent as a hook's output
+// (see hook.js), inside Claude Code's own wrapper: the text after this line.
+const PET_MARK = 'Message from the user, sent from the Openmon desktop pet. Treat it as the user\'s next message:';
+
+function fromPet(s) {
+  const at = s.indexOf(PET_MARK);
+  if (at < 0) return '';
+  return s
+    .slice(at + PET_MARK.length)
+    .split(/<\/system-reminder>|&lt;\/system-reminder&gt;/)[0]
+    .trim();
+}
+
 // Text a person wrote, not Claude Code's own wrappers (<command-name>,
 // <system-reminder>, hook output and the like).
 function personText(s) {
@@ -43,6 +56,9 @@ function messagesOf(event) {
   const msg = event.message;
   if (!msg) return [];
   if (event.type === 'user') {
+    const blocks = typeof msg.content === 'string' ? [msg.content] : Array.isArray(msg.content) ? msg.content.filter((b) => b && b.type === 'text').map((b) => b.text) : [];
+    const pet = blocks.map((b) => fromPet(String(b || ''))).filter(Boolean).join('\n\n');
+    if (pet) return [{ role: 'user', text: pet, via: 'pet', at }];
     if (typeof msg.content === 'string') {
       const text = personText(msg.content);
       return text ? [{ role: 'user', text, at }] : [];
