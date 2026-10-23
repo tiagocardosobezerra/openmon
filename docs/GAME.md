@@ -30,7 +30,7 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 
 * **Amizade** (0 a 100) só sobe: responda rápido ao agente, faça carinho com um clique, volte todo dia. Virar Ancião pede amizade 60.
 * **Personalidade**: cada ovo nasce Corajoso, Sonolento, Curioso, Alegre, Calmo ou Atrevido, o que muda como ele se mexe e o que ele fala.
-* **Raridades**: 1 em 128 nasce com cores brilhantes (shiny), sempre com brilho e estrelinhas em volta. Cada forma tem as 5 poses também em shiny.
+* **Raridades**: 1 em 128 nasce brilhante, com outras cores e sempre com brilho e estrelinhas em volta. Cada forma tem as 5 poses também na versão brilhante.
 * **Linha oculta**: quando dois tipos de trabalho empatam quase exatamente, aparece a Chimera.
 * **Lendários**: três, cada um ligado a um feito. *Mergeon* aparece no seu primeiro pull request aceito, *Aeonbyte* depois de um ano de Openmon e *Zeroday* depois de 100 consertos. Eles entram no seu Time e nunca evoluem.
 * **Forma de foco**: num pedido longo (50 ações ou mais), ele cresce dentro de um anel de energia até o pedido acabar.
@@ -56,7 +56,7 @@ Cada projeto em que o agente trabalha bastante ganha **o seu próprio ovo**. At�
 ## Todo dia tem algo
 
 * **Missões**: três por dia, como "responder ao agente em até 30 s, 3 vezes" ou "3 rodadas de testes verdes". Cada uma dá experiência, amizade e um Biscoito.
-* **Mochila**: *Biscoito* (+2 de amizade), *Bala de nível* (sobe um nível), *Doce de amizade* (+10), *Amuleto de XP* (experiência em dobro por um dia), *Ovo misterioso* (choca um novo membro, com mais chance de shiny), *Pedra firme* (enquanto ele segura, não evolui) e 11 *Pedras de tipo* (segure uma e a próxima evolução vai para aquele tipo).
+* **Mochila**: *Biscoito* (+2 de amizade), *Bala de nível* (sobe um nível), *Doce de amizade* (+10), *Amuleto de XP* (experiência em dobro por um dia), *Ovo misterioso* (choca um novo membro, com mais chance de vir brilhante), *Pedra firme* (enquanto ele segura, não evolui) e 11 *Pedras de tipo* (segure uma e a próxima evolução vai para aquele tipo).
 * **30 acessórios** na cabeça, no rosto e no pescoço: boné, coroa, cachecol, óculos redondos e escuros, monóculo, máscara de herói, capacete de obra, coroa de folhas, chapéu de explorador, gorro de chef, laço, tiara de estrelas, chapéu de abóbora, gorro de Natal, gravata, colar de pérolas, capa, sininho, mochilinha e outros, cada um liberado por uma conquista (100 commits, 50 consertos, 200 páginas lidas…). Aparecem no pet, na Mochila e no cartão de treinador.
 * **Presente do dia e sequência**: um Biscoito por dia de uso, uma Pedra de tipo a cada 3 dias seguidos, uma Bala de nível a cada 7, um Amuleto de XP a cada 14 e um Ovo misterioso a cada 30.
 * **Opendex, insígnias e Hall da Fama**: quando o seu chega a Ancião, aposente-o no Hall da Fama e comece uma nova geração, escolhendo de novo o inicial; a Mochila, a Opendex e as insígnias continuam.

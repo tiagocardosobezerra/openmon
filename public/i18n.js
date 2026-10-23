@@ -1546,7 +1546,7 @@
       "item.xp-charm.text": "Experiência do trabalho em dobro por 24 horas, para o time todo (o limite de 10 minutos também dobra). Outro soma mais 24 horas. Você ganha um a cada 14 dias seguidos.",
       "item.xp-charm.on": "Ativo: experiência em dobro até {t}.",
       "item.mystery-egg": "Ovo misterioso",
-      "item.mystery-egg.text": "Choca um novo membro do seu time, com mais chance de shiny. Ele não tem projeto: cresce enquanto está na tela, como principal ou ao lado dele. Você ganha um a cada 30 dias seguidos.",
+      "item.mystery-egg.text": "Choca um novo membro do seu time, com mais chance de vir brilhante. Ele não tem projeto: cresce enquanto está na tela, como principal ou ao lado dele. Você ganha um a cada 30 dias seguidos.",
       "wear.glasses-round": "Óculos redondos",
       "wear.glasses-round.how": "Seu agente lê 3.000 arquivos.",
       "wear.glasses-dark": "Óculos escuros",
