@@ -128,6 +128,10 @@
       <button data-open="dex.html">Opendex</button>
       <button data-open="card.html" data-t="card">Trainer card</button>
     </div>
+    <div class="row">
+      <button data-act="fillDex" data-t="fillDex">Fill the Opendex</button>
+      <button data-open="dex.html?shiny" data-t="dexShiny">Opendex in shiny colours</button>
+    </div>
   </section>
 </main>
 <script>
@@ -139,7 +143,7 @@
     subs: '3 subagentes', needs: 'Precisa de você', needs2: '2º agente precisa', done: 'Terminou', endAll: 'Encerrar sessões',
     agentHint: 'Clique no pet enquanto ele espera para dizer "vi". Depois de 5 minutos parado, ele dorme.',
     petSec: 'Pet', petIt: 'Fazer carinho', level: 'Subir nível', demo: 'Ver demonstração', nature: 'Natureza', bond: 'Laço', badge: 'Mostrar insígnia',
-    more: 'Idioma e páginas', card: 'Cartão de treinador', work: 'Rajada de trabalho do agente', unlockAll: 'Desbloquear todas as habilidades', powers: 'Habilidades',
+    more: 'Idioma e páginas', card: 'Cartão de treinador', work: 'Rajada de trabalho do agente', unlockAll: 'Desbloquear todas as habilidades', fillDex: 'Preencher a Opendex', dexShiny: 'Opendex brilhante', powers: 'Habilidades',
   };
   const pt = /^pt/i.test(navigator.language);
   if (pt) {
@@ -186,6 +190,7 @@
       case 'badge': dev('achievement', { id: $('badge').value }); break;
       case 'work': dev('work'); break;
       case 'unlockAll': dev('unlockAll'); break;
+      case 'fillDex': dev('fillDex'); break;
       case 'subagents':
         dev('signal', { kind: 'turn-start' });
         for (let i = 0; i < 3; i++) dev('signal', { kind: 'subagent-start', agentId: `sub${++subN}`, detail: 'Explore' });

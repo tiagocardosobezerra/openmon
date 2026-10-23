@@ -231,6 +231,9 @@ test('playground actions exist only on a playground daemon', async () => {
     assert.equal(play.state().live.pose, 'attention');
     await post('nearHatch', {});
     assert.equal(play.state().pet.stage, 'egg');
+    await post('fillDex', {});
+    const { dexEntries } = require('../src/species');
+    assert.ok(dexEntries().every((e) => play.state().pet.dex[e.key]));
   } finally {
     await play.close();
   }
