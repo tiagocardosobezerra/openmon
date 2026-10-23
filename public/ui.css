@@ -45,8 +45,23 @@
   --info-soft: #e5f2ff;
   --bond: #ff7fa3;
 
-  --craft: #ff9f43; --lore: #9381f2; --shell: #35d0bf; --test: #74cc63; --roam: #5fb3ff; --swarm: #ff80b8;
-  --docs: #3b5bdb; --git: #c7835a; --debug: #e5484d; --data: #3a98bd; --style: #e787b0;
+  /* Type colours, read off the official art (body colour of each Adult),
+     and the tinted ink each lineage is outlined in. */
+  --craft: #c94a30; --lore: #2c4684; --shell: #575b7c; --test: #8fa1b4; --roam: #70abdd; --swarm: #cd7e1d;
+  --docs: #374177; --git: #8ac462; --debug: #9374d8; --data: #8fd0ee; --style: #d45993; --chimera: #b98fd8;
+  --craft-ink: #3a1c16; --lore-ink: #141a33; --shell-ink: #0d0e17; --test-ink: #232c3a; --roam-ink: #3a2418; --swarm-ink: #3b2412;
+  --docs-ink: #262036; --git-ink: #2c1e14; --debug-ink: #22163a; --data-ink: #173650; --style-ink: #3a0f24; --chimera-ink: #2a1838;
+  /* Text on a type's colour: white on the dark ones, ink on the light ones. */
+  --craft-on: #fff; --lore-on: #fff; --shell-on: #fff; --test-on: #1a2230; --roam-on: #1d140d; --swarm-on: #fff;
+  --docs-on: #fff; --git-on: #1c140d; --debug-on: #fff; --data-on: #10283c; --style-on: #fff; --chimera-on: #1f1029;
+  /* The colour of the Openmon a component is about (see .t-<type>). */
+  --type: var(--brand);
+  --type-ink: var(--outline);
+  --type-on: #fff;
+  /* Fills (bars) lean toward the page's ink so dark types still show on a dark page. */
+  --type-fill: color-mix(in srgb, var(--type) 78%, var(--ink));
+  /* Vinyl: the soft highlight along the top of raised surfaces. */
+  --gloss: inset 0 1.5px 0 rgba(255, 255, 255, 0.55);
 
   --r-sm: 8px;
   --r-md: 12px;
@@ -61,14 +76,15 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #14101b;
-    --surface: #211b2c;
-    --surface-2: #1b1624;
-    --sunken: #2b2439;
-    --ink: #f3eefc;
+    --bg: #15101a;
+    --surface: #241b2c;
+    --surface-2: #1d1624;
+    --sunken: #2d2338;
+    --ink: #f6f0fb;
     --outline: #07050b;
-    --muted: #a59cba;
-    --line: #362d47;
+    --muted: #ada2bf;
+    --line: #3a2f49;
+    --gloss: inset 0 1.5px 0 rgba(255, 255, 255, 0.07);
     --brand: #9486ff;
     --brand-ink: #c3baff;
     --brand-soft: #2c2547;
@@ -142,8 +158,34 @@ body.page * { box-sizing: border-box; }
   background: var(--surface);
   border: var(--bw) solid var(--outline);
   border-radius: var(--r-lg);
-  box-shadow: var(--lift);
+  box-shadow: var(--lift), var(--gloss);
 }
+
+/* A component about one Openmon takes its type's colour. */
+.t-craft, .t-lore, .t-shell, .t-test, .t-roam, .t-swarm, .t-docs, .t-git, .t-debug, .t-data, .t-style, .t-chimera { --type-fill: color-mix(in srgb, var(--type) 78%, var(--ink)); }
+.t-craft { --type: var(--craft); --type-ink: var(--craft-ink); --type-on: var(--craft-on); } .t-lore { --type: var(--lore); --type-ink: var(--lore-ink); --type-on: var(--lore-on); }
+.t-shell { --type: var(--shell); --type-ink: var(--shell-ink); --type-on: var(--shell-on); } .t-test { --type: var(--test); --type-ink: var(--test-ink); --type-on: var(--test-on); }
+.t-roam { --type: var(--roam); --type-ink: var(--roam-ink); --type-on: var(--roam-on); } .t-swarm { --type: var(--swarm); --type-ink: var(--swarm-ink); --type-on: var(--swarm-on); }
+.t-docs { --type: var(--docs); --type-ink: var(--docs-ink); --type-on: var(--docs-on); } .t-git { --type: var(--git); --type-ink: var(--git-ink); --type-on: var(--git-on); }
+.t-debug { --type: var(--debug); --type-ink: var(--debug-ink); --type-on: var(--debug-on); } .t-data { --type: var(--data); --type-ink: var(--data-ink); --type-on: var(--data-on); }
+.t-style { --type: var(--style); --type-ink: var(--style-ink); --type-on: var(--style-on); } .t-chimera { --type: var(--chimera); --type-ink: var(--chimera-ink); --type-on: var(--chimera-on); }
+
+/* The stage: where an Openmon stands, in its type's colour, with a floor. */
+.stage {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(ellipse 55% 9% at 50% 88%, color-mix(in srgb, var(--type-ink) 35%, transparent), transparent 70%),
+    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--type) 38%, var(--surface)), color-mix(in srgb, var(--type) 16%, var(--surface)) 70%);
+  box-shadow: inset 0 0 0 var(--bw) color-mix(in srgb, var(--type) 45%, var(--line));
+  overflow: hidden;
+}
+
+/* The type's own label: its colour, its ink. */
+.type-tag { display: inline-flex; align-items: center; gap: 5px; padding: 1px 9px 1px 4px; border-radius: var(--r-pill); background: var(--type); color: var(--type-on); font: 600 11.5px/1.6 var(--font-display); box-shadow: 0 0 0 1.5px var(--type-ink); white-space: nowrap; }
+.type-tag::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: rgba(255, 255, 255, 0.85); box-shadow: inset 0 0 0 3px var(--type); }
 .panel.soft { border-color: var(--line); box-shadow: none; }
 .panel-pad { padding: 14px 16px; }
 
@@ -168,7 +210,9 @@ body.page * { box-sizing: border-box; }
 .btn:hover { background: var(--surface-2); }
 .btn:active { transform: translateY(2px); box-shadow: none; }
 .btn:focus-visible { outline: none; box-shadow: var(--lift-sm), var(--focus); }
-.btn.primary { background: var(--sun); color: #2a2140; }
+.btn.primary { background: var(--sun); color: #2a2140; box-shadow: var(--lift-sm), inset 0 1.5px 0 rgba(255, 255, 255, 0.6); }
+/* Secondary buttons step back: lighter border, no lift. */
+.btn.quiet { border-color: color-mix(in srgb, var(--outline) 35%, var(--line)); box-shadow: none; }
 .btn.primary:hover { background: color-mix(in srgb, var(--sun) 88%, #fff); }
 .btn.brand { background: var(--brand); color: #fff; }
 .btn.ghost { border-color: transparent; background: transparent; box-shadow: none; color: var(--muted); }
@@ -242,8 +286,8 @@ button.chip[aria-pressed="true"] { border-color: var(--outline); box-shadow: var
 .meter > span { grid-area: label; color: var(--muted); font-weight: 650; }
 .meter > b { grid-area: value; justify-self: end; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meter > .bar { grid-area: bar; }
-.bar { height: 10px; border-radius: 99px; background: var(--sunken); overflow: hidden; border: 1.5px solid var(--outline); }
-.bar > i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--brand); transition: width 0.6s ease; }
+.bar { height: 12px; border-radius: 99px; background: var(--sunken); overflow: hidden; border: 2px solid var(--outline); }
+.bar > i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--type-fill); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35); transition: width 0.6s ease; }
 .bar.bond > i { background: var(--bond); }
 
 .big-number { font: 600 30px/1 var(--font-display); font-variant-numeric: tabular-nums; }

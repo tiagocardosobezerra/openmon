@@ -459,6 +459,21 @@
     if (wildX() > petCX()) ctx.scale(-1, 1);
     OpenmonArt.drawCreature(ctx, { stage: 'juvenile', lineage: w.lineage, shiny: w.shiny, t, size: SIZE * 0.82, pose: 'idle', anim });
     ctx.restore();
+    // Its portrait in the bubble.
+    const pc = document.querySelector('#bubble canvas.portrait');
+    if (pc) {
+      const dpr = window.devicePixelRatio || 1;
+      const px = 44;
+      if (pc.width !== px * dpr) {
+        pc.width = px * dpr;
+        pc.height = px * dpr;
+      }
+      const p = pc.getContext('2d');
+      p.setTransform(1, 0, 0, 1, 0, 0);
+      p.clearRect(0, 0, pc.width, pc.height);
+      p.setTransform(dpr, 0, 0, dpr, px / 2 * dpr, (px - 3) * dpr);
+      OpenmonArt.drawCreature(p, { stage: 'juvenile', lineage: w.lineage, shiny: w.shiny, t, size: 19, pose: 'idle', anim });
+    }
   }
 
   let emote = null;
@@ -655,7 +670,18 @@
 
   // Status bubbles: a round icon, the session name, a title, one detail
   // line and, when it can jump to the agent's window, an action button.
-  const BUBBLE_ICON = { attention: '!', done: '✓', error: '✕', toast: '★', setup: 'i', restore: '↺', warn: '?', notice: 'i' };
+  // Drawn icons for each kind of bubble (24 × 24, stroked in currentColor).
+  const ICON_PATHS = {
+    attention: '<path d="M12 5v9"/><circle cx="12" cy="18.6" r="1.4" fill="currentColor" stroke="none"/>',
+    done: '<path d="M5.5 12.5l4.2 4.2L18.5 7.8"/>',
+    error: '<path d="M7.5 7.5l9 9M16.5 7.5l-9 9"/>',
+    toast: '<path d="M12 4.5l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L4.8 9.8l5-.7z" fill="currentColor" stroke-width="1.2"/>',
+    setup: '<path d="M9 4v5M15 4v5M7 9h10v3a5 5 0 0 1-10 0zM12 17v3"/>',
+    restore: '<path d="M5.5 12a6.5 6.5 0 1 0 2-4.7"/><path d="M5 4.5V8h3.5"/>',
+    warn: '<path d="M9.4 9.2a2.7 2.7 0 1 1 3.8 2.5c-.8.4-1.2 1-1.2 1.8v.6"/><circle cx="12" cy="18.4" r="1.3" fill="currentColor" stroke="none"/>',
+    notice: '<circle cx="12" cy="7.4" r="1.3" fill="currentColor" stroke="none"/><path d="M12 11v6.5"/>',
+  };
+  const BUBBLE_ICON = Object.fromEntries(Object.entries(ICON_PATHS).map(([k, d]) => [k, `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`]));
   let bubbleJump = null;
   // buttons: extra [data, label, style] on the bubble, data being
   // { answer } (a question's option) or { talk, ref } (opens the window to
@@ -688,7 +714,7 @@
     b.dataset.key = key;
     const kind = cls.split(' ')[0];
     const icon = BUBBLE_ICON[kind];
-    b.className = [cls, icon ? 'status' : '', jump ? 'jump' : ''].filter(Boolean).join(' ');
+    b.className = [cls, icon || kind === 'wild' ? 'status' : '', jump ? 'jump' : ''].filter(Boolean).join(' ');
     b.textContent = '';
     const add = (tag, klass, text) => {
       const e = document.createElement(tag);
@@ -696,7 +722,17 @@
       e.textContent = text;
       b.appendChild(e);
     };
-    if (icon) add('span', 'ic', icon);
+    if (kind === 'wild') {
+      // A wild Openmon: its own portrait instead of an icon (drawn by drawWild).
+      const portrait = document.createElement('canvas');
+      portrait.className = 'portrait';
+      b.appendChild(portrait);
+    } else if (icon) {
+      const ic = document.createElement('span');
+      ic.className = 'ic';
+      ic.innerHTML = icon;
+      b.appendChild(ic);
+    }
     if (eyebrow) add('span', 'eyebrow', eyebrow);
     add('span', 'title', title);
     if (sub) add('small', '', sub);
@@ -815,7 +851,7 @@
       const title = tr(w.shiny ? 'wild.titleShiny' : 'wild.title', { name: w.name || w.lineage });
       const buttons = [...owned.map(([id, key], i) => [{ wild: 'throw', ball: id }, tr(key, { n: bag[id] }), i === 0 ? 'primary' : '']), [{ wild: 'release' }, tr('wild.release'), '']];
       const left = Math.max(0, Math.ceil((w.until - Date.now()) / 60000));
-      return setBubble('toast', title, balls ? tr('wild.sub') : tr('wild.noBall'), { buttons, note: tr('wild.left', { m: left }), id: `wild|${w.at}` });
+      return setBubble(`wild t-${w.lineage}`, title, balls ? tr('wild.sub') : tr('wild.noBall'), { buttons, note: tr('wild.left', { m: left }), id: `wild|${w.at}` });
     }
     if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent'), id: `error|${f.id}|${f.since}` });
     // Mid-task and silent for minutes, or one command running very long.
@@ -904,12 +940,16 @@
     $('card-close').setAttribute('aria-label', tr('card.close'));
 
     $('card-name').textContent = pet.shiny && pet.stage !== 'egg' ? `${pet.name} ★` : pet.name;
-    // The species line only when a nickname takes the title.
+    // The card wears the colour of its Openmon's type (an egg: the brand's).
+    const type = pet.legend ? null : pet.lineage || (pet.stage === 'egg' ? null : pet.starter);
+    for (const c of [...card.classList]) if (c.startsWith('t-')) card.classList.remove(c);
+    if (type) card.classList.add(`t-${type}`);
+    $('card-type').textContent = pet.legend ? tr('party.legendTag') : type ? statLabels[type] || type : tr(`stage.${pet.stage}`);
+    // Number, stage and generation on one quiet line; the species too when a nickname takes the title.
     const dexNo = pet.dexNo ? `#${String(pet.dexNo).padStart(3, '0')}` : '';
-    $('card-form').textContent = pet.nickname ? `${dexNo} ${pet.form}`.trim() : dexNo;
+    $('card-form').textContent = [pet.nickname ? `${dexNo} ${pet.form}`.trim() : dexNo, pet.stage !== 'egg' && !pet.legend ? tr(`stage.${pet.stage}`) : null, (pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null].filter(Boolean).join(' · ');
     $('card-level').textContent = tr('card.level', { n: pet.level || 1 });
     $('card-level').title = tr('card.levelHelp');
-    $('card-stage').textContent = tr(`stage.${pet.stage}`);
     const pr = pet.progress;
     const soon = pr.next && pr.ratio >= 0.9 && !pr.needsBond && !pr.needsStarter;
     const nature = natures[pet.nature] ? natures[pet.nature].label : '';
@@ -920,13 +960,11 @@
       [soon ? tr(pet.stage === 'egg' ? 'card.aboutToHatch' : 'card.evolveSoon') : null, 'sun'],
       [quiet || null, ''],
       [config.focus && config.focusUntil ? tr('card.focus', { t: new Date(config.focusUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : null, 'sun'],
-      [pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null, ''],
       [pet.holding === 'everstone' ? tr(pr.next && pet.xp >= 0 && pr.ratio >= 1 ? 'card.everstoneReady' : 'card.everstone') : null, 'brand'],
       // Legendaries and mystery eggs have no project of their own.
       // With a team, every card names its project (the first Openmon has none).
       [pet.legend ? tr('party.legendTag') : pet.project && /^mystery:/.test(pet.project) ? tr('party.mysteryTag') : pet.project && /^wild:/.test(pet.project) ? tr('party.wildTag') : pet.project ? tr('party.project', { project: pet.project }) : teamSize > 1 ? tr('party.general') : null, 'brand'],
       [nature ? tr('card.nature', { nature }) : null, ''],
-      [(pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null, ''],
     ]) if (text) chips.appendChild(el('span', `chip ${cls}`.trim(), text));
 
     $('xp-bar').style.width = `${Math.round(pr.ratio * 100)}%`;
@@ -936,6 +974,16 @@
     $('bond-bar').parentElement.parentElement.title = tr('meter.bond.help');
     $('bond-bar').style.width = `${pet.bond}%`;
     $('bond-text').textContent = `${pet.bond}/100`;
+
+    // The day at a glance: missions, streak, and the one thing worth doing next.
+    const dayMissions = (pet.today && pet.today.missions) || [];
+    const done = dayMissions.filter((m) => m.done).length;
+    const day = $('card-day');
+    day.textContent = '';
+    if (dayMissions.length) day.append(el('span', `day-pill${done === dayMissions.length ? ' ok' : ''}`, tr('day.missions', { n: done, total: dayMissions.length })));
+    if (pet.streak && pet.streak.days > 1) day.append(el('span', 'day-pill', tr('day.streak', { n: pet.streak.days })));
+    const next = pet.wild && pet.wild.until > Date.now() ? tr('day.wild', { name: pet.wild.name }) : pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null;
+    if (next) day.append(el('span', 'day-next', next));
 
     // Tabs, with a count on Agents (waiting) and Today (missions left).
     const sessions = live.sessions || [];
