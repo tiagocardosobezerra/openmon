@@ -797,3 +797,61 @@ test('a wild Openmon on screen: shown in the state, caught or let go through the
     await daemon.close();
   }
 });
+
+test('assistant chat: key only, Claude asks through the pet queue, your answer goes back', async () => {
+  const { EventEmitter } = require('node:events');
+  const { PassThrough } = require('node:stream');
+  const runs = [];
+  const spawnClaude = (args, cwd) => {
+    const child = new EventEmitter();
+    child.stdin = new PassThrough();
+    child.stdout = new PassThrough();
+    child.stderr = new PassThrough();
+    child.kill = () => {};
+    const run = { args, cwd, sent: [], say: (e) => child.stdout.write(`${JSON.stringify(e)}\n`) };
+    child.stdin.on('data', (d) => String(d).split('\n').filter((l) => l.trim()).forEach((l) => run.sent.push(JSON.parse(l))));
+    runs.push(run);
+    return child;
+  };
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-home-'));
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-work-'));
+  const daemon = createDaemon({ port: 0, store: createStore({ dir, delay: 10 }), hooksInstalled: () => true, bundledArt: null, configFile: path.join(dir, 'config.json'), focus: createFocus({ driver: null }), contactKey: KEY, upgradeHooks: () => {}, spawnClaude });
+  const port = await daemon.listen();
+  const post = (p, body, key = KEY) => request(port, 'POST', p, { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json', 'X-Openmon-Key': key } });
+  try {
+    assert.equal((await post('/api/chat/new', { cwd: work, text: 'oi' }, 'wrong')).status, 403);
+    assert.equal((await request(port, 'GET', '/api/chats')).status, 403);
+    assert.equal((await request(port, 'GET', '/api/chat/stream?key=nope')).status, 403);
+    const made = JSON.parse((await post('/api/chat/new', { cwd: work, text: 'Crie nota.txt' })).body);
+    assert.equal(made.ok, true);
+    assert.equal(runs[0].cwd, path.resolve(work));
+    const chat = daemon.assistant.get(made.id);
+    // Claude Code's own hook for this session stays out of the way.
+    const hook = JSON.parse((await request(port, 'POST', '/event', { body: JSON.stringify({ session_id: chat.sessionId, cwd: work, hook_event_name: 'PermissionRequest', tool_name: 'Write', tool_input: { file_path: 'a.txt', content: 'x' }, _permission: true }) })).body || '{}');
+    assert.equal(hook.askPermission, undefined);
+    // Claude Code asks Openmon: the request joins the pet's queue.
+    runs[0].say({ type: 'control_request', request_id: 'r1', request: { subtype: 'can_use_tool', tool_name: 'Write', input: { file_path: path.join(work, 'nota.txt'), content: 'ola' } } });
+    await new Promise((r) => setTimeout(r, 50));
+    const pending = daemon.state().permissions.find((p) => p.chat === made.id);
+    assert.ok(pending);
+    assert.equal(daemon.state().live.pose, 'attention');
+    // A tool event of the same session does not answer it for you.
+    daemon.ingest({ session_id: chat.sessionId, cwd: work, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'x' } });
+    assert.ok(daemon.state().permissions.find((p) => p.id === pending.id));
+    await post('/api/permission/decide', { id: pending.id, decision: 'allow' });
+    await new Promise((r) => setTimeout(r, 50));
+    const answer = runs[0].sent.find((m) => m.type === 'control_response');
+    assert.equal(answer.response.response.behavior, 'allow');
+    // The list and the conversation, for the chat window.
+    const list = JSON.parse((await request(port, 'GET', '/api/chats', { headers: { 'X-Openmon-Key': KEY } })).body);
+    assert.equal(list.chats[0].id, made.id);
+    const got = JSON.parse((await request(port, 'GET', `/api/chat?id=${made.id}`, { headers: { 'X-Openmon-Key': KEY } })).body);
+    assert.equal(got.messages[0].text, 'Crie nota.txt');
+    // A reminder, scheduled.
+    const sched = JSON.parse((await post('/api/schedule/add', { kind: 'remind', text: 'Água', when: { type: 'in', minutes: 5 } })).body);
+    assert.equal(sched.ok, true);
+    assert.equal(daemon.schedule.list().length, 1);
+  } finally {
+    await daemon.close();
+  }
+});

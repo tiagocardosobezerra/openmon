@@ -3,7 +3,7 @@
 // The bridge for the app window's pages (Settings, "write to the agent"):
 // only the few desktop actions a web page cannot do on its own.
 
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('openmonSettings', {
   call: (cmd, arg) => ipcRenderer.invoke('settings', String(cmd), arg),
@@ -14,4 +14,12 @@ contextBridge.exposeInMainWorld('openmonSettings', {
   copyImage: (dataUrl) => ipcRenderer.invoke('copy-image', String(dataUrl)),
   // Answered only in the "write to the agent" window.
   contactKey: () => ipcRenderer.invoke('contact-key'),
+  // Where a file dropped on the chat lives (Electron no longer puts it on File).
+  filePath: (file) => {
+    try {
+      return webUtils.getPathForFile(file) || null;
+    } catch {
+      return null;
+    }
+  },
 });

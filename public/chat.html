@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Openmon</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  html, body { height: 100%; }
+  [hidden] { display: none !important; }
+  body.page { min-height: 0; margin: 0; display: grid; grid-template-columns: 260px 1fr; background: var(--bg); overflow: hidden; }
+  aside { display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; border-right: var(--bw) solid var(--line); background: var(--surface-2); overflow: auto; min-height: 0; }
+  aside h2 { margin: 12px 6px 2px; font: 600 12px var(--font-display); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  aside .item { display: grid; grid-template-columns: 10px 1fr; gap: 2px 8px; align-items: center; width: 100%; padding: 7px 8px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+  aside .item:hover { background: var(--surface); }
+  aside .item[aria-current="true"] { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--outline); }
+  aside .item b { font: 600 13.5px var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  aside .item small { grid-column: 2; color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .dot.working { background: var(--brand); animation: pulse 1.2s ease-in-out infinite; }
+  .dot.waiting, .dot.attention { background: var(--sun); box-shadow: 0 0 0 1.5px var(--outline); }
+  .dot.done { background: var(--ok); }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .dot.working { animation: none; } }
+  aside .empty { margin: 2px 8px; color: var(--muted); font-size: 12.5px; }
+  aside .grow { flex: 1; }
+  main.chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  header.head { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: var(--bw) solid var(--line); background: var(--surface); }
+  header.head .t { flex: 1; min-width: 0; }
+  header.head h1 { margin: 0; font: 600 16px var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header.head p { margin: 0; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log { flex: 1; overflow: auto; padding: 16px clamp(12px, 4vw, 40px) 8px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: min(760px, 92%); padding: 10px 14px; border-radius: 16px; font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; }
+  .msg.user { align-self: flex-end; background: var(--brand); color: #fff; border-bottom-right-radius: 4px; white-space: pre-wrap; }
+  .msg.assistant { align-self: flex-start; background: var(--surface); border: 1.5px solid var(--line); border-bottom-left-radius: 4px; }
+  .msg.assistant.live::after { content: "▍"; color: var(--brand); animation: pulse 1s infinite; }
+  .msg.thinking::after { content: "● ● ●"; letter-spacing: 2px; }
+  .msg.tool { align-self: flex-start; padding: 2px 10px; background: transparent; color: var(--muted); font: 500 12.5px var(--font-mono); }
+  .msg.tool::before { content: "› "; }
+  .msg.error { align-self: stretch; max-width: none; background: var(--bad-soft); color: var(--bad); border: 1.5px solid color-mix(in srgb, var(--bad) 40%, transparent); font-size: 13.5px; white-space: pre-wrap; }
+  .msg.notice { align-self: center; color: var(--muted); font-size: 12.5px; padding: 2px 8px; }
+  .msg .img { display: inline-block; margin-top: 4px; font-size: 12px; opacity: 0.85; }
+  .msg p { margin: 0 0 8px; } .msg p:last-child { margin-bottom: 0; }
+  .msg ul, .msg ol { margin: 4px 0 8px; padding-left: 22px; }
+  .msg h3 { margin: 8px 0 4px; font: 600 15px var(--font-display); }
+  .msg code { font: 500 13px var(--font-mono); background: var(--sunken); padding: 1px 5px; border-radius: 5px; }
+  .msg pre { margin: 6px 0 8px; padding: 10px 12px; background: var(--sunken); border-radius: var(--r-sm); overflow: auto; }
+  .msg pre code { padding: 0; background: none; white-space: pre; display: block; }
+  .msg a { color: var(--brand-ink); }
+  .card { align-self: stretch; max-width: 760px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface); border: var(--bw) solid var(--outline); box-shadow: var(--lift-sm); }
+  .card.danger { border-color: var(--bad); }
+  .card .k { font: 600 12px var(--font-display); color: var(--muted); }
+  .card h3 { margin: 2px 0 6px; font: 600 15px var(--font-display); }
+  .card .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .card .diff { margin: 6px 0 0; padding: 6px 0; background: var(--sunken); border-radius: var(--r-sm); max-height: 180px; overflow: auto; }
+  .card .diff code { display: block; padding: 0 10px; font: 500 12.5px/1.45 var(--font-mono); white-space: pre; }
+  .card .diff .del { background: color-mix(in srgb, #e5484d 20%, transparent); }
+  .card .diff .add { background: color-mix(in srgb, #3fb8a6 22%, transparent); }
+  .composer { padding: 8px clamp(12px, 4vw, 40px) 14px; border-top: var(--bw) solid var(--line); background: var(--surface); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 8px; }
+  .chips .chip { white-space: nowrap; }
+  .box { display: flex; align-items: flex-end; gap: 8px; }
+  .box textarea { flex: 1; min-height: 44px; max-height: 40vh; resize: none; font: 14.5px/1.45 var(--font-body); }
+  .attached { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .attached .chip button { border: 0; background: none; cursor: pointer; color: var(--muted); padding: 0 0 0 4px; font: inherit; }
+  .newbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; color: var(--muted); }
+  .newbar select { max-width: 340px; }
+  .welcome { margin: auto; max-width: 520px; text-align: center; color: var(--muted); }
+  .welcome h2 { color: var(--ink); font: 600 22px var(--font-display); margin: 0 0 6px; }
+  .drop { position: fixed; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--brand) 18%, transparent); border: 3px dashed var(--brand); font: 600 20px var(--font-display); color: var(--brand-ink); pointer-events: none; }
+  dialog { border: var(--bw) solid var(--outline); border-radius: var(--r-lg); background: var(--surface); color: var(--ink); padding: 16px 18px; width: min(560px, 92vw); box-shadow: var(--lift); }
+  dialog::backdrop { background: rgba(20, 12, 30, 0.45); }
+  dialog h2 { margin: 0 0 4px; font: 600 18px var(--font-display); }
+  dialog p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+  dialog .rows { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; max-height: 50vh; overflow: auto; }
+  dialog .rowline { display: flex; gap: 6px; align-items: center; }
+  dialog .rowline .input { flex: 1; min-width: 0; }
+  dialog textarea.input { width: 100%; box-sizing: border-box; min-height: 260px; font: 13px/1.5 var(--font-mono); }
+  dialog .end { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+  dialog label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
+  .sched li { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .sched li span { flex: 1; min-width: 0; }
+  .sched li small { color: var(--muted); }
+  .sched { list-style: none; margin: 0 0 10px; padding: 0; }
+  .menu-btn { display: none; }
+  @media (max-width: 720px) {
+    body.page { grid-template-columns: 1fr; }
+    aside { position: fixed; inset: 0 30% 0 0; z-index: 5; display: none; box-shadow: var(--lift); }
+    body.side aside { display: flex; }
+    .menu-btn { display: inline-grid; }
+  }
+</style>
+</head>
+<body class="page">
+<aside id="side">
+  <button class="btn primary" id="new" type="button"></button>
+  <h2 id="h-chats"></h2>
+  <div id="chats"></div>
+  <h2 id="h-agents"></h2>
+  <div id="agents"></div>
+  <div class="grow"></div>
+  <button class="btn quiet sm" id="open-sched" type="button"></button>
+  <button class="btn quiet sm" id="open-memory" type="button"></button>
+</aside>
+<main class="chat">
+  <header class="head">
+    <button class="icon-btn menu-btn" id="menu" type="button" aria-label="Menu">☰</button>
+    <div class="t"><h1 id="title"></h1><p id="sub"></p></div>
+    <button class="btn sm" id="stop" type="button" hidden></button>
+    <button class="btn sm quiet" id="continue" type="button" hidden></button>
+    <button class="btn sm ghost" id="rename" type="button" hidden></button>
+    <button class="btn sm ghost" id="delete" type="button" hidden></button>
+  </header>
+  <div class="log" id="log" aria-live="polite"></div>
+  <div class="composer">
+    <div class="newbar" id="newbar" hidden>
+      <span id="in-folder"></span>
+      <select class="input" id="folder"></select>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="attached" id="attached"></div>
+    <div class="box">
+      <button class="icon-btn" id="attach" type="button"></button>
+      <button class="icon-btn" id="paste" type="button"></button>
+      <textarea class="input" id="text" rows="1"></textarea>
+      <button class="btn primary" id="send" type="button"></button>
+    </div>
+  </div>
+</main>
+<div class="drop" id="drop" hidden></div>
+
+<dialog id="ask">
+  <h2 id="ask-title"></h2>
+  <input class="input" id="ask-text" style="width: 100%; box-sizing: border-box">
+  <div class="end"><button class="btn" id="ask-cancel" type="button"></button><button class="btn primary" id="ask-ok" type="button">OK</button></div>
+</dialog>
+<dialog id="memory">
+  <h2 id="m-title"></h2>
+  <p id="m-sub"></p>
+  <textarea class="input" id="m-text"></textarea>
+  <div class="end"><button class="btn" id="m-cancel" type="button"></button><button class="btn primary" id="m-save" type="button"></button></div>
+</dialog>
+<dialog id="actions">
+  <h2 id="a-title"></h2>
+  <p id="a-sub"></p>
+  <div class="rows" id="a-rows"></div>
+  <div class="end"><button class="btn quiet" id="a-reset" type="button"></button><button class="btn" id="a-add" type="button"></button><button class="btn" id="a-cancel" type="button"></button><button class="btn primary" id="a-save" type="button"></button></div>
+</dialog>
+<dialog id="sched">
+  <h2 id="s-title"></h2>
+  <p id="s-sub"></p>
+  <ul class="sched" id="s-list"></ul>
+  <div class="rows">
+    <label><span id="s-kind-l"></span><select class="input" id="s-kind"></select></label>
+    <label><span id="s-text-l"></span><textarea class="input" id="s-text" rows="2" style="min-height: 0"></textarea></label>
+    <label><span id="s-when-l"></span>
+      <span class="rowline"><select class="input" id="s-when"></select><input class="input" id="s-min" type="number" min="1" max="1440" value="30"><input class="input" id="s-time" type="time" value="09:00"></span>
+    </label>
+    <label id="s-folder-l"><span id="s-folder-t"></span><select class="input" id="s-folder"></select></label>
+  </div>
+  <p id="s-status"></p>
+  <div class="end"><button class="btn" id="s-close" type="button"></button><button class="btn primary" id="s-add" type="button"></button></div>
+</dialog>
+
+<script src="i18n.js"></script>
+<script>
+  // Talk to Claude from Openmon: conversations that run here (your own
+  // Claude Code, in a folder you pick) and the ones open elsewhere (the
+  // terminal, an editor), read live from Claude Code's own file.
+  const { lang, detail: trDetail } = window.OpenmonI18n;
+  document.documentElement.lang = lang;
+  const TEXT = {
+    en: {
+      title: 'Talk to Claude', newChat: 'New conversation', chats: 'Conversations', agents: 'Open elsewhere', noChats: 'None yet.', noAgents: 'No agent at work.',
+      send: 'Send', stop: 'Stop', continueHere: 'Continue here', rename: 'Rename', del: 'Delete', delAsk: 'Delete this conversation from Openmon? (Claude Code keeps its own copy.)', renameAsk: 'New name:',
+      placeholder: 'Write to Claude… (Enter sends, Shift+Enter makes a new line)', placeholderAgent: 'Write to this conversation… (it gets it at its next step)', cantWrite: 'This conversation cannot get messages from Openmon: start it again in Claude Code, or continue it here.',
+      attach: 'Attach files', paste: 'Paste what you copied', pasted: 'Pasted', image: 'image', drop: 'Drop here to attach', folder: 'Folder:', pickFolder: 'Pick a folder…', assistant: 'Assistant (general things)',
+      welcome: 'What can I do for you?', welcomeSub: 'Claude answers here, with your own Claude Code: it can read and change files in the folder you pick, run commands (with your OK) and use your connectors. Openmon asks you before anything that needs it.',
+      working: 'Working…', waiting: 'Waiting for you', idle: 'Ready', ended: 'Ended', cost: '~{usd} (estimate)', in: 'in {dir}',
+      allow: 'Allow', always: 'Always allow', deny: 'Deny', seeAll: 'See all', wants: 'Claude wants to', question: 'Claude asks', answer: 'Answer', other: 'Other…', otherAsk: 'Your answer:',
+      missing: 'Openmon could not start Claude Code. Install it (npm install -g @anthropic-ai/claude-code), run "claude" once to sign in, then try again.', exit: 'Claude Code stopped:', turn: 'Claude could not finish:',
+      present: 'Presentation mode is on: conversations are hidden.', sent: 'Sent', queued: 'It gets it at its next step.', notSent: 'Not sent. Try again.',
+      actions: 'Edit quick actions', actionsSub: 'One click sends the text. A text that ends with ":" goes to the box for you to finish. {clipboard} becomes what you copied.', label: 'Name', prompt: 'Text', add: 'Add', save: 'Save', cancel: 'Cancel', reset: 'Default ones',
+      memory: 'Assistant memory', memorySub: 'CLAUDE.md in the assistant folder: what Claude should always know about you. It reads it at the start of each conversation there.', saved: 'Saved',
+      schedule: 'Reminders and tasks', scheduleSub: 'A reminder: the pet tells you at that time. A task: Claude does it at that time, and the pet tells you when it is done.', kind: 'What', remind: 'Reminder', task: 'Task for Claude', textL: 'Text', when: 'When',
+      inMin: 'In … minutes', at: 'Today at', daily: 'Every day at', weekdays: 'Weekdays at', folderL: 'Folder', close: 'Close', schedAdd: 'Schedule', schedNone: 'Nothing scheduled.', schedBad: 'Check the text and the time.', remove: 'Remove', next: 'next: {t}',
+      quick: [['What do I have today?', 'What do I have on my calendar today, and anything urgent in my email? Use my connectors; if I have none, tell me how to connect them.'], ['Explain what I copied', '{clipboard}\n\nExplain this simply.'], ['Review my changes', 'Review the uncommitted changes in this folder (git diff) and list problems, worst first.'], ['Run the tests', 'Run the tests of this project and tell me the result in one line; if they fail, explain why.'], ['Write a message about:', 'Help me write a short, friendly message about:']],
+    },
+    'pt-BR': {
+      title: 'Conversar com o Claude', newChat: 'Nova conversa', chats: 'Conversas', agents: 'Abertas em outro lugar', noChats: 'Nenhuma ainda.', noAgents: 'Nenhum agente trabalhando.',
+      send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aqui', rename: 'Renomear', del: 'Apagar', delAsk: 'Apagar esta conversa do Openmon? (O Claude Code guarda a cópia dele.)', renameAsk: 'Novo nome:',
+      placeholder: 'Escreva para o Claude… (Enter envia, Shift+Enter quebra a linha)', placeholderAgent: 'Escreva para esta conversa… (ela recebe no próximo passo)', cantWrite: 'Esta conversa não recebe mensagens do Openmon: abra-a de novo no Claude Code, ou continue aqui.',
+      attach: 'Anexar arquivos', paste: 'Colar o que você copiou', pasted: 'Colado', image: 'imagem', drop: 'Solte aqui para anexar', folder: 'Pasta:', pickFolder: 'Escolher pasta…', assistant: 'Assistente (assuntos gerais)',
+      welcome: 'Em que posso ajudar?', welcomeSub: 'O Claude responde aqui, com o seu próprio Claude Code: ele pode ler e mudar arquivos da pasta que você escolher, rodar comandos (com o seu OK) e usar seus conectores. O Openmon pergunta antes de tudo o que precisa.',
+      working: 'Trabalhando…', waiting: 'Esperando você', idle: 'Pronto', ended: 'Encerrada', cost: '~{usd} (estimativa)', in: 'em {dir}',
+      allow: 'Permitir', always: 'Sempre permitir', deny: 'Recusar', seeAll: 'Ver tudo', wants: 'O Claude quer', question: 'O Claude pergunta', answer: 'Responder', other: 'Outra…', otherAsk: 'Sua resposta:',
+      missing: 'O Openmon não conseguiu abrir o Claude Code. Instale (npm install -g @anthropic-ai/claude-code), rode "claude" uma vez para entrar na sua conta e tente de novo.', exit: 'O Claude Code parou:', turn: 'O Claude não conseguiu terminar:',
+      present: 'Modo apresentação ligado: as conversas ficam escondidas.', sent: 'Enviada', queued: 'Ela recebe no próximo passo.', notSent: 'Não foi. Tente de novo.',
+      actions: 'Editar ações rápidas', actionsSub: 'Um clique envia o texto. Um texto que termina com ":" vai para a caixa para você completar. {clipboard} vira o que você copiou.', label: 'Nome', prompt: 'Texto', add: 'Adicionar', save: 'Salvar', cancel: 'Cancelar', reset: 'Voltar às de fábrica',
+      memory: 'Memória do assistente', memorySub: 'O CLAUDE.md da pasta do assistente: o que o Claude deve sempre saber sobre você. Ele lê no começo de cada conversa ali.', saved: 'Salvo',
+      schedule: 'Lembretes e tarefas', scheduleSub: 'Lembrete: o pet avisa você na hora. Tarefa: o Claude faz na hora, e o pet avisa quando terminar.', kind: 'O quê', remind: 'Lembrete', task: 'Tarefa para o Claude', textL: 'Texto', when: 'Quando',
+      inMin: 'Daqui a … minutos', at: 'Hoje às', daily: 'Todo dia às', weekdays: 'Dias úteis às', folderL: 'Pasta', close: 'Fechar', schedAdd: 'Agendar', schedNone: 'Nada agendado.', schedBad: 'Confira o texto e o horário.', remove: 'Tirar', next: 'próxima: {t}',
+      quick: [['O que tenho hoje?', 'O que tenho na agenda hoje, e algo urgente no meu e-mail? Use meus conectores; se eu não tiver nenhum, diga como conectar.'], ['Explicar o que copiei', '{clipboard}\n\nExplique isto de forma simples.'], ['Revisar mudanças', 'Revise as mudanças não commitadas desta pasta (git diff) e aponte os problemas, do mais grave ao menos grave.'], ['Rodar os testes', 'Rode os testes deste projeto e me diga o resultado em uma linha; se falharem, explique por quê.'], ['Escrever mensagem sobre:', 'Me ajude a escrever uma mensagem curta e simpática sobre:']],
+    },
+    es: {
+      title: 'Hablar con Claude', newChat: 'Nueva conversación', chats: 'Conversaciones', agents: 'Abiertas en otro lugar', noChats: 'Ninguna todavía.', noAgents: 'Ningún agente trabajando.',
+      send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aquí', rename: 'Renombrar', del: 'Borrar', delAsk: '¿Borrar esta conversación de Openmon? (Claude Code guarda su copia.)', renameAsk: 'Nuevo nombre:',
+      placeholder: 'Escribe a Claude… (Enter envía, Shift+Enter hace una línea nueva)', placeholderAgent: 'Escribe a esta conversación… (la recibe en su próximo paso)', cantWrite: 'Esta conversación no recibe mensajes de Openmon: ábrela de nuevo en Claude Code, o continúala aquí.',
+      attach: 'Adjuntar archivos', paste: 'Pegar lo que copiaste', pasted: 'Pegado', image: 'imagen', drop: 'Suelta aquí para adjuntar', folder: 'Carpeta:', pickFolder: 'Elegir carpeta…', assistant: 'Asistente (temas generales)',
+      welcome: '¿En qué te ayudo?', welcomeSub: 'Claude responde aquí, con tu propio Claude Code: puede leer y cambiar archivos de la carpeta que elijas, correr comandos (con tu OK) y usar tus conectores. Openmon te pregunta antes de todo lo que lo necesite.',
+      working: 'Trabajando…', waiting: 'Te espera', idle: 'Listo', ended: 'Terminada', cost: '~{usd} (estimación)', in: 'en {dir}',
+      allow: 'Permitir', always: 'Permitir siempre', deny: 'Rechazar', seeAll: 'Ver todo', wants: 'Claude quiere', question: 'Claude pregunta', answer: 'Responder', other: 'Otra…', otherAsk: 'Tu respuesta:',
+      missing: 'Openmon no pudo abrir Claude Code. Instálalo (npm install -g @anthropic-ai/claude-code), ejecuta "claude" una vez para entrar en tu cuenta e inténtalo de nuevo.', exit: 'Claude Code se detuvo:', turn: 'Claude no pudo terminar:',
+      present: 'Modo presentación activado: las conversaciones están ocultas.', sent: 'Enviada', queued: 'La recibe en su próximo paso.', notSent: 'No se envió. Inténtalo de nuevo.',
+      actions: 'Editar acciones rápidas', actionsSub: 'Un clic envía el texto. Un texto que termina en ":" va a la caja para que lo completes. {clipboard} se vuelve lo que copiaste.', label: 'Nombre', prompt: 'Texto', add: 'Agregar', save: 'Guardar', cancel: 'Cancelar', reset: 'Las de fábrica',
+      memory: 'Memoria del asistente', memorySub: 'El CLAUDE.md de la carpeta del asistente: lo que Claude debe saber siempre de ti. Lo lee al empezar cada conversación ahí.', saved: 'Guardado',
+      schedule: 'Recordatorios y tareas', scheduleSub: 'Recordatorio: la mascota te avisa a esa hora. Tarea: Claude la hace a esa hora, y la mascota te avisa cuando termina.', kind: 'Qué', remind: 'Recordatorio', task: 'Tarea para Claude', textL: 'Texto', when: 'Cuándo',
+      inMin: 'En … minutos', at: 'Hoy a las', daily: 'Todos los días a las', weekdays: 'Días hábiles a las', folderL: 'Carpeta', close: 'Cerrar', schedAdd: 'Programar', schedNone: 'Nada programado.', schedBad: 'Revisa el texto y la hora.', remove: 'Quitar', next: 'próxima: {t}',
+      quick: [['¿Qué tengo hoy?', '¿Qué tengo hoy en mi calendario, y algo urgente en mi correo? Usa mis conectores; si no tengo ninguno, dime cómo conectarlos.'], ['Explicar lo que copié', '{clipboard}\n\nExplica esto de forma simple.'], ['Revisar cambios', 'Revisa los cambios sin commit de esta carpeta (git diff) y señala los problemas, del más grave al menos grave.'], ['Correr las pruebas', 'Corre las pruebas de este proyecto y dime el resultado en una línea; si fallan, explica por qué.'], ['Escribir un mensaje sobre:', 'Ayúdame a escribir un mensaje corto y amable sobre:']],
+    },
+  };
+  const T = TEXT[lang] || TEXT.en;
+  const fill = (s, vars = {}) => String(s).replace(/\{(\w+)\}/g, (_, k) => (k in vars ? vars[k] : `{${k}}`));
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => Object.assign(document.createElement(tag), cls ? { className: cls } : {}, text !== undefined ? { textContent: text } : {});
+  const desk = window.openmonSettings;
+  const params = new URLSearchParams(location.search);
+
+  let key = null;
+  let list = { chats: [], agents: [], folders: [], assistantFolder: '', present: false, schedule: [] };
+  let state = null; // the pet's state: permissions, questions, live sessions
+  let view = params.get('id') ? { kind: 'chat', id: params.get('id') } : params.get('session') ? { kind: 'agent', session: params.get('session') } : { kind: 'new' };
+  let current = null; // the chat or agent conversation on screen
+  let draft = '';
+  let files = []; // { path, name } from the picker or a drop
+  let images = []; // { type, data } pasted
+  let config = {};
+  const questionPicks = {}; // question id -> the option picked for each part
+
+  // Fixed text.
+  document.title = `${T.title} · Openmon`;
+  $('new').textContent = `+ ${T.newChat}`;
+  $('h-chats').textContent = T.chats;
+  $('h-agents').textContent = T.agents;
+  $('send').textContent = T.send;
+  $('stop').textContent = T.stop;
+  $('continue').textContent = T.continueHere;
+  $('rename').textContent = T.rename;
+  $('delete').textContent = T.del;
+  $('attach').title = T.attach;
+  $('attach').setAttribute('aria-label', T.attach);
+  $('attach').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 12.4 19a5 5 0 0 1-7.1-7.1l8-8a3.4 3.4 0 0 1 4.8 4.8l-8 8a1.8 1.8 0 0 1-2.5-2.5L15 7"/></svg>';
+  $('paste').title = T.paste;
+  $('paste').setAttribute('aria-label', T.paste);
+  $('paste').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4.5" width="12" height="16" rx="2"/><path d="M9.5 4.5V3.5h5v1M9 10h6M9 14h4"/></svg>';
+  $('in-folder').textContent = T.folder;
+  $('drop').textContent = T.drop;
+  $('open-sched').textContent = `⏰ ${T.schedule}`;
+  $('open-memory').textContent = `🧠 ${T.memory}`;
+
+  // Electron has no prompt(): a small box of our own.
+  function ask(title, value = '') {
+    return new Promise((resolve) => {
+      $('ask-title').textContent = title;
+      $('ask-text').value = value;
+      $('ask-cancel').textContent = T.cancel;
+      const end = (v) => {
+        $('ask').close();
+        resolve(v);
+      };
+      $('ask-ok').onclick = () => end($('ask-text').value);
+      $('ask-cancel').onclick = () => end(null);
+      $('ask-text').onkeydown = (e) => e.key === 'Enter' && end($('ask-text').value);
+      $('ask').showModal();
+      $('ask-text').focus();
+    });
+  }
+
+  async function api(path, body) {
+    if (!key) key = desk && desk.contactKey ? await desk.contactKey().catch(() => null) : null;
+    const opts = body === undefined ? { headers: { 'X-Openmon-Key': key || '' } } : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Openmon-Key': key || '' }, body: JSON.stringify(body) };
+    const r = await fetch(path, opts).catch(() => null);
+    if (!r || !r.ok) return null;
+    return r.json().catch(() => null);
+  }
+
+  // ---- A light Markdown: paragraphs, lists, headings, code, bold, links.
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+  function inline(s) {
+    return esc(s)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  }
+  function markdown(text) {
+    const out = [];
+    const parts = String(text).split(/```[^\n]*\n?/);
+    parts.forEach((part, i) => {
+      if (i % 2) return out.push(`<pre><code>${esc(part.replace(/\n$/, ''))}</code></pre>`);
+      let list = null;
+      const flush = () => {
+        if (list) out.push(`<${list.tag}>${list.items.map((x) => `<li>${inline(x)}</li>`).join('')}</${list.tag}>`);
+        list = null;
+      };
+      for (const block of part.split(/\n{2,}/)) {
+        for (const line of block.split('\n')) {
+          const ul = /^\s*[-*•]\s+(.*)$/.exec(line);
+          const ol = /^\s*\d+[.)]\s+(.*)$/.exec(line);
+          const h = /^#{1,4}\s+(.*)$/.exec(line);
+          if (ul || ol) {
+            const tag = ul ? 'ul' : 'ol';
+            if (!list || list.tag !== tag) {
+              flush();
+              list = { tag, items: [] };
+            }
+            list.items.push((ul || ol)[1]);
+          } else if (h) {
+            flush();
+            out.push(`<h3>${inline(h[1])}</h3>`);
+          } else if (line.trim()) {
+            flush();
+            out.push(`<p>${inline(line)}</p>`);
+          }
+        }
+        flush();
+      }
+    });
+    return out.join('');
+  }
+
+  // ---- Sidebar
+  function statusOf(c) {
+    if (c.status === 'working') return 'working';
+    if (c.status === 'waiting') return 'waiting';
+    return 'idle';
+  }
+  function renderSide() {
+    const chats = $('chats');
+    chats.textContent = '';
+    if (!list.chats.length) chats.append(el('p', 'empty', T.noChats));
+    for (const c of list.chats) {
+      const b = el('button', 'item');
+      b.type = 'button';
+      b.setAttribute('aria-current', String(view.kind === 'chat' && view.id === c.id));
+      b.append(el('i', `dot ${statusOf(c)}`), el('b', '', c.title), el('small', '', `${c.cwd.split(/[\\/]/).pop()} · ${new Date(c.updatedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`));
+      b.onclick = () => go({ kind: 'chat', id: c.id });
+      chats.append(b);
+    }
+    const agents = $('agents');
+    agents.textContent = '';
+    if (!list.agents.length) agents.append(el('p', 'empty', T.noAgents));
+    for (const a of list.agents) {
+      const b = el('button', 'item');
+      b.type = 'button';
+      b.setAttribute('aria-current', String(view.kind === 'agent' && view.session === a.session));
+      b.append(el('i', `dot ${a.state}`), el('b', '', a.label || a.session), el('small', '', trDetail(a.detail) || ''));
+      b.onclick = () => go({ kind: 'agent', session: a.session });
+      agents.append(b);
+    }
+  }
+
+  async function refreshList() {
+    const r = await api('/api/chats');
+    if (r) list = r;
+    renderSide();
+    if (view.kind === 'new') renderFolders();
+  }
+
+  // ---- Folder for a new conversation
+  function renderFolders() {
+    const sel = $('folder');
+    const keep = sel.value;
+    sel.textContent = '';
+    const add = (value, label) => sel.append(Object.assign(el('option', '', label), { value }));
+    add(list.assistantFolder, `🗂 ${T.assistant}`);
+    for (const f of list.folders) if (f !== list.assistantFolder) add(f, f);
+    add('__pick', T.pickFolder);
+    if (keep && [...sel.options].some((o) => o.value === keep)) sel.value = keep;
+  }
+  $('folder').onchange = async () => {
+    if ($('folder').value !== '__pick') return;
+    const dir = desk && desk.call ? await desk.call('pick-folder').catch(() => null) : null;
+    if (dir) {
+      if (![...$('folder').options].some((o) => o.value === dir)) $('folder').insertBefore(Object.assign(el('option', '', dir), { value: dir }), $('folder').lastChild);
+      $('folder').value = dir;
+    } else $('folder').value = list.assistantFolder;
+  };
+
+  // ---- The conversation on screen
+  function go(next) {
+    view = next;
+    document.body.classList.remove('side');
+    draft = '';
+    current = null;
+    history.replaceState(null, '', next.kind === 'chat' ? `?id=${next.id}` : next.kind === 'agent' ? `?session=${encodeURIComponent(next.session)}` : '?new=1');
+    load();
+    renderSide();
+  }
+
+  async function load() {
+    if (view.kind === 'chat') current = await api(`/api/chat?id=${encodeURIComponent(view.id)}`);
+    else if (view.kind === 'agent') current = await api(`/api/chat/agent?session=${encodeURIComponent(view.session)}`);
+    else current = null;
+    if (current && current.gone) return go({ kind: 'new' });
+    if (current && current.draft) draft = current.draft;
+    render();
+  }
+
+  function msgNode(m) {
+    if (m.role === 'assistant') {
+      const d = el('div', 'msg assistant');
+      d.innerHTML = markdown(m.text);
+      return d;
+    }
+    if (m.role === 'error') return el('div', 'msg error', `${m.code === 'missing' ? T.missing : m.code === 'turn' ? T.turn : T.exit}${m.code === 'missing' ? '' : `\n${m.text || ''}`}`);
+    const d = el('div', `msg ${m.role === 'user' ? 'user' : m.role === 'tool' ? 'tool' : 'notice'}`, m.text || '');
+    if (m.images) d.append(el('span', 'img', ` 🖼 ${m.images} ${T.image}`));
+    return d;
+  }
+
+  function cards() {
+    if (!state || !current) return [];
+    const mine = (x) => (view.kind === 'chat' ? x.chat === current.id : x.session === current.session);
+    const out = [];
+    for (const p of state.permissions || []) {
+      if (!mine(p)) continue;
+      const c = el('div', `card${/rm -rf|--force|reset --hard|DROP TABLE|\| *sh\b/i.test(p.detail || '') ? ' danger' : ''}`);
+      c.append(el('div', 'k', T.wants), el('h3', '', trDetail(p.detail) || ''));
+      if (p.preview) {
+        const pre = el('pre', 'diff');
+        for (const l of p.preview.lines) pre.append(el('code', l.t === '-' ? 'del' : 'add', `${l.t} ${l.s}`));
+        c.append(pre);
+      }
+      const row = el('div', 'row');
+      const btn = (label, cls, fn) => {
+        const b = el('button', `btn sm ${cls}`, label);
+        b.type = 'button';
+        b.onclick = fn;
+        row.append(b);
+      };
+      const decide = (decision) => fetch('/api/permission/decide', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id, decision }) });
+      btn(T.allow, 'primary', () => decide('allow'));
+      if (p.canAlways) btn(T.always, '', () => decide('always'));
+      btn(T.deny, '', () => decide('deny'));
+      if (p.preview && desk && desk.call) btn(T.seeAll, 'quiet', () => desk.call('open-request', p.id));
+      c.append(row);
+      out.push(c);
+    }
+    for (const q of state.questions || []) {
+      if (!mine(q)) continue;
+      const picks = (questionPicks[q.id] = questionPicks[q.id] || []);
+      const submit = () => {
+        if (q.list.every((_, j) => picks[j])) api('/api/question/answer', { id: q.id, answers: picks.map((x) => [x]) });
+        else render();
+      };
+      for (const [i, item] of q.list.entries()) {
+        const c = el('div', 'card');
+        c.append(el('div', 'k', `${T.question}${item.header ? ` · ${item.header}` : ''}`), el('h3', '', item.question));
+        const row = el('div', 'row');
+        for (const o of item.options) {
+          const b = el('button', `btn sm${picks[i] === o.label ? ' primary' : ''}`, o.shown || o.label);
+          b.type = 'button';
+          b.title = o.description || '';
+          b.onclick = () => {
+            picks[i] = o.label;
+            submit();
+          };
+          row.append(b);
+        }
+        const other = el('button', 'btn sm quiet', T.other);
+        other.type = 'button';
+        other.onclick = async () => {
+          const t = await ask(T.otherAsk);
+          if (t && t.trim()) {
+            picks[i] = t.trim();
+            submit();
+          }
+        };
+        row.append(other);
+        c.append(row);
+        out.push(c);
+      }
+    }
+    return out;
+  }
+
+  function render() {
+    const log = $('log');
+    const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+    log.textContent = '';
+    const isChat = view.kind === 'chat' && current;
+    const isAgent = view.kind === 'agent' && current;
+    $('newbar').hidden = view.kind !== 'new';
+    $('stop').hidden = !(isChat && current.status !== 'idle');
+    $('continue').hidden = !isAgent;
+    $('rename').hidden = !isChat;
+    $('delete').hidden = !isChat;
+    $('attach').hidden = isAgent;
+    $('paste').hidden = false;
+    $('text').disabled = false;
+    $('send').disabled = false;
+    $('chips').hidden = false;
+    if (view.kind === 'new' || !current) {
+      $('title').textContent = T.newChat;
+      $('sub').textContent = '';
+      const w = el('div', 'welcome');
+      w.append(el('h2', '', T.welcome), el('p', '', T.welcomeSub));
+      log.append(w);
+      renderFolders();
+      $('text').placeholder = T.placeholder;
+      return;
+    }
+    if (isChat) {
+      $('title').textContent = current.title;
+      const st = current.status === 'working' ? T.working : current.status === 'waiting' ? T.waiting : T.idle;
+      $('sub').textContent = [st, fill(T.in, { dir: current.cwd }), current.costUsd ? fill(T.cost, { usd: `$${current.costUsd.toFixed(current.costUsd < 1 ? 3 : 2)}` }) : ''].filter(Boolean).join(' · ');
+      $('text').placeholder = T.placeholder;
+    } else {
+      $('title').textContent = current.label;
+      $('sub').textContent = [current.state === 'working' ? T.working : current.state === 'attention' ? T.waiting : current.state === 'ended' ? T.ended : T.idle, current.cwd ? fill(T.in, { dir: current.cwd }) : ''].filter(Boolean).join(' · ');
+      $('text').placeholder = current.canSend ? T.placeholderAgent : T.cantWrite;
+    }
+    // A conversation elsewhere that cannot hear Openmon: "Continue here" instead.
+    const mute = Boolean(isAgent && !current.canSend);
+    $('text').disabled = mute;
+    $('send').disabled = mute;
+    $('chips').hidden = mute;
+    if (list.present || current.present) {
+      log.append(el('div', 'msg notice', T.present));
+      return;
+    }
+    for (const m of current.messages || []) log.append(msgNode(m));
+    if (draft) {
+      const d = el('div', 'msg assistant live');
+      d.innerHTML = markdown(draft);
+      log.append(d);
+    } else if (isChat && current.status === 'working') log.append(el('div', 'msg assistant live thinking', ''));
+    for (const c of cards()) log.append(c);
+    if (atBottom || !render.once) log.scrollTop = log.scrollHeight;
+    render.once = true;
+  }
+
+  // ---- Quick actions
+  function quickActions() {
+    const own = Array.isArray(config.quickActions) ? config.quickActions.map((a) => [a.label, a.prompt]) : null;
+    return own || T.quick;
+  }
+  function renderChips() {
+    const box = $('chips');
+    box.textContent = '';
+    for (const [label, text] of quickActions()) {
+      const b = el('button', 'chip', label);
+      b.type = 'button';
+      b.onclick = () => useAction(text);
+      box.append(b);
+    }
+    const edit = el('button', 'chip', '✎');
+    edit.type = 'button';
+    edit.title = T.actions;
+    edit.setAttribute('aria-label', T.actions);
+    edit.onclick = openActions;
+    box.append(edit);
+  }
+  async function useAction(text) {
+    let t = text;
+    if (t.includes('{clipboard}')) {
+      const clip = desk && desk.call ? await desk.call('clipboard').catch(() => null) : null;
+      t = t.replace('{clipboard}', (clip && clip.text) || '');
+      if (clip && clip.image) images.push(clip.image);
+      renderAttached();
+    }
+    if (/[:…]\s*$/.test(t)) {
+      $('text').value = `${t} `;
+      $('text').focus();
+      grow();
+      return;
+    }
+    $('text').value = t;
+    send();
+  }
+
+  function openActions() {
+    const rows = $('a-rows');
+    rows.textContent = '';
+    const addRow = (label = '', prompt = '') => {
+      const r = el('div', 'rowline');
+      const l = Object.assign(el('input', 'input'), { value: label, placeholder: T.label, maxLength: 40 });
+      l.style.maxWidth = '160px';
+      const p = Object.assign(el('input', 'input'), { value: prompt, placeholder: T.prompt, maxLength: 2000 });
+      const x = el('button', 'icon-btn', '✕');
+      x.type = 'button';
+      x.setAttribute('aria-label', T.remove);
+      x.onclick = () => r.remove();
+      r.append(l, p, x);
+      rows.append(r);
+    };
+    for (const [l, p] of quickActions()) addRow(l, p);
+    $('a-add').onclick = () => addRow();
+    $('a-reset').onclick = async () => {
+      config = (await api('/api/assistant/config', { quickActions: null })) || config;
+      $('actions').close();
+      renderChips();
+    };
+    $('a-save').onclick = async () => {
+      const quick = [...rows.children].map((r) => ({ label: r.children[0].value, prompt: r.children[1].value })).filter((a) => a.label.trim() && a.prompt.trim());
+      config = (await api('/api/assistant/config', { quickActions: quick })) || config;
+      $('actions').close();
+      renderChips();
+    };
+    $('actions').showModal();
+  }
+  $('a-title').textContent = T.actions;
+  $('a-sub').textContent = T.actionsSub;
+  $('a-add').textContent = T.add;
+  $('a-save').textContent = T.save;
+  $('a-cancel').textContent = T.cancel;
+  $('a-reset').textContent = T.reset;
+  $('a-cancel').onclick = () => $('actions').close();
+
+  // ---- Attachments
+  function renderAttached() {
+    const box = $('attached');
+    box.textContent = '';
+    const chip = (label, drop) => {
+      const c = el('span', 'chip', label);
+      const x = el('button', '', '✕');
+      x.type = 'button';
+      x.setAttribute('aria-label', T.remove);
+      x.onclick = () => {
+        drop();
+        renderAttached();
+      };
+      c.append(x);
+      box.append(c);
+    };
+    files.forEach((f, i) => chip(`📎 ${f.name}`, () => files.splice(i, 1)));
+    images.forEach((_, i) => chip(`🖼 ${T.image} ${i + 1}`, () => images.splice(i, 1)));
+  }
+  function addPaths(paths) {
+    for (const p of paths || []) if (p && !files.some((f) => f.path === p)) files.push({ path: p, name: p.split(/[\\/]/).pop() });
+    renderAttached();
+  }
+  $('attach').onclick = async () => addPaths(desk && desk.call ? await desk.call('pick-files').catch(() => []) : []);
+  $('paste').onclick = async () => {
+    const clip = desk && desk.call ? await desk.call('clipboard').catch(() => null) : null;
+    if (!clip) return;
+    if (clip.image) images.push(clip.image);
+    if (clip.text) {
+      const t = $('text');
+      t.value = t.value ? `${t.value}\n${clip.text}` : clip.text;
+      grow();
+    }
+    renderAttached();
+    $('text').focus();
+  };
+  let dragDepth = 0;
+  window.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    dragDepth++;
+    if (view.kind !== 'agent') $('drop').hidden = false;
+  });
+  window.addEventListener('dragleave', () => {
+    if (--dragDepth <= 0) $('drop').hidden = true;
+  });
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragDepth = 0;
+    $('drop').hidden = true;
+    if (view.kind === 'agent' || !desk || !desk.filePath) return;
+    addPaths([...e.dataTransfer.files].map((f) => desk.filePath(f)).filter(Boolean));
+  });
+  window.addEventListener('paste', (e) => {
+    const item = [...(e.clipboardData ? e.clipboardData.items : [])].find((i) => i.type.startsWith('image/'));
+    if (!item) return;
+    e.preventDefault();
+    const reader = new FileReader();
+    reader.onload = () => {
+      images.push({ type: item.type, data: String(reader.result).split(',')[1] });
+      renderAttached();
+    };
+    reader.readAsDataURL(item.getAsFile());
+  });
+
+  // ---- Sending
+  function grow() {
+    const t = $('text');
+    t.style.height = 'auto';
+    t.style.height = `${Math.min(t.scrollHeight, window.innerHeight * 0.4)}px`;
+  }
+  $('text').addEventListener('input', grow);
+  $('text').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  async function send() {
+    const text = $('text').value.trim();
+    if (!text && !files.length && !images.length) return;
+    $('send').disabled = true;
+    const payload = { text, files: files.map((f) => f.path), images };
+    let r = null;
+    if (view.kind === 'new') {
+      const cwd = $('folder').value && $('folder').value !== '__pick' ? $('folder').value : '';
+      r = await api('/api/chat/new', { ...payload, cwd });
+      if (r && r.id) go({ kind: 'chat', id: r.id });
+    } else if (view.kind === 'chat') {
+      r = await api('/api/chat/send', { ...payload, id: view.id });
+    } else if (view.kind === 'agent') {
+      if (!current || !current.canSend) {
+        $('send').disabled = false;
+        return;
+      }
+      r = await api('/api/inbox/send', { session: view.session, text });
+      if (r && r.ok) {
+        current.messages = [...(current.messages || []), { role: 'user', text }];
+        render();
+        flash(r.delivered ? T.sent : T.queued);
+      }
+    }
+    $('send').disabled = false;
+    if (!r || r.ok === false) {
+      if (r && r.id) go({ kind: 'chat', id: r.id });
+      return flash(T.notSent);
+    }
+    $('text').value = '';
+    files = [];
+    images = [];
+    renderAttached();
+    grow();
+    refreshList();
+  }
+  $('send').onclick = send;
+  function flash(text) {
+    $('sub').textContent = text;
+  }
+
+  // ---- Header buttons
+  $('stop').onclick = () => api('/api/chat/stop', { id: view.id });
+  $('continue').onclick = async () => {
+    const r = await api('/api/chat/continue', { session: view.session });
+    if (r && r.id) go({ kind: 'chat', id: r.id });
+  };
+  $('rename').onclick = async () => {
+    const t = await ask(T.renameAsk, current ? current.title : '');
+    if (t && t.trim()) {
+      await api('/api/chat/rename', { id: view.id, title: t });
+      await refreshList();
+      load();
+    }
+  };
+  $('delete').onclick = async () => {
+    if (!confirm(T.delAsk)) return;
+    await api('/api/chat/delete', { id: view.id });
+    await refreshList();
+    go({ kind: 'new' });
+  };
+  $('new').onclick = () => go({ kind: 'new' });
+  $('menu').onclick = () => document.body.classList.toggle('side');
+
+  // ---- Memory
+  $('m-title').textContent = T.memory;
+  $('m-sub').textContent = T.memorySub;
+  $('m-save').textContent = T.save;
+  $('m-cancel').textContent = T.cancel;
+  $('m-cancel').onclick = () => $('memory').close();
+  $('open-memory').onclick = async () => {
+    const m = await api('/api/assistant/memory');
+    $('m-text').value = (m && m.text) || '';
+    $('m-sub').textContent = `${T.memorySub} (${(m && m.path) || ''})`;
+    $('memory').showModal();
+  };
+  $('m-save').onclick = async () => {
+    const r = await api('/api/assistant/memory', { text: $('m-text').value });
+    if (r && r.ok) $('memory').close();
+  };
+
+  // ---- Reminders and tasks
+  $('s-title').textContent = T.schedule;
+  $('s-sub').textContent = T.scheduleSub;
+  $('s-kind-l').textContent = T.kind;
+  $('s-text-l').textContent = T.textL;
+  $('s-when-l').textContent = T.when;
+  $('s-folder-t').textContent = T.folderL;
+  $('s-close').textContent = T.close;
+  $('s-add').textContent = T.schedAdd;
+  for (const [v, l] of [['remind', T.remind], ['task', T.task]]) $('s-kind').append(Object.assign(el('option', '', l), { value: v }));
+  for (const [v, l] of [['in', T.inMin], ['at', T.at], ['daily', T.daily], ['weekdays', T.weekdays]]) $('s-when').append(Object.assign(el('option', '', l), { value: v }));
+  function schedForm() {
+    const task = $('s-kind').value === 'task';
+    $('s-folder-l').hidden = !task;
+    const inMin = $('s-when').value === 'in';
+    $('s-min').hidden = !inMin;
+    $('s-time').hidden = inMin;
+  }
+  $('s-kind').onchange = schedForm;
+  $('s-when').onchange = schedForm;
+  async function renderSched() {
+    const r = await api('/api/schedule');
+    const ul = $('s-list');
+    ul.textContent = '';
+    const items = (r && r.items) || [];
+    if (!items.length) ul.append(el('li', '', T.schedNone));
+    for (const i of items) {
+      const li = el('li');
+      const s = el('span', '', `${i.kind === 'task' ? '🤖' : '⏰'} ${i.text}`);
+      s.append(el('br'), el('small', '', fill(T.next, { t: new Date(i.next).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) }) + (i.repeat ? ` · ${i.repeat === 'daily' ? T.daily : T.weekdays} ${i.time}` : '')));
+      const x = el('button', 'btn sm quiet', T.remove);
+      x.type = 'button';
+      x.onclick = async () => {
+        await api('/api/schedule/remove', { id: i.id });
+        renderSched();
+      };
+      li.append(s, x);
+      ul.append(li);
+    }
+  }
+  $('open-sched').onclick = () => {
+    const sel = $('s-folder');
+    sel.textContent = '';
+    sel.append(Object.assign(el('option', '', `🗂 ${T.assistant}`), { value: '' }));
+    for (const f of list.folders) if (f !== list.assistantFolder) sel.append(Object.assign(el('option', '', f), { value: f }));
+    $('s-status').textContent = '';
+    schedForm();
+    renderSched();
+    $('sched').showModal();
+  };
+  $('s-close').onclick = () => $('sched').close();
+  $('s-add').onclick = async () => {
+    const type = $('s-when').value;
+    const when = type === 'in' ? { type, minutes: Number($('s-min').value) } : { type, time: $('s-time').value };
+    const r = await api('/api/schedule/add', { kind: $('s-kind').value, text: $('s-text').value, cwd: $('s-folder').value, when });
+    if (!r || !r.ok) return ($('s-status').textContent = T.schedBad);
+    $('s-text').value = '';
+    $('s-status').textContent = T.saved;
+    renderSched();
+  };
+
+  // ---- Live: the pet's state (requests, agents) and the chats' stream.
+  function connect() {
+    const s = new EventSource('/stream');
+    s.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.type !== 'state') return;
+      const before = JSON.stringify([state && state.permissions, state && state.questions]);
+      state = m;
+      config = m.config || config;
+      if (JSON.stringify([m.permissions, m.questions]) !== before) render();
+    };
+  }
+  async function connectChats() {
+    if (!key) key = desk && desk.contactKey ? await desk.contactKey().catch(() => null) : null;
+    if (!key) return;
+    const s = new EventSource(`/api/chat/stream?key=${encodeURIComponent(key)}`);
+    s.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.type !== 'chat') return;
+      const mine = view.kind === 'chat' && current && m.id === current.id;
+      if (m.op === 'list' || m.op === 'status') refreshList();
+      if (!mine) return;
+      if (m.op === 'delta') {
+        draft += m.text;
+        const live = document.querySelector('.msg.live');
+        if (live) {
+          live.innerHTML = markdown(draft);
+          const log = $('log');
+          if (log.scrollHeight - log.scrollTop - log.clientHeight < 120) log.scrollTop = log.scrollHeight;
+        } else render();
+      } else if (m.op === 'message') {
+        if (m.message.role === 'assistant') draft = '';
+        current.messages = [...(current.messages || []), m.message];
+        render();
+      } else if (m.op === 'status') {
+        current.status = m.status;
+        current.costUsd = m.costUsd;
+        if (m.status === 'idle') draft = '';
+        render();
+      }
+    };
+  }
+  // A conversation open elsewhere is read from its file: every 2 s.
+  setInterval(async () => {
+    if (view.kind !== 'agent' || document.hidden) return;
+    const r = await api(`/api/chat/agent?session=${encodeURIComponent(view.session)}`);
+    if (!r) return;
+    const changed = !current || JSON.stringify(r.messages) !== JSON.stringify(current.messages) || r.state !== current.state;
+    current = r;
+    if (changed) render();
+  }, 2000);
+  setInterval(() => !document.hidden && refreshList(), 5000);
+
+  (async () => {
+    renderChips();
+    connect();
+    await connectChats();
+    await refreshList();
+    await load();
+    if (desk && desk.call) {
+      const s = await fetch('/api/state').then((r) => r.json()).catch(() => null);
+      if (s) {
+        state = s;
+        config = s.config || {};
+        renderChips();
+        render();
+      }
+    }
+    $('text').focus();
+  })();
+</script>
+</body>
+</html>

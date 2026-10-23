@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('openmonDesktop', {
   openPage: (page) => ipcRenderer.send('open-page', String(page)),
   openRequest: (id) => ipcRenderer.send('open-request', String(id)),
   openUpdate: () => ipcRenderer.send('open-update'),
+  // Talk to Claude: "?id=<chat>", "?session=<agent session>", "?new=1" or nothing.
+  openChat: (query) => ipcRenderer.send('open-chat', String(query || '')),
   openName: () => ipcRenderer.send('open-name'),
   installHooks: () => ipcRenderer.send('install-hooks'),
   // "Write to the agent": kind is message, question or deny; ref the session or request id.

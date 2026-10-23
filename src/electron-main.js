@@ -16,6 +16,10 @@ const installer = require('./install');
 // Menu and notification text follow the OS language (English or Portuguese).
 const PT = {
   'Open card': 'Abrir card',
+  'Talk to Claude': 'Conversar com o Claude',
+  'Claude answered': 'O Claude respondeu',
+  'Reminder': 'Lembrete',
+  'Scheduled task started': 'Tarefa agendada começou',
   'Nickname…': 'Apelido…',
   'Play demo': 'Ver demonstração',
   'Show pet': 'Mostrar pet',
@@ -84,6 +88,10 @@ const PT = {
 };
 // Spanish menu and notification text.
 const ES_TEXT = {
+  "Talk to Claude": "Hablar con Claude",
+  "Claude answered": "Claude respondió",
+  "Reminder": "Recordatorio",
+  "Scheduled task started": "Empezó una tarea programada",
   Lv: "Nv",
   main: "principal",
   "Make it the main one": "Hacerlo el principal",
@@ -373,6 +381,7 @@ function menuTemplate() {
       ];
   return [
     ...team,
+    { label: L('Talk to Claude'), ...(chatShortcut ? { accelerator: chatShortcut, registerAccelerator: false } : {}), click: () => openChatWindow() },
     {
       label: L('Pages'),
       submenu: [
@@ -592,6 +601,72 @@ function openTalkWindow(ask) {
   talkWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   talkWin.once('ready-to-show', () => bringToFront(talkWin));
   talkWin.loadURL(`http://127.0.0.1:${port}/talk.html?kind=${kind}&ref=${encodeURIComponent(ref)}`);
+}
+
+// Talk to Claude: Openmon's own conversations, and the ones open elsewhere.
+// A normal window (it takes the keyboard), one at a time.
+let chatWin = null;
+let chatShortcut = null;
+function openChatWindow(query = '') {
+  const q = typeof query === 'string' && /^\?(id=[a-f0-9]{16}|session=[\w.-]{1,120}|new=1)?$/.test(query) ? query : '';
+  const url = `http://127.0.0.1:${port}/chat.html${q}`;
+  if (chatWin && !chatWin.isDestroyed()) {
+    if (q) chatWin.loadURL(url);
+    return bringToFront(chatWin);
+  }
+  chatWin = new BrowserWindow({
+    width: 980,
+    height: 760,
+    minWidth: 380,
+    minHeight: 420,
+    title: L('Talk to Claude'),
+    show: false,
+    autoHideMenuBar: true,
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#15101a' : '#f3eee4',
+    icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.js') },
+  });
+  chatWin.on('focus', () => petsOnTop(false));
+  chatWin.on('blur', () => petsOnTop(true));
+  chatWin.on('closed', () => {
+    chatWin = null;
+    petsOnTop(true, true);
+  });
+  // Links in an answer open in your browser; the window never leaves the chat.
+  chatWin.webContents.setWindowOpenHandler(({ url: target }) => {
+    if (/^https?:\/\//.test(target) && !target.startsWith(`http://127.0.0.1:${port}/`)) shell.openExternal(target);
+    return { action: 'deny' };
+  });
+  chatWin.webContents.on('will-navigate', (e, target) => {
+    if (!target.startsWith(`http://127.0.0.1:${port}/chat.html`)) e.preventDefault();
+  });
+  chatWin.once('ready-to-show', () => bringToFront(chatWin));
+  chatWin.loadURL(url);
+}
+
+// What only the desktop can do for the chat page: pick a folder or files,
+// read the clipboard, open a request whole.
+async function chatCommand(cmd, arg) {
+  switch (cmd) {
+    case 'pick-folder': {
+      const r = await dialog.showOpenDialog(chatWin, { properties: ['openDirectory'] });
+      return r.canceled ? null : r.filePaths[0] || null;
+    }
+    case 'pick-files': {
+      const r = await dialog.showOpenDialog(chatWin, { properties: ['openFile', 'multiSelections'] });
+      return r.canceled ? [] : r.filePaths.slice(0, 10);
+    }
+    case 'clipboard': {
+      const img = clipboard.readImage();
+      const png = img && !img.isEmpty() ? img.toPNG() : null;
+      return { text: clipboard.readText().slice(0, 20000), image: png && png.length <= 5 * 1024 * 1024 ? { type: 'image/png', data: png.toString('base64') } : null };
+    }
+    case 'open-request':
+      if (/^[a-f0-9]{24}$/.test(String(arg))) openAppWindow('request', `?id=${arg}`);
+      return true;
+    default:
+      return null;
+  }
 }
 
 function refreshTray() {
@@ -890,10 +965,12 @@ function wireIpc() {
   ipcMain.on('open-powers', openPowersWindow);
   ipcMain.on('open-name', () => openNameWindow());
   ipcMain.on('open-talk', (_e, ask) => openTalkWindow(ask));
+  // The pet's "Talk to Claude", "Message" and a chat's bubble.
+  ipcMain.on('open-chat', (_e, query) => openChatWindow(String(query || '')));
   // The key for free text to the agent: only for the pet windows and the
   // "write to the agent" window, never for other pages.
   ipcMain.handle('contact-key', (e) => {
-    const ours = [win, talkWin, ...companionWins.values()].some((w) => w && !w.isDestroyed() && e.sender === w.webContents);
+    const ours = [win, talkWin, chatWin, ...companionWins.values()].some((w) => w && !w.isDestroyed() && e.sender === w.webContents);
     return ours ? daemon.contactKey() : null;
   });
   // The "connect Claude Code" bubble: same as the menu item.
@@ -908,6 +985,7 @@ function wireIpc() {
   });
   // Settings page actions that need the desktop (only from the app window).
   ipcMain.handle('settings', async (e, cmd, arg) => {
+    if (chatWin && !chatWin.isDestroyed() && e.sender === chatWin.webContents) return chatCommand(String(cmd), arg);
     if (!powersWin || powersWin.isDestroyed() || e.sender !== powersWin.webContents) return null;
     const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled(), agents: installer.otherAgents(), aider: installer.aiderLine(), rules: installer.rulesStatus() });
     switch (cmd) {
@@ -1078,7 +1156,8 @@ function watchPermissions(state) {
   if (!state.config.notify || state.config.quiet || state.demo || !Notification.isSupported()) return;
   const waitMs = (state.config.answerWaitSec || 25) * 1000;
   for (const p of pending) {
-    if (permissionNotes.has(p.id) || waitMs - (p.until - Date.now()) < PERMISSION_NOTIFY_MS) continue;
+    const waited = p.since ? Date.now() - p.since : waitMs - (p.until - Date.now());
+    if (permissionNotes.has(p.id) || waited < PERMISSION_NOTIFY_MS) continue;
     const n = new Notification({
       title: L('{label} asks for permission', { label: p.label || 'Agent' }),
       // "Allow Bash: npm publish?" reads as "Bash: npm publish".
@@ -1144,6 +1223,24 @@ app.whenReady().then(async () => {
   // Hooks from an older version learn the agent's questions and messages.
   daemon.upgradeHooks();
   daemon.bus.on('shutdown', () => app.quit());
+  // A chat answered while you were elsewhere; a reminder is due.
+  const notify = (title, body, click) => {
+    const c = daemon.config();
+    if (!c.notify || c.quiet || !Notification.isSupported()) return;
+    const n = new Notification({ title, body: String(body || '').slice(0, 200), silent: true });
+    if (click) n.on('click', click);
+    n.show();
+  };
+  daemon.bus.on('chat-done', (d) => {
+    if (chatWin && !chatWin.isDestroyed() && chatWin.isFocused()) return;
+    notify(L('Claude answered'), daemon.config().present ? '' : [d.title, d.line].filter(Boolean).join(': '), () => openChatWindow(`?id=${d.id}`));
+  });
+  daemon.bus.on('reminder', (item) => {
+    if (!Notification.isSupported()) return;
+    const n = new Notification({ title: `⏰ ${L('Reminder')}`, body: item.text.slice(0, 200) });
+    n.show();
+  });
+  daemon.bus.on('task-started', (item) => notify(L('Scheduled task started'), item.text, item.chat ? () => openChatWindow(`?id=${item.chat}`) : null));
   daemon.bus.on('lang', (l) => {
     lang = l;
     if (win && !win.isDestroyed()) win.loadURL(petUrl());
@@ -1187,6 +1284,10 @@ app.whenReady().then(async () => {
       // only that one: never a request you have not seen).
       globalShortcut.register('CommandOrControl+Alt+Y', () => win && win.webContents.send('command', 'perm-allow'));
       globalShortcut.register('CommandOrControl+Alt+N', () => win && win.webContents.send('command', 'perm-deny'));
+      // Talk to Claude from anywhere.
+      // (Ctrl+Alt+Space is Claude's own app.) The first one free wins.
+      chatShortcut = ['CommandOrControl+Alt+C', 'CommandOrControl+Alt+K'].find((k) => globalShortcut.register(k, () => openChatWindow('?new=1'))) || null;
+      if (!chatShortcut) logError('chat shortcuts Ctrl+Alt+C and Ctrl+Alt+K are taken by other programs');
     } catch {}
   }
   applyScale(daemon.config().scale || 1);

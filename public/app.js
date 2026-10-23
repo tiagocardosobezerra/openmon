@@ -109,7 +109,13 @@
   const canTalk = Boolean(desktop && desktop.openTalk && desktop.contactKey);
   let contactKey = null;
   if (canTalk) desktop.contactKey().then((k) => (contactKey = k)).catch(() => {});
+  // Agent sessions that are Openmon's own chats: session -> chat id.
+  let chatSessions = {};
+  const canChat = Boolean(desktop && desktop.openChat);
+  const chatQuery = (session) => (chatSessions[session] ? `?id=${chatSessions[session]}` : `?session=${encodeURIComponent(session)}`);
   function talk(kind, ref) {
+    // A message to a conversation: the chat window, with the whole conversation.
+    if (kind === 'message' && canChat && ref) return desktop.openChat(chatQuery(ref));
     if (canTalk && ref) desktop.openTalk(kind, ref);
   }
   const sessionLabel = (id) => ((live.sessions || []).find((s) => s.id === id) || {}).label || '';
@@ -1012,7 +1018,7 @@
       const cls = danger ? 'attention danger' : long ? 'attention long' : 'attention';
       if (pending) {
         const left = Math.max(0, Math.ceil((pending.until - Date.now()) / 1000));
-        return setBubble(cls, title, trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: danger ? tr('danger.note') : tr('perm.note', { s: left }), id: `permission|${pending.id}` });
+        return setBubble(cls, title, trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: danger ? tr('danger.note') : pending.chat ? tr('chat.permNote') : tr('perm.note', { s: left }), id: `permission|${pending.id}` });
       }
       return setBubble(cls, title, trDetail(f.detail), { ...answer, eyebrow, buttons: write });
     }
@@ -1442,6 +1448,7 @@
     if (msg.demo && !demo) pushToast(tr('demo'), tr('demo.sub'), 3000);
     demo = msg.demo;
     live = msg.live;
+    chatSessions = msg.chatSessions || {};
     // Focus just ended: say so, and suggest a short break.
     const wasFocus = Boolean(config && config.focus);
     config = msg.config || config;
@@ -1618,6 +1625,22 @@
           }
           break;
         }
+        // Openmon's own chats and the schedule.
+        case 'chat-done':
+          if (!companionId) pushToast(`💬 ${e.title || tr('chat.done')}`, e.line || '', 6000, 'done');
+          break;
+        case 'reminder':
+          if (!companionId) {
+            pushToast(`⏰ ${tr('reminder.title')}`, e.text, 12000, 'say');
+            play('attention');
+          }
+          break;
+        case 'task-started':
+          if (!companionId) pushToast(tr('task.started'), e.text, 5000);
+          break;
+        case 'phone-reply':
+          if (!companionId) pushToast(tr('phone.reply'), '', 3500, 'done');
+          break;
         case 'break':
           if (!config.focus) pushToast(tr('break.title', { n: e.minutes }), tr('break.sub'), 9000, 'say');
           break;
@@ -1853,6 +1876,8 @@
   // Brings the agent's window (terminal, editor, app) to the front.
   async function jumpTo(id) {
     if (!id || demo) return;
+    // One of Openmon's own chats has no other window: the chat is its window.
+    if (chatSessions[id] && canChat) return desktop.openChat(`?id=${chatSessions[id]}`);
     try {
       const r = await (await fetch('/api/focus', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })).json();
       if (!r.ok) pushToast(tr('jump.fail'), tr('jump.failSub'), 4000, 'error');
@@ -1900,6 +1925,15 @@
   function renderMore() {
     const pages = $('more-pages');
     pages.textContent = '';
+    if (canChat && !demo) {
+      const chat = el('button', 'btn sm primary', tr('chat.open'));
+      chat.type = 'button';
+      chat.onclick = () => {
+        desktop.openChat('');
+        setHover(false);
+      };
+      pages.appendChild(chat);
+    }
     for (const [page, label] of [['dex', 'Opendex'], ['card', tr('nav.card')], ['help', tr('nav.help')], ['settings', tr('card.settings')]]) {
       const b = el('button', 'btn sm', label);
       b.type = 'button';
@@ -2055,7 +2089,7 @@
         // Answering in the agent's window: it asks there right away
         // instead of waiting for the pet.
         if (question && bubbleId === `question|${question.id}`) post('/api/question/release', { id: question.id });
-        else if (pending) post('/api/permission/decide', { id: pending.id, decision: 'release' });
+        else if (pending && !pending.chat) post('/api/permission/decide', { id: pending.id, decision: 'release' });
         const id = bubbleJump;
         dismissBubble();
         return jumpTo(id);
