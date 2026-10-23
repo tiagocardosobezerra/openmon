@@ -185,7 +185,9 @@ async function main() {
         process.exit(1);
       }
       const main = path.join(__dirname, '..', 'src', 'electron-main.js');
-      const child = spawn(electron, [main, '--playground'], { stdio: 'ignore', detached: true, windowsHide: true, env });
+      // No windowsHide: on Windows it hides the first window the app shows,
+      // and here that is the control panel.
+      const child = spawn(electron, [main, '--playground'], { stdio: 'ignore', detached: true, env });
       child.unref();
       return console.log('Playground open: a sandbox pet next to yours and a control panel. Close the panel to end it.');
     }
