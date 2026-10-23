@@ -24,7 +24,7 @@ contextBridge.exposeInMainWorld('openmonDesktop', {
   openAsk: (opts) => ipcRenderer.send('open-ask', { screen: Boolean(opts && opts.screen), clip: Boolean(opts && opts.clip) }),
   openName: () => ipcRenderer.send('open-name'),
   installHooks: () => ipcRenderer.send('install-hooks'),
-  // "Write to the agent": kind is message, question or deny; ref the session or request id.
+  // "Write to the agent": kind is question or deny; ref the request id.
   openTalk: (kind, ref) => ipcRenderer.send('open-talk', { kind: String(kind), ref: String(ref) }),
   contactKey: () => ipcRenderer.invoke('contact-key'),
 });

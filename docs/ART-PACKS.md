@@ -22,7 +22,7 @@ Lookup order for a shiny Forgemaw asleep: `craft-adult.shiny@sleep`, `craft-adul
 
 ### Shiny poses
 
-Draw the poses once, in the normal colours. `node tools/build-tints.js` compares each `.shiny` with its normal form and writes `tints.json` next to the art: which colours change, and anything the shiny adds. The pet applies that to every pose at draw time, so a shiny Openmon still sleeps, works and cheers in its own colours. The shiny must keep the same elements, in the same order, as its normal form. Shiny art needs no sparkles: the pet draws the glow and stars on every shiny.
+Draw the poses once, in the normal colours. `node tools/build-tints.js` compares each `.shiny` with its normal form and writes `tints.json` next to the art: which colours change, and anything the shiny adds. The pet applies that to every pose at draw time, so a shiny Openmon still sleeps, works and cheers in its own colours. The shiny must keep the same elements, in the same order, as its normal form. Shiny art needs no sparkles: the pet draws the little stars around every shiny.
 
 ### Accessories and items
 

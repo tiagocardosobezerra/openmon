@@ -2,7 +2,7 @@
 
 **Português** | [English](GAME.en.md) | [Español](GAME.es.md)
 
-O Openmon é um pet de desktop, no espírito dos jogos de criaturas e dos bichinhos virtuais, que vive no canto da tela enquanto o Claude Code trabalha. Ele lê quando o agente lê, martela quando o agente edita, levanta um escudo quando os testes rodam e pula segurando uma placa quando o agente **precisa de você**. Um clique nele e a janela do agente vem para a frente, pronta para você aprovar ou responder. Com os dias, o ovo choca, cresce e evolui para uma de 40 formas, decidida pelo tipo de trabalho que o seu agente mais faz.
+O Openmon é um pet de desktop, no espírito dos jogos de criaturas e dos bichinhos virtuais, que vive no canto da tela enquanto o Claude Code trabalha. Ele lê quando o agente lê, martela quando o agente edita, levanta um escudo quando os testes rodam e pula segurando uma placa quando o agente **precisa de você**. Um clique nele e a janela do agente vem para a frente, pronta para você aprovar ou responder. Com os dias, o ovo choca, cresce e evolui para uma de 39 formas, decidida pelo tipo de trabalho que o seu agente mais faz.
 
 Esta página explica o jogo. Para o que o Openmon faz por você e como instalar, veja o [README](../README.md).
 
@@ -30,7 +30,7 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 
 * **Amizade** (0 a 100) só sobe: responda rápido ao agente, faça carinho com um clique, volte todo dia. Virar Ancião pede amizade 60.
 * **Personalidade**: cada ovo nasce Corajoso, Sonolento, Curioso, Alegre, Calmo ou Atrevido, o que muda como ele se mexe e o que ele fala.
-* **Raridades**: 1 em 128 nasce brilhante, com outras cores e sempre com brilho e estrelinhas em volta. Cada forma tem as 5 poses também na versão brilhante.
+* **Raridades**: 1 em 128 nasce brilhante, com outras cores e sempre com estrelinhas em volta. Cada forma tem as 5 poses também na versão brilhante.
 * **Linha oculta**: quando dois tipos de trabalho empatam quase exatamente, aparece a Chimera.
 * **Lendários**: três, cada um ligado a um feito. *Mergeon* aparece no seu primeiro pull request aceito, *Aeonbyte* depois de um ano de Openmon e *Zeroday* depois de 100 consertos. Eles entram no seu Time e nunca evoluem.
 * **Encontros selvagens**: de vez em quando (1 em 1.024 ações do agente, no máximo um por dia) um Openmon selvagem aparece ao lado do seu pet por 10 minutos. Ele é sempre um Jovem, quase sempre do tipo da ação que o chamou, e pode vir brilhante (1 em 128). Jogue uma *Openball* para tentar capturar: 3 em 4. Se escapar, metade das vezes ele fica para mais uma tentativa. Capturado, ele entra no Time sem projeto e com o tipo dele. Você ganha 3 Openballs com o primeiro Openmon, uma por dia perfeito e uma a cada 5 dias seguidos. Dá para desligar nas Configurações. Outros itens de campo: *Openball Plus* (captura 7 em 8, a cada 10 dias seguidos), *Openball Mestra* (captura sempre; ganha ao encontrar selvagens dos 11 tipos), *Isca* (por 1 hora, encontros 1 em 256, a cada 3 dias perfeitos), *Lanterna* (o próximo selvagem vem brilhante 1 em 16; ganha na 10ª captura) e *Mapa de campo* (escolhe o tipo do próximo selvagem, a cada 8 dias perfeitos).
@@ -40,7 +40,7 @@ Trabalho raro vale mais, então todo tipo pode vencer. E existe uma linhagem esc
 
 <table>
 <tr>
-<td width="50%"><img src="screens/dex.pt-BR.png" alt="A Opendex com os tipos e as formas"><br><sub><b>Opendex</b>: os tipos, como cada um se conquista e as 40 formas</sub></td>
+<td width="50%"><img src="screens/dex.pt-BR.png" alt="A Opendex com os tipos e as formas"><br><sub><b>Opendex</b>: os tipos, como cada um se conquista e as 39 formas</sub></td>
 <td width="50%"><img src="screens/bag.pt-BR.png" alt="A Mochila com itens e acessórios"><br><sub><b>Mochila</b>: itens e acessórios para usar</sub></td>
 </tr>
 </table>

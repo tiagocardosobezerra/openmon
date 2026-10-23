@@ -33,6 +33,8 @@ const { createSchedule } = require('./schedule');
 const PHONE_TOPIC = /^[A-Za-z0-9_-]{8,64}$/;
 const DEFAULT_PORT = Number(process.env.OPENMON_PORT) || 4747;
 const MAX_BODY = 2 * 1024 * 1024;
+// A chat message can carry pictures (a screenshot, pasted images).
+const MAX_CHAT_BODY = 16 * 1024 * 1024;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -1296,21 +1298,48 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     return /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin) && new URL(origin).port === String(server.address().port);
   }
 
+  // The JSON body, then the route (once): a body that is not JSON comes as
+  // `err`; a route that throws answers 500 instead of taking the daemon down.
   function readJson(req, cb) {
+    const max = req.url.startsWith('/api/chat/') ? MAX_CHAT_BODY : MAX_BODY;
     let size = 0;
     const chunks = [];
     req.on('data', (chunk) => {
       size += chunk.length;
-      if (size > MAX_BODY) req.destroy();
+      if (size > max) req.destroy();
       else chunks.push(chunk);
     });
     req.on('end', () => {
+      let body;
+      let err = null;
       try {
-        cb(null, chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {});
-      } catch (err) {
-        cb(err);
+        body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {};
+      } catch (e) {
+        err = e;
+      }
+      // Valid JSON that is not an object (null, 3, "x") is no request body.
+      if (!err && (!body || typeof body !== 'object')) err = new Error('not an object');
+      try {
+        cb(err, err ? null : body);
+      } catch (e) {
+        fail(req.res, e);
       }
     });
+  }
+
+  function fail(res, err) {
+    log(`error ${err && err.message}`);
+    if (res && !res.headersSent) res.writeHead(500).end();
+    else if (res && !res.writableEnded) res.end();
+  }
+
+  // A path from the address bar: undefined when it is not valid %-encoding.
+  function decodePath(s) {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return undefined;
+    }
   }
 
   function json(res, code, body) {
@@ -1319,6 +1348,15 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   }
 
   const server = http.createServer((req, res) => {
+    req.res = res;
+    try {
+      handle(req, res);
+    } catch (err) {
+      fail(res, err);
+    }
+  });
+
+  function handle(req, res) {
     if (!allowed(req)) return res.writeHead(403).end();
     const url = new URL(req.url, 'http://localhost');
     const route = `${req.method} ${url.pathname}`;
@@ -1800,16 +1838,17 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     }
 
     if (req.method === 'GET' && url.pathname.startsWith('/brand/')) {
-      const name = decodeURIComponent(url.pathname.slice(7));
+      const name = decodePath(url.pathname.slice(7));
+      if (!name || !BRAND_FILE.test(name)) return res.writeHead(404).end();
       const full = path.join(BRAND_DIR, name);
-      if (!BRAND_FILE.test(name) || !fs.existsSync(full)) return res.writeHead(404).end();
+      if (!fs.existsSync(full)) return res.writeHead(404).end();
       res.writeHead(200, { 'Content-Type': MIME[path.extname(name).toLowerCase()], 'Cache-Control': 'max-age=3600', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'" });
       return fs.createReadStream(full).pipe(res);
     }
 
     if (req.method === 'GET' && url.pathname.startsWith('/art/')) {
-      const name = decodeURIComponent(url.pathname.slice(5));
-      const dir = ART_FILE.test(name) ? listArt(artDirs).where[name] : null;
+      const name = decodePath(url.pathname.slice(5));
+      const dir = name && ART_FILE.test(name) ? listArt(artDirs).where[name] : null;
       const full = dir ? path.join(dir, name) : null;
       if (!full) return res.writeHead(404).end();
       res.writeHead(200, { 'Content-Type': MIME[path.extname(name)], 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'" });
@@ -1817,8 +1856,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     }
 
     if (req.method === 'GET') {
-      const file = url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname.slice(1));
-      const full = path.join(PUBLIC_DIR, file);
+      const file = url.pathname === '/' ? 'index.html' : decodePath(url.pathname.slice(1));
+      const full = file ? path.join(PUBLIC_DIR, file) : '';
       if (!full.startsWith(PUBLIC_DIR + path.sep) || !fs.existsSync(full) || fs.statSync(full).isDirectory()) {
         return res.writeHead(404).end();
       }
@@ -1826,13 +1865,11 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       return fs.createReadStream(full).pipe(res);
     }
     res.writeHead(405).end();
-  });
+  }
 
   return {
-    server,
     bus,
     ingest,
-    petIt,
     focusAgent,
     // Allow / Deny from a system notification's buttons.
     decidePermission: (id, decision) => settlePermission(id, decision),
@@ -1842,8 +1879,6 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     exportTo,
     backupNow: () => (backups ? backups.maybe(real.pet, config, true) : false),
     backupDir: () => (backups ? backups.dir : null),
-    rename,
-    chooseStarter,
     layEgg,
     runDemo,
     stopDemo,
@@ -1855,15 +1890,12 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     contactKey: () => contactKey,
     assistant,
     schedule,
-    // Quick question from the pet's own box (desktop) and a screenshot's question.
-    quickChat: (input) => quickChat(input),
     upgradeHooks: () => !playground && config.answerFromPet && upgradeHooks(),
     listen: () =>
       new Promise((resolve, reject) => {
         server.once('error', reject);
         server.listen(port, '127.0.0.1', () => resolve(server.address().port));
       }),
-    syncCloud,
     close: () =>
       new Promise((resolve) => {
         stopDemo();

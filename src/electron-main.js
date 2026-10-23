@@ -581,7 +581,7 @@ function openNameWindow() {
 // never takes the keyboard). It answers a question, explains a Deny, or
 // sends a message to a conversation. It stays open until you send or close.
 let talkWin = null;
-const TALK_KINDS = ['message', 'question', 'deny'];
+const TALK_KINDS = ['question', 'deny'];
 function openTalkWindow(ask) {
   const kind = ask && TALK_KINDS.includes(ask.kind) ? ask.kind : null;
   const ref = ask && typeof ask.ref === 'string' ? ask.ref.slice(0, 120) : '';
@@ -1299,6 +1299,12 @@ app.whenReady().then(async () => {
   try {
     await session.defaultSession.clearCache();
   } catch {}
+  // Our pages only ever notify and copy; nothing gets the camera, the
+  // microphone, the location or anything else, and no other page anything.
+  const PAGE_PERMISSIONS = new Set(['notifications', 'clipboard-sanitized-write']);
+  const ours = (url) => typeof url === 'string' && url.startsWith(`http://127.0.0.1:${port}/`);
+  session.defaultSession.setPermissionRequestHandler((wc, permission, done) => done(PAGE_PERMISSIONS.has(permission) && ours(wc.getURL())));
+  session.defaultSession.setPermissionCheckHandler((wc, permission, origin) => PAGE_PERMISSIONS.has(permission) && ours(`${origin}/`));
   if (process.platform === 'darwin' && app.dock) app.dock.hide();
   daemon = createDaemon({ playground: PLAYGROUND, cloud: PLAYGROUND ? null : require('./cloud').createCloud() });
   try {

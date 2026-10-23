@@ -37,8 +37,9 @@
 </form>
 <script src="i18n.js"></script>
 <script>
-  // "Write to the agent": answer a question, explain a Deny, or send a
-  // message. Nothing is sent until you click a button here.
+  // "Write to the agent": answer a question, or explain a Deny. (Messages to
+  // a conversation are written in the chat window.) Nothing is sent until
+  // you click a button here.
   const { t: tr, detail: trDetail } = window.OpenmonI18n;
   const params = new URLSearchParams(location.search);
   const kind = params.get('kind');
@@ -81,35 +82,6 @@
     $('buttons').textContent = '';
     status(tr('talk.gone'));
     button(tr('talk.cancel'), '', () => window.close());
-  }
-
-  function messageForm(state) {
-    const session = (state.live.sessions || []).find((s) => s.id === ref);
-    const box = (state.inbox || {})[ref] || {};
-    $('title').textContent = tr('talk.message.title', { label: session ? session.label : tr('yourAgent') });
-    $('hint').textContent = box.canSend ? tr('talk.message.hint') : tr('talk.unsupported');
-    const text = el('textarea', 'input');
-    text.maxLength = 4000;
-    text.id = 'text';
-    $('body').appendChild(text);
-    if (box.queued) {
-      status(tr('talk.queuedNote'));
-      button(tr('talk.discard'), 'ghost', async () => {
-        await send('/api/inbox/cancel', { session: ref });
-        status('');
-      });
-    }
-    button(tr('talk.cancel'), '', () => window.close());
-    const go = button(tr('talk.send'), 'primary', async () => {
-      if (!text.value.trim()) return text.focus();
-      go.disabled = true;
-      const r = await send('/api/inbox/send', { session: ref, text: text.value });
-      if (r && r.ok) return window.close();
-      go.disabled = false;
-      status(r && r.reason === 'unsupported' ? tr('talk.unsupported') : tr('talk.failed'), true);
-    });
-    go.disabled = !box.canSend;
-    text.focus();
   }
 
   function denyForm(state) {
@@ -184,8 +156,7 @@
   (async () => {
     key = bridge && bridge.contactKey ? await bridge.contactKey().catch(() => null) : null;
     const state = await fetch('/api/state').then((r) => r.json());
-    if (kind === 'message') messageForm(state);
-    else if (kind === 'deny') denyForm(state);
+    if (kind === 'deny') denyForm(state);
     else if (kind === 'question') questionForm(state);
     if (!key) status(tr('talk.desktopOnly'), true);
   })();

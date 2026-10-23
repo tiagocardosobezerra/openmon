@@ -4,7 +4,7 @@
 // Pure functions over a plain JSON object, so it is easy to persist, test
 // and migrate. Nothing here ever takes progress away.
 
-const { MISSIONS, MISSION_XP, PERFECT_DAY_XP, COSMETICS, ITEMS, WEAR_SLOTS, LEGENDS, STARTERS, STARTER_HATCH_XP } = require('./species');
+const { MISSIONS, MISSION_XP, PERFECT_DAY_XP, COSMETICS, ITEMS, WEAR_SLOTS, STARTERS, STARTER_HATCH_XP } = require('./species');
 const { STATS, STAT_WEIGHTS, STAGES, ACHIEVEMENTS, NATURES, SHINY_ODDS, CHIMERA_GAP, CHIMERA_MIN, stageIndex, formName, formKey, dexEntries } = require('./species');
 
 const VERSION = 1;

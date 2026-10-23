@@ -9,16 +9,10 @@
 // stopped last time; only token counts are kept, never the text.
 
 const fs = require('node:fs');
-const path = require('node:path');
 const { costOf } = require('./pricing');
-
 // Only conversation files inside a .claude folder, never any other path a
 // local process might send.
-function trusted(file) {
-  if (typeof file !== 'string' || !file.endsWith('.jsonl')) return false;
-  const parts = path.resolve(file).split(/[\\/]+/);
-  return parts.includes('.claude');
-}
+const { trusted } = require('./transcript');
 
 function createUsage({ maxFiles = 50 } = {}) {
   // file -> { offset, rest, seen: Map(id -> {input, output, cacheRead, cacheWrite}) }

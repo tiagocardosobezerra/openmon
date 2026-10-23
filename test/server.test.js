@@ -907,3 +907,19 @@ test('assistant tools: their own key; reminders, memory and the bubble; quick qu
     await daemon.close();
   }
 });
+
+test('bad requests never take the daemon down: broken %-encoding, a null body, a route that throws', async () => {
+  const { daemon, port } = await boot();
+  try {
+    for (const p of ['/%E0%A4%A', '/art/%E0%A4%A', '/brand/%', '/%2e%2e/%2e%2e/package.json', '/..%5c..%5cpackage.json']) {
+      assert.equal((await request(port, 'GET', p)).status, 404, p);
+    }
+    assert.equal((await request(port, 'POST', '/api/rename', { body: 'null' })).status, 400);
+    assert.equal((await request(port, 'POST', '/api/wear', { body: '7' })).status, 400);
+    assert.equal((await request(port, 'POST', '/api/rename', { body: '{"name": {"toString": 1}}' })).status < 600, true);
+    // Still up.
+    assert.equal((await request(port, 'GET', '/health')).status, 200);
+  } finally {
+    await daemon.close();
+  }
+});

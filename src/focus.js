@@ -124,6 +124,12 @@ function createFocus({ driver = drivers[process.platform] || null, now = Date.no
   // session id -> { win, askedAt }
   const sessions = new Map();
   const ASK_AGAIN_MS = 60_000;
+  // Sessions that never ended (a crash, a closed terminal) do not pile up.
+  const keep = (sessionId, entry) => {
+    sessions.delete(sessionId);
+    sessions.set(sessionId, entry);
+    if (sessions.size > 200) sessions.delete(sessions.keys().next().value);
+  };
 
   return {
     // Whether the hook for this session should look its window up now.
@@ -131,13 +137,13 @@ function createFocus({ driver = drivers[process.platform] || null, now = Date.no
       if (!driver || !sessionId) return false;
       const entry = sessions.get(sessionId) || {};
       if (entry.win || (entry.askedAt != null && now() - entry.askedAt < ASK_AGAIN_MS)) return false;
-      sessions.set(sessionId, { ...entry, askedAt: now() });
+      keep(sessionId, { ...entry, askedAt: now() });
       return true;
     },
     setWindow(sessionId, win) {
       const clean = cleanWindow(win);
       if (!sessionId || !clean) return false;
-      sessions.set(sessionId, { win: clean, askedAt: now() });
+      keep(sessionId, { win: clean, askedAt: now() });
       return true;
     },
     forget(sessionId) {
