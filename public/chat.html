@@ -70,6 +70,8 @@
   .newbar select { max-width: 340px; }
   .welcome { margin: auto; max-width: 520px; text-align: center; color: var(--muted); }
   .welcome h2 { color: var(--ink); font: 600 22px var(--font-display); margin: 0 0 6px; }
+  .welcome img { width: 96px; height: 96px; object-fit: contain; }
+  header.head .me { width: 34px; height: 34px; object-fit: contain; }
   .drop { position: fixed; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--brand) 18%, transparent); border: 3px dashed var(--brand); font: 600 20px var(--font-display); color: var(--brand-ink); pointer-events: none; }
   dialog { border: var(--bw) solid var(--outline); border-radius: var(--r-lg); background: var(--surface); color: var(--ink); padding: 16px 18px; width: min(560px, 92vw); box-shadow: var(--lift); }
   dialog::backdrop { background: rgba(20, 12, 30, 0.45); }
@@ -116,6 +118,7 @@
 <main class="chat">
   <header class="head">
     <button class="icon-btn menu-btn" id="menu" type="button" aria-label="Menu">☰</button>
+    <img class="me" id="me" alt="" hidden>
     <div class="t"><h1 id="title"></h1><p id="sub"></p></div>
     <select class="input sm-select" id="model" hidden></select>
     <button class="icon-btn" id="pin" type="button" hidden></button>
@@ -251,6 +254,7 @@
   let files = []; // { path, name } from the picker or a drop
   let images = []; // { type, data } pasted
   let config = {};
+  let petArt = null; // your Openmon's picture
   let searchHits = null; // chat ids matching the search box, or null
   const questionPicks = {}; // question id -> the option picked for each part
 
@@ -560,6 +564,7 @@
       $('title').textContent = T.newChat;
       $('sub').textContent = '';
       const w = el('div', 'welcome');
+      if (petArt) w.append(Object.assign(el('img'), { src: petArt, alt: '' }));
       w.append(el('h2', '', T.welcome), el('p', '', T.welcomeSub));
       log.append(w);
       renderFolders();
@@ -1029,6 +1034,14 @@
       if (s) {
         state = s;
         config = s.config || {};
+        // Your Openmon, who answers here.
+        const p = !s.demo && s.pet;
+        if (p && p.formKey) {
+          petArt = `/art/${encodeURIComponent(p.formKey)}.svg`;
+          $('me').onload = () => ($('me').hidden = false);
+          $('me').src = petArt;
+          $('me').title = p.name || '';
+        }
         renderChips();
         render();
       }

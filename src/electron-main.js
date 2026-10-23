@@ -17,7 +17,7 @@ const installer = require('./install');
 const PT = {
   'Open card': 'Abrir card',
   'Assistant': 'Assistente',
-  'Ask your Openmon': 'Perguntar ao seu Openmon',
+  'Quick question': 'Pergunta rápida',
   'Claude answered': 'O Claude respondeu',
   'Reminder': 'Lembrete',
   'Scheduled task started': 'Tarefa agendada começou',
@@ -90,7 +90,7 @@ const PT = {
 // Spanish menu and notification text.
 const ES_TEXT = {
   "Assistant": "Asistente",
-  "Ask your Openmon": "Preguntar a tu Openmon",
+  "Quick question": "Pregunta rápida",
   "Claude answered": "Claude respondió",
   "Reminder": "Recordatorio",
   "Scheduled task started": "Empezó una tarea programada",
@@ -384,7 +384,7 @@ function menuTemplate() {
   return [
     ...team,
     { label: L('Assistant'), ...(chatShortcut ? { accelerator: chatShortcut, registerAccelerator: false } : {}), click: () => openChatWindow() },
-    { label: L('Ask your Openmon'), ...(askShortcut ? { accelerator: askShortcut, registerAccelerator: false } : {}), click: () => openAskWindow() },
+    { label: L('Quick question'), ...(askShortcut ? { accelerator: askShortcut, registerAccelerator: false } : {}), click: () => openAskWindow() },
     {
       label: L('Pages'),
       submenu: [

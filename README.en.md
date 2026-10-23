@@ -173,9 +173,10 @@ The egg appears in the corner of your screen and an icon shows up in the tray. S
 
 ### Settings
 
-Right-click the pet and click **More** at the bottom of its card (or the tray icon). The menu has the card, the pages, **focus mode**, **quiet mode** and **Settings**, a page with six sections:
+Right-click the pet and click **More** at the bottom of its card (or the tray icon). The menu has the card, the pages, **focus mode**, **quiet mode** and **Settings**, a page with seven sections:
 
 * **Pet**: nickname, size, language, sounds, chatter, walking around and sharing conversations among the Openmons on screen.
+* **Assistant**: open the assistant, its folder and memory, and reading answers aloud.
 * **Alerts**: system notification and answering permissions from the pet (with the waiting time).
 * **Focus and calm**: focus mode, quiet mode, presentation mode and break reminder.
 * **Phone**: phone alerts through the ntfy app (optional).

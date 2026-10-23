@@ -1064,7 +1064,8 @@
     // The very first minute: what this is, and a demo for those without an
     // agent at hand.
     if (introOffer && Date.now() < introOffer && (pose === 'idle' || pose === 'sleep') && !demo && !companionId) {
-      return setBubble('toast', tr('intro'), tr('intro.sub'), { buttons: [[{ demo: 'start' }, tr('demo.watch'), 'primary']], id: 'intro' });
+      const buttons = [...(canChat ? [[{ chat: 'new' }, tr('chat.open'), 'primary']] : []), [{ demo: 'start' }, tr('demo.watch'), canChat ? '' : 'primary']];
+      return setBubble('toast', tr('intro'), tr(canChat ? 'intro.subAssistant' : 'intro.sub'), { buttons, id: 'intro' });
     }
     // A stuck agent: open its window, or ask it to stop and wait.
     const stuck = (live.sessions || []).find((x) => x.stuck);
@@ -1273,7 +1274,7 @@
       // "Permission: npm publish": the thing asked for set as code.
       const permAsked = x.state === 'attention' && /^(Allow|Wants)/.test(x.detail || '') ? /^([^:]{1,24}): (.+)$/s.exec(detail) : null;
       if (permAsked) what.replaceChildren(`${permAsked[1]}: `, el('code', '', permAsked[2]));
-      li.append(el('i', 'dot'), el('b', '', x.label), what);
+      li.append(el('i', 'dot'), el('b', '', chatSessions[x.id] ? `💬 ${tr('nav.assistant')}` : x.label), what);
       // With more than one Openmon on screen: who follows this conversation.
       if (!demo && onScreen.length > 1) {
         const own = owners[x.id];
@@ -1649,7 +1650,6 @@
           chatAnswer = { id: e.id, title: `💬 ${e.title || tr('chat.done')}`, text: e.answer || e.line || '', until: Date.now() + (e.quick ? 45_000 : 20_000) };
           renderBubble();
           if (e.quick) speak(e.answer || e.line);
-          play('done');
           break;
         case 'say':
           if (!companionId) {
@@ -2096,7 +2096,7 @@
     // "See all": the request page, with the whole diff.
     const openChatBtn = e.target.closest && e.target.closest('[data-chat]');
     if (openChatBtn) {
-      if (canChat) desktop.openChat(`?id=${openChatBtn.dataset.chat}`);
+      if (canChat) desktop.openChat(openChatBtn.dataset.chat === 'new' ? '?new=1' : `?id=${openChatBtn.dataset.chat}`);
       chatAnswer = null;
       dismissBubble();
       return;

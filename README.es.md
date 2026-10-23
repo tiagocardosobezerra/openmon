@@ -173,9 +173,10 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 
 ### Configuración
 
-Haz clic derecho en la mascota y en **Más**, al pie de la tarjeta (o en el ícono de la bandeja). El menú tiene la tarjeta, las páginas, el **modo foco**, el **modo silencio** y la **Configuración**, una página con seis secciones:
+Haz clic derecho en la mascota y en **Más**, al pie de la tarjeta (o en el ícono de la bandeja). El menú tiene la tarjeta, las páginas, el **modo foco**, el **modo silencio** y la **Configuración**, una página con siete secciones:
 
 * **Mascota**: apodo, tamaño, idioma, sonidos, frases, pasear por la pantalla y repartir las conversaciones entre los Openmons en pantalla.
+* **Asistente**: abrir el asistente, su carpeta y su memoria, y leer las respuestas en voz alta.
 * **Avisos**: notificación del sistema y responder permisos desde la mascota (con el tiempo de espera).
 * **Foco y calma**: modo foco, modo silencio, modo presentación y recordatorio de pausa.
 * **Celular**: aviso en el celular con la app ntfy (opcional).
