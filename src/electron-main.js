@@ -246,7 +246,7 @@ function keepPetsOnScreen() {
     const inside = b.x + b.width * 0.4 >= area.x && b.x + b.width * 0.6 <= area.x + area.width && b.y + b.height * 0.5 >= area.y && b.y + b.height <= area.y + area.height + 40;
     if (inside) continue;
     const x = Math.min(Math.max(b.x, area.x), area.x + area.width - b.width);
-    w.setPosition(Math.round(x), Math.round(area.y + area.height - b.height));
+    w.setPosition(Math.round(x) || 0, Math.round(area.y + area.height - b.height) || 0);
     if (w === win) savePlace();
     else if (w.__companion) saveCompanionPlace(w.__companion, w);
   }
@@ -1014,7 +1014,15 @@ function wireIpc() {
         offset.x += (dragGrip.x - offset.x) * 0.25;
         offset.y += (dragGrip.y - offset.y) * 0.25;
       }
-      if (dragging && !dragging.isDestroyed()) dragging.setPosition(Math.round(c.x - offset.x), Math.round(c.y - offset.y));
+      // (`|| 0`: Math.round can give -0, which Electron refuses as an integer.)
+      const x = Math.round(c.x - offset.x) || 0;
+      const y = Math.round(c.y - offset.y) || 0;
+      // Never a bad number to the window (it throws, every 16 ms).
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        dragGrip = null;
+        return;
+      }
+      if (dragging && !dragging.isDestroyed()) dragging.setPosition(x, y);
     }, 16);
   });
   // Where the pet is held, as a fraction of its window (the top of its head).
