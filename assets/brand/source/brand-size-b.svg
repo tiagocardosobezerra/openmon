@@ -1,7 +1,0 @@
-<svg width="1024" height="1024" class="cr" viewBox="0 0 200 200" aria-label="Símbolo a 48 px" xmlns="http://www.w3.org/2000/svg"><style>.cr { display: block; width: 100%; height: 100%; overflow: visible; }
-.cr .o { stroke: rgb(42, 33, 64); stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
-.cr .o.thin { stroke-width: 3.5; }
-.cr .o.g { stroke-width: 9; }
-.cr .ln { fill: none; }
-.cr .k { fill: rgb(42, 33, 64); }
-.cr .w { fill: rgb(255, 255, 255); }</style><circle class="o" fill="#7c6cf2" cx="100" cy="106" r="44"></circle><ellipse class="k" cx="84" cy="94" rx="9" ry="11"></ellipse><ellipse class="k" cx="116" cy="94" rx="9" ry="11"></ellipse><path class="o" fill="#fffdf7" d="M28 116 L44 104 L58 116 L72 104 L86 116 L100 104 L114 116 L128 104 L142 116 L156 104 L172 116 C172 124 172 128 172 134 C172 170 140 192 100 192 C60 192 28 170 28 134 C28 128 28 122 28 116Z"></path><path class="o g ln" d="M78 132 L98 146 L78 160"></path><path class="o g ln" d="M108 162 L128 162"></path><g transform="translate(0 -20) rotate(-12 100 60)"><path class="o" fill="#fffdf7" d="M40 80 C52 46 76 30 100 30 C124 30 148 46 160 80 L146 70 L132 82 L118 70 L104 82 L90 70 L76 82 L62 70 L50 80Z"></path></g></svg>
