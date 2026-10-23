@@ -169,5 +169,20 @@ test('transcript: what you and the agent said, one line per tool, no wrappers', 
   const out = readTranscript(file);
   assert.deepEqual(out.map((m) => [m.role, m.text]), [['user', 'corrige os testes'], ['assistant', 'Vou olhar.'], ['tool', 'Bash: npm test']]);
   assert.equal(readTranscript(path.join(dir, 'other.jsonl')), null);
+  // A message written on the pet arrives as a hook's output: shown as yours.
+  const hook = fs.readFileSync(path.join(__dirname, '..', 'src', 'hook.js'), 'utf8');
+  const mark = /`(Message from the user, sent from the Openmon desktop pet\. Treat it as the user's next message:)/.exec(hook);
+  assert.ok(mark, 'hook.js still writes the line the transcript reader looks for');
+  fs.appendFileSync(file, `${JSON.stringify({ type: 'user', message: { role: 'user', content: `<task-notification>
+<summary>Stop hook feedback</summary>
+</task-notification>
+<system-reminder>
+Stop hook blocking error from command "Stop": ${mark[1]}
+
+Revise o projeto, por favor.
+</system-reminder>` } })}
+`);
+  const last = readTranscript(file).pop();
+  assert.deepEqual([last.role, last.text, last.via], ['user', 'Revise o projeto, por favor.', 'pet']);
   assert.deepEqual(messagesOf(null), []);
 });

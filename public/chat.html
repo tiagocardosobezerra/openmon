@@ -42,6 +42,7 @@
   .msg.error { align-self: stretch; max-width: none; background: var(--bad-soft); color: var(--bad); border: 1.5px solid color-mix(in srgb, var(--bad) 40%, transparent); font-size: 13.5px; white-space: pre-wrap; }
   .msg.notice { align-self: center; color: var(--muted); font-size: 12.5px; padding: 2px 8px; }
   .msg .img { display: inline-block; margin-top: 4px; font-size: 12px; opacity: 0.85; }
+  .msg .via { display: block; margin-top: 4px; font-size: 11.5px; opacity: 0.8; white-space: normal; }
   .msg p { margin: 0 0 8px; } .msg p:last-child { margin-bottom: 0; }
   .msg ul, .msg ol { margin: 4px 0 8px; padding-left: 22px; }
   .msg h3 { margin: 8px 0 4px; font: 600 15px var(--font-display); }
@@ -174,7 +175,7 @@
   const TEXT = {
     en: {
       title: 'Talk to Claude', newChat: 'New conversation', chats: 'Conversations', agents: 'Open elsewhere', noChats: 'None yet.', noAgents: 'No agent at work.',
-      send: 'Send', stop: 'Stop', continueHere: 'Continue here', rename: 'Rename', del: 'Delete', delAsk: 'Delete this conversation from Openmon? (Claude Code keeps its own copy.)', renameAsk: 'New name:',
+      viaPet: '🐣 sent from the pet', send: 'Send', stop: 'Stop', continueHere: 'Continue here', rename: 'Rename', del: 'Delete', delAsk: 'Delete this conversation from Openmon? (Claude Code keeps its own copy.)', renameAsk: 'New name:',
       placeholder: 'Write to Claude… (Enter sends, Shift+Enter makes a new line)', placeholderAgent: 'Write to this conversation… (it gets it at its next step)', cantWrite: 'This conversation cannot get messages from Openmon: start it again in Claude Code, or continue it here.',
       attach: 'Attach files', paste: 'Paste what you copied', pasted: 'Pasted', image: 'image', drop: 'Drop here to attach', folder: 'Folder:', pickFolder: 'Pick a folder…', assistant: 'Assistant (general things)',
       welcome: 'What can I do for you?', welcomeSub: 'Claude answers here, with your own Claude Code: it can read and change files in the folder you pick, run commands (with your OK) and use your connectors. Openmon asks you before anything that needs it.',
@@ -190,7 +191,7 @@
     },
     'pt-BR': {
       title: 'Conversar com o Claude', newChat: 'Nova conversa', chats: 'Conversas', agents: 'Abertas em outro lugar', noChats: 'Nenhuma ainda.', noAgents: 'Nenhum agente trabalhando.',
-      send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aqui', rename: 'Renomear', del: 'Apagar', delAsk: 'Apagar esta conversa do Openmon? (O Claude Code guarda a cópia dele.)', renameAsk: 'Novo nome:',
+      viaPet: '🐣 enviada pelo pet', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aqui', rename: 'Renomear', del: 'Apagar', delAsk: 'Apagar esta conversa do Openmon? (O Claude Code guarda a cópia dele.)', renameAsk: 'Novo nome:',
       placeholder: 'Escreva para o Claude… (Enter envia, Shift+Enter quebra a linha)', placeholderAgent: 'Escreva para esta conversa… (ela recebe no próximo passo)', cantWrite: 'Esta conversa não recebe mensagens do Openmon: abra-a de novo no Claude Code, ou continue aqui.',
       attach: 'Anexar arquivos', paste: 'Colar o que você copiou', pasted: 'Colado', image: 'imagem', drop: 'Solte aqui para anexar', folder: 'Pasta:', pickFolder: 'Escolher pasta…', assistant: 'Assistente (assuntos gerais)',
       welcome: 'Em que posso ajudar?', welcomeSub: 'O Claude responde aqui, com o seu próprio Claude Code: ele pode ler e mudar arquivos da pasta que você escolher, rodar comandos (com o seu OK) e usar seus conectores. O Openmon pergunta antes de tudo o que precisa.',
@@ -206,7 +207,7 @@
     },
     es: {
       title: 'Hablar con Claude', newChat: 'Nueva conversación', chats: 'Conversaciones', agents: 'Abiertas en otro lugar', noChats: 'Ninguna todavía.', noAgents: 'Ningún agente trabajando.',
-      send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aquí', rename: 'Renombrar', del: 'Borrar', delAsk: '¿Borrar esta conversación de Openmon? (Claude Code guarda su copia.)', renameAsk: 'Nuevo nombre:',
+      viaPet: '🐣 enviada desde la mascota', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aquí', rename: 'Renombrar', del: 'Borrar', delAsk: '¿Borrar esta conversación de Openmon? (Claude Code guarda su copia.)', renameAsk: 'Nuevo nombre:',
       placeholder: 'Escribe a Claude… (Enter envía, Shift+Enter hace una línea nueva)', placeholderAgent: 'Escribe a esta conversación… (la recibe en su próximo paso)', cantWrite: 'Esta conversación no recibe mensajes de Openmon: ábrela de nuevo en Claude Code, o continúala aquí.',
       attach: 'Adjuntar archivos', paste: 'Pegar lo que copiaste', pasted: 'Pegado', image: 'imagen', drop: 'Suelta aquí para adjuntar', folder: 'Carpeta:', pickFolder: 'Elegir carpeta…', assistant: 'Asistente (temas generales)',
       welcome: '¿En qué te ayudo?', welcomeSub: 'Claude responde aquí, con tu propio Claude Code: puede leer y cambiar archivos de la carpeta que elijas, correr comandos (con tu OK) y usar tus conectores. Openmon te pregunta antes de todo lo que lo necesite.',
@@ -419,6 +420,7 @@
     if (m.role === 'error') return el('div', 'msg error', `${m.code === 'missing' ? T.missing : m.code === 'turn' ? T.turn : T.exit}${m.code === 'missing' ? '' : `\n${m.text || ''}`}`);
     const d = el('div', `msg ${m.role === 'user' ? 'user' : m.role === 'tool' ? 'tool' : 'notice'}`, m.text || '');
     if (m.images) d.append(el('span', 'img', ` 🖼 ${m.images} ${T.image}`));
+    if (m.via === 'pet') d.append(el('span', 'via', T.viaPet));
     return d;
   }
 
@@ -719,7 +721,7 @@
       }
       r = await api('/api/inbox/send', { session: view.session, text });
       if (r && r.ok) {
-        current.messages = [...(current.messages || []), { role: 'user', text }];
+        current.messages = [...(current.messages || []), { role: 'user', text, via: 'pet' }];
         render();
         flash(r.delivered ? T.sent : T.queued);
       }
