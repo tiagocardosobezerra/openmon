@@ -177,11 +177,7 @@
 
   async function main() {
     [species, data] = await Promise.all([fetch(`/api/species?lang=${lang}`).then((r) => r.json()), fetch('/api/state').then((r) => r.json())]);
-    const loop = (ms) => {
-      render(ms / 1000);
-      requestAnimationFrame(loop);
-    };
-    requestAnimationFrame(loop);
+    OpenmonMotion.loop((ms) => render(ms / 1000));
   }
 
   const msg = (text) => (document.getElementById('msg').textContent = text);

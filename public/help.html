@@ -22,10 +22,10 @@
   .step h3 { margin: 8px 0 4px; font-size: 17px; }
   .step p { margin: 0; color: var(--muted); font-size: 13.5px; }
   .faq { display: grid; gap: 8px; max-width: 760px; }
-  .faq details { padding: 10px 14px; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-md); box-shadow: var(--gloss); }
+  .faq details { padding: 0; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-md); box-shadow: var(--gloss); }
   .faq details[open] { border-color: var(--outline); }
-  .faq summary { cursor: pointer; font: 600 15px var(--font-display); }
-  .faq details p { margin: 8px 0 2px; color: var(--muted); }
+  .faq summary { display: block; cursor: pointer; padding: 12px 14px; min-height: 44px; font: 600 15px var(--font-display); }
+  .faq details p { margin: 0; padding: 0 14px 12px; color: var(--muted); }
   kbd { white-space: nowrap; }
 </style>
 </head>
@@ -219,9 +219,8 @@
       const anim = OpenmonMotion.poseAnim({ pose, family: 'craft', t, since: Math.floor(t / 6) * 6, stage: spec.stage, nature: 'cheerful' });
       OpenmonArt.drawCreature(ctx, { ...spec, t, size: 60, pose, anim });
     }
-    requestAnimationFrame(frame);
   }
-  OpenmonArt.loadPack().then(() => requestAnimationFrame(frame));
+  OpenmonArt.loadPack().then(() => OpenmonMotion.loop(frame));
   T.step.forEach(([title, text], i) => {
     const card = el('div', 'step panel soft');
     card.append(el('span', 'n', String(i + 1)), el('h3', '', title), el('p', '', text));

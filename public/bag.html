@@ -20,6 +20,12 @@
   .item .icon { width: 84px; height: 84px; border-radius: 20px; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, var(--surface), var(--surface-2) 75%); box-shadow: inset 0 0 0 2px var(--line); }
   .item .icon svg, .item .icon img { width: 68px; height: 68px; }
   .item.empty .icon { opacity: 0.45; }
+  /* Stones you have none of: compact tiles, the page's room goes to what you can use. */
+  .stones .item.empty { padding: 8px 6px; }
+  .stones .item.empty .icon { width: 52px; height: 52px; border-radius: 14px; }
+  .stones .item.empty .icon img { width: 42px; height: 42px; }
+  .stones .item.empty .why, .stones .item.empty .desc { display: none; }
+  .stones .item.empty h3 { font-size: 13px; }
   .item .how { margin: 4px 0 0; font-size: 12px; line-height: 1.3; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .item.open .how { display: none; }
   .item h3 { margin: 4px 0 0; font-size: 15px; line-height: 1.2; }

@@ -186,5 +186,24 @@
     return a;
   }
 
-  window.OpenmonMotion = { poseAnim };
+  // The pages' creatures breathe at a calm 30 frames a second (24 where
+  // there are many), draw nothing while the window is hidden, and with
+  // "reduce motion" hold still (a slow redraw, so art that loads late shows).
+  function loop(draw, { fps = 30 } = {}) {
+    const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const gap = 1000 / (still ? 2 : fps);
+    let last = -1e9;
+    // Waits between frames instead of waking at the screen's rate.
+    const tick = (ms) => {
+      if (ms - last >= gap - 1) {
+        last = ms;
+        draw(still ? 0 : ms);
+      }
+      if (document.hidden) document.addEventListener('visibilitychange', () => requestAnimationFrame(tick), { once: true });
+      else setTimeout(() => requestAnimationFrame(tick), Math.max(0, gap - (performance.now() - ms) - 4));
+    };
+    requestAnimationFrame(tick);
+  }
+
+  window.OpenmonMotion = { poseAnim, loop };
 })();

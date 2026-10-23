@@ -81,7 +81,7 @@ html, body {
 /* A wild Openmon's bubble: its portrait on a little stage of its type. */
 #bubble.wild { grid-template-columns: 44px minmax(0, 1fr); border-color: color-mix(in srgb, var(--type) 60%, var(--outline)); }
 #bubble .portrait { grid-row: 1 / span 4; align-self: start; width: 44px; height: 44px; border-radius: 12px; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--type) 45%, var(--surface)), color-mix(in srgb, var(--type) 18%, var(--surface)) 72%); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--type) 55%, var(--outline)); }
-#bubble .eyebrow { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font: 600 11px/1.4 var(--font-display); letter-spacing: 0.02em; }
+#bubble .eyebrow { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font: 600 12px/1.4 var(--font-display); letter-spacing: 0.02em; }
 #bubble .act { margin-top: 6px; min-height: 24px; padding: 1px 10px; font-size: 12px; pointer-events: none; }
 #bubble.jump { cursor: pointer; }
 #bubble .choices { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; white-space: nowrap; }
@@ -89,7 +89,7 @@ html, body {
 /* The answer you most likely want stands out; the rest step back. */
 #bubble .choices .btn.primary { min-height: 30px; padding: 3px 14px; font-size: 13px; }
 #bubble .choices .btn:not(.primary) { border-color: color-mix(in srgb, var(--outline) 35%, var(--line)); box-shadow: none; }
-#bubble .note { grid-column: 2; margin-top: 4px; color: var(--muted); font: 600 11px var(--font-body); }
+#bubble .note { grid-column: 2; margin-top: 4px; color: var(--muted); font: 600 12px var(--font-body); }
 #bubble.jump:hover .act { background: color-mix(in srgb, var(--sun) 85%, #fff); }
 #bubble.jump:active { transform: translateX(-50%) translateY(2px); box-shadow: 0 1px 0 var(--outline); }
 
@@ -195,7 +195,7 @@ html, body {
 .card-title { display: flex; align-items: baseline; gap: 6px; }
 #card-name { font: 600 20px/1.15 var(--font-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card-head .icon-btn { color: var(--ink); }
-.lv { flex: none; font: 600 11.5px/1.5 var(--font-display); color: #2a2140; background: var(--sun); padding: 0 7px; border-radius: 99px; box-shadow: 0 0 0 1.5px var(--outline); }
+.lv { flex: none; font: 600 12px/1.5 var(--font-display); color: #2a2140; background: var(--sun); padding: 0 7px; border-radius: 99px; box-shadow: 0 0 0 1.5px var(--outline); }
 .card-form { display: flex; align-items: center; gap: 7px; margin-top: 4px; font-size: 12px; color: color-mix(in srgb, var(--ink) 70%, var(--type)); }
 .card-form > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #card-form { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -215,26 +215,26 @@ html, body {
 #card > .card-chips { height: 24px; overflow: hidden; align-content: flex-start; }
 
 /* The day at a glance, between the bars and the tabs. */
-.card-day { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; height: 22px; overflow: hidden; font-size: 11.5px; }
+.card-day { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; height: 26px; overflow: hidden; font-size: 12px; }
 .card-day:empty { display: none; }
-.day-pill { flex: none; white-space: nowrap; padding: 1px 8px; border-radius: 99px; background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); font: 600 11.5px/1.6 var(--font-display); }
+.day-pill { flex: none; white-space: nowrap; min-height: 24px; display: inline-flex; align-items: center; padding: 1px 10px; border-radius: 99px; background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); font: 600 12px/1.6 var(--font-display); }
 button.day-pill { border: 0; cursor: pointer; }
 button.day-pill:hover { box-shadow: inset 0 0 0 1.5px var(--outline); }
 .day-pill.ok { background: var(--ok-soft); box-shadow: none; color: var(--ok); }
-.day-next { min-width: 0; color: var(--brand-ink); font: 600 11.5px var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.day-next { min-width: 0; color: var(--brand-ink); font: 600 12px var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tab-body { min-height: 96px; overflow-y: auto; scrollbar-width: thin; margin: 0 -4px; padding: 0 4px; }
 
 /* Agents tab: one row per session; click a row to jump to its window. */
 #sessions { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
 #sessions li { display: grid; grid-template-columns: 10px auto 1fr auto auto; gap: 6px; align-items: center; min-height: 28px; padding: 3px 8px; border-radius: var(--r-sm); font-size: 12.5px; background: var(--surface-2); white-space: nowrap; }
 #sessions li.jump { cursor: pointer; }
-#sessions li .owner { font: 600 11px var(--font-body); color: var(--muted); background: transparent; border: 1.5px solid var(--line); border-radius: 999px; padding: 0 7px; max-width: 86px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+#sessions li .owner { font: 600 12px var(--font-body); color: var(--muted); background: transparent; border: 1.5px solid var(--line); border-radius: 999px; padding: 0 7px; max-width: 86px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 #sessions li .owner:hover { color: var(--text); border-color: var(--brand); }
 #sessions li .owner.pinned { color: var(--text); border-color: var(--brand); background: var(--brand-soft); }
 #sessions li.jump:hover { background: var(--brand-soft); }
 #sessions li .dot { width: 9px; height: 9px; border-radius: 50%; background: #c9c2d6; box-shadow: 0 0 0 1.5px var(--outline); }
 #sessions li.working .dot { background: #7cc4ff; animation: blink 1.4s ease-in-out infinite; }
-#sessions li.attention { background: color-mix(in srgb, var(--sun) 55%, var(--surface)); white-space: normal; align-items: start; padding-top: 5px; padding-bottom: 5px; }
+#sessions li.attention { background: color-mix(in srgb, var(--sun) 18%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--sun); white-space: normal; align-items: start; padding-top: 5px; padding-bottom: 5px; }
 /* What the agent asks is the one line you must read whole: up to two lines. */
 #sessions li.attention span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--text); line-height: 1.25; }
 #sessions li.attention .dot { margin-top: 4px; }
@@ -242,10 +242,10 @@ button.day-pill:hover { box-shadow: inset 0 0 0 1.5px var(--outline); }
 #sessions li.done .dot { background: var(--ok); }
 #sessions li b { font: 600 13px var(--font-display); overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
 #sessions li span { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
-#sessions li.attention span { color: var(--sun-ink); font-weight: 650; }
-#sessions li .go { color: var(--muted); font: 700 11px var(--font-display); opacity: 0; }
+#sessions li.attention span { color: var(--ink); font-weight: 650; }
+#sessions li .go { color: var(--muted); font: 700 12px var(--font-display); opacity: 0; }
 #sessions li.jump:hover .go, #sessions li.attention .go { opacity: 1; }
-#sessions li.attention .go { color: #2a2140; }
+#sessions li.attention .go, #sessions li.attention b { color: var(--ink); }
 #sessions li.perm-row { display: flex; gap: 6px; justify-content: flex-end; background: none; min-height: 0; padding: 0 2px 4px; }
 #sessions li.perm-row .btn { min-height: 24px; padding: 1px 10px; font-size: 12px; }
 #sessions li.empty { display: block; background: none; color: var(--muted); text-align: center; padding: 18px 0; white-space: normal; }
@@ -258,19 +258,19 @@ button.day-pill:hover { box-shadow: inset 0 0 0 1.5px var(--outline); }
 .card-wait b { font: 600 16px var(--font-display); color: var(--ink); font-variant-numeric: tabular-nums; }
 .missions { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; }
 .missions li { display: grid; grid-template-columns: 18px 1fr auto; gap: 6px; align-items: center; font-size: 12px; padding: 3px 4px; }
-.missions li.head { display: block; padding: 0 4px; font: 600 11.5px var(--font-display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--brand-ink); }
+.missions li.head { display: block; padding: 0 4px; font: 600 12px var(--font-display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--brand-ink); }
 .missions li .mark { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--line); font-size: 10px; font-weight: 800; }
 .missions li.done { color: var(--muted); }
 .missions li.done .mark { background: var(--ok); color: #fff; box-shadow: none; }
 .missions li.done span:nth-child(2) { text-decoration: line-through; }
 .missions li span:nth-child(2) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.missions b { font-variant-numeric: tabular-nums; font-size: 11.5px; color: var(--muted); }
+.missions b { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted); }
 
 /* Stats tab: affinity bars, the share that decides the lineage. */
 .stats { display: grid; gap: 3px; }
 .stats div { display: grid; grid-template-columns: 58px 1fr 30px; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .stats div.top { color: var(--ink); font-weight: 700; }
-.stats div em { font-style: normal; font-variant-numeric: tabular-nums; text-align: right; font-size: 11px; }
+.stats div em { font-style: normal; font-variant-numeric: tabular-nums; text-align: right; font-size: 12px; }
 .aff { display: block; height: 8px; border-radius: 99px; background: var(--sunken); position: relative; overflow: hidden; }
 .aff::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: 99px; background: var(--c, var(--brand)); }
 .aff-craft { --c: var(--craft); } .aff-lore { --c: var(--lore); } .aff-shell { --c: var(--shell); } .aff-test { --c: var(--test); } .aff-roam { --c: var(--roam); } .aff-swarm { --c: var(--swarm); }
@@ -278,7 +278,7 @@ button.day-pill:hover { box-shadow: inset 0 0 0 1.5px var(--outline); }
 .stats div[data-stat] { cursor: help; border-radius: 6px; padding: 1px 4px; margin: 0 -4px; }
 .stats div[data-stat]:hover, .stats div[data-stat]:focus-visible { background: var(--surface-2); color: var(--ink); outline: none; }
 /* Sticks to the top of the tab while the bars scroll under it. */
-.stat-info { position: sticky; top: 0; z-index: 1; margin: 0 0 6px; padding: 6px 8px; min-height: 46px; box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.25); border-radius: var(--r-sm); background: var(--surface-2); color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+.stat-info { position: sticky; top: 0; z-index: 1; margin: 0 0 6px; padding: 6px 8px; min-height: 46px; box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.25); border-radius: var(--r-sm); background: var(--surface-2); color: var(--muted); font-size: 12px; line-height: 1.4; }
 .stat-info.on { color: var(--ink); }
 .stat-info .aff-name { font: 600 12px var(--font-display); color: var(--c); filter: brightness(0.85); }
 .stats .egg-note { display: block; color: var(--muted); text-align: center; padding: 16px 0; }
@@ -292,10 +292,10 @@ button.day-pill:hover { box-shadow: inset 0 0 0 1.5px var(--outline); }
 .more-panel { display: flex; flex-direction: column; gap: 6px; }
 .more-panel[hidden] { display: none; }
 .more-pages { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.more-pages .btn { min-width: 0; font-size: 11.5px; padding: 3px 7px; justify-content: flex-start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.more-pages .btn { min-width: 0; font-size: 12px; padding: 3px 7px; justify-content: flex-start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .more-row { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
 .more-row b { color: var(--text); font-weight: 700; min-width: 58px; }
-.more-row .btn { font-size: 11.5px; padding: 1px 7px; min-height: 22px; }
+.more-row .btn { font-size: 12px; padding: 1px 7px; min-height: 22px; }
 .more-row .on { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card-actions .btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -332,6 +332,8 @@ body.preview #stage { right: 50%; margin-right: -150px; bottom: 80px; }
   #bubble, #bubble.attention, #card, #card.closing, #sessions li.working .dot { animation: none; }
 }
 
-.day-pill.candy { background: color-mix(in srgb, var(--sun) 30%, var(--surface)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sun) 70%, var(--outline)); }
-#sessions li.attention code { font: 700 12px var(--font-mono); color: var(--sun-ink, #3b2f00); }
+.day-pill.candy { background: color-mix(in srgb, var(--sun) 30%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--sun), 0 2px 0 var(--outline); }
+.day-pill.candy::after { content: '▸'; margin-left: 5px; }
+.day-pill.candy.armed { background: var(--sun); color: #2a2140; }
+#sessions li.attention code { font: 700 12px var(--font-mono); color: var(--ink); }
 #bubble small code { font-family: var(--font-mono); font-size: 0.95em; font-weight: 700; background: none; }

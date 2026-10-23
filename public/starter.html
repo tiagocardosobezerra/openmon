@@ -72,7 +72,6 @@
   function frame(ms) {
     const t = ms / 1000;
     drawn.forEach(({ canvas, spec }, i) => draw(canvas, spec, t + i * 0.7));
-    requestAnimationFrame(frame);
   }
 
   // Never shiny here: a shiny is rolled in secret and only shows at hatch.
@@ -111,7 +110,7 @@
       const chosen = pet && pet.stage === 'egg' && pet.starter;
       if (chosen) showDone(chosen, null, tr('starter.done', { name: species.lineages[chosen].juvenile }), tr('starter.doneSub'));
       else showDone(null, null, tr('starter.already'), tr('starter.alreadySub'));
-      requestAnimationFrame(frame);
+      OpenmonMotion.loop(frame);
       return;
     }
     const lore = Object.fromEntries(species.dex.map((e) => [e.key, e.text]));
@@ -140,7 +139,7 @@
       $('starters').appendChild(card);
       drawn.push({ canvas, spec: specOf(lineage) });
     }
-    requestAnimationFrame(frame);
+    OpenmonMotion.loop(frame);
   }
 
   OpenmonArt.loadPack();

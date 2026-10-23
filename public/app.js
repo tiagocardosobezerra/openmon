@@ -69,6 +69,7 @@
   let lastTap = 0;
   // Until when the card's candy pill waits for its confirming second click.
   let candyArmedUntil = 0;
+  let lastBubbleBottom = '';
   let landed = 0;
   // How many Openmons the team has (a companion always has company).
   let teamSize = companionId ? 2 : 1;
@@ -431,16 +432,22 @@
     // little stretched, hanging and swinging from the hand against the way it
     // is moved, looking down at the floor it left.
     if (carry) {
-      const target = Math.max(-0.38, Math.min(0.38, -carry.vx * 0.012));
+      // Hanging from the hand, the body trails behind the move: dragged to
+      // the left, it swings out to the right (a turn to the left around the
+      // grip at its head, which is a negative angle on the canvas).
+      const target = Math.max(-0.38, Math.min(0.38, carry.vx * 0.012));
       carry.tiltV = (carry.tiltV + (target - carry.tilt) * 0.22) * 0.82;
       carry.tilt += carry.tiltV;
       carry.vx *= 0.85;
+      // Read by the end-to-end test (which way it hangs while carried).
+      document.body.dataset.tilt = carry.tilt.toFixed(3);
       const up = Math.min(1, (performance.now() - carry.at) / 140);
       anim.jump = Math.max(anim.jump || 0, up * (14 + Math.sin(t * 7) * 1.5));
       anim.squash = -0.08 * up;
       anim.tilt = 0;
       anim.turn = 1;
-      anim.lookX = Math.max(-1, Math.min(1, -carry.tilt * 2));
+      // It looks where it is being taken.
+      anim.lookX = Math.max(-1, Math.min(1, carry.tilt * 2));
       anim.lookY = 1;
       anim.shake = 0;
       anim.prop = null;
@@ -901,7 +908,9 @@
     // same rule for a companion, so every Openmon's card lines up.
     const stage = currentSpec().stage;
     const lift = pose === 'attention' ? 38 : 14;
-    document.documentElement.style.setProperty('--bubble-bottom', `${Math.min(300, H - headY(stage) + lift)}px`);
+    // Only when it moves: setting it restyles the whole page.
+    const bottom = `${Math.min(300, H - headY(stage) + lift)}px`;
+    if (bottom !== lastBubbleBottom) document.documentElement.style.setProperty('--bubble-bottom', (lastBubbleBottom = bottom));
     if (companionId) return setBubble(null);
     const f = live.focus || {};
     if (toast && toast.style === 'say' && (pose === 'attention' || pose === 'error')) toast = null;
@@ -1122,7 +1131,7 @@
     const wildOut = pet.wild && pet.wild.until > Date.now();
     if (candies > 0 && !wildOut && pet.progress && pet.progress.next && pet.stage !== 'egg' && !pet.legend && pet.level < 100) {
       const armed = Date.now() < candyArmedUntil;
-      const candy = el('button', 'day-pill candy', armed ? tr('card.candySure') : tr('card.candyHint', { n: candies }));
+      const candy = el('button', `day-pill candy${armed ? ' armed' : ''}`, armed ? tr('card.candySure') : tr('card.candyHint', { n: candies }));
       candy.type = 'button';
       candy.title = tr('item.candy.text');
       // Used right here (the level-up plays on the pet), on a second click:

@@ -358,6 +358,25 @@ function runScenario(scenario) {
       w.webContents.sendInputEvent({ type: 'mouseMove', x: cursor.x - b.x, y: cursor.y - b.y, globalX: cursor.x, globalY: cursor.y, button: 'left', modifiers: ['leftButtonDown'] });
       await wait(50);
     }
+    // Mid-move, hanging from the hand: the body trails behind (dragged to
+    // the left, its feet swing out to the right, and the other way round).
+    // Quick moves one way, then the other. Carried by the head, it hangs
+    // behind the move: a turn to the left (a negative angle on the canvas,
+    // feet out to the right) while it goes left, and the other way round.
+    const sway = async (step, n) => {
+      let sum = 0;
+      for (let i = 0; i < n; i++) {
+        const b = w.getBounds();
+        cursor = { x: cursor.x + step, y: cursor.y };
+        w.webContents.sendInputEvent({ type: 'mouseMove', x: cursor.x - b.x, y: cursor.y - b.y, globalX: cursor.x, globalY: cursor.y, button: 'left', modifiers: ['leftButtonDown'] });
+        await wait(16);
+        if (i >= n / 2) sum += Number(await js(w, 'document.body.dataset.tilt || 0'));
+      }
+      return sum / (n / 2);
+    };
+    const goingRight = await sway(4, 8);
+    const goingLeft = await sway(-4, 16);
+    check(`${label}: the body swings against the move`, goingRight > 0.03 && goingLeft < -0.03, `tilt ${goingRight.toFixed(3)} going right, ${goingLeft.toFixed(3)} going left`);
     await wait(80);
     const b = w.getBounds();
     w.webContents.sendInputEvent({ type: 'mouseUp', x: cursor.x - b.x, y: cursor.y - b.y, globalX: cursor.x, globalY: cursor.y, button: 'left', clickCount: 1 });
@@ -367,7 +386,7 @@ function runScenario(scenario) {
     // middle, the hand ends up on the same column but higher on the pet, so
     // the window moves sideways with the pointer and hangs lower under it.
     const held = { x: cursor.x - after[0], y: cursor.y - after[1] };
-    check(`${label}: drag moves the window`, after[0] === before[0] + dx && after[1] > before[1] + dy, `from ${before} to ${after}, wanted a move of ${dx} and more than ${dy}`);
+    check(`${label}: drag moves the window`, after[0] === before[0] + dx - 32 && after[1] > before[1] + dy, `from ${before} to ${after}, wanted a move of ${dx - 32} and more than ${dy}`);
     check(`${label}: carried by the top of its head`, Math.abs(held.x - p.x) <= 2 && held.y < p.y - 10 && held.y > 0, `held at ${held.x},${held.y}, pressed at ${Math.round(p.x)},${Math.round(p.y)}`);
     check(`${label}: drag leaves the other windows alone`, others.every((o, i) => String(o.getPosition()) === String(othersBefore[i])));
     const place = await until(() => {

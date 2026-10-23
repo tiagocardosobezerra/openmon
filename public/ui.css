@@ -235,7 +235,7 @@ body.page * { box-sizing: border-box; }
 }
 
 /* The type's own label: its colour, its ink. */
-.type-tag { display: inline-flex; align-items: center; gap: 5px; padding: 1px 9px 1px 4px; border-radius: var(--r-pill); background: var(--type); color: var(--type-on); font: 600 11.5px/1.6 var(--font-display); box-shadow: 0 0 0 1.5px var(--type-ink); white-space: nowrap; }
+.type-tag { display: inline-flex; align-items: center; gap: 5px; padding: 1px 9px 1px 4px; border-radius: var(--r-pill); background: var(--type); color: var(--type-on); font: 600 12px/1.6 var(--font-display); box-shadow: 0 0 0 1.5px var(--type-ink); white-space: nowrap; }
 .type-tag::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: rgba(255, 255, 255, 0.85); box-shadow: inset 0 0 0 3px var(--type); }
 .panel.soft { border-color: var(--line); box-shadow: none; }
 .panel-pad { padding: 14px 16px; }
@@ -297,7 +297,7 @@ body.page * { box-sizing: border-box; }
   background: var(--surface-2);
   border: 1.5px solid var(--line);
   color: var(--muted);
-  font: 600 11.5px/1.5 var(--font-body);
+  font: 600 12px/1.5 var(--font-body);
   white-space: nowrap;
 }
 .chip.brand { background: var(--brand-soft); border-color: transparent; color: var(--brand-ink); }
@@ -335,7 +335,7 @@ button.chip[aria-pressed="true"] { border-color: var(--outline); box-shadow: var
 /* Label and value on one line, the bar under them: long values never squeeze the bar. */
 .meter { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "label value" "bar bar"; align-items: baseline; gap: 2px 8px; font-size: 12px; }
 .meter > span { grid-area: label; color: var(--muted); font-weight: 650; }
-.meter > b { grid-area: value; justify-self: end; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meter > b { grid-area: value; justify-self: end; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meter > .bar { grid-area: bar; }
 .bar { height: 12px; border-radius: 99px; background: var(--sunken); overflow: hidden; border: 2px solid var(--outline); }
 .bar > i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--type-fill); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35); transition: width 0.6s ease; }
@@ -345,7 +345,7 @@ button.chip[aria-pressed="true"] { border-color: var(--outline); box-shadow: var
 .muted { color: var(--muted); }
 .empty { color: var(--muted); padding: 18px 4px; text-align: center; }
 code, .mono { font-family: var(--font-mono); font-size: 12.5px; overflow-wrap: anywhere; }
-kbd { font: 600 11px var(--font-mono); padding: 1px 5px; border-radius: 5px; border: 1.5px solid var(--line); border-bottom-width: 2.5px; background: var(--surface); }
+kbd { font: 600 12px var(--font-mono); padding: 1px 5px; border-radius: 5px; border: 1.5px solid var(--line); border-bottom-width: 2.5px; background: var(--surface); }
 
 .field { display: grid; gap: 4px; }
 .field label { font: 600 13px var(--font-display); }

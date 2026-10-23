@@ -27,15 +27,15 @@
   .col { display: flex; flex-direction: column-reverse; height: 100%; justify-content: flex-start; border-radius: 6px 6px 2px 2px; cursor: pointer; overflow: hidden; background: var(--surface-2); }
   .col i { display: block; width: 100%; }
   .col:hover, .col.on { box-shadow: 0 0 0 2px var(--outline); }
-  .days { display: grid; grid-template-columns: repeat(14, 1fr); gap: 6px; margin-top: 4px; font-size: 10.5px; color: var(--muted); text-align: center; }
+  .days { display: grid; grid-template-columns: repeat(14, 1fr); gap: 6px; margin-top: 4px; font-size: 12px; color: var(--muted); text-align: center; }
   .days .today { color: var(--ink); font-weight: 800; }
-  .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12px; color: var(--muted); }
   .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; background: var(--c); }
   .day-detail { margin-top: 10px; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 13px; min-height: 40px; }
   .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
   .totals div { padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); }
   .totals b { display: block; font: 600 20px var(--font-display); font-variant-numeric: tabular-nums; }
-  .totals small { color: var(--muted); font-size: 11.5px; }
+  .totals small { color: var(--muted); font-size: 12px; }
   .timeline { margin-top: 12px; padding: 14px 16px; }
   .tl-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
   .tl-head h3 { margin: 0; font-size: 16px; }
@@ -53,7 +53,7 @@
   .tab .pw-ic svg, .tab .pw-ic img { width: 18px; height: 18px; }
   .tab.locked { background: var(--surface-2); border-color: var(--line); }
   .tab b { font: 600 13px var(--font-display); }
-  .tab small { font-size: 11px; color: var(--muted); }
+  .tab small { font-size: 12px; color: var(--muted); }
   .tab.on { border-color: var(--outline); box-shadow: 0 3px 0 var(--outline), inset 0 -5px 0 var(--c); }
   .tab.locked img { filter: grayscale(1) brightness(0.3); opacity: 0.55; }
   .panel-body { margin-top: 12px; padding: 16px 18px; min-height: 180px; border-top: 6px solid var(--c, var(--brand)); }
@@ -367,7 +367,7 @@
       h('div', {}, h('b', {}, tests ? `${Math.round((sum('green') / tests) * 100)}%` : '–'), h('small', {}, tr('journal.weekGreen'))),
       h('div', {}, h('b', {}, dur(sum('waitMs'))), h('small', {}, tr('journal.weekWait'))),
       // Some agents report no tokens: a dash, not a zero that looks like a bug.
-      h('div', { title: tr('today.tokensHelp') }, h('b', {}, sum('tokens') ? new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 }).format(sum('tokens')) : '–'), h('small', {}, tr('journal.weekTokens'))),
+      h('div', { title: tr('today.tokensHelp') }, h('b', {}, sum('tokens') ? new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 }).format(sum('tokens')) : tr('journal.noData')), h('small', {}, tr('journal.weekTokens'))),
       h('div', {}, h('b', { style: 'font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, top ? top[0] : '–'), h('small', {}, tr('journal.weekTop'))));
     // A ready-to-paste update for your daily stand-up.
     const standup = h('button', { class: 'btn sm', style: 'margin-top:10px', title: tr('standup.copyHelp') }, tr('standup.copy'));
@@ -389,6 +389,7 @@
   function renderTimeline() {
     $('h-timeline').textContent = tr('timeline.title');
     $('search').placeholder = tr('timeline.search');
+    $('search').setAttribute('aria-label', tr('timeline.search'));
     const q = $('search').value.trim().toLowerCase();
     const list = $('timeline');
     list.textContent = '';
