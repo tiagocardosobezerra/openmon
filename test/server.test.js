@@ -698,3 +698,42 @@ test('who follows what: a pinned conversation, a pinned project, then the queue 
     await daemon.close();
   }
 });
+
+test('a brand-new trainer can talk to the agent through the egg, then pick a starter that hatches from that work', async () => {
+  const { daemon, port } = await boot();
+  const stream = await new Promise((resolve) => http.get({ host: '127.0.0.1', port, path: '/stream?talk=1' }, resolve));
+  const json = { 'Content-Type': 'application/json' };
+  const keyed = { ...json, 'X-Openmon-Key': KEY };
+  const base = { session_id: 'n1', cwd: '/tmp/shop' };
+  try {
+    assert.equal(daemon.state().pet.awaitingStarter, true);
+
+    // Before any starter is picked, the agent's question is answered on the egg.
+    const questions = [{ question: 'Ship it?', header: 'Ship', multiSelect: false, options: [{ label: 'Yes' }, { label: 'No' }] }];
+    const hook = spawnHook(port, ['--question'], { ...base, hook_event_name: 'PreToolUse', tool_name: 'AskUserQuestion', tool_input: { questions } });
+    const q = await until(port, (s) => s.questions[0]);
+    assert.equal(JSON.parse((await request(port, 'POST', '/api/question/answer', { body: JSON.stringify({ id: q.id, answers: ['Yes'] }), headers: keyed })).body).ok, true);
+    const answered = await hook;
+    assert.deepEqual(JSON.parse(answered.out).hookSpecificOutput.updatedInput.answers, { 'Ship it?': 'Yes' });
+
+    // And a message written on the egg reaches the idle conversation.
+    const idle = spawnHook(port, ['--rewake'], { ...base, hook_event_name: 'Stop' });
+    await until(port, (st) => st.inbox.n1 && st.inbox.n1.listening);
+    assert.deepEqual(JSON.parse((await request(port, 'POST', '/api/inbox/send', { body: JSON.stringify({ session: 'n1', text: 'add tests' }), headers: keyed })).body), { ok: true, delivered: true });
+    assert.match((await idle).err, /add tests$/);
+
+    // Pick the starter; the work of that same conversation hatches it.
+    const events = JSON.parse((await request(port, 'POST', '/api/starter', { body: JSON.stringify({ lineage: 'shell' }) })).body).events;
+    assert.ok(events.some((e) => e.type === 'starter' && e.lineage === 'shell'));
+    for (let i = 0; i < 40 && daemon.state().pet.stage === 'egg'; i++) {
+      await runHook(port, { ...base, hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: `echo ${i}` }, tool_response: {} });
+    }
+    const pet = daemon.state().pet;
+    assert.equal(pet.stage, 'juvenile');
+    assert.equal(pet.lineage, 'shell');
+    assert.equal(pet.name, 'Sparkle');
+  } finally {
+    stream.destroy();
+    await daemon.close();
+  }
+});
