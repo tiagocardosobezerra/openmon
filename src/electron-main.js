@@ -76,6 +76,10 @@ const PT = {
   'Quit': 'Sair',
   '{label} needs you': '{label} precisa de você',
   'Your agent is waiting.': 'Seu agente está esperando.',
+  '{label} asks for permission': '{label} pede permissão',
+  'Click to see it and answer.': 'Clique para ver e responder.',
+  Allow: 'Permitir',
+  Deny: 'Recusar',
 };
 // Spanish menu and notification text.
 const ES_TEXT = {
@@ -148,6 +152,10 @@ const ES_TEXT = {
   "Quit": "Salir",
   "{label} needs you": "{label} te necesita",
   "Your agent is waiting.": "Tu agente está esperando.",
+  "{label} asks for permission": "{label} pide permiso",
+  "Click to see it and answer.": "Haz clic para verlo y responder.",
+  Allow: "Permitir",
+  Deny: "Rechazar",
   "Stats card": "Tarjeta",
 };
 function L(text, vars = {}) {
@@ -457,10 +465,11 @@ function applyScale(scale) {
 let powersWin = null;
 // One app window for Powers, Opendex and the trainer card; the top bar
 // moves between them.
-const APP_PAGES = new Set(['powers', 'dex', 'party', 'bag', 'card', 'help', 'settings', 'starter']);
-function openAppWindow(page = 'powers') {
+const APP_PAGES = new Set(['powers', 'dex', 'party', 'bag', 'card', 'help', 'settings', 'starter', 'request']);
+// query: only for the request page ("?id=…").
+function openAppWindow(page = 'powers', query = '') {
   if (!APP_PAGES.has(page)) page = 'powers';
-  const url = `http://127.0.0.1:${port}/${page}.html`;
+  const url = `http://127.0.0.1:${port}/${page}.html${query}`;
   if (powersWin && !powersWin.isDestroyed()) {
     if (!powersWin.webContents.getURL().startsWith(url)) powersWin.loadURL(url);
     return bringToFront(powersWin);
@@ -712,12 +721,31 @@ function companionUrl(id) {
 let petsHidden = false;
 function showPets(on) {
   petsHidden = !on;
+  fullscreenHidden = false;
   for (const w of [win, ...companionWins.values()]) {
     if (!w || w.isDestroyed()) continue;
     if (on) {
       w.showInactive();
       liftPet(w);
     } else w.hide();
+  }
+}
+
+// A full-screen app, a game or a presentation in front: the pets step aside
+// (Settings → Pet can keep them), and come back when it ends, unless you
+// hid them yourself meanwhile.
+let fullscreenHidden = false;
+function onFullscreen(full) {
+  if (full && !petsHidden && daemon && daemon.config().hideFullscreen !== false) {
+    fullscreenHidden = true;
+    for (const w of [win, ...companionWins.values()]) if (w && !w.isDestroyed()) w.hide();
+  } else if (!full && fullscreenHidden && !petsHidden) {
+    fullscreenHidden = false;
+    for (const w of [win, ...companionWins.values()]) {
+      if (!w || w.isDestroyed()) continue;
+      w.showInactive();
+      liftPet(w);
+    }
   }
 }
 
@@ -757,7 +785,7 @@ function syncCompanions(state) {
     w.__companion = id;
     // Hidden only if the pets were hidden on purpose, not because the main
     // window has not shown yet at start-up.
-    if (petsHidden) w.once('ready-to-show', () => w.hide());
+    if (petsHidden || fullscreenHidden) w.once('ready-to-show', () => w.hide());
     w.loadURL(companionUrl(id));
     w.on('closed', () => companionWins.delete(id));
     companionWins.set(id, w);
@@ -937,6 +965,10 @@ function wireIpc() {
     clipboard.writeImage(img);
     return true;
   });
+  // One agent request, whole (from the bubble's "See all").
+  ipcMain.on('open-request', (_e, id) => {
+    if (/^[a-f0-9]{24}$/.test(String(id))) openAppWindow('request', `?id=${id}`);
+  });
   ipcMain.on('open-page', (_e, page) => {
     openAppWindow(page);
   });
@@ -993,10 +1025,46 @@ function watchStarter(state) {
 
 // OS notification when an agent has waited a while and the user has not
 // noticed the pet.
+// A permission the pet can answer, waiting a few seconds: a system
+// notification with Allow and Deny (buttons where the system has them; a
+// click opens the request page, with the whole change). It goes away once
+// the request is answered anywhere.
+const PERMISSION_NOTIFY_MS = 6000;
+const permissionNotes = new Map();
+function watchPermissions(state) {
+  const pending = state.permissions || [];
+  for (const [id, n] of permissionNotes) {
+    if (pending.some((p) => p.id === id)) continue;
+    try {
+      n.close();
+    } catch {}
+    permissionNotes.delete(id);
+  }
+  if (!state.config.notify || state.config.quiet || state.demo || !Notification.isSupported()) return;
+  const waitMs = (state.config.answerWaitSec || 25) * 1000;
+  for (const p of pending) {
+    if (permissionNotes.has(p.id) || waitMs - (p.until - Date.now()) < PERMISSION_NOTIFY_MS) continue;
+    const n = new Notification({
+      title: L('{label} asks for permission', { label: p.label || 'Agent' }),
+      // "Allow Bash: npm publish?" reads as "Bash: npm publish".
+      body: [String(p.detail || '').replace(/^Allow (.*)\?$/s, '$1'), L('Click to see it and answer.')].filter(Boolean).join('\n'),
+      silent: true,
+      actions: [{ type: 'button', text: L('Allow') }, { type: 'button', text: L('Deny') }],
+    });
+    n.on('action', (_e, index) => daemon.decidePermission(p.id, index === 0 ? 'allow' : 'deny'));
+    n.on('click', () => openAppWindow('request', `?id=${p.id}`));
+    permissionNotes.set(p.id, n);
+    n.show();
+  }
+}
+
 function watchAttention(state) {
   latest = state;
+  watchPermissions(state);
   const live = state.live;
   if (live.pose !== 'attention' || !live.focus) return;
+  // A permission has its own notification (with its buttons).
+  if ((state.permissions || []).some((p) => p.session === live.focus.id)) return;
   const since = live.focus.since;
   if (notifiedFor === since || !state.config.notify || state.config.quiet || state.demo) return;
   // With a screen reader on, the pet cannot be seen to wait: notify at once.
@@ -1070,6 +1138,7 @@ app.whenReady().then(async () => {
   wireIpc();
   createWindow();
   for (const ev of ['display-removed', 'display-metrics-changed']) screen.on(ev, () => setTimeout(keepPetsOnScreen, 300));
+  if (!PLAYGROUND) stopFullscreen = require('./fullscreen').watchFullscreen(onFullscreen);
   if (PLAYGROUND) openControlPanel();
   // Keyboard: Ctrl+Alt+O opens the card, Ctrl+Alt+J jumps to the agent that waits.
   if (!PLAYGROUND) {
@@ -1099,7 +1168,9 @@ app.whenReady().then(async () => {
 
 app.on('second-instance', () => win && showPets(true));
 app.on('window-all-closed', (e) => e.preventDefault());
+let stopFullscreen = () => {};
 app.on('before-quit', () => {
+  stopFullscreen();
   logError('quit requested');
   // Tells the supervisor (`openmon start`) this exit was on purpose.
   try {

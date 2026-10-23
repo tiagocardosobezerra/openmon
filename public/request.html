@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/brand/icon.svg">
+<title>Openmon request</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  main { padding-bottom: 48px; max-width: 980px; }
+  .req { padding: 16px 18px; }
+  .req .who { font: 600 13px var(--font-display); color: var(--muted); }
+  .req h2 { margin: 2px 0 6px; font-size: 20px; }
+  .req .what { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+  .req .left { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+  .file { margin: 16px 0 6px; font: 600 14px var(--font-display); }
+  /* The whole change: removed lines red, added lines green. */
+  .diff { margin: 0; padding: 8px 0; border-radius: var(--r-md); background: var(--sunken); box-shadow: inset 0 0 0 1.5px var(--line); max-height: 52vh; overflow: auto; }
+  .diff code { display: block; padding: 1px 12px; font: 500 13px/1.5 var(--font-mono); white-space: pre; }
+  .diff .del { background: color-mix(in srgb, #e5484d 20%, transparent); }
+  .diff .add { background: color-mix(in srgb, #3fb8a6 22%, transparent); }
+  .more { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .done { padding: 18px; font-size: 15px; }
+</style>
+</head>
+<body class="page" data-page="request">
+<main class="wrap">
+  <div class="hero"><div><h1 id="title"></h1><p id="sub"></p></div></div>
+  <section class="req panel" id="req" hidden>
+    <div class="who" id="who"></div>
+    <h2 id="h"></h2>
+    <p class="what" id="what"></p>
+    <p class="left" id="left"></p>
+    <div id="diffbox"></div>
+    <div class="actions">
+      <button class="btn primary" id="allow" type="button"></button>
+      <button class="btn" id="always" type="button" hidden></button>
+      <button class="btn" id="deny" type="button"></button>
+      <button class="btn quiet" id="release" type="button"></button>
+    </div>
+  </section>
+  <p class="done panel soft" id="done" hidden></p>
+</main>
+<script src="i18n.js"></script>
+<script src="nav.js"></script>
+<script>
+  // One request from an agent, whole: what it wants to run or change, and
+  // Allow / Deny. Opened from the bubble ("See all") or a system notification.
+  const { t: tr, detail: trDetail, lang } = window.OpenmonI18n;
+  document.documentElement.lang = lang;
+  const $ = (id) => document.getElementById(id);
+  const id = new URLSearchParams(location.search).get('id') || '';
+  $('title').textContent = tr('request.title');
+  document.title = `${tr('request.title')} · Openmon`;
+  $('sub').textContent = tr('request.sub');
+  $('allow').textContent = tr('perm.allow');
+  $('always').textContent = tr('perm.always');
+  $('deny').textContent = tr('perm.deny');
+  $('release').textContent = tr('request.release');
+  let req = null;
+  let answered = false;
+
+  function finish(text) {
+    answered = true;
+    $('req').hidden = true;
+    $('done').textContent = text;
+    $('done').hidden = false;
+  }
+
+  function render() {
+    $('req').hidden = false;
+    $('who').textContent = req.label || tr('yourAgent');
+    $('h').textContent = tr('request.wants');
+    $('what').textContent = trDetail(req.detail) || '';
+    $('always').hidden = !req.canAlways;
+    const box = $('diffbox');
+    box.textContent = '';
+    if (req.diff) {
+      if (req.diff.file) box.append(Object.assign(document.createElement('div'), { className: 'file', textContent: req.diff.file }));
+      const pre = document.createElement('pre');
+      pre.className = 'diff';
+      for (const l of req.diff.lines) pre.append(Object.assign(document.createElement('code'), { className: l.t === '-' ? 'del' : 'add', textContent: `${l.t} ${l.s}` }));
+      box.append(pre);
+      if (req.diff.more) box.append(Object.assign(document.createElement('p'), { className: 'more', textContent: tr('perm.moreLines', { n: req.diff.more }) }));
+    }
+  }
+
+  async function poll() {
+    if (answered) return;
+    const r = await fetch(`/api/permission?id=${encodeURIComponent(id)}`).then((x) => x.json()).catch(() => ({ gone: true }));
+    if (r.gone) return finish(req ? tr('request.timedOut') : tr('request.gone'));
+    if (!req) {
+      req = r;
+      render();
+    }
+    const left = Math.max(0, Math.ceil((r.until - Date.now()) / 1000));
+    $('left').textContent = tr('request.left', { s: left });
+  }
+
+  async function decide(decision) {
+    const r = await fetch('/api/permission/decide', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, decision }) }).then((x) => x.json()).catch(() => ({}));
+    if (!r.ok) return finish(tr('request.gone'));
+    finish(decision === 'deny' ? tr('request.denied') : decision === 'release' ? tr('request.released') : tr('request.allowed'));
+  }
+  for (const d of ['allow', 'always', 'deny', 'release']) $(d).onclick = () => decide(d);
+  document.addEventListener('keydown', (e) => {
+    if (answered || !req || e.target.closest('input, textarea')) return;
+    if (e.key === 'y' || e.key === 'Y') decide('allow');
+    if (e.key === 'n' || e.key === 'N') decide('deny');
+  });
+  poll();
+  setInterval(poll, 1000);
+</script>
+</body>
+</html>

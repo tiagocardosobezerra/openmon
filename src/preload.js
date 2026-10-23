@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('openmonDesktop', {
   onCommand: (fn) => ipcRenderer.on('command', (_e, cmd) => fn(cmd)),
   openPowers: () => ipcRenderer.send('open-powers'),
   openPage: (page) => ipcRenderer.send('open-page', String(page)),
+  openRequest: (id) => ipcRenderer.send('open-request', String(id)),
   openName: () => ipcRenderer.send('open-name'),
   installHooks: () => ipcRenderer.send('install-hooks'),
   // "Write to the agent": kind is message, question or deny; ref the session or request id.

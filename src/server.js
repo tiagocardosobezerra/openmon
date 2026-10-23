@@ -133,7 +133,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, wild: true, companions: [], shareSessions: true, follows: {} };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, wild: true, hideFullscreen: true, companions: [], shareSessions: true, follows: {} };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -449,12 +449,12 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   // What an edit would change, for the bubble: the lines that go and the
   // lines that come (the unchanged ones around them dropped), a few at
   // most, secrets hidden. Commands need none: the command is the detail.
-  function permissionPreview(tool, input) {
+  // (The bubble shows 8 short lines; the request page, up to 400 whole ones.)
+  function permissionPreview(tool, input, MAX = 8, WIDTH = 90) {
     if (!input || typeof input !== 'object') return null;
-    const MAX = 8;
     const clip = (s) => {
       const t = String(s).replace(/\t/g, '  ').replace(/\s+$/, '');
-      return t.length > 90 ? `${t.slice(0, 89)}…` : t;
+      return t.length > WIDTH ? `${t.slice(0, WIDTH - 1)}…` : t;
     };
     // Secrets are hidden in the whole text first: some span lines (keys).
     const split = (s) => (typeof s === 'string' && s ? redact(s).split(/\r?\n/) : []);
@@ -491,7 +491,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // Claude Code's own suggestions ("allow this from now on") make the
     // "Always allow" button possible.
     const suggestions = Array.isArray(body.permission_suggestions) && body.permission_suggestions.length ? body.permission_suggestions : null;
-    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), label: signal ? signal.label : null, detail: signal ? signal.detail : null, until: now() + waitMs, waiters: [], decision: null, suggestions, preview: permissionPreview(body.tool_name, body.tool_input) };
+    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), label: signal ? signal.label : null, detail: signal ? signal.detail : null, until: now() + waitMs, waiters: [], decision: null, suggestions, preview: permissionPreview(body.tool_name, body.tool_input), full: permissionPreview(body.tool_name, body.tool_input, 400, 400) };
     entry.timer = setTimeout(() => settlePermission(id, null), waitMs + 500);
     if (entry.timer.unref) entry.timer.unref();
     permissions.set(id, entry);
@@ -1008,6 +1008,12 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           res.on('close', () => (entry.waiters = entry.waiters.filter((r) => r !== res)));
         });
       // Your Allow or Deny, from the pet window (same-origin page only).
+      // The request page: one waiting request, its whole diff.
+      case 'GET /api/permission': {
+        const entry = permissions.get(String(url.searchParams.get('id') || ''));
+        if (!entry) return json(res, 200, { gone: true });
+        return json(res, 200, { id: entry.id, label: entry.label, detail: entry.detail, until: entry.until, canAlways: Boolean(entry.suggestions), diff: entry.full || null });
+      }
       case 'POST /api/permission/decide':
         return readJson(req, (err, body) => {
           if (err || !body || !['allow', 'deny', 'always', 'release'].includes(body.decision)) return res.writeHead(400).end();
@@ -1202,6 +1208,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (body.answerFromPet === true && hooksInstalled()) upgradeHooks();
           if (typeof body.answerFromPet === 'boolean') patch.answerFromPet = body.answerFromPet;
           if (typeof body.wild === 'boolean') patch.wild = body.wild;
+          if (typeof body.hideFullscreen === 'boolean') patch.hideFullscreen = body.hideFullscreen;
           if (typeof body.answerWaitSec === 'number' && body.answerWaitSec >= 5 && body.answerWaitSec <= 60) patch.answerWaitSec = Math.round(body.answerWaitSec);
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
           if (typeof body.tokenLimit === 'number' && body.tokenLimit >= 0 && body.tokenLimit <= 1e10) patch.tokenLimit = Math.round(body.tokenLimit);
@@ -1300,6 +1307,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     ingest,
     petIt,
     focusAgent,
+    // Allow / Deny from a system notification's buttons.
+    decidePermission: (id, decision) => settlePermission(id, decision),
     recheckHooks,
     setFocus,
     restoreFile,

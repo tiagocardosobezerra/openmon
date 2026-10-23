@@ -535,6 +535,11 @@ test('a permission to edit shows what would change (only the changed lines, secr
     assert.deepEqual(p.preview.lines.map((l) => l.t), ['-', '+']);
     assert.equal(p.preview.lines[0].s, 'const key = "x";');
     assert.ok(!p.preview.lines[1].s.includes('sk-abcdefghijklmnopqrstuv'), p.preview.lines[1].s);
+    // The request page gets the whole change, and nothing once it is answered.
+    const page = JSON.parse((await request(port, 'GET', `/api/permission?id=${p.id}`)).body);
+    assert.equal(page.diff.lines.length, 2);
+    assert.equal(page.label, p.label);
+    assert.equal(JSON.parse((await request(port, 'GET', '/api/permission?id=nope')).body).gone, true);
     await request(port, 'POST', '/api/permission/decide', { body: JSON.stringify({ id: p.id, decision: 'allow' }), headers: { 'Content-Type': 'application/json' } });
     assert.equal(JSON.parse((await hook).out).hookSpecificOutput.decision.behavior, 'allow');
   } finally {

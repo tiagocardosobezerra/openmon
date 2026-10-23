@@ -275,7 +275,7 @@ function runScenario(scenario) {
     page.webContents.on('console-message', (_e, level, message) => level >= 3 && errors.push(message));
     page.webContents.on('render-process-gone', (_e, d) => errors.push(`renderer gone: ${d.reason}`));
     check('pages: the pets step behind an open page', pets.every((w) => !w.isAlwaysOnTop() && w.__belowPage));
-    for (const name of ['bag', 'party', 'dex', 'powers', 'card', 'help', 'settings']) {
+    for (const name of ['bag', 'party', 'dex', 'powers', 'card', 'help', 'settings', 'request']) {
       if (!page.webContents.getURL().endsWith(`/${name}.html`)) {
         // Through the top bar, as a person would.
         await js(page, `location.href = '/${name}.html'`).catch(() => {});

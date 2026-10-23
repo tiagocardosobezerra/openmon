@@ -909,6 +909,8 @@
         b.textContent = label;
         row.appendChild(b);
       }
+      // The whole change, on a page of its own.
+      if (choices.preview) row.appendChild(bubbleButton({ request: choices.id }, tr('request.seeAll'), ''));
       // Deny with a reason (or deny and stop), written in a small window.
       if (canTalk) row.appendChild(bubbleButton({ talk: 'deny', ref: choices.id }, tr('perm.reason'), ''));
       row.appendChild(bubbleButton({ decide: 'open' }, tr('jump.open'), 'ghost'));
@@ -1984,6 +1986,13 @@
     const write = e.target.closest && e.target.closest('[data-talk]');
     if (write) {
       talk(write.dataset.talk, write.dataset.ref);
+      return;
+    }
+    // "See all": the request page, with the whole diff.
+    const seeAll = e.target.closest && e.target.closest('[data-request]');
+    if (seeAll) {
+      if (desktop && desktop.openRequest) desktop.openRequest(seeAll.dataset.request);
+      else window.open(`/request.html?id=${encodeURIComponent(seeAll.dataset.request)}`, '_blank');
       return;
     }
     // The first-run demo: a scripted session on a throwaway egg.
