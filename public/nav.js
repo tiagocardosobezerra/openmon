@@ -2,7 +2,8 @@
 
 // The top bar shared by every page: the brand, the main places with an icon
 // and a label, "More" for the rest, Settings, and your Openmon at the corner
-// as "you are here". <body data-page="dex"> marks the current page.
+// as "you are here", next to the brand. <body data-page="dex"> marks the
+// current page.
 (function () {
   const { t: tr } = window.OpenmonI18n;
   const page = document.body.dataset.page;
@@ -144,7 +145,7 @@
   window.addEventListener('blur', () => closeMenus());
   nav.append(more, link('settings', '/settings.html', tr('card.settings')));
 
-  // Your Openmon at the corner: "you are here".
+  // Your Openmon: "you are here".
   const me = document.createElement('a');
   me.className = 'nav-me';
   me.href = '/dex.html';
@@ -171,7 +172,9 @@
     })
     .catch(() => {});
 
-  bar.append(brand, nav, me);
+  // On the left, next to the brand: its space is kept while the image
+  // loads, so the places on the right never move.
+  bar.append(brand, me, nav);
   const here = nav.querySelector('[aria-current="page"][href]');
   if (here) document.title = `${here.title || here.textContent} · Openmon`;
   document.body.prepend(bar);
