@@ -371,7 +371,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     }
     if (target === real && (signal.kind === 'turn-end' || signal.kind === 'session-end') && payload.transcript_path) {
       const delta = usage.read(String(payload.transcript_path));
-      if (delta) events.push(...pet.addTokens(real.pet, delta, t));
+      if (delta) events.push(...pet.addTokens(real.pet, delta, t, signal.label || null, config.tokenLimit || 0));
     }
     if (target === real) persist(events.some((e) => e.type === 'evolve'));
     log(`${signal.kind.padEnd(14)} ${signal.label}${signal.detail ? ` · ${signal.detail}` : ''}`);
@@ -446,6 +446,40 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   // Answers that arrive before the hook starts waiting are kept a moment.
   const settled = new Map();
 
+  // What an edit would change, for the bubble: the lines that go and the
+  // lines that come (the unchanged ones around them dropped), a few at
+  // most, secrets hidden. Commands need none: the command is the detail.
+  function permissionPreview(tool, input) {
+    if (!input || typeof input !== 'object') return null;
+    const MAX = 8;
+    const clip = (s) => {
+      const t = redact(String(s).replace(/\t/g, '  ').replace(/\s+$/, ''));
+      return t.length > 90 ? `${t.slice(0, 89)}…` : t;
+    };
+    const split = (s) => (typeof s === 'string' && s ? s.split(/\r?\n/) : []);
+    const lines = [];
+    let more = 0;
+    const push = (t, s) => (lines.length < MAX ? lines.push({ t, s: clip(s) }) : more++);
+    const change = (before, after) => {
+      const a = split(before);
+      const b = split(after);
+      let start = 0;
+      while (start < a.length && start < b.length && a[start] === b[start]) start++;
+      let end = 0;
+      while (end < a.length - start && end < b.length - start && a[a.length - 1 - end] === b[b.length - 1 - end]) end++;
+      for (const s of a.slice(start, a.length - end)) push('-', s);
+      for (const s of b.slice(start, b.length - end)) push('+', s);
+    };
+    const file = (p) => (typeof p === 'string' && p ? p.split(/[\\/]/).pop() : null);
+    if (tool === 'Edit') change(input.old_string, input.new_string);
+    else if (tool === 'MultiEdit' && Array.isArray(input.edits)) for (const e of input.edits) change(e && e.old_string, e && e.new_string);
+    else if (tool === 'Write') for (const s of split(input.content)) push('+', s);
+    else if (tool === 'NotebookEdit') for (const s of split(input.new_source)) push('+', s);
+    else return null;
+    if (!lines.length) return null;
+    return { file: file(input.file_path || input.notebook_path), lines, more };
+  }
+
   function askPermission(body, signal) {
     if (!config.answerFromPet || !body._permission || !clients.size || world !== real) return null;
     // The agent's questions have their own hook (and their own bubble).
@@ -456,7 +490,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // Claude Code's own suggestions ("allow this from now on") make the
     // "Always allow" button possible.
     const suggestions = Array.isArray(body.permission_suggestions) && body.permission_suggestions.length ? body.permission_suggestions : null;
-    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), label: signal ? signal.label : null, detail: signal ? signal.detail : null, until: now() + waitMs, waiters: [], decision: null, suggestions };
+    const entry = { id, session: signal ? signal.session : String(body.session_id || 'default'), label: signal ? signal.label : null, detail: signal ? signal.detail : null, until: now() + waitMs, waiters: [], decision: null, suggestions, preview: permissionPreview(body.tool_name, body.tool_input) };
     entry.timer = setTimeout(() => settlePermission(id, null), waitMs + 500);
     if (entry.timer.unref) entry.timer.unref();
     permissions.set(id, entry);
@@ -483,7 +517,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   }
 
   function permissionView() {
-    return [...permissions.values()].map((p) => ({ id: p.id, session: p.session, label: p.label, detail: p.detail, until: p.until, canAlways: Boolean(p.suggestions) }));
+    return [...permissions.values()].map((p) => ({ id: p.id, session: p.session, label: p.label, detail: p.detail, until: p.until, canAlways: Boolean(p.suggestions), preview: p.preview || null }));
   }
 
   // The agent's questions (AskUserQuestion) the pet can answer, like
@@ -950,8 +984,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'GET /api/powers':
         {
           const v = pet.view(world.pet);
-          if (config.present) return json(res, 200, { unlocked: unlockedPowers(world.pet), today: v.today, journal: v.journal.map((e) => ({ ...e, projects: {}, agentMs: {} })), streak: v.streak, sessions: [], present: true });
-          return json(res, 200, { unlocked: unlockedPowers(world.pet), today: v.today, journal: v.journal, streak: v.streak, sessions: powers.view() });
+          if (config.present) return json(res, 200, { unlocked: unlockedPowers(world.pet), featured: v.featured, today: v.today, journal: v.journal.map((e) => ({ ...e, projects: {}, agentMs: {}, tokensBy: {} })), streak: v.streak, sessions: [], present: true });
+          return json(res, 200, { unlocked: unlockedPowers(world.pet), featured: v.featured, today: v.today, journal: v.journal, streak: v.streak, sessions: powers.view() });
         }
       case 'GET /api/playground':
         return json(res, 200, { playground: Boolean(dev) });
@@ -1113,6 +1147,17 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (ok && body.place === 'box' && (config.companions || []).includes(body.id)) setConfig({ companions: config.companions.filter((x) => x !== body.id) });
           json(res, 200, { ok });
         });
+      // Trading: a member leaves as a code, a code brings one in.
+      case 'POST /api/trade/out':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          const id = String(body.id || '');
+          const code = partyAction(() => party.tradeOut(real.pet, id, now()));
+          if (code && (config.companions || []).includes(id)) setConfig({ companions: config.companions.filter((x) => x !== id) });
+          json(res, 200, code ? { ok: true, code } : { ok: false });
+        });
+      case 'POST /api/trade/in':
+        return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, partyAction(() => party.tradeIn(real.pet, String(body.code || ''), now())))));
       case 'POST /api/party/rename':
         return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, { events: partyAction(() => party.renameMember(real.pet, String(body.id || ''), body.name)) })));
       case 'POST /api/wild/throw':
@@ -1156,6 +1201,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.wild === 'boolean') patch.wild = body.wild;
           if (typeof body.answerWaitSec === 'number' && body.answerWaitSec >= 5 && body.answerWaitSec <= 60) patch.answerWaitSec = Math.round(body.answerWaitSec);
           if (typeof body.scale === 'number' && body.scale >= 0.6 && body.scale <= 1.6) patch.scale = body.scale;
+          if (typeof body.tokenLimit === 'number' && body.tokenLimit >= 0 && body.tokenLimit <= 1e10) patch.tokenLimit = Math.round(body.tokenLimit);
           // One-time tips, remembered so they are never shown twice.
           if (typeof body.tipSeen === 'string' && /^[a-z-]{1,24}$/.test(body.tipSeen) && !(config.tips || []).includes(body.tipSeen)) patch.tips = [...(config.tips || []), body.tipSeen].slice(-20);
           if (typeof body.focusMinutes === 'number') patch.focusUntil = body.focusMinutes > 0 ? now() + Math.min(body.focusMinutes, 600) * 60_000 : null;
@@ -1251,6 +1297,11 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     ingest,
     petIt,
     focusAgent,
+    // The keyboard answer (Ctrl+Alt+Y / N): the request that waits longest.
+    decideOldest: (decision) => {
+      const oldest = [...permissions.values()].sort((a, b) => a.until - b.until)[0];
+      return oldest ? settlePermission(oldest.id, decision) : false;
+    },
     recheckHooks,
     setFocus,
     restoreFile,

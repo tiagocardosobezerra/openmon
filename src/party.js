@@ -256,4 +256,50 @@ function view(root) {
   return { held: heldByOthers(root), size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
 }
 
-module.exports = { ensure, addMember, applySignal, chooseStarter, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, heldByOthers, PARTY_SIZE, EGG_AFTER_ACTIONS };
+// Trading with a friend: a member (not the one on screen, not an egg or a
+// legendary) leaves your team as a code; whoever pastes the code in their
+// Team gets it. Your own code brings it back. Each code works once per
+// computer. The checksum only catches a code cut short when copied.
+const TRADE_PREFIX = 'OPENMON1';
+const TRADE_FIELDS = ['name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'history'];
+const tradeSum = (body) => crypto.createHash('sha256').update(body).digest('hex').slice(0, 8);
+
+function tradeOut(root, id, now) {
+  ensure(root);
+  const member = root.others.find((m) => m.id === id);
+  if (!member || member.legend || member.awaitingStarter || member.stage === 'egg') return null;
+  const data = { from: member.id, at: now };
+  for (const k of TRADE_FIELDS) if (member[k] !== undefined) data[k] = member[k];
+  const body = Buffer.from(JSON.stringify(data)).toString('base64url');
+  root.others = root.others.filter((m) => m !== member);
+  return `${TRADE_PREFIX}.${body}.${tradeSum(body)}`;
+}
+
+function tradeIn(root, code, now) {
+  ensure(root);
+  const m = /^OPENMON1\.([A-Za-z0-9_-]{10,20000})\.([0-9a-f]{8})$/.exec(String(code || '').replace(/\s+/g, ''));
+  if (!m || tradeSum(m[1]) !== m[2]) return { ok: false, reason: 'invalid' };
+  let data;
+  try {
+    data = JSON.parse(Buffer.from(m[1], 'base64url').toString('utf8'));
+  } catch {
+    return { ok: false, reason: 'invalid' };
+  }
+  const STAGES_OK = ['juvenile', 'adult', 'mythic'];
+  if (!data || typeof data !== 'object' || !STAGES_OK.includes(data.stage) || typeof data.lineage !== 'string' || !(Number(data.xp) >= 0) || typeof data.from !== 'string') return { ok: false, reason: 'invalid' };
+  const ticket = `${data.from}:${m[2]}`;
+  root.received = Array.isArray(root.received) ? root.received : [];
+  if (root.received.includes(ticket)) return { ok: false, reason: 'used' };
+  const member = { xpLog: [], project: `trade:${String(data.name || '').slice(0, 24)}`, holding: null };
+  for (const k of TRADE_FIELDS) if (data[k] !== undefined) member[k] = data[k];
+  member.name = typeof member.name === 'string' ? member.name.slice(0, 24) : null;
+  member.xp = Math.min(Number(member.xp) || 0, 10_000_000);
+  addMember(root, member);
+  root.received = [...root.received, ticket].slice(-200);
+  // A form you had never seen counts as seen.
+  const key = `${member.lineage}-${member.stage}`;
+  if (root.dex && !root.dex[key]) root.dex[key] = now;
+  return { ok: true, place: member.place, name: pet.displayName(merge(root, member)) };
+}
+
+module.exports = { tradeOut, tradeIn, ensure, addMember, applySignal, chooseStarter, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, heldByOthers, PARTY_SIZE, EGG_AFTER_ACTIONS };

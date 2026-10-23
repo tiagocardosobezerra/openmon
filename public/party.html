@@ -61,6 +61,13 @@
   .upcoming div { display: grid; grid-template-columns: 1fr 160px auto; gap: 10px; align-items: center; padding: 8px 12px; border-radius: var(--r-md); background: var(--surface); border: var(--bw) solid var(--line); }
   .switch { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
   .switch input { width: 18px; height: 18px; accent-color: var(--brand); }
+  /* Trading: the code to send, and the box to paste one in. */
+  .more .menu textarea.code { width: 100%; min-height: 64px; font: 12px var(--font-mono); resize: vertical; }
+  .more .menu small { color: var(--muted); font-size: 12px; }
+  .trade-in { max-width: 640px; padding: 12px 14px; }
+  .trade-in p { margin: 0 0 8px; }
+  .trade-row { display: flex; gap: 8px; }
+  .trade-row .input { flex: 1; min-width: 0; font-family: var(--font-mono); }
 </style>
 </head>
 <body class="page" data-page="party">
@@ -71,6 +78,11 @@
   <h2 class="section-title" id="h-upcoming"></h2>
   <p class="muted" id="upcoming-sub" style="margin:-4px 0 10px"></p>
   <div class="upcoming" id="upcoming"></div>
+  <h2 class="section-title" id="h-trade"></h2>
+  <div class="trade-in panel soft">
+    <p class="muted" id="trade-sub"></p>
+    <div class="trade-row"><input class="input" id="trade-code" autocomplete="off" spellcheck="false"><button class="btn primary" id="trade-go" type="button"></button></div>
+  </div>
   <h2 class="section-title"><img src="/ui/nest.svg" alt=""><span id="h-box"></span> <small id="box-count"></small><span class="walls" id="walls"></span></h2>
   <div class="boxwrap" id="boxwrap"><div class="grid" id="box"></div></div>
 </main>
@@ -82,7 +94,7 @@
   const { t: tr, lang } = window.OpenmonI18n;
   document.documentElement.lang = lang;
   const $ = (id) => document.getElementById(id);
-  for (const [id, key] of [['title', 'party.title'], ['sub', 'party.sub'], ['h-party', 'party.party'], ['h-box', 'party.box'], ['h-upcoming', 'party.upcoming'], ['upcoming-sub', 'party.upcomingSub']]) $(id).textContent = tr(key);
+  for (const [id, key] of [['title', 'party.title'], ['sub', 'party.sub'], ['h-party', 'party.party'], ['h-box', 'party.box'], ['h-upcoming', 'party.upcoming'], ['upcoming-sub', 'party.upcomingSub'], ['h-trade', 'trade.inTitle'], ['trade-sub', 'trade.inSub'], ['trade-go', 'trade.receive']]) $(id).textContent = tr(key);
   const el = (tag, cls, text) => {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -125,7 +137,7 @@
     const kind = p.name === p.form ? [p.lineage && !p.legend ? tr(`power.${p.lineage}`) : null, tr(`stage.${p.stage}`)].filter(Boolean).join(' · ') : p.form;
     c.append(stage, name, el('span', 'meta', `${tr('card.level', { n: p.level })} · ${kind}`));
     // Legendaries, mystery eggs and wild ones belong to no project.
-    const special = p.legend ? tr('party.legendTag') : p.project && p.project.startsWith('mystery:') ? tr('party.mysteryTag') : p.project && p.project.startsWith('wild:') ? tr('party.wildTag') : null;
+    const special = p.legend ? tr('party.legendTag') : p.project && p.project.startsWith('mystery:') ? tr('party.mysteryTag') : p.project && p.project.startsWith('wild:') ? tr('party.wildTag') : p.project && p.project.startsWith('trade:') ? tr('party.tradeTag') : null;
     const mystery = !p.legend && p.project && p.project.startsWith('mystery:');
     const bar = el('div', 'bar');
     const fill = el('i');
@@ -162,7 +174,7 @@
       const row = el('label', 'follow');
       row.append(el('span', '', tr('party.follows')));
       const sel = el('select');
-      const projects = [...new Set([...data.members, ...data.box].map((m) => m.project).concat(data.upcoming.map((u) => u.project)).filter((x) => x && !x.startsWith('mystery:') && !x.startsWith('wild:') && !x.startsWith('legend:')))].sort();
+      const projects = [...new Set([...data.members, ...data.box].map((m) => m.project).concat(data.upcoming.map((u) => u.project)).filter((x) => x && !x.startsWith('mystery:') && !x.startsWith('wild:') && !x.startsWith('legend:') && !x.startsWith('trade:')))].sort();
       const current = (cfg.follows || {})[p.id] || '';
       for (const [value, text] of [['', tr('party.followsAuto')], ...projects.map((x) => [x, x])]) {
         const o = el('option', '', text);
@@ -200,6 +212,35 @@
       const show = el('button', 'btn sm quiet', tr('party.show'));
       show.onclick = () => post('/api/party/active', { id: p.id });
       menu.append(show);
+    }
+    // Trade with a friend: it leaves as a code, after a clear "are you sure".
+    if (!p.active && !p.legend && p.stage !== 'egg') {
+      const trade = el('button', 'btn sm quiet', tr('trade.button'));
+      trade.dataset.keepOpen = '';
+      trade.onclick = () => {
+        const go = el('button', 'btn sm primary', tr('trade.confirm'));
+        go.type = 'button';
+        go.dataset.keepOpen = '';
+        go.onclick = async () => {
+          const r = await fetch('/api/trade/out', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id }) }).then((x) => x.json()).catch(() => ({}));
+          if (!r.ok) return window.openmonNote(tr('party.failed'), false);
+          const field = el('textarea', 'input code');
+          field.readOnly = true;
+          field.value = r.code;
+          field.setAttribute('aria-label', tr('trade.code'));
+          const copy = el('button', 'btn sm primary', tr('trade.copy'));
+          copy.type = 'button';
+          copy.dataset.keepOpen = '';
+          copy.onclick = () => openmonCopyInto(copy, r.code, tr('trade.copied'));
+          const done = el('button', 'btn sm quiet', tr('trade.done'));
+          done.type = 'button';
+          done.onclick = () => load();
+          menu.replaceChildren(el('b', '', tr('trade.ready', { name: OpenmonI18n.name(p.name) })), field, copy, el('small', '', tr('trade.undo')), done);
+          field.select();
+        };
+        menu.replaceChildren(el('b', '', tr('trade.sure', { name: OpenmonI18n.name(p.name) })), el('small', '', tr('trade.sureSub')), go);
+      };
+      menu.append(trade);
     }
     const rename = el('button', 'btn sm quiet', tr('party.rename'));
     rename.dataset.keepOpen = '';
@@ -318,7 +359,17 @@
         try {
           localStorage.setItem('openmon.boxWall', w);
         } catch {}
-        renderWalls();
+        // A friend's code: their Openmon joins your team.
+  $('trade-code').setAttribute('aria-label', tr('trade.code'));
+  $('trade-code').placeholder = 'OPENMON1.…';
+  $('trade-go').onclick = async () => {
+    const r = await fetch('/api/trade/in', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: $('trade-code').value }) }).then((x) => x.json()).catch(() => ({}));
+    if (!r.ok) return window.openmonNote(tr(r.reason === 'used' ? 'trade.used' : 'trade.invalid'), false);
+    $('trade-code').value = '';
+    window.openmonNote(tr(r.place === 'box' ? 'trade.joinedNest' : 'trade.joined', { name: OpenmonI18n.name(r.name) }));
+    load();
+  };
+  renderWalls();
       };
       box.append(b);
     }

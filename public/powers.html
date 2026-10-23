@@ -23,6 +23,12 @@
   .journal h3 { margin: 0; font-size: 16px; }
   .journal .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
   .journal .head p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .by-project { margin-top: 14px; }
+  .by-project h4 { margin: 0 0 6px; font: 600 14px var(--font-display); }
+  .by-project table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .by-project th { text-align: left; color: var(--muted); font-weight: 600; padding: 4px 6px; border-bottom: 1.5px solid var(--line); }
+  .by-project td { padding: 5px 6px; border-bottom: 1px solid var(--line); }
+  .by-project .n { text-align: right; font-variant-numeric: tabular-nums; }
   .chart { display: grid; grid-template-columns: repeat(14, 1fr); align-items: end; gap: 6px; height: 120px; padding-bottom: 2px; border-bottom: 2px solid var(--line); }
   .col { display: flex; flex-direction: column-reverse; height: 100%; justify-content: flex-start; border-radius: 6px 6px 2px 2px; cursor: pointer; overflow: hidden; background: var(--surface-2); }
   .col i { display: block; width: 100%; }
@@ -51,6 +57,7 @@
   .tab img { width: 56px; height: 56px; object-fit: contain; }
   .tab .pw-ic { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; color: var(--muted); }
   .tab .pw-ic svg, .tab .pw-ic img { width: 18px; height: 18px; }
+  .tab .x2 { position: absolute; top: 6px; left: 6px; padding: 0 6px; border-radius: 99px; background: var(--sun); color: #2a2140; font: 700 12px/1.5 var(--font-display); box-shadow: 0 0 0 1.5px var(--outline); }
   .tab.locked { background: var(--surface-2); border-color: var(--line); }
   .tab b { font: 600 13px var(--font-display); }
   .tab small { font-size: 12px; color: var(--muted); }
@@ -169,6 +176,12 @@
       const locked = !data.unlocked.includes(p);
       const b = h('button', { class: `tab${p === tab ? ' on' : ''}${locked ? ' locked' : ''}`, style: `--c: var(--${p})`, title: locked ? tr('powers.lockedShort') : '' },
         h('img', { src: `/art/${p}-juvenile.svg`, alt: '' }), h('b', {}, tr(`power.${p}`)), h('small', {}, locked ? tr(`powers.from.${p}`) : tr(`power.${p}.short`)), locked ? lockIcon() : powerIcon(p));
+      // The type of the week wears a small ×2.
+      if (p === data.featured) {
+        b.classList.add('featured');
+        b.title = tr('week.help', { type: tr(`power.${p}`) });
+        b.append(h('span', { class: 'x2' }, '×2'));
+      }
       b.onclick = () => { tab = p; picked = true; render(); };
       box.append(b);
     }
@@ -381,7 +394,21 @@
       a.click();
       a.remove();
     };
-    box.append(head, chart, labels, legend, detail, totals, standup, csv);
+    // What each project took this week: actions, agent time, tokens.
+    const byProject = {};
+    for (const e of week) {
+      for (const [p, n] of Object.entries(e.projects || {})) (byProject[p] = byProject[p] || { actions: 0, ms: 0, tokens: 0 }).actions += n;
+      for (const [p, ms] of Object.entries(e.agentMs || {})) (byProject[p] = byProject[p] || { actions: 0, ms: 0, tokens: 0 }).ms += ms;
+      for (const [p, n] of Object.entries(e.tokensBy || {})) (byProject[p] = byProject[p] || { actions: 0, ms: 0, tokens: 0 }).tokens += n;
+    }
+    const compact = new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 });
+    const rows = Object.entries(byProject).sort((a, b) => b[1].ms - a[1].ms || b[1].actions - a[1].actions).slice(0, 8);
+    const projTable = rows.length
+      ? h('div', { class: 'by-project' }, h('h4', {}, tr('journal.byProject')), h('table', {},
+          h('tr', {}, h('th', {}, tr('journal.colProject')), h('th', { class: 'n' }, tr('journal.colActions')), h('th', { class: 'n' }, tr('journal.colTime')), h('th', { class: 'n' }, tr('journal.colTokens'))),
+          rows.map(([p, v]) => h('tr', {}, h('td', {}, h('code', {}, p)), h('td', { class: 'n' }, String(v.actions)), h('td', { class: 'n' }, v.ms ? dur(v.ms) : '–'), h('td', { class: 'n' }, v.tokens ? compact.format(v.tokens) : '–')))))
+      : null;
+    box.append(head, chart, labels, legend, detail, totals, ...(projTable ? [projTable] : []), standup, csv);
   }
 
   // Timeline of the selected session, or a search across every session.
@@ -429,6 +456,8 @@
     renderWait();
     renderSessions();
     renderTabs();
+    // This week's type, said once at the top.
+    $('sub').textContent = data.featured ? `${tr('powers.sub')} ${tr('week.line', { type: tr(`power.${data.featured}`) })}` : tr('powers.sub');
     renderPanel();
   }
 

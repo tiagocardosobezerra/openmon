@@ -221,8 +221,41 @@ function uninstallOpenCode({ pluginPath = openCodePluginPath() } = {}) {
   return { settingsPath: pluginPath, removed: 1 };
 }
 
+// Codex CLI reads a top-level `notify = [...]` in ~/.codex/config.toml. Added
+// at the top of the file (top-level keys must come before any [table]),
+// never over a notify line someone else set.
+function codexConfigPath() {
+  return path.join(os.homedir(), '.codex', 'config.toml');
+}
+function installCodex({ configPath = codexConfigPath() } = {}) {
+  const text = fs.existsSync(configPath) ? fs.readFileSync(configPath, 'utf8') : '';
+  if (text.includes('--codex"]')) return { settingsPath: configPath, already: true };
+  if (/^\s*notify\s*=/m.test(text)) return { settingsPath: configPath, conflict: true };
+  fs.mkdirSync(path.dirname(configPath), { recursive: true });
+  if (text) fs.copyFileSync(configPath, `${configPath}.openmon-backup`);
+  fs.writeFileSync(configPath, `${codexNotifyLine()}\n${text}`);
+  return { settingsPath: configPath, backupPath: text ? `${configPath}.openmon-backup` : null };
+}
+
+// Which other agents already feed the pet (for Settings).
+function otherAgents() {
+  const has = (file, needle) => {
+    try {
+      return fs.readFileSync(file, 'utf8').includes(needle);
+    } catch {
+      return false;
+    }
+  };
+  return {
+    codex: has(codexConfigPath(), '--codex"]'),
+    cursor: has(cursorHooksPath(), MARKER),
+    gemini: has(geminiSettingsPath(), MARKER),
+    opencode: fs.existsSync(openCodePluginPath()),
+  };
+}
+
 function aiderLine() {
   return `aider --notifications --notifications-command "${hookCommand()} --aider"`;
 }
 
-module.exports = { installOpenCode, uninstallOpenCode, openCodePluginPath, installGemini, installCursor, uninstallCursor, geminiSettingsPath, cursorHooksPath, aiderLine, GEMINI_HOOK_EVENTS, CURSOR_HOOK_EVENTS, install, uninstall, isInstalled, hasPermissionHook, hasContactHooks, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT, QUESTION_TOOL, LISTEN_EVENTS, LISTEN_SEC };
+module.exports = { installCodex, codexConfigPath, otherAgents, installOpenCode, uninstallOpenCode, openCodePluginPath, installGemini, installCursor, uninstallCursor, geminiSettingsPath, cursorHooksPath, aiderLine, GEMINI_HOOK_EVENTS, CURSOR_HOOK_EVENTS, install, uninstall, isInstalled, hasPermissionHook, hasContactHooks, withHooks, strip, hookCommand, codexNotifyLine, MARKER, TOOL_EVENTS, OTHER_EVENTS, PERMISSION_EVENT, QUESTION_TOOL, LISTEN_EVENTS, LISTEN_SEC };

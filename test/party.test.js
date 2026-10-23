@@ -156,3 +156,24 @@ test('work without its own pet feeds the main pet on screen, even a mystery egg;
   party.applySignal(q, tool(null), {}, T0 + 31 * 60 * 60_000);
   assert.ok(q.xp > xp0);
 });
+
+test('a trade code takes a member out and brings it into another team, once; a bad code is refused', () => {
+  const pet = require('../src/pet');
+  const now = Date.now();
+  const a = party.ensure(pet.createPet(now - 86400000));
+  const member = party.addMember(a, Object.assign(pet.createPet(now - 86400000), { stage: 'adult', lineage: 'lore', xp: 5000, name: 'Owly' }));
+  const code = party.tradeOut(a, member.id, now);
+  assert.match(code, /^OPENMON1\./);
+  assert.equal(a.others.some((m) => m.id === member.id), false);
+  const b = party.ensure(pet.createPet(now - 86400000));
+  const got = party.tradeIn(b, code, now);
+  assert.equal(got.ok, true);
+  const joined = b.others[b.others.length - 1];
+  assert.deepEqual([joined.lineage, joined.stage, joined.xp, joined.name], ['lore', 'adult', 5000, 'Owly']);
+  assert.equal(b.dex['lore-adult'], now);
+  assert.equal(party.tradeIn(b, code, now).reason, 'used');
+  assert.equal(party.tradeIn(b, code.slice(0, -3) + 'zzz', now).reason, 'invalid');
+  assert.equal(party.tradeIn(b, 'hello', now).reason, 'invalid');
+  // Never the one on screen, an egg or a legendary.
+  assert.equal(party.tradeOut(b, b.id, now), null);
+});

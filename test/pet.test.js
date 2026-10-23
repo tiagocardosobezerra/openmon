@@ -93,7 +93,8 @@ test('green tests: stats, XP and achievement', () => {
   const p = pet.createPet(T0);
   const events = pet.applySignal(p, { kind: 'test-end', family: 'test', passed: true }, {}, T0);
   assert.equal(p.stats.test, 3);
-  assert.equal(p.xp, pet.XP.green);
+  // Double in the week the featured type is Test.
+  assert.equal(p.xp, pet.XP.green * (pet.featuredType(T0) === 'test' ? 2 : 1));
   assert.ok(events.some((e) => e.type === 'achievement' && e.id === 'first-green'));
 });
 
@@ -393,4 +394,31 @@ test('new accessories: commits, the face slot and progress hints', () => {
   assert.equal(pet.wear(p, 'face', 'leaf-crown').length, 0);
   const hint = pet.view(p).cosmetics.find((c) => c.id === 'hardhat');
   assert.deepEqual(hint.progress, { have: 100, need: 500 });
+});
+
+test('tokens are counted per project, and a daily limit is told once when crossed', () => {
+  const p = pet.createPet(Date.now() - 86400000);
+  const now = Date.now();
+  assert.deepEqual(pet.addTokens(p, { input: 600, output: 0 }, now, 'shop', 1000), []);
+  const crossed = pet.addTokens(p, { input: 500, output: 0 }, now, 'web', 1000);
+  assert.deepEqual(crossed.map((e) => e.type), ['token-limit']);
+  assert.deepEqual(pet.addTokens(p, { input: 500, output: 0 }, now, 'web', 1000), []);
+  assert.deepEqual(p.daily.tokensBy, { shop: 600, web: 1000 });
+});
+
+test('the type of the week changes every Monday, goes round all 11, and doubles that work\'s XP', () => {
+  const monday = Date.UTC(2026, 9, 19, 12);
+  const seen = new Set();
+  for (let w = 0; w < 11; w++) seen.add(pet.featuredType(monday + w * 7 * 86400000));
+  assert.equal(seen.size, 11);
+  assert.equal(pet.featuredType(monday), pet.featuredType(monday + 5 * 86400000));
+  const type = pet.featuredType(monday);
+  const other = ['craft', 'lore'].find((t) => t !== type);
+  const xpOf = (family) => {
+    const p = pet.createPet(monday - 86400000);
+    const before = p.xp;
+    pet.applySignal(p, { kind: 'tool-done', family, detail: 'x' }, {}, monday);
+    return p.xp - before;
+  };
+  assert.equal(xpOf(type), 2 * xpOf(other));
 });

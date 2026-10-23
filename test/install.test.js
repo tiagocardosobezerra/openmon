@@ -95,3 +95,19 @@ test('install replaces hooks left by the old Bytelings name', () => {
   assert.ok(commands.some((c) => c.includes('--openmon')));
   assert.ok(commands.includes(other.command));
 });
+
+test('Codex: the notify line goes at the top of config.toml, once, and never over someone else\'s', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-codex-'));
+  const configPath = path.join(dir, 'config.toml');
+  fs.writeFileSync(configPath, 'model = "o3"\n\n[profiles.fast]\nmodel = "o4-mini"\n');
+  const r = installer.installCodex({ configPath });
+  const text = fs.readFileSync(configPath, 'utf8');
+  assert.ok(text.startsWith('notify = ["node", '), text);
+  assert.ok(text.includes('[profiles.fast]'));
+  assert.equal(fs.existsSync(r.backupPath), true);
+  assert.equal(installer.installCodex({ configPath }).already, true);
+  const other = path.join(dir, 'other.toml');
+  fs.writeFileSync(other, 'notify = ["say", "done"]\n');
+  assert.equal(installer.installCodex({ configPath: other }).conflict, true);
+  assert.equal(fs.readFileSync(other, 'utf8'), 'notify = ["say", "done"]\n');
+});

@@ -123,3 +123,21 @@ test('it notices a stuck task, a long command, a loop and many edits without a c
   s.snapshot(T + 80 * 60_000);
   assert.equal(s.takeNotices().length, 0);
 });
+
+test('a long or busy request ends with a one-line summary: files edited, tests, time', () => {
+  const s = createSessions();
+  s.apply(sig('turn-start'), 0);
+  s.apply(sig('tool-done', { edit: true, detail: 'Edit a.js' }), 10_000);
+  s.apply(sig('tool-done', { edit: true, detail: 'Edit a.js' }), 20_000);
+  s.apply(sig('tool-done', { edit: true, detail: 'Edit b.js' }), 30_000);
+  s.apply(sig('test-end', { passed: false }), 40_000);
+  s.apply(sig('test-end', { passed: true }), 50_000);
+  s.takeNotices();
+  s.apply(sig('turn-end'), 120_000);
+  const summary = s.takeNotices().find((n) => n.type === 'summary');
+  assert.deepEqual({ files: summary.files, green: summary.green, red: summary.red, ms: summary.ms }, { files: 2, green: 1, red: 1, ms: 120_000 });
+  // A quick one says nothing.
+  s.apply(sig('turn-start'), 200_000);
+  s.apply(sig('turn-end'), 210_000);
+  assert.equal(s.takeNotices().filter((n) => n.type === 'summary').length, 0);
+});

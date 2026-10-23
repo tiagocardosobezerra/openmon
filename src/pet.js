@@ -238,6 +238,7 @@ function view(pet) {
     dexNo: dexEntries().findIndex((e) => e.key === keyOf(pet)) + 1,
     legend: pet.legend || null,
     charmUntil: pet.charmUntil && pet.charmUntil > Date.now() ? pet.charmUntil : null,
+    featured: featuredType(Date.now()),
     nature: pet.nature,
     shiny: pet.shiny,
     generation: pet.generation,
@@ -381,14 +382,22 @@ function addAgentTime(pet, project, ms, now) {
   return events;
 }
 
-// Tokens your agents used (read from Claude Code's conversation files).
-function addTokens(pet, delta, now) {
+// Tokens your agents used (read from Claude Code's conversation files),
+// per project too. With a daily limit set (Settings), crossing it once a day
+// says so.
+function addTokens(pet, delta, now, project = null, limit = 0) {
   const events = [];
   rollDay(pet, now, events);
   const n = (delta.input || 0) + (delta.output || 0) + (delta.cacheWrite || 0);
   if (!n) return events;
-  pet.daily.tokens = (pet.daily.tokens || 0) + n;
+  const before = pet.daily.tokens || 0;
+  pet.daily.tokens = before + n;
   pet.counters.tokens = (pet.counters.tokens || 0) + n;
+  if (project) {
+    pet.daily.tokensBy = pet.daily.tokensBy || {};
+    pet.daily.tokensBy[project] = (pet.daily.tokensBy[project] || 0) + n;
+  }
+  if (limit > 0 && before < limit && pet.daily.tokens >= limit) events.push({ type: 'token-limit', tokens: pet.daily.tokens, limit });
   return events;
 }
 
@@ -510,6 +519,7 @@ function journalEntry(d) {
     tokens: d.tokens || 0,
     fixes: d.fixes || 0,
     agentMs: { ...(d.agentMs || {}) },
+    tokensBy: { ...(d.tokensBy || {}) },
     families: { ...(d.families || {}) },
     projects: { ...(d.projects || {}) },
   };
@@ -619,6 +629,15 @@ function addBond(pet, amount, now, events) {
   pet.bond = Math.min(BOND_MAX, pet.bond + amount);
   if (pet.bond > before) events.push({ type: 'bond', amount: pet.bond - before, bond: pet.bond });
   if (pet.bond >= BOND_MAX) unlock(pet, 'best-friends', now, events);
+}
+
+// The type of the week: one of the 11, in turn, changing every Monday. Work
+// of that type earns double XP all week, for everyone at the same time.
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+function featuredType(now) {
+  // 1970-01-05 was a Monday.
+  const week = Math.floor((now - 4 * 24 * 60 * 60 * 1000) / WEEK_MS);
+  return STATS[((week % STATS.length) + STATS.length) % STATS.length];
 }
 
 function addXp(pet, amount, now, events) {
@@ -737,7 +756,7 @@ function applySignal(pet, signal, ctx = {}, now) {
       countFeats(pet, signal);
       countWork(pet, signal);
       addFix(pet, takeFix(signal, now, false), now);
-      addXp(pet, XP.tool, now, events);
+      addXp(pet, XP.tool * (signal.family === featuredType(now) ? 2 : 1), now, events);
       break;
     case 'tool-fail':
       c.tools++;
@@ -755,7 +774,7 @@ function applySignal(pet, signal, ctx = {}, now) {
         pet.daily.green = (pet.daily.green || 0) + 1;
         pet.stats.test += 3;
         addFix(pet, takeFix(signal, now, true), now);
-        addXp(pet, XP.green, now, events);
+        addXp(pet, XP.green * (featuredType(now) === 'test' ? 2 : 1), now, events);
         events.push({ type: 'tests', passed: true });
         unlock(pet, 'first-green', now, events);
         if (c.testsGreen >= 100) unlock(pet, 'green-100', now, events);
@@ -907,6 +926,7 @@ module.exports = {
   affinity,
   level,
   xpForLevel,
+  featuredType,
   displayName,
   wear,
   useItem,

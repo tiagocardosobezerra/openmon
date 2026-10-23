@@ -225,6 +225,23 @@ let dragGrip = null;
 
 const placeFile = () => path.join(homeDir(), 'window.json');
 
+// A monitor unplugged, or its resolution or scaling changed: a pet left
+// (even half) off every screen walks back onto the nearest one, feet on its
+// bottom edge. The main one also saves its new place.
+function keepPetsOnScreen() {
+  for (const w of [win, ...companionWins.values()]) {
+    if (!w || w.isDestroyed()) continue;
+    const b = w.getBounds();
+    const area = screen.getDisplayMatching(b).workArea;
+    const inside = b.x + b.width * 0.4 >= area.x && b.x + b.width * 0.6 <= area.x + area.width && b.y + b.height * 0.5 >= area.y && b.y + b.height <= area.y + area.height + 40;
+    if (inside) continue;
+    const x = Math.min(Math.max(b.x, area.x), area.x + area.width - b.width);
+    w.setPosition(Math.round(x), Math.round(area.y + area.height - b.height));
+    if (w === win) savePlace();
+    else if (w.__companion) saveCompanionPlace(w.__companion, w);
+  }
+}
+
 function defaultPlace() {
   const { workArea } = screen.getPrimaryDisplay();
   // The playground pet stands to the left of the real one.
@@ -847,7 +864,7 @@ function wireIpc() {
   // Settings page actions that need the desktop (only from the app window).
   ipcMain.handle('settings', async (e, cmd, arg) => {
     if (!powersWin || powersWin.isDestroyed() || e.sender !== powersWin.webContents) return null;
-    const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled() });
+    const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled(), agents: installer.otherAgents(), aider: installer.aiderLine() });
     switch (cmd) {
       case 'info':
         return info();
@@ -863,6 +880,18 @@ function wireIpc() {
         daemon.recheckHooks();
         refreshTray();
         return info();
+      // The other agents, one click each (Aider is a command line to copy).
+      case 'connect-agent': {
+        const run = { codex: installer.installCodex, cursor: installer.installCursor, gemini: installer.installGemini, opencode: installer.installOpenCode }[arg];
+        if (!run) return info();
+        try {
+          const r = run();
+          if (r && r.conflict) return { ...info(), conflict: arg };
+        } catch (err) {
+          dialog.showErrorBox('Openmon', String(err.message || err));
+        }
+        return info();
+      }
       case 'backup':
         daemon.backupNow();
         return true;
@@ -970,7 +999,8 @@ function watchAttention(state) {
   if (live.pose !== 'attention' || !live.focus) return;
   const since = live.focus.since;
   if (notifiedFor === since || !state.config.notify || state.config.quiet || state.demo) return;
-  if (Date.now() - since < NOTIFY_AFTER_MS) return;
+  // With a screen reader on, the pet cannot be seen to wait: notify at once.
+  if (Date.now() - since < (app.accessibilitySupportEnabled ? 0 : NOTIFY_AFTER_MS)) return;
   notifiedFor = since;
   if (Notification.isSupported()) {
     const n = new Notification({ title: L('{label} needs you', { label: live.focus.label }), body: live.focus.detail || L('Your agent is waiting.'), silent: true });
@@ -1039,12 +1069,16 @@ app.whenReady().then(async () => {
   setInterval(() => watchAttention(daemon.state()), 2000).unref();
   wireIpc();
   createWindow();
+  for (const ev of ['display-removed', 'display-metrics-changed']) screen.on(ev, () => setTimeout(keepPetsOnScreen, 300));
   if (PLAYGROUND) openControlPanel();
   // Keyboard: Ctrl+Alt+O opens the card, Ctrl+Alt+J jumps to the agent that waits.
   if (!PLAYGROUND) {
     try {
       globalShortcut.register('CommandOrControl+Alt+O', () => win && win.webContents.send('command', 'card'));
       globalShortcut.register('CommandOrControl+Alt+J', () => daemon.focusAgent(null));
+      // Answer the agent's waiting request without the mouse.
+      globalShortcut.register('CommandOrControl+Alt+Y', () => daemon.decideOldest('allow'));
+      globalShortcut.register('CommandOrControl+Alt+N', () => daemon.decideOldest('deny'));
     } catch {}
   }
   applyScale(daemon.config().scale || 1);

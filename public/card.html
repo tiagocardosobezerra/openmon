@@ -12,12 +12,14 @@
   .hero { padding-bottom: 14px; }
   canvas { width: 100%; height: auto; border-radius: 20px; border: 2.5px solid var(--outline); box-shadow: 0 5px 0 var(--outline), 0 16px 40px rgba(0,0,0,0.16); display: block; }
   .actions { display: flex; gap: 8px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+  .card-mode { display: inline-flex; margin: 0 0 12px; padding: 3px; border-radius: 12px; background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--line); }
   #msg { color: var(--muted); min-height: 1.5em; margin-top: 10px; text-align: center; }
 </style>
 </head>
 <body class="page" data-page="card">
 <main class="wrap">
   <div class="hero"><div><h1 id="title"></h1><p id="sub"></p></div></div>
+  <div class="seg pick card-mode" role="radiogroup" id="mode"></div>
   <canvas id="card" width="1200" height="630"></canvas>
   <div class="actions">
     <button id="copy" class="btn primary"></button>
@@ -123,6 +125,12 @@
     ctx.strokeStyle = INK;
     ctx.stroke();
 
+    if (mode === 'month') {
+      renderMonth(p);
+      footer();
+      return;
+    }
+
     // Text.
     const days = Math.max(1, Math.ceil((Date.now() - p.bornAt) / 86400000));
     const nature = species.natures[p.nature] ? species.natures[p.nature].label : '';
@@ -164,6 +172,10 @@
       ctx.fillText(l, x, y + 22);
     });
 
+    footer();
+  }
+
+  function footer() {
     ctx.fillStyle = '#6d6680';
     ctx.font = '600 18px system-ui, sans-serif';
     ctx.textAlign = 'right';
@@ -174,6 +186,82 @@
       ctx.fillText(tr('card.footer').replace(/^openmon · /, ''), 1130 - lw - 14, 563);
     } else ctx.fillText(tr('card.footer'), 1130, 570);
   }
+
+  // The month with your Openmon: the last 30 days of the journal in six numbers.
+  function renderMonth(p) {
+    const since = Date.now() - 30 * 86400000;
+    const keyOf = (ms) => {
+      const d = new Date(ms);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    const days = (p.journal || []).filter((e) => e.day >= keyOf(since));
+    const sum = (k) => days.reduce((a, e) => a + (e[k] || 0), 0);
+    const tests = sum('green') + sum('red');
+    const fam = {};
+    for (const e of days) for (const [k, n] of Object.entries(e.families || {})) fam[k] = (fam[k] || 0) + n;
+    const topType = Object.entries(fam).sort((a, b) => b[1] - a[1])[0];
+    const hours = days.reduce((a, e) => a + Object.values(e.agentMs || {}).reduce((x, y) => x + y, 0), 0) / 3600000;
+    const newForms = Object.values(p.dex || {}).filter((at) => at >= since).length;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#6d6680';
+    ctx.font = '700 22px system-ui, sans-serif';
+    ctx.fillText(tr('month.kicker', { month: new Date().toLocaleDateString(lang, { month: 'long', year: 'numeric' }) }).toUpperCase(), 580, 115);
+    // As big as fits on the card.
+    ctx.fillStyle = INK;
+    const title = tr('month.title', { name: p.name });
+    let size = 54;
+    do ctx.font = `900 ${size}px system-ui, sans-serif`;
+    while (ctx.measureText(title).width > 540 && (size -= 2) > 26);
+    ctx.fillText(title, 578, 172);
+    if (newForms) {
+      ctx.fillStyle = '#6d6680';
+      ctx.font = '600 22px system-ui, sans-serif';
+      ctx.fillText(tr('month.newForms', { n: newForms }), 580, 212);
+    }
+    const tiles = [
+      [sum('tools').toLocaleString(lang), tr('month.actions')],
+      [sum('turns').toLocaleString(lang), tr('month.requests')],
+      [tests ? `${Math.round((sum('green') / tests) * 100)}%` : '–', tr('month.green')],
+      [hours >= 0.05 ? `${hours.toFixed(hours < 10 ? 1 : 0)} h` : '–', tr('month.hours')],
+      [topType ? species.statLabels[topType[0]] || topType[0] : '–', tr('month.topType')],
+      [`${days.filter((e) => e.tools).length}`, tr('month.days')],
+    ];
+    tiles.forEach(([v, l], i) => {
+      const x = 580 + (i % 3) * 186;
+      const y = 250 + Math.floor(i / 3) * 140;
+      roundRect(x, y, 170, 118, 18);
+      ctx.fillStyle = '#f4efe6';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+      ctx.fillStyle = INK;
+      ctx.font = '800 34px system-ui, sans-serif';
+      ctx.fillText(v, x + 16, y + 52);
+      ctx.fillStyle = '#6d6680';
+      ctx.font = '600 16px system-ui, sans-serif';
+      ctx.fillText(l, x + 16, y + 84);
+    });
+  }
+
+  let mode = 'card';
+  function renderMode() {
+    const box = document.getElementById('mode');
+    box.textContent = '';
+    for (const [m, label] of [['card', tr('month.cardTab')], ['month', tr('month.tab')]]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.setAttribute('aria-selected', String(m === mode));
+      b.onclick = () => {
+        mode = m;
+        renderMode();
+      };
+      box.append(b);
+    }
+  }
+  renderMode();
 
   async function main() {
     [species, data] = await Promise.all([fetch(`/api/species?lang=${lang}`).then((r) => r.json()), fetch('/api/state').then((r) => r.json())]);

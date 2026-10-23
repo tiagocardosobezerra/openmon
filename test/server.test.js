@@ -523,6 +523,27 @@ test('Deny with a reason, or deny and stop: only with the desktop key', async ()
   }
 });
 
+test('a permission to edit shows what would change (only the changed lines, secrets hidden), and Ctrl+Alt+Y answers it', async () => {
+  const { daemon, port } = await boot();
+  const stream = await new Promise((resolve) => http.get({ host: '127.0.0.1', port, path: '/stream' }, resolve));
+  try {
+    const before = 'const a = 1;\nconst key = "x";\nconst c = 3;';
+    const after = 'const a = 1;\nconst API_KEY = "sk-abcdefghijklmnopqrstuv";\nconst c = 3;';
+    const hook = spawnHook(port, ['--permission'], { session_id: 'e1', hook_event_name: 'PermissionRequest', tool_name: 'Edit', tool_input: { file_path: '/w/src/app.js', old_string: before, new_string: after }, cwd: '/w' });
+    const p = await until(port, (s) => s.permissions[0]);
+    assert.equal(p.preview.file, 'app.js');
+    assert.deepEqual(p.preview.lines.map((l) => l.t), ['-', '+']);
+    assert.equal(p.preview.lines[0].s, 'const key = "x";');
+    assert.ok(!p.preview.lines[1].s.includes('sk-abcdefghijklmnopqrstuv'), p.preview.lines[1].s);
+    assert.equal(daemon.decideOldest('allow'), true);
+    assert.equal(JSON.parse((await hook).out).hookSpecificOutput.decision.behavior, 'allow');
+    assert.equal(daemon.decideOldest('allow'), false);
+  } finally {
+    stream.destroy();
+    await daemon.close();
+  }
+});
+
 test('a message from the pet reaches the conversation: next hook while working, the waiting hook while idle', async () => {
   const { daemon, port } = await boot();
   const json = { 'Content-Type': 'application/json' };

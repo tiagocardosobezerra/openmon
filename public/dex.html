@@ -75,6 +75,14 @@
   .badge.locked .medal { background: var(--sunken); color: var(--muted); }
   .badge b { display: block; font: 600 14px var(--font-display); }
   .badge small { color: var(--muted); }
+  /* The nearest goals, above the collection. */
+  .goals .section-title { margin-top: 18px; }
+  .goal-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+  .goal { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: center; padding: 12px 14px; }
+  .goal img { width: 52px; height: 52px; object-fit: contain; }
+  .goal b { display: block; font: 600 15px var(--font-display); }
+  .goal .bar { height: 8px; margin: 6px 0 4px; border-width: 1.5px; }
+  .goal small { display: block; color: var(--muted); font-size: 12.5px; }
 </style>
 </head>
 <body class="page" data-page="dex">
@@ -83,6 +91,7 @@
     <div><h1>Opendex</h1><p id="intro"></p></div>
     <div class="aside"><div class="big-number" id="seen"></div><div class="muted" id="seen-label"></div><div class="bar progress"><i id="seen-bar"></i></div></div>
   </div>
+  <section class="goals" id="goals" hidden></section>
   <div class="filters" id="filters" role="toolbar"></div>
   <div class="type-info" id="type-info" hidden></div>
   <div class="grid" id="grid"></div>
@@ -145,10 +154,50 @@
     }
   }
 
+  // The nearest goals, each with how far along it is: the next form, the
+  // closest accessory, the next gift for coming back day after day.
+  function renderGoals(pet, species) {
+    const box = document.getElementById('goals');
+    if (!pet) return;
+    const goals = [];
+    const pr = pet.progress || {};
+    if (pr.next && !pr.needsStarter && pet.lineage) {
+      const next = (species.lineages[pet.lineage] || {})[pr.next];
+      goals.push({ icon: `/art/${pet.lineage}-${pr.next}.svg`, title: tr('goals.form', { name: next || '???' }), ratio: pr.ratio, sub: pr.needsBond && !pr.xpToGo ? tr('card.needsBond', { n: pr.bondNeeded }) : tr('goals.xp', { n: (pr.xpToGo || 0).toLocaleString(lang) }) });
+    }
+    const wear = (pet.cosmetics || []).filter((c) => !c.owned && c.progress && c.progress.need > 0).sort((a, b) => b.progress.have / b.progress.need - a.progress.have / a.progress.need)[0];
+    if (wear) goals.push({ icon: `/wear/${wear.id}.svg`, title: tr(`wear.${wear.id}`), ratio: wear.progress.have / wear.progress.need, sub: `${tr(`wear.${wear.id}.how`)} · ${wear.progress.have}/${wear.progress.need}` });
+    const days = (pet.streak && pet.streak.days) || 0;
+    const gifts = [['candy', 7], ['stone-' + (pet.lineage || 'craft'), 3], ['xp-charm', 14], ['mystery-egg', 30]].map(([id, every]) => ({ id, every, left: every - (days % every) }));
+    const gift = gifts.sort((a, b) => a.left - b.left)[0];
+    goals.push({ icon: `/items/${gift.id}.svg`, title: gift.id.startsWith('stone-') ? tr('item.stone', { type: tr(`power.${gift.id.slice(6)}`) }) : tr(`item.${gift.id}`), ratio: 1 - gift.left / gift.every, sub: gift.left === 1 ? tr('goals.tomorrow') : tr('goals.days', { n: gift.left }) });
+    box.textContent = '';
+    box.append(Object.assign(document.createElement('h2'), { className: 'section-title', textContent: tr('goals.title') }));
+    const row = document.createElement('div');
+    row.className = 'goal-row';
+    for (const g of goals) {
+      const c = document.createElement('div');
+      c.className = 'goal panel soft';
+      const img = Object.assign(document.createElement('img'), { src: g.icon, alt: '' });
+      const text = document.createElement('div');
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      const fill = document.createElement('i');
+      fill.style.width = `${Math.round(Math.max(0.03, Math.min(1, g.ratio)) * 100)}%`;
+      bar.append(fill);
+      text.append(Object.assign(document.createElement('b'), { textContent: g.title }), bar, Object.assign(document.createElement('small'), { textContent: g.sub }));
+      c.append(img, text);
+      row.append(c);
+    }
+    box.append(row);
+    box.hidden = false;
+  }
+
   async function main() {
     const [species, state] = await Promise.all([fetch(`/api/species?lang=${lang}`).then((r) => r.json()), fetch('/api/state').then((r) => r.json()).catch(() => null)]);
     const pet = state && !state.demo ? state.pet : null;
     labels = species.statLabels || {};
+    renderGoals(pet, species);
     const dex = (pet && pet.dex) || {};
     const grid = document.getElementById('grid');
     let seen = 0;

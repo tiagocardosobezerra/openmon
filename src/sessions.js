@@ -21,6 +21,9 @@ const STUCK_MS = 4 * 60 * 1000;
 const LONG_TOOL_MS = 8 * 60 * 1000;
 // The same thing failing this many times in a row is a loop.
 const LOOP_FAILS = 3;
+// A request that ran this long (or this busy) gets a one-line summary when it ends.
+const SUMMARY_MS = 90 * 1000;
+const SUMMARY_TOOLS = 15;
 // Edits since the last commit before a gentle reminder.
 const COMMIT_EDITS = 30;
 const COMMIT_MS = 45 * 60 * 1000;
@@ -135,10 +138,17 @@ function createSessions() {
         break;
       case 'turn-start':
         s.turnTools = 0;
+        // What this request does, for the summary when it ends.
+        s.turn = { at: t, files: new Set(), green: 0, red: 0 };
         s.error = null;
         setState('working', null, 'Thinking…');
         break;
       case 'turn-end':
+        // A request worth a summary (long, or busy): what it did, in one line.
+        if (s.turn && (t - s.turn.at >= SUMMARY_MS || s.turnTools >= SUMMARY_TOOLS)) {
+          notices.push({ type: 'summary', session: s.id, label: s.label, ms: t - s.turn.at, tools: s.turnTools, files: s.turn.files.size, green: s.turn.green, red: s.turn.red });
+        }
+        s.turn = null;
         s.subagents.clear();
         s.inFlight = null;
         setState('done', null, 'Done');
@@ -150,6 +160,7 @@ function createSessions() {
         break;
       case 'tool-done':
         s.turnTools++;
+        if (s.turn && signal.edit && signal.detail) s.turn.files.add(String(signal.detail));
         s.inFlight = null;
         s.fails = null;
         trackCommit(s, signal, t);
@@ -174,6 +185,8 @@ function createSessions() {
         // Red, then green again: worth a cheer.
         if (signal.passed === true && s.lastTestRed) notices.push({ type: 'tests-fixed', session: s.id, label: s.label });
         if (signal.passed === true || signal.passed === false) s.lastTestRed = signal.passed === false;
+        if (s.turn && signal.passed === true) s.turn.green++;
+        if (s.turn && signal.passed === false) s.turn.red++;
         if (signal.passed === false) s.error = { since: t, detail: 'Tests failed' };
         break;
       case 'subagent-start':

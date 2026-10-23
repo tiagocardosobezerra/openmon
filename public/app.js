@@ -70,6 +70,10 @@
   // Until when the card's candy pill waits for its confirming second click.
   let candyArmedUntil = 0;
   let lastBubbleBottom = '';
+  // A loop the agent fell into (the same failure again and again), shown a while.
+  let loopAlert = null;
+  // Until when a brand-new egg offers the demo.
+  let introOffer = 0;
   let landed = 0;
   // How many Openmons the team has (a companion always has company).
   let teamSize = companionId ? 2 : 1;
@@ -839,6 +843,9 @@
     }
     b.dataset.key = key;
     const kind = cls.split(' ')[0];
+    // Screen readers hear what matters, once per new bubble: a request that
+    // needs you, a task done, a failure.
+    if (['attention', 'done', 'error', 'warn'].includes(kind)) $('announce').textContent = [eyebrow, title, sub].filter(Boolean).join('. ');
     const icon = BUBBLE_ICON[kind];
     b.className = [cls, icon || kind === 'wild' ? 'status' : '', jump ? 'jump' : ''].filter(Boolean).join(' ');
     b.textContent = '';
@@ -865,6 +872,29 @@
     // A request to run something: the command itself set as code.
     const said = sub && /^attention/.test(cls) ? /^(.{1,60}?): (.+)$/s.exec(sub) : null;
     if (said) b.lastChild.replaceChildren(`${said[1]}: `, Object.assign(document.createElement('code'), { textContent: said[2] }));
+    if (choices && choices.preview) {
+      // What the edit would change, before you allow it.
+      const p = choices.preview;
+      const box = document.createElement('span');
+      box.className = 'diff';
+      if (p.file) {
+        const f = document.createElement('b');
+        f.textContent = p.file;
+        box.appendChild(f);
+      }
+      for (const line of p.lines) {
+        const l = document.createElement('code');
+        l.className = line.t === '-' ? 'del' : 'add';
+        l.textContent = `${line.t} ${line.s}`;
+        box.appendChild(l);
+      }
+      if (p.more) {
+        const m = document.createElement('i');
+        m.textContent = tr('perm.moreLines', { n: p.more });
+        box.appendChild(m);
+      }
+      b.appendChild(box);
+    }
     if (choices) {
       // Allow / Deny, right on the bubble.
       const row = document.createElement('span');
@@ -988,8 +1018,18 @@
     }
     if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent'), id: `error|${f.id}|${f.since}` });
     // Mid-task and silent for minutes, or one command running very long.
+    // The very first minute: what this is, and a demo for those without an
+    // agent at hand.
+    if (introOffer && Date.now() < introOffer && (pose === 'idle' || pose === 'sleep') && !demo && !companionId) {
+      return setBubble('toast', tr('intro'), tr('intro.sub'), { buttons: [[{ demo: 'start' }, tr('demo.watch'), 'primary']], id: 'intro' });
+    }
+    // A stuck or looping agent: open its window, or ask it to stop and wait.
+    const askStop = (id) => (canTalk && inbox[id] && inbox[id].canSend ? [[{ stop: id }, tr('stop.ask'), '']] : null);
+    if (loopAlert && Date.now() < loopAlert.until && pose !== 'done') {
+      return setBubble('warn', tr('loop.title', { n: loopAlert.n }), `${loopAlert.label} · ${trDetail(loopAlert.detail)}`, { jump: demo ? null : loopAlert.session, eyebrow: loopAlert.label, buttons: askStop(loopAlert.session), id: `loop|${loopAlert.session}|${loopAlert.n}` });
+    }
     const stuck = (live.sessions || []).find((x) => x.stuck);
-    if (stuck && pose !== 'done') return setBubble('warn', tr('stuck.title', { t: clock(stuck.stuck) }), tr('stuck.sub'), { jump: demo ? null : stuck.id, eyebrow: stuck.label, id: `stuck|${stuck.id}` });
+    if (stuck && pose !== 'done') return setBubble('warn', tr('stuck.title', { t: clock(stuck.stuck) }), tr('stuck.sub'), { jump: demo ? null : stuck.id, eyebrow: stuck.label, buttons: askStop(stuck.id), id: `stuck|${stuck.id}` });
     const longTool = (live.sessions || []).find((x) => x.longTool);
     if (longTool && pose === 'working') return setBubble('warn', tr('longTool.title', { t: clock(longTool.longTool.ms) }), trDetail(longTool.longTool.detail), { jump: demo ? null : longTool.id, eyebrow: longTool.label, id: `long|${longTool.id}|${longTool.longTool.detail}` });
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
@@ -1099,7 +1139,7 @@
       [pet.holding === 'everstone' ? tr(pr.next && pet.xp >= 0 && pr.ratio >= 1 ? 'card.everstoneReady' : 'card.everstone') : null, 'brand'],
       // Legendaries and mystery eggs have no project of their own.
       // With a team, every card names its project (the first Openmon has none).
-      [pet.legend ? tr('party.legendTag') : pet.project && /^mystery:/.test(pet.project) ? tr('party.mysteryTag') : pet.project && /^wild:/.test(pet.project) ? tr('party.wildTag') : pet.project ? tr('party.project', { project: pet.project }) : teamSize > 1 ? tr('party.general') : null, 'brand'],
+      [pet.legend ? tr('party.legendTag') : pet.project && /^mystery:/.test(pet.project) ? tr('party.mysteryTag') : pet.project && /^wild:/.test(pet.project) ? tr('party.wildTag') : pet.project && /^trade:/.test(pet.project) ? tr('party.tradeTag') : pet.project ? tr('party.project', { project: pet.project }) : teamSize > 1 ? tr('party.general') : null, 'brand'],
       [nature ? tr('card.nature', { nature }) : null, ''],
     ]) if (text) chips.appendChild(el('span', `chip ${cls}`.trim(), text));
 
@@ -1126,6 +1166,12 @@
       day.append(pill);
     }
     if (pet.streak && pet.streak.days > 1) day.append(el('span', 'day-pill', tr('day.streak', { n: pet.streak.days })));
+    // The type of the week, when it is this Openmon's own: its work counts double.
+    if (pet.featured && pet.featured === pet.lineage) {
+      const wk = el('span', 'day-pill week', tr('week.pill'));
+      wk.title = tr('week.help', { type: statLabels[pet.featured] || pet.featured });
+      day.append(wk);
+    }
     // A level candy waiting in the Bag: an invitation, one click away.
     const candies = (pet.bag && pet.bag.candy) || 0;
     const wildOut = pet.wild && pet.wild.until > Date.now();
@@ -1368,7 +1414,8 @@
       } else if (msg.pet.awaitingStarter) {
         // The starter bubble speaks first (see renderBubble).
       } else if (msg.pet.stage === 'egg' && msg.pet.counters.tools === 0 && (!msg.setup || msg.setup.hooks)) {
-        setTimeout(() => pushToast(tr('intro'), tr('intro.sub'), 7000, 'say'), 1500);
+        // A brand-new egg: what it is, and a demo to see it react right away.
+        introOffer = Date.now() + 60_000;
       } else setTimeout(() => chatter('greet'), 2500);
       // Teach the right-click once, after the hello. Not connected yet: the
       // Connect bubble comes first, and the tip waits for the first finished task.
@@ -1521,15 +1568,39 @@
           burst('confetti', 14, petCX(), GROUND - 80, 2, { colors: ['#5ccf74', '#fff', '#ffe156'], gravity: 260 });
           break;
         case 'loop':
-          pushToast(tr('loop.title', { n: e.n }), `${e.label} · ${trDetail(e.detail)}`, 9000, 'notice');
+          // A bubble that stays a while, with what to do about it.
+          loopAlert = { ...e, until: Date.now() + 90_000 };
+          renderBubble();
           play('attention');
           break;
         case 'compact':
           pushToast(tr('compact.title'), tr('compact.sub', { label: e.label }), 6000, 'notice');
           break;
+        case 'summary': {
+          // A long or busy request ended: what it did, in one line.
+          const bits = [e.files ? tr('summary.files', { n: e.files }) : null, e.green || e.red ? (e.red && !e.green ? tr('summary.red') : tr('summary.green')) : null, shortDur(e.ms)].filter(Boolean).join(' · ');
+          pushToast(tr('summary.title', { label: e.label }), bits, 7000, 'done');
+          // A long one: also a system notification, in case you looked away.
+          if (!companionId && !demo && config.notify && e.ms >= 5 * 60_000 && window.Notification) {
+            try {
+              new Notification(tr('summary.title', { label: e.label }), { body: bits, silent: true });
+            } catch {}
+          }
+          break;
+        }
         case 'commit-nudge':
           pushToast(tr('commit.title', { n: e.edits }), tr('commit.sub', { label: e.label, t: shortDur(e.ms) }), 8000, 'notice');
           break;
+        case 'token-limit': {
+          const n = new Intl.NumberFormat(OpenmonI18n.lang, { notation: 'compact', maximumFractionDigits: 1 });
+          pushToast(tr('tokens.limit', { n: n.format(e.limit) }), tr('tokens.limitSub', { n: n.format(e.tokens) }), 9000, 'notice');
+          if (!companionId && config.notify && window.Notification) {
+            try {
+              new Notification(tr('tokens.limit', { n: n.format(e.limit) }), { body: tr('tokens.limitSub', { n: n.format(e.tokens) }), silent: true });
+            } catch {}
+          }
+          break;
+        }
         case 'break':
           if (!config.focus) pushToast(tr('break.title', { n: e.minutes }), tr('break.sub'), 9000, 'say');
           break;
@@ -1913,6 +1984,22 @@
     const write = e.target.closest && e.target.closest('[data-talk]');
     if (write) {
       talk(write.dataset.talk, write.dataset.ref);
+      return;
+    }
+    // The first-run demo: a scripted session on a throwaway egg.
+    if (e.target.closest && e.target.closest('[data-demo]')) {
+      introOffer = 0;
+      post('/api/demo');
+      dismissBubble();
+      return;
+    }
+    // "Ask it to stop": a short message to that conversation.
+    const stop = e.target.closest && e.target.closest('[data-stop]');
+    if (stop) {
+      postKeyed('/api/inbox/send', { session: stop.dataset.stop, text: tr('stop.message') });
+      loopAlert = null;
+      dismissBubble();
+      pushToast(tr('stop.sent'), '', 3500, 'done');
       return;
     }
     const decide = e.target.closest && e.target.closest('[data-decide]');
