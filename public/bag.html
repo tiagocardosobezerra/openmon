@@ -11,19 +11,23 @@
   main { padding-bottom: 48px; }
   .item.none .icon, .item.none h3 { opacity: 0.55; }
   .none-note { font-size: 12.5px; color: var(--muted); font-style: italic; }
-  .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-  .item { display: grid; grid-template-columns: 56px 1fr; gap: 4px 12px; align-items: center; padding: 12px 14px; }
-  .item .icon { grid-row: span 3; width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--line); }
-  .item .icon svg, .item .icon img { width: 46px; height: 46px; }
+  /* Items as tiles: the icon first and big, the count, one button; what it
+     does only when asked ("?"). */
+  .items, .stones { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; align-items: start; }
+  .item { position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; padding: 12px 10px 12px; text-align: center; }
+  .item .icon { width: 84px; height: 84px; border-radius: 20px; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, var(--surface), var(--surface-2) 75%); box-shadow: inset 0 0 0 2px var(--line); }
+  .item .icon svg, .item .icon img { width: 68px; height: 68px; }
   .item.empty { opacity: 0.55; }
-  .stones { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-  .stones .item { grid-template-columns: 44px 1fr; padding: 10px 12px; }
-  .stones .item .icon { width: 44px; height: 44px; border-radius: 12px; }
-  .stones .item .icon img { width: 36px; height: 36px; }
-  .item h3 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
-  .item h3 .count { font: 600 13px var(--font-display); color: var(--muted); }
-  .item p { margin: 0; font-size: 12.5px; color: var(--muted); }
-  .item .btn { justify-self: start; margin-top: 4px; }
+  .item h3 { margin: 4px 0 0; font-size: 15px; line-height: 1.2; }
+  .item .count { font: 600 13px var(--font-display); color: var(--muted); }
+  .item .count.have { color: var(--ink); background: var(--sun); color: #2a2140; padding: 0 8px; border-radius: 99px; box-shadow: 0 0 0 1.5px var(--outline); }
+  .item .desc { display: none; margin: 4px 0 0; font-size: 12.5px; color: var(--muted); text-align: left; }
+  .item.open .desc { display: block; }
+  .item .why { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--muted); font: 700 13px/1 var(--font-display); cursor: pointer; }
+  .item .why[aria-expanded="true"] { background: var(--brand-soft); color: var(--brand-ink); }
+  .item p:not(.desc) { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+  .item select { max-width: 100%; }
+  .item .btn { margin-top: 6px; }
   .item.holding { box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--brand) 40%, transparent); }
   .wear-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
   .wear { position: relative; display: grid; gap: 2px; justify-items: center; padding: 8px 8px 12px; text-align: center; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-lg); font: inherit; color: inherit; cursor: pointer; transition: transform 0.08s ease; }
@@ -31,7 +35,7 @@
   .wear.worn { border-color: var(--outline); box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--sun) 70%, transparent); }
   .wear.locked { cursor: default; background: var(--surface-2); }
   .wear.locked canvas { filter: grayscale(1) brightness(0.35); opacity: 0.55; }
-  .wear canvas { width: 120px; height: 120px; }
+  .wear canvas { width: 120px; height: 120px; border-radius: 14px; background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--brand) 18%, var(--surface)), var(--surface-2) 72%); }
   .wear b { font: 600 14px var(--font-display); }
   .wear small { font-size: 12px; color: var(--muted); }
   .wear .tag { position: absolute; top: 8px; right: 8px; }
@@ -45,8 +49,9 @@
   <div class="hero"><div><h1 id="title"></h1><p id="sub"></p></div></div>
   <h2 class="section-title" id="h-items"></h2>
   <div class="items" id="items"></div>
-  <h3 class="slot-title display" id="h-stones"></h3>
-  <p class="muted" id="stones-sub" style="margin:-4px 0 10px"></p>
+  <h2 class="section-title" id="h-field"></h2>
+  <div class="items" id="field"></div>
+  <h2 class="section-title" id="h-stones"></h2>
   <div class="stones" id="stones"></div>
   <h2 class="section-title"><span id="h-wear"></span> <small id="wear-count"></small></h2>
   <p class="muted" id="wear-sub" style="margin:-4px 0 0"></p>
@@ -65,7 +70,7 @@
   const { t: tr, lang } = window.OpenmonI18n;
   document.documentElement.lang = lang;
   const $ = (id) => document.getElementById(id);
-  for (const [id, key] of [['title', 'bag.title'], ['sub', 'bag.sub'], ['h-items', 'bag.items'], ['h-wear', 'bag.wear'], ['wear-sub', 'bag.wearSub'], ['h-head', 'bag.head'], ['h-face', 'bag.face'], ['h-neck', 'bag.neck'], ['h-stones', 'bag.stones'], ['stones-sub', 'bag.stonesSub']]) $(id).textContent = tr(key);
+  for (const [id, key] of [['title', 'bag.title'], ['sub', 'bag.sub'], ['h-items', 'bag.toUse'], ['h-wear', 'bag.wear'], ['wear-sub', 'bag.wearSub'], ['h-head', 'bag.head'], ['h-face', 'bag.face'], ['h-neck', 'bag.neck'], ['h-stones', 'bag.toHold'], ['h-field', 'bag.field']]) $(id).textContent = tr(key);
 
   const el = (tag, cls, text) => {
     const e = document.createElement(tag);
@@ -111,13 +116,15 @@
     icon.append(img);
     const stone = id.startsWith('stone-') ? id.slice(6) : null;
     const h = el('h3', '', stone ? tr('item.stone', { type: tr(`power.${stone}`) }) : tr(`item.${id}`));
-    h.append(el('span', 'count', holding ? tr('bag.holding') : `×${n}`));
-    card.append(icon, h);
-    if (!small) {
-      let text = tr(`item.${id}.text`);
-      if (id === 'xp-charm' && pet.charmUntil) text = tr('item.xp-charm.on', { t: new Date(pet.charmUntil).toLocaleString(lang, { weekday: 'short', hour: '2-digit', minute: '2-digit' }) });
-      card.append(el('p', '', text));
-    }
+    card.append(icon, h, el('span', `count${n ? ' have' : ''}`, holding ? tr('bag.holding') : `×${n}`));
+    let text = stone ? tr('bag.stonesSub') : tr(`item.${id}.text`);
+    if (id === 'xp-charm' && pet.charmUntil) text = tr('item.xp-charm.on', { t: new Date(pet.charmUntil).toLocaleString(lang, { weekday: 'short', hour: '2-digit', minute: '2-digit' }) });
+    const why = el('button', 'why', '?');
+    why.type = 'button';
+    why.setAttribute('aria-label', tr('bag.what'));
+    why.setAttribute('aria-expanded', 'false');
+    why.onclick = () => why.setAttribute('aria-expanded', String(card.classList.toggle('open')));
+    card.append(why, el('p', 'desc', text));
     let btn;
     // Openballs are thrown from the pet's bubble when a wild one shows up.
     if (THROW(id)) {
@@ -142,7 +149,7 @@
       if (lit) btn.title = tr('bag.lanternOn');
       if (lured) card.append(el('p', 'muted', tr('bag.lureOn', { t: new Date(pet.lureUntil).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }) })));
       if (id === 'field-map' && pet.fieldMap) card.append(el('p', 'muted', tr('bag.mapOn', { type: tr(`power.${pet.fieldMap}`) })));
-      if (id === 'field-map') {
+      if (id === 'field-map' && n) {
         // The map asks which type the next wild one is.
         const pickType = el('select');
         pickType.setAttribute('aria-label', tr('bag.mapPick'));
@@ -174,9 +181,13 @@
   function renderItems() {
     const box = $('items');
     box.textContent = '';
-    for (const id of ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg', 'everstone', 'openball', 'openball-plus', 'openball-master', 'lure', 'lantern', 'field-map']) box.append(itemCard(id, false));
+    for (const id of ['snack', 'candy', 'friend-candy', 'xp-charm', 'mystery-egg']) box.append(itemCard(id, false));
+    const field = $('field');
+    field.textContent = '';
+    for (const id of ['openball', 'openball-plus', 'openball-master', 'lure', 'lantern', 'field-map']) field.append(itemCard(id, false));
     const stones = $('stones');
     stones.textContent = '';
+    stones.append(itemCard('everstone', false));
     for (const t of TYPES) stones.append(itemCard(`stone-${t}`, true));
   }
 

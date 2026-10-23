@@ -60,6 +60,13 @@
   let setupInfo = null;
   let live = { pose: 'sleep', sessions: [], counts: {}, focus: null };
   let pet = null;
+  // Being carried (drag): when it was picked up, how fast it moves, its swing.
+  let carry = null;
+  // Petting: when the last hearts flew, recent clicks, and a combo's start.
+  let lastPetFx = 0;
+  let petClicks = [];
+  let comboAt = -1e9;
+  let landed = 0;
   // How many Openmons the team has (a companion always has company).
   let teamSize = companionId ? 2 : 1;
   let config = { muted: false };
@@ -231,12 +238,24 @@
       ctx.lineWidth = 2;
       ctx.strokeStyle = INK;
       switch (p.kind) {
-        case 'heart':
-          heart(ctx, p.x + Math.sin(p.life * 6) * 4, p.y, 8 + k * 3);
-          ctx.fillStyle = '#ff6f91';
+        case 'heart': {
+          const pop = Math.min(1, p.life / 0.14);
+          const size = (p.size || 9) * (0.4 + 0.6 * pop) * (1 + 0.15 * Math.sin(p.life * 10) * (1 - k));
+          const hx = p.x + Math.sin(p.life * 5 + (p.phase || 0)) * 5;
+          ctx.globalAlpha = Math.min(1, (1 - k) * 1.6);
+          ctx.lineWidth = 2.2;
+          ctx.strokeStyle = '#3a1424';
+          heart(ctx, hx, p.y, size);
+          ctx.fillStyle = p.color || '#ff5f8f';
           ctx.fill();
           ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(hx - size * 0.34, p.y - size * 0.42, size * 0.16, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+          ctx.fill();
+          ctx.globalAlpha = 1;
           break;
+        }
         case 'spark':
           star(ctx, p.x, p.y, 5 * (1 - k * 0.5));
           ctx.fillStyle = p.color || '#ffe156';
@@ -284,6 +303,18 @@
 
   // --- what to draw ------------------------------------------------------------
 
+  // A brilhante pose is recoloured the first time it shows; draw each pose
+  // once off-screen so a quick one (being carried, a sudden question) is
+  // already in its colours.
+  let prewarmed = '';
+  function prewarmPoses() {
+    if (!pet || !pet.shiny || pet.stage === 'egg' || prewarmed === pet.formKey) return;
+    prewarmed = pet.formKey;
+    const off = document.createElement('canvas').getContext('2d');
+    const draw = () => { for (const pose of ['attention', 'working', 'done', 'error', 'sleep']) OpenmonArt.drawCreature(off, { ...specOf(pet), t: 0, size: SIZE, pose, anim: {} }); };
+    setTimeout(draw, 1200);
+    setTimeout(draw, 4000);
+  }
   function specOf(p) {
     if (!p) return { stage: 'egg', lineage: null, trait: null };
     return { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera || null, shiny: Boolean(p.shiny) && p.stage !== 'egg', wear: p.wear || null, legend: p.legend || null };
@@ -386,6 +417,37 @@
       else anim.glow = Math.max(anim.glow, 0.3 + Math.sin(t * 3) * 0.2);
     }
 
+    // Three pets in a row: a hop and a full spin.
+    const combo = (performance.now() - comboAt) / 900;
+    if (combo >= 0 && combo < 1 && !carry) {
+      anim.turn = Math.cos(combo * Math.PI * 2);
+      anim.jump = Math.max(anim.jump || 0, Math.sin(combo * Math.PI) * 18);
+      anim.eyes = 'happy';
+    }
+    // Held by the cursor: lifted off the ground, a little stretched, swinging
+    // against the way it is moved, looking down at the floor it left.
+    if (carry) {
+      const target = Math.max(-0.38, Math.min(0.38, -carry.vx * 0.012));
+      carry.tiltV = (carry.tiltV + (target - carry.tilt) * 0.22) * 0.82;
+      carry.tilt += carry.tiltV;
+      carry.vx *= 0.85;
+      const up = Math.min(1, (performance.now() - carry.at) / 140);
+      anim.jump = Math.max(anim.jump || 0, up * (14 + Math.sin(t * 7) * 1.5));
+      anim.squash = -0.08 * up;
+      anim.tilt = carry.tilt;
+      anim.turn = 1;
+      anim.lookX = Math.max(-1, Math.min(1, -carry.tilt * 2));
+      anim.lookY = 1;
+      anim.shake = 0;
+      anim.prop = null;
+      anim.eyes = 'open';
+    } else if (landed) {
+      // Set down: a squash that settles, like landing on its feet.
+      const p = (performance.now() - landed) / 420;
+      if (p >= 1) landed = 0;
+      else anim.squash = Math.max(anim.squash || 0, 0.16 * Math.cos(p * Math.PI * 1.5) * (1 - p));
+    }
+
     const walking = Math.abs(walkTo - petX) > 0.5 && !evolveFx;
     if (walking && !reducedMotion) {
       anim.turn = walkTo > petX ? 1 : -1;
@@ -403,7 +465,9 @@
       if (focusK > 0.01) {
         const k = 1 + focusK * 0.18;
         if (auraFocus.complete && auraFocus.naturalWidth) {
-          const r = SIZE * 1.9 * k;
+          // As big as fits: never cut by the window's edges.
+          const cy = GROUND - SIZE * 0.95 * k;
+          const r = Math.max(SIZE, Math.min(SIZE * 1.9 * k, H - cy - 2, cy - 2, petCX() - 2, W - petCX() - 2));
           ctx.save();
           ctx.translate(0, -SIZE * 0.95 * k);
           ctx.rotate(reducedMotion ? 0 : t * 0.4);
@@ -413,7 +477,8 @@
         }
         ctx.scale(k, k);
       }
-      OpenmonArt.drawCreature(ctx, { ...spec, t, size: SIZE, pose: showPose, anim });
+      // Carried: the surprised pose, eyes wide and arms up.
+      OpenmonArt.drawCreature(ctx, { ...spec, t, size: SIZE, pose: carry && spec.stage !== 'egg' ? 'attention' : showPose, anim });
       ctx.restore();
       return;
     }
@@ -1211,6 +1276,7 @@
     config = msg.config || config;
     if (wasFocus && !config.focus && config.focusUntil && Date.now() >= config.focusUntil - 1000) pushToast(tr('focus.done'), tr('focus.doneSub'), 8000, 'scene');
     pet = msg.pet;
+    prewarmPoses();
     teamSize = msg.party ? msg.party.members.length + msg.party.box.length : 1;
     const nextFamily = live.family || (live.focus && live.focus.family) || null;
     if (live.pose !== pose) {
@@ -1255,9 +1321,7 @@
       switch (e.type) {
         case 'petted':
           petted = true;
-          pettedAt = t;
-          for (let i = 0; i < 3; i++) spawn('heart', petCX() + (i - 1) * 22, top + 6, { vx: (i - 1) * 8, vy: -34, max: 1.3 });
-          play('cry');
+          if (performance.now() - lastPetFx > 1200) petFx(1);
           break;
         case 'level':
           if (!evolve) {
@@ -1402,6 +1466,8 @@
           break;
         case 'bond':
           if (!petted) spawn('heart', petCX() + 30, top + 4, { vy: -26, max: 1.2 });
+          // Friendship that counted: say so, softly.
+          spawn('text', petCX() + 34, top - 4, { text: tr('pet.bondUp', { n: e.amount || 1 }), vy: -16, max: 1.4, sizePx: 12, color: '#e0457b' });
           break;
         default:
           break;
@@ -1465,6 +1531,38 @@
   }
 
   let down = null;
+  function setDown() {
+    if (!carry) return;
+    carry = null;
+    landed = performance.now();
+    burst('spark', 6, petCX(), GROUND - 2, 2.6, { colors: ['#e9e2d6', '#cfc6b8'], gravity: 220 });
+  }
+  // Petting: hearts in a fan above its head, a happy squish, its cry. Three
+  // quick pets in a row: it jumps and spins with joy.
+  function petFx(strength = 1) {
+    lastPetFx = performance.now();
+    pettedAt = now();
+    const top = GROUND - headY(currentSpec().stage);
+    const n = 3 + strength * 2;
+    for (let i = 0; i < n; i++) {
+      const a = (i / (n - 1) - 0.5) * 1.6;
+      spawn('heart', petCX() + Math.sin(a) * 18, top + 8, { vx: Math.sin(a) * 34, vy: -40 - Math.cos(a) * 16, max: 1.2 + Math.random() * 0.4, size: 7 + Math.random() * 4, phase: i, color: i % 3 === 1 ? '#ff8fb1' : '#ff5f8f' });
+    }
+    play('cry');
+  }
+  function petCombo() {
+    const t = performance.now();
+    petClicks = [...petClicks.filter((x) => t - x < 1300), t];
+    if (petClicks.length >= 3 && t - comboAt > 2500) {
+      comboAt = t;
+      petClicks = [];
+      burst('confetti', 16, petCX(), GROUND - 60, 2.2, { colors: CONFETTI, gravity: 260 });
+      play('done');
+      return 2;
+    }
+    return 1;
+  }
+
   canvas.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     const p = localPoint(e);
@@ -1478,12 +1576,18 @@
       down.moved = true;
       canvas.classList.add('dragging');
       setHover(false);
+      carry = { at: performance.now(), lastX: e.screenX, vx: 0, tilt: 0, tiltV: 0 };
+    }
+    if (carry) {
+      carry.vx = carry.vx * 0.5 + (e.screenX - carry.lastX) * 0.5 * 4;
+      carry.lastX = e.screenX;
     }
   });
   canvas.addEventListener('pointerup', () => {
     if (!down) return;
     if (desktop) desktop.dragEnd();
     canvas.classList.remove('dragging');
+    setDown();
     if (!down.moved) {
       // Clicking while it waits means "take me there": it calms down and
       // brings the agent's window to the front.
@@ -1495,7 +1599,10 @@
         dismissBubble();
         jumpTo(id);
       } else if (pet && pet.awaitingStarter) openPage('starter');
-      else post('/api/pet');
+      else {
+        petFx(petCombo());
+        post('/api/pet');
+      }
     }
     down = null;
   });
@@ -1505,11 +1612,16 @@
     if (!down) return;
     if (desktop) desktop.dragEnd();
     canvas.classList.remove('dragging');
+    setDown();
     down = null;
   };
   canvas.addEventListener('pointercancel', dropDrag);
   canvas.addEventListener('lostpointercapture', () => setTimeout(dropDrag, 0));
   window.addEventListener('blur', dropDrag);
+  canvas.addEventListener('dblclick', (e) => {
+    const p = localPoint(e);
+    if (overPet(p.x, p.y) && pose !== 'attention') setHover(true);
+  });
   canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     setHover(!hovering);

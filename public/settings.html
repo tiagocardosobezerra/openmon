@@ -13,12 +13,12 @@
   .layout { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: start; margin-top: 18px; }
   .side { position: sticky; top: 70px; display: grid; gap: 4px; }
   .side button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border: 1.5px solid transparent; border-radius: var(--r-md); background: transparent; color: var(--muted); font: 600 14px var(--font-display); text-align: left; cursor: pointer; }
-  .side button .ico { width: 22px; text-align: center; font-size: 16px; }
+  .side button .ico { display: inline-grid; place-items: center; width: 22px; height: 22px; }
   .side button:hover { color: var(--ink); background: var(--surface-2); }
   .side button[aria-selected="true"] { color: var(--ink); background: var(--surface); border-color: var(--outline); box-shadow: 0 2px 0 var(--outline); }
   .pane h2 { margin: 0 0 2px; font-size: 20px; }
   .pane > p.lead { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; }
-  .card { padding: 4px 16px; margin-bottom: 12px; }
+  .card { padding: 4px 16px; margin-bottom: 14px; box-shadow: var(--lift), var(--gloss); }
   .card h3 { margin: 12px 0 0; font: 600 12px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .row { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
   .card h3 + .row, .card > .row:first-child { border-top: 0; }
@@ -210,7 +210,16 @@
     },
   };
   const T = TEXT[lang] || TEXT.en;
-  const SECTIONS = [['pet', '🐣'], ['alerts', '🔔'], ['focus', '🎧'], ['phone', '📱'], ['computer', '💻'], ['more', '⚙']];
+  // Drawn icons for the sections (24 × 24, in the text colour).
+  const SECTION_ICON = {
+    pet: '<path d="M12 4c3.9 0 6.5 5.4 6.5 9 0 3.6-2.9 6.5-6.5 6.5S5.5 16.6 5.5 13c0-3.6 2.6-9 6.5-9z"/><path d="M9 8.5l1.5 1.5L12 8.5l1.5 1.5L15 8.5"/>',
+    alerts: '<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+    focus: '<path d="M4.5 15v-3a7.5 7.5 0 0 1 15 0v3"/><rect x="3.5" y="14" width="4" height="6" rx="1.5"/><rect x="16.5" y="14" width="4" height="6" rx="1.5"/>',
+    phone: '<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 17.5h2"/>',
+    computer: '<rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20.5h6M12 16.5v4"/>',
+    more: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  };
+  const SECTIONS = Object.keys(SECTION_ICON).map((id) => [id, `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SECTION_ICON[id]}</svg>`]);
 
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => {
@@ -471,7 +480,9 @@
       b.type = 'button';
       b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(id === tab));
-      b.append(el('span', 'ico', icon), el('span', '', T.tabs[id]));
+      const ico = el('span', 'ico');
+      ico.innerHTML = icon;
+      b.append(ico, el('span', '', T.tabs[id]));
       b.onclick = () => {
         tab = id;
         history.replaceState(null, '', `#${id}`);

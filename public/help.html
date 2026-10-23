@@ -13,6 +13,7 @@
   .poses { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
   .pose { padding: 10px 12px 14px; text-align: center; }
   .pose canvas { width: 120px; height: 120px; }
+  .pose .stage { height: 132px; margin-bottom: 4px; }
   .pose b { display: block; font: 600 15px var(--font-display); margin-top: 4px; }
   .pose span { font-size: 13px; color: var(--muted); }
   .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
@@ -21,10 +22,10 @@
   .step h3 { margin: 8px 0 4px; font-size: 17px; }
   .step p { margin: 0; color: var(--muted); font-size: 13.5px; }
   .faq { display: grid; gap: 8px; max-width: 760px; }
-  details { padding: 10px 14px; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-md); }
-  details[open] { border-color: var(--outline); }
-  summary { cursor: pointer; font: 600 15px var(--font-display); }
-  details p { margin: 8px 0 2px; color: var(--muted); }
+  .faq details { padding: 10px 14px; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-md); box-shadow: var(--gloss); }
+  .faq details[open] { border-color: var(--outline); }
+  .faq summary { cursor: pointer; font: 600 15px var(--font-display); }
+  .faq details p { margin: 8px 0 2px; color: var(--muted); }
   kbd { white-space: nowrap; }
 </style>
 </head>
@@ -194,7 +195,10 @@
   for (const [pose, title, text] of T.pose) {
     const card = el('div', 'pose panel soft');
     const canvas = el('canvas');
-    card.append(canvas, el('b', '', title), el('span', '', text));
+    // On a little stage of its type, like everywhere else.
+    const stage = el('div', 'stage t-craft');
+    stage.append(canvas);
+    card.append(stage, el('b', '', title), el('span', '', text));
     $('poses').append(card);
     live.push({ canvas, pose });
   }

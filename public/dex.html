@@ -23,11 +23,29 @@
   .line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 12.5px; }
   .line span.cur { font-weight: 800; text-decoration: underline; text-decoration-color: var(--c); text-decoration-thickness: 2px; }
   .line i { color: var(--muted); font-style: normal; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-  .cell { background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-lg); padding: 8px 8px 12px; text-align: center; cursor: pointer; position: relative; font: inherit; color: inherit; transition: transform 0.08s ease, border-color 0.12s ease; }
-  .cell:hover, .cell:focus-visible { border-color: var(--outline); transform: translateY(-2px); box-shadow: var(--lift); outline: none; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 14px; }
+  /* Phones: two per row, so a form never fills the whole screen. */
+  @media (max-width: 520px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .name { font-size: 14px; } }
+  .cell { background: var(--surface); border: var(--bw) solid color-mix(in srgb, var(--type) 40%, var(--line)); border-radius: var(--r-lg); padding: 6px 6px 10px; text-align: center; cursor: pointer; position: relative; font: inherit; color: inherit; box-shadow: var(--gloss); transition: transform 0.08s ease, border-color 0.12s ease; }
+  .cell .stage { margin-bottom: 6px; }
+  .cell:hover, .cell:focus-visible { border-color: var(--outline); transform: translateY(-2px); box-shadow: var(--lift), var(--gloss); outline: none; }
   .cell.current { border-color: var(--outline); box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--dex) 45%, transparent); }
-  .cell.unseen { background: var(--surface-2); }
+  .cell.unseen { --type: var(--sunken); --type-ink: var(--line); background: var(--surface-2); }
+  .cell.unseen .name { color: var(--muted); }
+  .cell[hidden] { display: none; }
+  /* Types as a row of filters; the one picked explains itself above the grid. */
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+  .filters button { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px 3px 4px; border: var(--bw) solid color-mix(in srgb, var(--type) 55%, var(--line)); border-radius: 99px; background: var(--surface); color: var(--ink); font: 600 13px var(--font-display); cursor: pointer; }
+  .filters button img { width: 24px; height: 24px; object-fit: contain; }
+  .filters button.all { padding-left: 12px; }
+  .filters button[aria-pressed="true"] { background: var(--type); color: var(--type-on); border-color: var(--type-ink); box-shadow: var(--lift-sm); }
+  .type-info { display: grid; grid-template-columns: 96px 1fr; gap: 6px 16px; align-items: center; margin: 0 0 14px; padding: 12px 16px; border-radius: var(--r-lg); background: color-mix(in srgb, var(--type) 14%, var(--surface)); border: var(--bw) solid color-mix(in srgb, var(--type) 50%, var(--line)); box-shadow: var(--gloss); }
+  .type-info[hidden] { display: none; }
+  .type-info img { grid-row: span 3; width: 96px; height: 96px; object-fit: contain; }
+  .type-info img.unseen { filter: grayscale(1) brightness(0.25); opacity: 0.6; }
+  .type-info p { margin: 0; font-size: 13.5px; }
+  .type-info .flavor { color: var(--muted); font-style: italic; }
+  .type-info .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .no { position: absolute; left: 10px; top: 8px; font: 600 12px var(--font-display); color: var(--muted); font-variant-numeric: tabular-nums; }
   .you { position: absolute; right: 8px; top: 7px; font: 600 10.5px/1.6 var(--font-display); background: var(--dex); color: #fff; border-radius: 99px; padding: 0 8px; }
   canvas { width: 100%; aspect-ratio: 1; display: block; }
@@ -36,7 +54,8 @@
   dialog { border: 2.5px solid var(--outline); border-radius: 20px; padding: 0; width: min(440px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 6px 0 var(--outline); }
   dialog::backdrop { background: rgba(20, 14, 30, 0.55); backdrop-filter: blur(2px); }
   .detail { padding: 16px 20px 20px; text-align: center; }
-  .detail canvas { width: 220px; margin: 0 auto; background: radial-gradient(circle at 50% 60%, var(--surface-2), transparent 70%); border-radius: 50%; }
+  .detail .stage { margin: 0 auto 8px; width: 240px; }
+  .detail canvas { width: 220px; margin: 0 auto; }
   .detail h3 { margin: 4px 0 2px; font-size: 24px; }
   .detail .text { margin: 12px 0 10px; text-align: left; }
   .detail .types-row { display: flex; justify-content: center; gap: 6px; margin: 6px 0 2px; }
@@ -44,6 +63,7 @@
   .detail .how b { font-family: var(--font-display); font-weight: 600; }
   .detail .line { justify-content: flex-start; margin: 0 0 14px; }
   .hof { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .hof .empty { grid-column: 1 / -1; text-align: left; padding: 4px 0; max-width: 60ch; }
   .hof div { background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-md); padding: 10px 12px; }
   .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; padding-bottom: 48px; }
   .badge { display: flex; gap: 10px; align-items: center; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-md); padding: 10px 12px; }
@@ -61,10 +81,8 @@
     <div><h1>Opendex</h1><p id="intro"></p></div>
     <div class="aside"><div class="big-number" id="seen"></div><div class="muted" id="seen-label"></div><div class="bar progress"><i id="seen-bar"></i></div></div>
   </div>
-  <h2 class="section-title" id="h-types">Types</h2>
-  <p class="muted" id="types-sub" style="margin:-4px 0 12px"></p>
-  <div class="types" id="types"></div>
-  <h2 class="section-title" id="h-forms">Forms</h2>
+  <div class="filters" id="filters" role="toolbar"></div>
+  <div class="type-info" id="type-info" hidden></div>
   <div class="grid" id="grid"></div>
   <h2 class="section-title"><span id="h-hall">Hall of Fame</span></h2>
   <div class="hof" id="hof"></div>
@@ -72,7 +90,7 @@
   <div class="badges" id="badges"></div>
 </main>
 <dialog id="detail"><div class="detail">
-  <canvas id="big"></canvas>
+  <div class="stage" id="d-stage"><canvas id="big"></canvas></div>
   <div class="sub" id="d-no"></div>
   <h3 id="d-name"></h3>
   <div class="types-row" id="d-types"></div>
@@ -96,7 +114,7 @@
   let labels = {};
   const lineageName = (l) => (l === 'chimera' ? 'Chimera' : labels[l] || l);
   document.documentElement.lang = lang;
-  for (const [id, key] of [['h-forms', 'dex.forms'], ['h-badges', 'dex.badges'], ['h-hall', 'dex.hall'], ['d-close', 'dex.close']]) document.getElementById(id).textContent = tr(key);
+  for (const [id, key] of [['h-badges', 'dex.badges'], ['h-hall', 'dex.hall'], ['d-close', 'dex.close']]) document.getElementById(id).textContent = tr(key);
 
   function pad(n) { return `#${String(n).padStart(3, '0')}`; }
 
@@ -118,7 +136,8 @@
     if (silhouette) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalCompositeOperation = 'source-atop';
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink');
+      // A dark cut-out, the same in light and dark themes.
+      ctx.fillStyle = 'rgba(14, 10, 22, 0.82)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
     }
@@ -142,8 +161,9 @@
       const current = pet && pet.formKey === entry.key;
       if (current) Object.assign(spec, { trait: pet.trait, shiny: pet.shiny, chimera: pet.chimera });
       const el = document.createElement('button');
-      el.className = `cell${known ? '' : ' unseen'}${current ? ' current' : ''}`;
-      el.innerHTML = `<span class="no">${pad(entry.no)}</span>${current ? `<span class="you">${tr('dex.you')}</span>` : ''}<canvas></canvas><div class="name"></div><div class="sub"></div>`;
+      el.className = `cell${known ? '' : ' unseen'}${current ? ' current' : ''}${entry.lineage ? ` t-${entry.lineage}` : ''}`;
+      el.dataset.lineage = entry.lineage || (entry.legend ? 'legend' : 'base');
+      el.innerHTML = `<div class="stage"><span class="no">${pad(entry.no)}</span>${current ? `<span class="you">${tr('dex.you')}</span>` : ''}<canvas></canvas></div><div class="name"></div><div class="sub"></div>`;
       el.querySelector('.name').textContent = known ? entry.name : '???';
       el.querySelector('.sub').textContent = metWild && !revealAll ? tr('dex.wildSeen') : known ? (entry.lineage ? `${lineageName(entry.lineage)} · ${tr(`stage.${entry.stage}`)}` : tr(`stage.${entry.stage}`)) : entry.hidden ? tr('dex.hiddenForm') : entry.lineage ? tr('dex.growsFrom', { work: WORK(entry.lineage) }) : '';
       el.addEventListener('click', () => show(entry, spec, known));
@@ -232,43 +252,62 @@
     lineages = species.lineages;
     weights = species.weights || {};
     dexSeen = dex;
-    document.getElementById('h-types').textContent = tr('types.title');
-    document.getElementById('types-sub').textContent = tr('types.sub');
-    const box = document.getElementById('types');
-    for (const t of TYPES) {
-      const card = el('div', 'type');
-      card.style.setProperty('--c', `var(--${t})`);
-      card.style.setProperty('--on', `var(--${t}-on)`);
-      const seenJuvenile = revealAll || dex[`${t}-juvenile`];
-      const img = el('img', seenJuvenile ? '' : 'unseen');
-      img.src = `/art/${t}-juvenile.svg`;
+    const bar = document.getElementById('filters');
+    bar.setAttribute('aria-label', tr('types.title'));
+    const pick = (t) => {
+      for (const b of bar.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.type === (t || '')));
+      for (const c of document.querySelectorAll('#grid .cell')) c.hidden = Boolean(t) && c.dataset.lineage !== t;
+      renderTypeInfo(t);
+    };
+    const all = el('button', 'all', tr('types.all'));
+    all.type = 'button';
+    all.dataset.type = '';
+    all.onclick = () => pick(null);
+    bar.append(all);
+    for (const t of [...TYPES, 'chimera']) {
+      const b = el('button', `t-${t}`);
+      b.type = 'button';
+      b.dataset.type = t;
+      const img = el('img');
+      img.src = `/art/${t === 'chimera' ? 'chimera-adult' : `${t}-juvenile`}.svg`;
       img.alt = '';
-      const h = el('h3');
-      h.append(typeChip(t));
-      const meta = el('div', 'meta');
-      const w = el('span', 'chip', tr('type.weight', { w: weights[t] || 1 }));
-      w.title = tr('type.weightWhy');
-      meta.append(w, el('span', 'chip brand', tr('type.power', { power: tr(`power.${t}.title`) })));
-      card.append(img, h, el('p', '', tr(`type.${t}.how`)), el('p', 'flavor', tr(`type.${t}.flavor`)), meta);
-      const line = evolutionLine(t, null);
-      line.style.gridColumn = '1 / -1';
-      card.append(line);
-      box.append(card);
+      if (!(revealAll || dex[t === 'chimera' ? 'chimera-adult' : `${t}-juvenile`])) img.style.filter = 'grayscale(1) brightness(0.3)';
+      b.append(img, t === 'chimera' ? tr('types.hidden') : lineageName(t));
+      b.onclick = () => pick(b.getAttribute('aria-pressed') === 'true' ? null : t);
+      bar.append(b);
     }
-    const hidden = el('div', 'type hidden-type');
-    const img = el('img', 'unseen');
-    img.src = '/art/chimera-adult.svg';
+    pick(null);
+  }
+  // The picked type explains itself: what trains it, how much it counts,
+  // the power it unlocks and its line.
+  function renderTypeInfo(t) {
+    const box = document.getElementById('type-info');
+    box.textContent = '';
+    box.hidden = !t;
+    if (!t) return;
+    box.className = `type-info t-${t}`;
+    const key = t === 'chimera' ? 'chimera-adult' : `${t}-juvenile`;
+    const img = el('img', revealAll || dexSeen[key] ? '' : 'unseen');
+    img.src = `/art/${key}.svg`;
     img.alt = '';
-    const h = el('h3', '', tr('types.hidden'));
-    hidden.append(img, h, el('p', 'flavor', tr('types.hiddenText')));
-    box.append(hidden);
+    if (t === 'chimera') {
+      box.append(img, el('p', '', tr('types.hiddenText')));
+      return;
+    }
+    const meta = el('div', 'meta');
+    const tag = el('span', 'type-tag', lineageName(t));
+    const w = el('span', 'chip', tr('type.weight', { w: weights[t] || 1 }));
+    w.title = tr('type.weightWhy');
+    meta.append(tag, w, el('span', 'chip brand', tr('type.power', { power: tr(`power.${t}.title`) })));
+    box.append(img, meta, el('p', '', tr(`type.${t}.how`)), evolutionLine(t, null));
   }
 
   function show(entry, spec, known) {
     open = { spec, known };
+    document.getElementById('d-stage').className = `stage${entry.lineage && known ? ` t-${entry.lineage}` : ''}`;
     const types = document.getElementById('d-types');
     types.textContent = '';
-    types.append(typeChip(entry.lineage));
+    types.append(entry.lineage && entry.lineage !== 'chimera' ? el('span', `type-tag t-${entry.lineage}`, lineageName(entry.lineage)) : typeChip(entry.lineage));
     const how = document.getElementById('d-how');
     how.textContent = '';
     if (entry.hidden && !known) how.hidden = true;
@@ -278,7 +317,6 @@
       else if (!entry.lineage) how.append(tr('type.baseHow'));
       else if (entry.lineage === 'chimera') how.append(tr('types.hiddenText'));
       else how.append(el('b', '', lineageName(entry.lineage) + ': '), tr(`type.${entry.lineage}.how`), ' ', tr('type.weight', { w: weights[entry.lineage] || 1 }) + '.');
-      if (['craft-mythic', 'lore-mythic'].includes(entry.key)) how.append(' ', tr('dex.friendForm'));
     }
     const lineBox = document.getElementById('d-line');
     lineBox.replaceWith(Object.assign(entry.lineage ? evolutionLine(entry.lineage, entry.key) : el('div', 'line'), { id: 'd-line' }));

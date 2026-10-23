@@ -18,7 +18,8 @@
   .sessions-box h3 { margin: 0 0 8px; font-size: 14px; }
   .sessions { display: flex; flex-wrap: wrap; gap: 6px; }
   .sessions .recap { flex-basis: 100%; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
-  .journal { margin-top: 12px; padding: 14px 16px; }
+  .journal { margin-top: 14px; padding: 14px 16px; }
+  .top { margin-top: 14px; }
   .journal h3 { margin: 0; font-size: 16px; }
   .journal .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
   .journal .head p { margin: 0; color: var(--muted); font-size: 12.5px; }
@@ -44,10 +45,13 @@
   #timeline li.prompt { background: var(--surface-2); font-weight: 650; }
   #timeline li time { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
   #timeline li .who { color: var(--muted); font-size: 12px; }
-  .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 6px; margin-top: 22px; }
-  .tab { font: inherit; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px 8px; border: var(--bw) solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--ink); cursor: pointer; transition: transform 0.08s ease; }
+  .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; margin-top: 8px; }
+  .tab { font: inherit; position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 8px; border: var(--bw) solid color-mix(in srgb, var(--c) 45%, var(--line)); border-radius: var(--r-md); background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--c) 28%, var(--surface)), var(--surface) 70%); color: var(--ink); cursor: pointer; box-shadow: var(--gloss); transition: transform 0.08s ease; }
   .tab:hover { transform: translateY(-2px); border-color: var(--c); }
-  .tab img { width: 46px; height: 46px; object-fit: contain; }
+  .tab img { width: 56px; height: 56px; object-fit: contain; }
+  .tab .pw-ic { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; color: var(--muted); }
+  .tab .pw-ic svg, .tab .pw-ic img { width: 18px; height: 18px; }
+  .tab.locked { background: var(--surface-2); border-color: var(--line); }
   .tab b { font: 600 13px var(--font-display); }
   .tab small { font-size: 11px; color: var(--muted); }
   .tab.on { border-color: var(--outline); box-shadow: 0 3px 0 var(--outline), inset 0 -5px 0 var(--c); }
@@ -70,13 +74,13 @@
 <body class="page" data-page="powers">
 <main class="wrap">
   <div class="hero"><div><h1 id="title">Skills</h1><p id="sub"></p></div></div>
+  <div class="tabs" id="tabs"></div>
+  <section class="panel panel-body" id="panel"></section>
+  <section class="journal panel soft" id="journal"></section>
   <div class="top">
     <section class="wait panel" id="wait"></section>
     <section class="sessions-box panel soft"><h3 id="h-sessions"></h3><div class="sessions" id="sessions"></div></section>
   </div>
-  <section class="journal panel soft" id="journal"></section>
-  <div class="tabs" id="tabs"></div>
-  <section class="panel panel-body" id="panel"></section>
   <section class="panel soft timeline" id="timeline-box">
     <div class="tl-head"><h3 id="h-timeline"></h3><input class="input" id="search" type="search" autocomplete="off"></div>
     <ol id="timeline"></ol>
@@ -161,10 +165,27 @@
     for (const p of POWERS) {
       const locked = !data.unlocked.includes(p);
       const b = h('button', { class: `tab${p === tab ? ' on' : ''}${locked ? ' locked' : ''}`, style: `--c: var(--${p})`, title: locked ? tr('powers.lockedShort') : '' },
-        h('img', { src: `/art/${p}-juvenile.svg`, alt: '' }), h('b', {}, tr(`power.${p}`)), h('small', {}, locked ? '🔒' : tr(`power.${p}.short`)));
+        h('img', { src: `/art/${p}-juvenile.svg`, alt: '' }), h('b', {}, tr(`power.${p}`)), h('small', {}, locked ? tr('powers.lockedShort') : tr(`power.${p}.short`)), locked ? lockIcon() : powerIcon(p));
       b.onclick = () => { tab = p; picked = true; render(); };
       box.append(b);
     }
+  }
+
+  // Drawn icons until the designer's public/icons/power-<id>.svg exist.
+  const svgIcon = (d) => {
+    const span = document.createElement('span');
+    span.className = 'pw-ic';
+    span.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+    return span;
+  };
+  const lockIcon = () => svgIcon('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>');
+  function powerIcon(p) {
+    const span = svgIcon('<circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/>');
+    const img = new Image();
+    img.alt = '';
+    img.onload = () => span.replaceChildren(img);
+    img.src = `/icons/power-${p}.svg`;
+    return span;
   }
 
   const copyBtn = (text) => {
@@ -219,7 +240,7 @@
     },
     roam(s) {
       if (!s.roam.length) return null;
-      const icon = { page: '🌐', search: '🔎', mcp: '🧩' };
+      const icon = { page: '↗', search: '⌕', mcp: '◇' };
       return h('table', {}, s.roam.map((w) => h('tr', {}, h('td', {}, icon[w.kind] || '•'), h('td', {}, h('code', {}, w.target)), h('td', { class: 'n muted' }, ago(w.at)), h('td', { class: 'n' }, copyBtn(w.target)))));
     },
     swarm(s) {
@@ -354,7 +375,7 @@
   }
 
   // Timeline of the selected session, or a search across every session.
-  const TL_ICON = { prompt: '💬', stop: '✓', ask: '!', agent: '✦', compact: '⋯' };
+  const TL_ICON = { prompt: '›', stop: '✓', ask: '!', agent: '✦', compact: '⋯' };
   function renderTimeline() {
     $('h-timeline').textContent = tr('timeline.title');
     $('search').placeholder = tr('timeline.search');

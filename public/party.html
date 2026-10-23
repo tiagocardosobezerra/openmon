@@ -10,28 +10,41 @@
 <style>
   main { padding-bottom: 56px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-  .mon { position: relative; display: grid; justify-items: center; gap: 2px; padding: 10px 12px 14px; text-align: center; }
-  .mon.active { box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--sun) 70%, transparent); }
-  .mon canvas { width: 150px; height: 150px; }
-  .mon .name { font: 600 17px var(--font-display); }
+  .mon { position: relative; display: grid; justify-items: center; gap: 2px; padding: 6px 6px 12px; text-align: center; border-color: color-mix(in srgb, var(--type) 45%, var(--outline)); }
+  .mon.active { box-shadow: var(--lift), var(--gloss), 0 0 0 3px color-mix(in srgb, var(--sun) 70%, transparent); }
+  .mon .stage { width: 100%; height: 170px; margin-bottom: 6px; }
+  .mon canvas { width: 160px; height: 160px; }
+  .mon .name { font: 600 18px var(--font-display); }
   .mon .meta { font-size: 12.5px; color: var(--muted); }
-  .mon .proj { margin-top: 4px; }
-  .mon .tag { position: absolute; top: 10px; left: 10px; }
-  .mon .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
-  .mon .bar { width: 80%; height: 6px; margin-top: 4px; }
+  .mon .tag { position: absolute; top: 12px; left: 12px; z-index: 1; }
+  .mon .proj { margin-top: 4px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; }
+  .mon .main-act { margin-top: 10px; min-width: 60%; }
+  .mon .bar { width: 70%; height: 8px; margin-top: 6px; border-width: 1.5px; }
+  /* Everything else about a member: a small menu behind "⋯". */
+  .more { position: absolute; top: 10px; right: 10px; z-index: 2; }
+  .more > summary { list-style: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 80%, transparent); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); font: 700 18px/1 var(--font-display); cursor: pointer; }
+  .more > summary::-webkit-details-marker { display: none; }
+  .more[open] > summary { background: var(--surface); box-shadow: inset 0 0 0 2px var(--outline); }
+  .more .menu { position: absolute; right: 0; top: 36px; display: grid; gap: 6px; width: 220px; padding: 10px; text-align: left; background: var(--surface); border: var(--bw) solid var(--outline); border-radius: var(--r-md); box-shadow: var(--lift), 0 10px 24px rgba(20, 12, 40, 0.25); }
+  .more .menu .btn { justify-content: flex-start; width: 100%; }
+  .more .follow { justify-content: space-between; }
   .empty-slot { display: grid; place-items: center; align-content: center; gap: 6px; min-height: 250px; border: 2px dashed var(--line); border-radius: var(--r-lg); color: var(--muted); text-align: center; padding: 16px; font-size: 13px; }
   .empty-slot img { width: 104px; height: 104px; opacity: 0.9; }
   .follow { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); width: 100%; justify-content: center; }
   .follow select { font: inherit; color: var(--text); background: var(--surface-2); border: 1.5px solid var(--line); border-radius: var(--r-sm); padding: 2px 6px; max-width: 150px; }
   .section-title img { width: 30px; height: 30px; vertical-align: -7px; margin-right: 6px; }
-  /* Project tag: the designer's plaque, a type-coloured dot with eyes and the name. */
-  .ptag { display: inline-flex; align-items: center; gap: 7px; max-width: 170px; height: 34px; box-sizing: border-box; margin-top: 6px; padding: 0 10px 0 6px; border: 3px solid #2a2140; border-radius: 12px; background: #fffdf7; color: #2a2140; font: 600 14px var(--font-display); }
-  .ptag i { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--c, #7c6cf2); box-shadow: inset 0 0 0 2px #2a2140; }
-  .ptag i::before, .ptag i::after { content: ''; width: 3px; height: 5px; border-radius: 50%; background: #2a2140; }
-  .ptag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* The Nest: a wallpaper behind the stored mons, picked by the trainer. */
-  .boxwrap { border-radius: var(--r-lg); padding: 14px; background: center / cover no-repeat var(--sunken); border: var(--bw) solid var(--line); }
+  /* The Nest is a scene: the resting Openmon stand on the chosen wallpaper. */
+  .boxwrap { min-height: 260px; border-radius: var(--r-lg); padding: 18px; background: center / cover no-repeat var(--sunken); border: var(--bw) solid var(--outline); box-shadow: var(--lift); }
   .boxwrap .muted { background: color-mix(in srgb, var(--surface) 88%, transparent); padding: 8px 12px; border-radius: var(--r-md); display: inline-block; }
+  /* In the Nest they stand right in the scene: no card, just a name plate. */
+  .boxwrap .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-items: end; }
+  .boxwrap .mon { background: none; border: 0; box-shadow: none; padding: 0 0 6px; }
+  .boxwrap .stage { background: none; box-shadow: none; height: 150px; }
+  .boxwrap .meta, .boxwrap .proj, .boxwrap .bar { display: none; }
+  .boxwrap .name { padding: 1px 12px; border-radius: 99px; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 0 0 0 1.5px var(--outline); font-size: 15px; }
+  .boxwrap .main-act { margin-top: 6px; min-width: 0; }
+  .boxwrap .more { top: 0; }
   .walls { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 10px; vertical-align: middle; }
   .walls button { width: 34px; height: 22px; padding: 0; border-radius: 7px; border: 2px solid var(--line); background: center / cover no-repeat; cursor: pointer; }
   .walls button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--sun); }
@@ -77,25 +90,44 @@
   }
 
   function card(p, size) {
-    const c = el('div', `mon panel${p.active ? ' active' : ''}`);
+    const type = p.legend ? null : p.lineage || null;
+    const c = el('div', `mon panel${p.active ? ' active' : ''}${type ? ` t-${type}` : ''}`);
+    const stage = el('div', 'stage');
     const canvas = el('canvas');
+    stage.append(canvas);
     canvases.push([canvas, p]);
-    c.append(canvas, el('span', 'name', p.shiny && p.stage !== 'egg' ? `${p.name} ★` : p.name), el('span', 'meta', `${tr('card.level', { n: p.level })} · ${p.form}`));
-    const tag = el('span', 'ptag');
-    // Legendaries and mystery eggs belong to no project.
+    c.append(stage, el('span', 'name', p.shiny && p.stage !== 'egg' ? `${p.name} ★` : p.name), el('span', 'meta', `${tr('card.level', { n: p.level })} · ${p.form}`));
+    // Legendaries, mystery eggs and wild ones belong to no project.
     const special = p.legend ? tr('party.legendTag') : p.project && p.project.startsWith('mystery:') ? tr('party.mysteryTag') : p.project && p.project.startsWith('wild:') ? tr('party.wildTag') : null;
-    const label = special || p.project || tr('party.general');
     const mystery = !p.legend && p.project && p.project.startsWith('mystery:');
-    tag.title = mystery ? tr('party.mysteryHow') : special || (p.project ? tr('party.project', { project: p.project }) : tr('party.general'));
-    tag.style.setProperty('--c', p.legend ? 'var(--sun)' : p.lineage && p.lineage !== 'chimera' ? `var(--${p.lineage})` : 'var(--brand)');
-    tag.append(el('i'), el('span', '', label));
-    c.append(tag);
+    const proj = el('span', 'chip proj', special || p.project || tr('party.general'));
+    proj.title = mystery ? tr('party.mysteryHow') : special || (p.project ? tr('party.project', { project: p.project }) : tr('party.general'));
+    c.append(proj);
     const bar = el('div', 'bar');
     const fill = el('i');
     fill.style.width = `${Math.round((p.progress || 0) * 100)}%`;
     bar.append(fill);
     c.append(bar);
     if (p.active || (cfg.companions || []).includes(p.id)) c.append(el('span', 'tag chip sun', tr('party.onScreen')));
+
+    // The one main action: bring it to the screen (or back from the Nest).
+    if (!p.active) {
+      const inNest = p.place === 'box';
+      const main = el('button', 'btn primary main-act', inNest ? tr('party.toParty') : tr('party.show'));
+      main.onclick = () => (inNest ? post('/api/party/move', { id: p.id, place: 'party' }) : post('/api/party/active', { id: p.id }));
+      if (inNest && data.members.length >= size) {
+        main.disabled = true;
+        main.title = tr('party.full');
+      }
+      c.append(main);
+    }
+
+    // Everything else, behind "⋯".
+    const more = el('details', 'more');
+    const sum = el('summary', '', '⋯');
+    sum.setAttribute('aria-label', tr('party.moreActions'));
+    sum.title = tr('party.moreActions');
+    const menu = el('div', 'menu');
     // Which project this pet follows: automatic, or a project pinned to it.
     if (p.place === 'party' && !p.legend) {
       const row = el('label', 'follow');
@@ -112,40 +144,36 @@
       sel.title = tr('party.followsHelp');
       sel.onchange = () => post('/api/follow', { pet: p.id, project: sel.value || null });
       row.append(sel);
-      c.append(row);
+      menu.append(row);
     }
-    const actions = el('div', 'actions');
-    if (!p.active) {
-      const show = el('button', 'btn sm primary', tr('party.show'));
-      show.onclick = () => post('/api/party/active', { id: p.id });
-      actions.append(show);
+    if (!p.active && p.place === 'party') {
       // Also on screen, next to the main one (up to 2 more).
-      if (p.place === 'party') {
-        const list = cfg.companions || [];
-        const on = list.includes(p.id);
-        const also = el('button', `btn sm${on ? ' brand' : ''}`, tr(on ? 'party.alsoOff' : 'party.alsoOn'));
-        if (!on && list.length >= 2) {
-          also.disabled = true;
-          also.title = tr('party.alsoFull');
-        }
-        also.onclick = () => post('/api/config', { companions: on ? list.filter((x) => x !== p.id) : [...list, p.id] });
-        actions.append(also);
+      const list = cfg.companions || [];
+      const on = list.includes(p.id);
+      const also = el('button', 'btn sm quiet', tr(on ? 'party.alsoOff' : 'party.alsoOn'));
+      if (!on && list.length >= 2) {
+        also.disabled = true;
+        also.title = tr('party.alsoFull');
       }
-      const move = el('button', 'btn sm', p.place === 'box' ? tr('party.toParty') : tr('party.toBox'));
-      move.onclick = () => post('/api/party/move', { id: p.id, place: p.place === 'box' ? 'party' : 'box' });
-      if (p.place === 'box' && data.members.length >= size) {
-        move.disabled = true;
-        move.title = tr('party.full');
-      }
-      actions.append(move);
+      also.onclick = () => post('/api/config', { companions: on ? list.filter((x) => x !== p.id) : [...list, p.id] });
+      menu.append(also);
+      const toNest = el('button', 'btn sm quiet', tr('party.toBox'));
+      toNest.onclick = () => post('/api/party/move', { id: p.id, place: 'box' });
+      menu.append(toNest);
     }
-    const rename = el('button', 'btn sm ghost', tr('party.rename'));
+    if (!p.active && p.place === 'box') {
+      const show = el('button', 'btn sm quiet', tr('party.show'));
+      show.onclick = () => post('/api/party/active', { id: p.id });
+      menu.append(show);
+    }
+    const rename = el('button', 'btn sm quiet', tr('party.rename'));
     rename.onclick = () => {
       const name = window.prompt(tr('name.q'), p.nickname || '');
       if (name !== null) post('/api/party/rename', { id: p.id, name });
     };
-    actions.append(rename);
-    c.append(actions);
+    menu.append(rename);
+    more.append(sum, menu);
+    c.append(more);
     return c;
   }
 
@@ -182,17 +210,29 @@
     drawAll();
   }
 
-  function drawAll() {
+  function drawAll(ms = performance.now()) {
     const dpr = window.devicePixelRatio || 1;
-    for (const [canvas, p] of canvases) {
-      canvas.width = 150 * dpr;
-      canvas.height = 150 * dpr;
+    const t = ms / 1000;
+    canvases.forEach(([canvas, p], i) => {
+      if (canvas.width !== 160 * dpr) {
+        canvas.width = 160 * dpr;
+        canvas.height = 160 * dpr;
+      }
       const ctx = canvas.getContext('2d');
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       const k = canvas.width / 200;
-      ctx.setTransform(k, 0, 0, k, 100 * k, 182 * k);
+      ctx.setTransform(k, 0, 0, k, 100 * k, 186 * k);
       const spec = { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera, shiny: p.shiny && p.stage !== 'egg', wear: p.wear, legend: p.legend };
-      OpenmonArt.drawCreature(ctx, { ...spec, t: 1, size: 56, pose: 'idle', anim: { eyes: 'happy', mouth: 'grin' } });
-    }
+      // Resting in the Nest: asleep. In the Party: idle, each on its own rhythm.
+      const pose = p.place === 'box' ? 'sleep' : 'idle';
+      const anim = OpenmonMotion.poseAnim({ ...spec, pose, nature: p.nature || 'calm', t: t + i * 1.7, since: 0 });
+      OpenmonArt.drawCreature(ctx, { ...spec, t: t + i * 1.7, size: 56, pose, anim });
+    });
+  }
+  function frame(ms) {
+    drawAll(ms);
+    requestAnimationFrame(frame);
   }
 
   async function load() {
@@ -228,8 +268,7 @@
     }
   }
   renderWalls();
-  OpenmonArt.loadPack().then(load);
-  setTimeout(drawAll, 1500);
+  OpenmonArt.loadPack().then(load).then(() => requestAnimationFrame(frame));
   setTimeout(drawAll, 3500);
 </script>
 </body>
