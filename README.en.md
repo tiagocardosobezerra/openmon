@@ -26,7 +26,7 @@
 
 The agent notices run with [Node.js](https://nodejs.org), which Claude Code users already have. The installers are not signed yet: on Windows, click "More info → Run anyway"; on macOS, right-click the app and choose "Open". Prefer the source? See [Install from source](#install-from-source).
 
-**Privacy:** everything stays on your computer, with no account and no internet; phone alerts and GitHub are optional.
+**Privacy:** everything stays on your computer, with no account. Its only trip to the internet is once a day, to check GitHub for a new version (you can turn it off); phone alerts and GitHub are optional.
 
 Behind it there is a game: the egg hatches, grows and evolves into one of 39 forms, shaped by your agent's work. Types, items, accessories, legendaries, skills and missions are in [docs/GAME.en.md](docs/GAME.en.md).
 
@@ -35,7 +35,7 @@ Behind it there is a game: the egg hatches, grows and evolves into one of 39 for
 * **Lets you answer and talk to your agent right there.** With Claude Code, the bubble gets **Allow** and **Deny** on permission requests and the options of each question the agent asks; **Message** writes to the conversation the pet follows, and reaches an idle agent right away. Claude Code waits for your answer on the pet for up to 25 seconds; after that it asks you as usual. Nothing is ever approved on its own: only your click answers. Turn it off in Settings → "Answer from the pet".
 * **Shows what is happening, without watching the terminal.** A hammer is editing, a book reading, a shield testing, a spyglass the web. Several agents at once? The card lists each one and what it is doing.
 * **Keeps a journal.** What your agents did each day, by kind of work and by project, and how long they waited for you.
-* **Never in the way, never leaves your computer.** Clicks pass through its window, it never blocks or slows the agent, uses no internet and no account (unless you turn on phone alerts or GitHub), and passwords and keys show hidden (`•••`).
+* **Never in the way, never leaves your computer.** Clicks pass through its window, it never blocks or slows the agent, uses no account and sends nothing of yours to the internet (it only checks once a day for a new version; phone alerts and GitHub are yours to turn on), and passwords and keys show hidden (`•••`).
 * **Never lost.** It keeps copies in Documents/Openmon Backups. New computer? On a fresh install it offers to bring your pet back.
 * **Comes with you to another computer (optional).** Sign in with GitHub (`openmon login` or Settings → Computer) and your pet is saved in a secret Gist in your account. On another computer, sign in with the same account and it picks up where you left off. If it changed on both, Openmon asks which one to keep. No Openmon server: the app talks straight to GitHub.
 
@@ -65,7 +65,7 @@ Behind it there is a game: the egg hatches, grows and evolves into one of 39 for
 
 ## Install from source
 
-You need [Node.js](https://nodejs.org) 20 or newer and [Claude Code](https://claude.com/claude-code).
+You need [Node.js](https://nodejs.org) 22.12 or newer and [Claude Code](https://claude.com/claude-code).
 
 ### 1. Install
 
@@ -124,11 +124,17 @@ The egg appears in the corner of your screen and an icon shows up in the tray. S
 * **The agent's questions**: their options become buttons on the bubble; **Other…** opens a small window to write your own answer.
 * **Message to the conversation**: on the "All done!" bubble or in the card, **Message** opens a small window. An idle agent wakes up right away; a working one gets it with its next step.
 * **Open** hands the question or request to the agent's window at once, without waiting for the pet.
+* **See all**: the bubble shows the start of the change; **See all** opens a page with the whole change. There, `Y` allows and `N` denies.
+* **From the system notification**: if you don't look at the pet, the notification comes with **Allow** and **Deny**.
+* **Pause all agents**: in the **More** panel, one button asks every working conversation to stop and wait for you.
+* **Claude Code permission rules** in Settings → Computer, one switch each: read and search without asking, run the tests without asking, and always ask before deleting or publishing.
 * **Several agents waiting?** The card shows the buttons under each one.
 * **Shortcuts**: `Ctrl+Alt+O` opens the card, `Ctrl+Alt+J` takes you to the agent that waits.
 
 **Numbers about your work**
 * **Tokens** used today (on the card) and per day (in the Journal), read from Claude Code's own conversation files, on your computer.
+* **Estimated cost** in dollars per project and over the last 7 days, at Anthropic API list prices. It is an estimate: monthly plans (Pro, Max, Team) are not charged per token.
+* **Today's requests**: every permission asked that day, how it was answered (on the pet, in the agent or not at all) and the change that came with it.
 * **Yesterday in one line** on the first use of the day.
 * **Stand-up text**: a Journal button copies "last working day" and "today", ready to paste.
 * **Hours per project (CSV)**: your agent's working time per project and day, for timesheets.
@@ -137,6 +143,9 @@ The egg appears in the corner of your screen and an icon shows up in the tray. S
 **For your day**
 * **Focus mode** (25, 50 or 90 minutes): only "needs you" gets through; at the end, a break suggestion.
 * **Break reminder** after 50 or 90 minutes of work in a row.
+* **Steps aside in full screen**: with a game, a video or a presentation in full screen, the pets hide and come back when it ends (Windows and macOS; you can turn it off in Settings → Pet).
+* **First steps**: in the Opendex, a list shows what is left to get started (connect, first session, pick a starter…) until it is all done.
+* **New version**: when one comes out, the pet tells you and the tray icon gets **Download**.
 * **Presentation mode**: project names become "Project A, B…" and commands are hidden everywhere Openmon shows them, for screen sharing.
 * **Phone alerts** (optional, through the free ntfy app): if an agent waits for a while, your phone gets a notice. It only sends "Your agent needs you".
 * **In OBS**: the pet with a transparent background for streams (address on the Settings page).
@@ -151,7 +160,7 @@ Right-click the pet and click **More** at the bottom of its card (or the tray ic
 * **Alerts**: system notification and answering permissions from the pet (with the waiting time).
 * **Focus and calm**: focus mode, quiet mode, presentation mode and break reminder.
 * **Phone**: phone alerts through the ntfy app (optional).
-* **Computer**: start with the computer, connect Claude Code, your pet on any computer (GitHub account), copies of your pet (make one now, export, bring back from a file) and putting the pet back in its corner.
+* **Computer**: start with the computer, connect Claude Code and other agents, Claude Code permission rules, check for a new version, your pet on any computer (GitHub account), copies of your pet (make one now, export, bring back from a file) and putting the pet back in its corner.
 * **Advanced**: keyboard shortcuts, OBS and the demo.
 
 ### Your own art
@@ -195,7 +204,7 @@ The server only listens on `127.0.0.1` and refuses requests from other web pages
 1. **The agent reports.** Claude Code, Gemini CLI, Cursor, OpenCode and Aider already report every step they take (hooks). Openmon only listens and never blocks anything.
 2. **It becomes a signal.** A local server at `127.0.0.1:4747` turns each notice into a simple signal: a tool used, a green or red test, "needs you".
 3. **The pet decides.** It picks a pose, earns experience in the right kind of work and logs what the agent did in its Skills.
-4. **It shows up on screen.** Everything stays in the corner of your screen. Nothing leaves your computer (phone alerts and GitHub are optional: one only sends "Your agent needs you", the other keeps your pet in a secret Gist in your account).
+4. **It shows up on screen.** Everything stays in the corner of your screen. Nothing of yours leaves your computer; it only checks once a day for a new version (phone alerts and GitHub are optional: one only sends "Your agent needs you", the other keeps your pet in a secret Gist in your account).
 
 ## Develop
 

@@ -26,7 +26,7 @@
 
 Los avisos del agente corren con [Node.js](https://nodejs.org), que quien usa Claude Code ya tiene. Los instaladores aún no están firmados: en Windows, haz clic en "Más información → Ejecutar de todas formas"; en macOS, clic derecho en la app y "Abrir". ¿Prefieres el código? Mira [Instalar desde el código](#instalar-desde-el-código).
 
-**Privacidad:** todo queda en tu computadora, sin cuenta y sin internet; el aviso en el celular y GitHub son opcionales.
+**Privacidad:** todo queda en tu computadora, sin cuenta. Su única salida a internet es una vez al día, para ver en GitHub si hay una versión nueva (se puede apagar); el aviso en el celular y GitHub son opcionales.
 
 Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas según el trabajo del agente. Tipos, objetos, accesorios, legendarios, habilidades y misiones están en [docs/GAME.es.md](docs/GAME.es.md).
 
@@ -35,7 +35,7 @@ Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas 
 * **Te deja responder y hablar con el agente ahí mismo.** Con Claude Code, el globo gana **Permitir** y **Rechazar** en los pedidos de permiso y las opciones de cada pregunta del agente; **Mensaje** escribe a la conversación que sigue la mascota, y llega enseguida si el agente está parado. Claude Code espera tu respuesta en la mascota hasta 25 segundos; después pregunta como siempre. Nada se aprueba solo: solo tu clic responde. Se desactiva en Configuración → "Responder desde la mascota".
 * **Muestra lo que pasa, sin mirar la terminal.** Martillo es editar, libro es leer, escudo es probar, catalejo es web. ¿Varios agentes a la vez? La tarjeta lista cada uno, con lo que está haciendo.
 * **Lleva un diario.** Lo que hicieron tus agentes cada día, por tipo de trabajo y por proyecto, y cuánto tiempo te esperaron.
-* **No molesta y no sale de tu computadora.** Los clics atraviesan la ventana, nunca bloquea ni retrasa al agente, no usa internet ni cuenta (salvo que actives el aviso en el celular o GitHub), y las contraseñas y claves aparecen ocultas (`•••`).
+* **No molesta y no sale de tu computadora.** Los clics atraviesan la ventana, nunca bloquea ni retrasa al agente, no usa cuenta ni manda nada tuyo a internet (solo revisa una vez al día si hay versión nueva; el aviso en el celular y GitHub los activas si quieres), y las contraseñas y claves aparecen ocultas (`•••`).
 * **No se pierde.** Hace copias en Documentos/Openmon Backups. ¿Formateaste la PC? En una instalación nueva pregunta si quieres traerla de vuelta.
 * **Va contigo a otra computadora (opcional).** Inicia sesión con GitHub (`openmon login` o Ajustes → Computadora) y tu mascota queda guardada en un Gist secreto de tu cuenta. En otra computadora, inicia sesión con la misma cuenta y sigue donde la dejaste. Si cambió en las dos, Openmon pregunta cuál conservar. Sin servidor de Openmon: la app habla directo con GitHub.
 
@@ -65,7 +65,7 @@ Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas 
 
 ## Instalar desde el código
 
-Necesitas [Node.js](https://nodejs.org) 20 o más nuevo y [Claude Code](https://claude.com/claude-code).
+Necesitas [Node.js](https://nodejs.org) 22.12 o más nuevo y [Claude Code](https://claude.com/claude-code).
 
 ### 1. Instala
 
@@ -124,11 +124,17 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 * **Preguntas del agente**: sus opciones se vuelven botones en el globo; **Otra…** abre una ventanita para escribir tu respuesta.
 * **Mensaje a la conversación**: en el globo de "¡Terminó!" o en la tarjeta, **Mensaje** abre una ventanita. Un agente parado despierta enseguida; uno trabajando lo recibe con su próximo paso.
 * **Abrir** pasa la pregunta o el pedido a la ventana del agente enseguida, sin esperar a la mascota.
+* **Ver todo**: la burbuja muestra el comienzo del cambio; **Ver todo** abre una página con el cambio entero. Ahí, `Y` permite y `N` rechaza.
+* **Desde la notificación del sistema**: si no miras la mascota, la notificación llega con **Permitir** y **Rechazar**.
+* **Pausar todos los agentes**: en el panel **Más**, un botón pide a todas las conversaciones que trabajan que paren y te esperen.
+* **Reglas de permiso de Claude Code** en Configuración → Computadora, un interruptor cada una: leer y buscar sin preguntar, correr las pruebas sin preguntar, y preguntar siempre antes de borrar o publicar.
 * **¿Varios agentes esperando?** La tarjeta muestra los botones debajo de cada uno.
 * **Atajos**: `Ctrl+Alt+O` abre la tarjeta, `Ctrl+Alt+J` te lleva al agente que espera.
 
 **Números de tu trabajo**
 * **Tokens** usados hoy (en la tarjeta) y por día (en el Diario), leídos de los archivos de conversación del propio Claude Code, en tu computadora.
+* **Costo estimado** en dólares por proyecto y en los últimos 7 días, con los precios de lista de la API de Anthropic. Es una estimación: los planes mensuales (Pro, Max, Team) no pagan por token.
+* **Pedidos de hoy**: cada permiso pedido en el día, cómo se respondió (en la mascota, en el agente o sin respuesta) y el cambio que traía.
 * **Ayer en una línea** en el primer uso del día.
 * **Texto para la daily**: un botón en el Diario copia "último día de trabajo" y "hoy" listos para pegar.
 * **Horas por proyecto (CSV)**: tiempo de trabajo del agente por proyecto y día, para tu hoja de horas.
@@ -137,6 +143,9 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 **Para tu día**
 * **Modo foco** (25, 50 o 90 minutos): solo aparece "te necesita"; al final, una sugerencia de pausa.
 * **Recordatorio de pausa** después de 50 o 90 minutos seguidos de trabajo.
+* **Se aparta en pantalla completa**: con un juego, un video o una presentación en pantalla completa, las mascotas se esconden y vuelven cuando termina (Windows y macOS; se puede apagar en Configuración → Mascota).
+* **Primeros pasos**: en la Opendex, una lista muestra lo que falta para empezar (conectar, primera sesión, elegir el inicial…) hasta que todo esté hecho.
+* **Versión nueva**: cuando sale una, la mascota avisa y el ícono de la bandeja muestra **Descargar**.
 * **Modo presentación**: cambia los nombres de proyecto por "Proyecto A, B…" y oculta los comandos en todo lo que muestra Openmon, para compartir pantalla.
 * **Aviso en el celular** (opcional, con la app gratuita ntfy): si un agente espera desde hace un rato, llega un aviso. Solo envía "Tu agente te necesita".
 * **En OBS**: la mascota con fondo transparente para transmisiones (la dirección está en la página de Configuración).
@@ -151,7 +160,7 @@ Haz clic derecho en la mascota y en **Más**, al pie de la tarjeta (o en el íco
 * **Avisos**: notificación del sistema y responder permisos desde la mascota (con el tiempo de espera).
 * **Foco y calma**: modo foco, modo silencio, modo presentación y recordatorio de pausa.
 * **Celular**: aviso en el celular con la app ntfy (opcional).
-* **Computadora**: iniciar con la computadora, conectar Claude Code, tu mascota en cualquier computadora (cuenta de GitHub), copias de la mascota (hacer ahora, exportar, traer de un archivo) y devolver la mascota a la esquina.
+* **Computadora**: iniciar con la computadora, conectar Claude Code y otros agentes, reglas de permiso de Claude Code, buscar versión nueva, tu mascota en cualquier computadora (cuenta de GitHub), copias de la mascota (hacer ahora, exportar, traer de un archivo) y devolver la mascota a la esquina.
 * **Avanzado**: atajos de teclado, OBS y demostración.
 
 ### Tu arte
@@ -195,7 +204,7 @@ El servidor solo escucha en `127.0.0.1` y rechaza pedidos de otras páginas web 
 1. **El agente avisa.** Claude Code, Gemini CLI, Cursor, OpenCode y Aider ya avisan cada paso que dan (hooks). Openmon solo escucha, sin bloquear nada.
 2. **Se vuelve señal.** Un servidor local en `127.0.0.1:4747` convierte cada aviso en una señal simple: herramienta usada, prueba en verde o en rojo, "te necesita".
 3. **La mascota decide.** Elige la pose, gana experiencia en el tipo de trabajo correcto y anota lo que hizo el agente en las Habilidades.
-4. **Aparece en pantalla.** Todo queda en la esquina de tu pantalla. Nada sale de tu computadora (el aviso en el celular y GitHub son opcionales: uno solo envía "Tu agente te necesita", el otro guarda tu mascota en un Gist secreto de tu cuenta).
+4. **Aparece en pantalla.** Todo queda en la esquina de tu pantalla. Nada tuyo sale de tu computadora; solo revisa una vez al día si hay versión nueva (el aviso en el celular y GitHub son opcionales: uno solo envía "Tu agente te necesita", el otro guarda tu mascota en un Gist secreto de tu cuenta).
 
 ## Desarrollar
 
