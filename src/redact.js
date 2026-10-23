@@ -8,6 +8,8 @@
 const MASK = '•••';
 
 const RULES = [
+  // Private keys and certificates (PEM), whatever their length.
+  [/(-----BEGIN [A-Z0-9 ]+-----)[\s\S]*?(-----END [A-Z0-9 ]+-----|$)/g, `$1 ${MASK} $2`],
   // Credentials in URLs: https://user:pass@host
   [/\b([a-z][a-z0-9+.-]*:\/\/)[^\s/:@]+:[^\s/@]+@/gi, `$1${MASK}@`],
   // Authorization headers.

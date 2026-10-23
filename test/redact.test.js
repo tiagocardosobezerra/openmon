@@ -28,3 +28,11 @@ test('masked before reaching bubbles, notifications and powers', () => {
   p.record({ session_id: 's', hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'curl https://x --token abcdefgh' } }, 's', 1);
   assert.equal(p.view()[0].shell[0].command, 'curl https://x --token •••');
 });
+
+test('a private key (PEM) is hidden whole, every line of it', () => {
+  const { redact } = require('../src/redact');
+  const pem = 'const k = `-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA1234\nabcdEFGH5678\n-----END RSA PRIVATE KEY-----`;';
+  const out = redact(pem);
+  assert.ok(!out.includes('MIIEow') && !out.includes('abcdEFGH'), out);
+  assert.ok(out.includes('-----BEGIN RSA PRIVATE KEY-----'), out);
+});

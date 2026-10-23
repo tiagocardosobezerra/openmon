@@ -1076,9 +1076,10 @@ app.whenReady().then(async () => {
     try {
       globalShortcut.register('CommandOrControl+Alt+O', () => win && win.webContents.send('command', 'card'));
       globalShortcut.register('CommandOrControl+Alt+J', () => daemon.focusAgent(null));
-      // Answer the agent's waiting request without the mouse.
-      globalShortcut.register('CommandOrControl+Alt+Y', () => daemon.decideOldest('allow'));
-      globalShortcut.register('CommandOrControl+Alt+N', () => daemon.decideOldest('deny'));
+      // Answer, without the mouse, the request the pet's bubble shows (and
+      // only that one: never a request you have not seen).
+      globalShortcut.register('CommandOrControl+Alt+Y', () => win && win.webContents.send('command', 'perm-allow'));
+      globalShortcut.register('CommandOrControl+Alt+N', () => win && win.webContents.send('command', 'perm-deny'));
     } catch {}
   }
   applyScale(daemon.config().scale || 1);

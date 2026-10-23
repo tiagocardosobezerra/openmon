@@ -453,10 +453,11 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     if (!input || typeof input !== 'object') return null;
     const MAX = 8;
     const clip = (s) => {
-      const t = redact(String(s).replace(/\t/g, '  ').replace(/\s+$/, ''));
+      const t = String(s).replace(/\t/g, '  ').replace(/\s+$/, '');
       return t.length > 90 ? `${t.slice(0, 89)}…` : t;
     };
-    const split = (s) => (typeof s === 'string' && s ? s.split(/\r?\n/) : []);
+    // Secrets are hidden in the whole text first: some span lines (keys).
+    const split = (s) => (typeof s === 'string' && s ? redact(s).split(/\r?\n/) : []);
     const lines = [];
     let more = 0;
     const push = (t, s) => (lines.length < MAX ? lines.push({ t, s: clip(s) }) : more++);
@@ -1156,6 +1157,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (code && (config.companions || []).includes(id)) setConfig({ companions: config.companions.filter((x) => x !== id) });
           json(res, 200, code ? { ok: true, code } : { ok: false });
         });
+      case 'POST /api/trade/cancel':
+        return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, partyAction(() => party.tradeCancel(real.pet, String(body.tid || ''))) || { ok: false })));
       case 'POST /api/trade/in':
         return readJson(req, (err, body) => (err || !body ? res.writeHead(400).end() : json(res, 200, partyAction(() => party.tradeIn(real.pet, String(body.code || ''), now())))));
       case 'POST /api/party/rename':
@@ -1297,11 +1300,6 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     ingest,
     petIt,
     focusAgent,
-    // The keyboard answer (Ctrl+Alt+Y / N): the request that waits longest.
-    decideOldest: (decision) => {
-      const oldest = [...permissions.values()].sort((a, b) => a.until - b.until)[0];
-      return oldest ? settlePermission(oldest.id, decision) : false;
-    },
     recheckHooks,
     setFocus,
     restoreFile,

@@ -157,7 +157,7 @@ test('work without its own pet feeds the main pet on screen, even a mystery egg;
   assert.ok(q.xp > xp0);
 });
 
-test('a trade code takes a member out and brings it into another team, once; a bad code is refused', () => {
+test('a trade: the member waits under Sent (code at hand), a friend gets it once, and your own code or "bring back" returns it', () => {
   const pet = require('../src/pet');
   const now = Date.now();
   const a = party.ensure(pet.createPet(now - 86400000));
@@ -165,6 +165,7 @@ test('a trade code takes a member out and brings it into another team, once; a b
   const code = party.tradeOut(a, member.id, now);
   assert.match(code, /^OPENMON1\./);
   assert.equal(a.others.some((m) => m.id === member.id), false);
+  assert.deepEqual(party.view(a).sent.map((o) => [o.code, o.name]), [[code, 'Owly']]);
   const b = party.ensure(pet.createPet(now - 86400000));
   const got = party.tradeIn(b, code, now);
   assert.equal(got.ok, true);
@@ -174,6 +175,38 @@ test('a trade code takes a member out and brings it into another team, once; a b
   assert.equal(party.tradeIn(b, code, now).reason, 'used');
   assert.equal(party.tradeIn(b, code.slice(0, -3) + 'zzz', now).reason, 'invalid');
   assert.equal(party.tradeIn(b, 'hello', now).reason, 'invalid');
+  // Back home: pasting your own code brings it back, and then it is spent here.
+  assert.equal(party.tradeIn(a, code, now).ok, true);
+  assert.equal(a.others.some((m) => m.name === 'Owly'), true);
+  assert.equal(party.view(a).sent.length, 0);
+  assert.equal(party.tradeIn(a, code, now).reason, 'used');
   // Never the one on screen, an egg or a legendary.
   assert.equal(party.tradeOut(b, b.id, now), null);
+});
+
+test('a crafted trade code cannot break the save: every field is checked and rebuilt', () => {
+  const crypto = require('node:crypto');
+  const pet = require('../src/pet');
+  const now = Date.now();
+  const make = (data) => {
+    const body = Buffer.from(JSON.stringify(data)).toString('base64url');
+    return `OPENMON1.${body}.${crypto.createHash('sha256').update(body).digest('hex').slice(0, 8)}`;
+  };
+  const b = party.ensure(pet.createPet(now - 86400000));
+  assert.equal(party.tradeIn(b, make({ tid: 'abcdef12', stage: 'adult', lineage: '__proto__', xp: 1 }), now).reason, 'invalid');
+  assert.equal(party.tradeIn(b, make({ tid: 'x', stage: 'adult', lineage: 'lore', xp: 1 }), now).reason, 'invalid');
+  const ok = party.tradeIn(b, make({ tid: 'abcdef12', stage: 'adult', lineage: 'lore', xp: 1e99, stats: null, history: 'boom', bond: 1e9, bornAt: 'x', nature: 'evil', shiny: 'yes', generation: -5, trait: 'nope', name: { a: 1 } }), now);
+  assert.equal(ok.ok, true);
+  const m = b.others[b.others.length - 1];
+  assert.equal(m.xp, 10_000_000);
+  assert.equal(m.bond, 100);
+  assert.equal(m.shiny, false);
+  assert.equal(m.nature, 'calm');
+  assert.equal(m.trait, null);
+  assert.deepEqual(m.history, []);
+  assert.equal(typeof m.stats.craft, 'number');
+  // The save still works with it on screen.
+  const next = party.setActive(b, m.id);
+  pet.applySignal(next, { kind: 'test-end', family: 'test', passed: true }, {}, now);
+  assert.doesNotThrow(() => pet.view(next));
 });

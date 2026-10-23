@@ -65,6 +65,9 @@
   .more .menu textarea.code { width: 100%; min-height: 64px; font: 12px var(--font-mono); resize: vertical; }
   .more .menu small { color: var(--muted); font-size: 12px; }
   .trade-in { max-width: 640px; padding: 12px 14px; }
+  .sent { display: grid; gap: 6px; max-width: 640px; margin-bottom: 8px; }
+  .sent-row { display: grid; grid-template-columns: 36px 1fr auto auto; gap: 8px; align-items: center; padding: 6px 10px; }
+  .sent-row img { width: 36px; height: 36px; object-fit: contain; }
   .trade-in p { margin: 0 0 8px; }
   .trade-row { display: flex; gap: 8px; }
   .trade-row .input { flex: 1; min-width: 0; font-family: var(--font-mono); }
@@ -79,6 +82,7 @@
   <p class="muted" id="upcoming-sub" style="margin:-4px 0 10px"></p>
   <div class="upcoming" id="upcoming"></div>
   <h2 class="section-title" id="h-trade"></h2>
+  <div class="sent" id="sent"></div>
   <div class="trade-in panel soft">
     <p class="muted" id="trade-sub"></p>
     <div class="trade-row"><input class="input" id="trade-code" autocomplete="off" spellcheck="false"><button class="btn primary" id="trade-go" type="button"></button></div>
@@ -293,6 +297,24 @@
     $('boxwrap').classList.toggle('empty', !data.box.length);
     for (const p of data.box) box.append(card(p, data.size));
     $('box-count').textContent = data.box.length ? String(data.box.length) : '';
+    // Sent in a trade: the code to copy again, or bring it back.
+    const sentBox = $('sent');
+    sentBox.textContent = '';
+    for (const o of data.sent || []) {
+      const row = el('div', 'sent-row panel soft');
+      const img = el('img');
+      img.src = `/art/${encodeURIComponent(o.formKey)}.svg`;
+      img.alt = '';
+      const copy = el('button', 'btn sm', tr('trade.copy'));
+      copy.type = 'button';
+      copy.onclick = () => openmonCopyInto(copy, o.code, tr('trade.copied'));
+      const back = el('button', 'btn sm quiet', tr('trade.back'));
+      back.type = 'button';
+      back.title = tr('trade.backHelp');
+      back.onclick = () => post('/api/trade/cancel', { tid: o.tid });
+      row.append(img, el('span', '', tr('trade.sentRow', { name: OpenmonI18n.name(o.name) })), copy, back);
+      sentBox.append(row);
+    }
     const up = $('upcoming');
     up.textContent = '';
     // Nothing on the way: one line, not a description of an empty list.
@@ -359,7 +381,12 @@
         try {
           localStorage.setItem('openmon.boxWall', w);
         } catch {}
-        // A friend's code: their Openmon joins your team.
+        renderWalls();
+      };
+      box.append(b);
+    }
+  }
+  // A friend's code: their Openmon joins your team.
   $('trade-code').setAttribute('aria-label', tr('trade.code'));
   $('trade-code').placeholder = 'OPENMON1.…';
   $('trade-go').onclick = async () => {
@@ -369,11 +396,6 @@
     window.openmonNote(tr(r.place === 'box' ? 'trade.joinedNest' : 'trade.joined', { name: OpenmonI18n.name(r.name) }));
     load();
   };
-  renderWalls();
-      };
-      box.append(b);
-    }
-  }
   renderWalls();
   OpenmonArt.loadPack().then(load).then(() => OpenmonMotion.loop(drawAll));
 </script>

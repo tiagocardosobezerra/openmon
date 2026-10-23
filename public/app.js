@@ -2094,6 +2094,11 @@
       // The shell made the window click-through again (the pointer left it).
       if (cmd === 'pointer-out') interactive = false;
       if (cmd === 'pointer-in') interactive = true;
+      // Ctrl+Alt+Y / N: the Allow / Deny of the bubble on screen, if it has them.
+      if (cmd === 'perm-allow' || cmd === 'perm-deny') {
+        const btn = !$('bubble').hidden && $('bubble').querySelector(`[data-decide="${cmd === 'perm-allow' ? 'allow' : 'deny'}"]`);
+        if (btn) btn.click();
+      }
     });
   }
 

@@ -523,7 +523,7 @@ test('Deny with a reason, or deny and stop: only with the desktop key', async ()
   }
 });
 
-test('a permission to edit shows what would change (only the changed lines, secrets hidden), and Ctrl+Alt+Y answers it', async () => {
+test('a permission to edit shows what would change (only the changed lines, secrets hidden), and Allow answers it', async () => {
   const { daemon, port } = await boot();
   const stream = await new Promise((resolve) => http.get({ host: '127.0.0.1', port, path: '/stream' }, resolve));
   try {
@@ -535,9 +535,8 @@ test('a permission to edit shows what would change (only the changed lines, secr
     assert.deepEqual(p.preview.lines.map((l) => l.t), ['-', '+']);
     assert.equal(p.preview.lines[0].s, 'const key = "x";');
     assert.ok(!p.preview.lines[1].s.includes('sk-abcdefghijklmnopqrstuv'), p.preview.lines[1].s);
-    assert.equal(daemon.decideOldest('allow'), true);
+    await request(port, 'POST', '/api/permission/decide', { body: JSON.stringify({ id: p.id, decision: 'allow' }), headers: { 'Content-Type': 'application/json' } });
     assert.equal(JSON.parse((await hook).out).hookSpecificOutput.decision.behavior, 'allow');
-    assert.equal(daemon.decideOldest('allow'), false);
   } finally {
     stream.destroy();
     await daemon.close();

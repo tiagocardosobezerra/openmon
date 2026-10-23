@@ -253,13 +253,18 @@ function view(root) {
     .map(([label, actions]) => ({ project: label, actions, needed: EGG_AFTER_ACTIONS }))
     .sort((a, b) => b.actions - a.actions)
     .slice(0, 6);
-  return { held: heldByOthers(root), size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects };
+  // Sent in a trade and not brought back: the code stays at hand.
+  const sent = (root.outbox || []).map((o) => ({ tid: o.tid, code: o.code, at: o.at, name: pet.displayName(merge(root, o.member)), formKey: pet.view(merge(root, o.member)).formKey }));
+  return { held: heldByOthers(root), size: PARTY_SIZE, members: list.filter((p) => p.place === 'party'), box: list.filter((p) => p.place === 'box'), upcoming: projects, sent };
 }
 
 // Trading with a friend: a member (not the one on screen, not an egg or a
-// legendary) leaves your team as a code; whoever pastes the code in their
-// Team gets it. Your own code brings it back. Each code works once per
-// computer. The checksum only catches a code cut short when copied.
+// legendary) leaves your team as a code and waits in your "sent" list until
+// you bring it back; whoever pastes the code in their Team gets it. A code
+// works once on each computer. Without a server nothing can stop a code from
+// being used on two computers, or brought back after a friend used it: a
+// trade is a gift between people who trust each other. The checksum only
+// catches a code cut short when copied.
 const TRADE_PREFIX = 'OPENMON1';
 const TRADE_FIELDS = ['name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'chimera', 'history'];
 const tradeSum = (body) => crypto.createHash('sha256').update(body).digest('hex').slice(0, 8);
@@ -268,38 +273,85 @@ function tradeOut(root, id, now) {
   ensure(root);
   const member = root.others.find((m) => m.id === id);
   if (!member || member.legend || member.awaitingStarter || member.stage === 'egg') return null;
-  const data = { from: member.id, at: now };
+  const tid = newId();
+  const data = { tid, at: now };
   for (const k of TRADE_FIELDS) if (member[k] !== undefined) data[k] = member[k];
   const body = Buffer.from(JSON.stringify(data)).toString('base64url');
+  const code = `${TRADE_PREFIX}.${body}.${tradeSum(body)}`;
   root.others = root.others.filter((m) => m !== member);
-  return `${TRADE_PREFIX}.${body}.${tradeSum(body)}`;
+  root.outbox = [...(Array.isArray(root.outbox) ? root.outbox : []), { tid, code, at: now, member }];
+  return code;
+}
+
+// Brings back a member you sent (its code stops working here).
+function tradeCancel(root, tid) {
+  ensure(root);
+  const sent = (root.outbox || []).find((o) => o.tid === tid);
+  if (!sent) return null;
+  root.outbox = root.outbox.filter((o) => o !== sent);
+  root.received = [...(Array.isArray(root.received) ? root.received : []), tid];
+  const member = sent.member;
+  member.place = partyCount(root) < PARTY_SIZE ? 'party' : 'box';
+  root.others.push(member);
+  return { ok: true, place: member.place, name: pet.displayName(merge(root, member)) };
+}
+
+// Everything in a code comes from someone else: each field is checked and
+// rebuilt, never copied as it came.
+function cleanTrade(data, now) {
+  const { STATS, NATURES } = require('./species');
+  const num = (v, lo, hi, dflt) => (Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : dflt);
+  if (!data || typeof data !== 'object' || typeof data.tid !== 'string' || !/^[a-f0-9]{6,32}$/.test(data.tid)) return null;
+  if (!['juvenile', 'adult', 'mythic'].includes(data.stage)) return null;
+  const chimera = data.lineage === 'chimera' && Array.isArray(data.chimera) && data.chimera.length === 2 && data.chimera.every((t) => STATS.includes(t)) ? [...data.chimera] : null;
+  if (!STATS.includes(data.lineage) && !chimera) return null;
+  const stats = {};
+  for (const k of STATS) stats[k] = Math.round(num(data.stats && typeof data.stats === 'object' ? data.stats[k] : 0, 0, 1e9, 0));
+  const history = Array.isArray(data.history)
+    ? data.history.slice(-30).filter((h) => h && typeof h === 'object' && ['egg', 'juvenile', 'adult', 'mythic'].includes(h.stage)).map((h) => ({ stage: h.stage, form: String(h.form || '').slice(0, 40), lineage: typeof h.lineage === 'string' ? h.lineage.slice(0, 20) : null, at: num(h.at, 0, now, now) }))
+    : [];
+  return {
+    tid: data.tid,
+    name: typeof data.name === 'string' && data.name.trim() ? data.name.trim().slice(0, 24) : null,
+    bornAt: num(data.bornAt, 0, now, now),
+    nature: Object.hasOwn(NATURES, data.nature) ? data.nature : 'calm',
+    shiny: data.shiny === true,
+    generation: Math.round(num(data.generation, 1, 999, 1)),
+    xp: Math.round(num(data.xp, 0, 10_000_000, 0)),
+    stats,
+    bond: Math.round(num(data.bond, 0, 100, 0)),
+    stage: data.stage,
+    lineage: data.lineage,
+    trait: STATS.includes(data.trait) ? data.trait : null,
+    chimera,
+    history,
+  };
 }
 
 function tradeIn(root, code, now) {
   ensure(root);
   const m = /^OPENMON1\.([A-Za-z0-9_-]{10,20000})\.([0-9a-f]{8})$/.exec(String(code || '').replace(/\s+/g, ''));
   if (!m || tradeSum(m[1]) !== m[2]) return { ok: false, reason: 'invalid' };
-  let data;
+  let raw;
   try {
-    data = JSON.parse(Buffer.from(m[1], 'base64url').toString('utf8'));
+    raw = JSON.parse(Buffer.from(m[1], 'base64url').toString('utf8'));
   } catch {
     return { ok: false, reason: 'invalid' };
   }
-  const STAGES_OK = ['juvenile', 'adult', 'mythic'];
-  if (!data || typeof data !== 'object' || !STAGES_OK.includes(data.stage) || typeof data.lineage !== 'string' || !(Number(data.xp) >= 0) || typeof data.from !== 'string') return { ok: false, reason: 'invalid' };
-  const ticket = `${data.from}:${m[2]}`;
+  const data = cleanTrade(raw, now);
+  if (!data) return { ok: false, reason: 'invalid' };
+  // Your own code: it comes back from the "sent" list.
+  if ((root.outbox || []).some((o) => o.tid === data.tid)) return tradeCancel(root, data.tid);
   root.received = Array.isArray(root.received) ? root.received : [];
-  if (root.received.includes(ticket)) return { ok: false, reason: 'used' };
-  const member = { xpLog: [], project: `trade:${String(data.name || '').slice(0, 24)}`, holding: null };
-  for (const k of TRADE_FIELDS) if (data[k] !== undefined) member[k] = data[k];
-  member.name = typeof member.name === 'string' ? member.name.slice(0, 24) : null;
-  member.xp = Math.min(Number(member.xp) || 0, 10_000_000);
+  if (root.received.includes(data.tid)) return { ok: false, reason: 'used' };
+  const { tid, ...fields } = data;
+  const member = { ...fields, xpLog: [], project: `trade:${fields.name || ''}`, holding: null };
   addMember(root, member);
-  root.received = [...root.received, ticket].slice(-200);
+  root.received = [...root.received, tid];
   // A form you had never seen counts as seen.
   const key = `${member.lineage}-${member.stage}`;
   if (root.dex && !root.dex[key]) root.dex[key] = now;
   return { ok: true, place: member.place, name: pet.displayName(merge(root, member)) };
 }
 
-module.exports = { tradeOut, tradeIn, ensure, addMember, applySignal, chooseStarter, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, heldByOthers, PARTY_SIZE, EGG_AFTER_ACTIONS };
+module.exports = { tradeOut, tradeIn, tradeCancel, ensure, addMember, applySignal, chooseStarter, setActive, move, renameMember, view, merge, split, petFor, projectOf, checkLegends, hatchMystery, heldByOthers, PARTY_SIZE, EGG_AFTER_ACTIONS };
