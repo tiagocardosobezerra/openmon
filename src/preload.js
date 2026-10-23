@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('openmonDesktop', {
   dragEnd: () => ipcRenderer.send('drag-end'),
   menu: () => ipcRenderer.send('menu'),
   setInteractive: (on) => ipcRenderer.send('interactive', Boolean(on)),
+  // The card is open: the window takes focus, so a click anywhere else closes it.
+  cardOpen: (on) => ipcRenderer.send('card-open', Boolean(on)),
   onCommand: (fn) => ipcRenderer.on('command', (_e, cmd) => fn(cmd)),
   openPowers: () => ipcRenderer.send('open-powers'),
   openPage: (page) => ipcRenderer.send('open-page', String(page)),

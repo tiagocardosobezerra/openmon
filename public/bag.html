@@ -9,7 +9,8 @@
 <link rel="stylesheet" href="ui.css">
 <style>
   main { padding-bottom: 48px; }
-  .item.none .icon, .item.none h3 { opacity: 0.55; }
+  .item.none .icon, .item.none h3 { opacity: 0.5; }
+  .item.none .icon img { filter: grayscale(0.6); }
   .none-note { font-size: 12.5px; color: var(--muted); font-style: italic; }
   /* Items as tiles: the icon first and big, the count, one button; what it
      does only when asked ("?"). */
@@ -130,7 +131,7 @@
     if (THROW(id)) {
       if (!n) {
         card.classList.add('none');
-        card.append(el('span', 'none-note', tr('bag.none')));
+        // "×0" already says it: no line of text repeated on every empty tile.
       }
       return card;
     }
@@ -171,7 +172,7 @@
     // None left: say so plainly instead of a button that looks pressable.
     if (!n && !holding && !(HELD(id) && held[id])) {
       card.classList.add('none');
-      card.append(el('span', 'none-note', tr('bag.none')));
+      // "×0" already says it: no line of text repeated on every empty tile.
       return card;
     }
     card.append(btn);

@@ -444,10 +444,14 @@ function openAppWindow(page = 'powers') {
     title: 'Openmon',
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#14101b' : '#f3eee4',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#15101a' : '#f3eee4',
     icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.js') },
   });
+  // While you use a page, the pets step behind it; back on top when you leave.
+  powersWin.on('focus', () => petsOnTop(false));
+  powersWin.on('blur', () => petsOnTop(true));
+  powersWin.on('closed', () => petsOnTop(true));
   const origin = `http://127.0.0.1:${port}/`;
   powersWin.webContents.setWindowOpenHandler(({ url: target }) => {
     if (/^https?:\/\//.test(target) && !target.startsWith(origin)) shell.openExternal(target);
@@ -463,6 +467,17 @@ function openAppWindow(page = 'powers') {
   powersWin.loadURL(url);
 }
 const openPowersWindow = () => openAppWindow('powers');
+
+// A page in use stays in front of the pets; they float again when it is left.
+let pageInFront = false;
+function petsOnTop(on) {
+  pageInFront = !on;
+  for (const w of [win, ...companionWins.values()]) {
+    if (!w || w.isDestroyed()) continue;
+    if (on) w.setAlwaysOnTop(true, 'floating');
+    else w.setAlwaysOnTop(false);
+  }
+}
 
 // The pet window never takes focus, so Windows would open our other windows
 // behind whatever app is active. A brief always-on-top puts them in front.
@@ -567,7 +582,7 @@ function openControlPanel() {
 // At most every 500 ms per window, and never with the pointer on the taskbar
 // (its previews and menus stay on top).
 function liftPet(w) {
-  if (!w || w.isDestroyed() || !w.isVisible()) return;
+  if (!w || w.isDestroyed() || !w.isVisible() || pageInFront) return;
   const now = Date.now();
   if (now - (w.__lifted || 0) < 500) return;
   const p = screen.getCursorScreenPoint();
@@ -704,6 +719,24 @@ function syncCompanions(state) {
 
 function wireIpc() {
   const senderWin = (e) => BrowserWindow.fromWebContents(e.sender);
+  // While its card is open a pet window takes focus, so clicking anywhere
+  // else (another app, the desktop, a page) blurs it and the card closes,
+  // like any popover. Closed, it goes back to never stealing focus.
+  ipcMain.on('card-open', (e, on) => {
+    const w = senderWin(e);
+    if (!w || w.isDestroyed()) return;
+    w.__cardOpen = on;
+    if (on) {
+      w.setFocusable(true);
+      w.focus();
+      if (!w.__blurCloses) {
+        w.__blurCloses = true;
+        w.on('blur', () => {
+          if (w.__cardOpen && !w.isDestroyed()) w.webContents.send('command', 'close-card');
+        });
+      }
+    } else w.setFocusable(false);
+  });
   ipcMain.on('interactive', (e, on) => {
     const w = senderWin(e);
     if (!w || w.isDestroyed()) return;

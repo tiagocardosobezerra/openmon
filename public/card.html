@@ -130,7 +130,7 @@
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#6d6680';
     ctx.font = '700 22px system-ui, sans-serif';
-    ctx.fillText(`#${String(p.dexNo).padStart(3, '0')} · LV ${p.level || 1} · GEN ${p.generation || 1} · ${p.stage.toUpperCase()}${p.shiny && p.stage !== 'egg' ? ' · SHINY' : ''}`, 580, 115);
+    ctx.fillText(`#${String(p.dexNo).padStart(3, '0')} · LV ${p.level || 1} · GEN ${p.generation || 1} · ${tr(`stage.${p.stage}`).toUpperCase()}${p.shiny && p.stage !== 'egg' ? ` · ${tr('card.shinyTag')}` : ''}`, 580, 115);
     ctx.fillStyle = INK;
     ctx.font = '900 64px system-ui, sans-serif';
     ctx.fillText(p.name + (p.shiny ? ' ★' : ''), 578, 182);
@@ -143,7 +143,7 @@
     // Eleven axes do not fit: the six strongest kinds of work, in their usual order.
     const top = new Set([...species.stats].sort((a, b) => (p.affinity[b] || 0) - (p.affinity[a] || 0)).slice(0, 6));
     const axes = species.stats.filter((s) => top.has(s));
-    radar(760, 425, 98, axes.map((s) => p.affinity[s] || 0), axes.map((s) => species.statLabels[s]), pal.body);
+    radar(760, 402, 86, axes.map((s) => p.affinity[s] || 0), axes.map((s) => species.statLabels[s]), pal.body);
 
     const seen = Object.keys(p.dex || {}).length;
     const facts = [

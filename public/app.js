@@ -1638,6 +1638,7 @@
     } else if (on && tab) cardTab = tab;
     if (on === hovering) return renderCard();
     hovering = on;
+    if (desktop && desktop.cardOpen) desktop.cardOpen(on);
     renderAll();
   }
 
@@ -1883,6 +1884,8 @@
   if (desktop && desktop.onCommand) {
     desktop.onCommand((cmd) => {
       if (cmd === 'card') setHover(!hovering);
+      // Clicked somewhere else: the card closes.
+      if (cmd === 'close-card') setHover(false);
       if (cmd === 'powers') openPowers();
       // The shell made the window click-through again (the pointer left it).
       if (cmd === 'pointer-out') interactive = false;
@@ -1897,10 +1900,13 @@
   $('lbl-more').textContent = tr('act.more');
   $('lbl-party').textContent = tr('act.party');
   function openPowers() {
+    // A page opens in front: the card steps out of its way.
+    setHover(false);
     if (desktop && desktop.openPowers) desktop.openPowers();
     else window.open('/powers.html', '_blank');
   }
   function openPage(page) {
+    setHover(false);
     if (desktop && desktop.openPage) desktop.openPage(page);
     else window.open(`/${page}.html`, '_blank');
   }
