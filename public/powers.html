@@ -57,6 +57,9 @@
   .tab.on { border-color: var(--outline); box-shadow: 0 3px 0 var(--outline), inset 0 -5px 0 var(--c); }
   .tab.locked img { filter: grayscale(1) brightness(0.3); opacity: 0.55; }
   .panel-body { margin-top: 12px; padding: 16px 18px; min-height: 180px; border-top: 6px solid var(--c, var(--brand)); }
+  /* Nothing to show for this type yet: one line, the Journal moves up. */
+  .panel-body:has(> .empty) { min-height: 0; }
+  .panel-body > .empty { padding: 6px 0 2px; text-align: left; }
   .panel-body h2 { margin: 0 0 2px; font-size: 19px; }
   .panel-body > p { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -165,7 +168,7 @@
     for (const p of POWERS) {
       const locked = !data.unlocked.includes(p);
       const b = h('button', { class: `tab${p === tab ? ' on' : ''}${locked ? ' locked' : ''}`, style: `--c: var(--${p})`, title: locked ? tr('powers.lockedShort') : '' },
-        h('img', { src: `/art/${p}-juvenile.svg`, alt: '' }), h('b', {}, tr(`power.${p}`)), h('small', {}, locked ? tr('powers.lockedShort') : tr(`power.${p}.short`)), locked ? lockIcon() : powerIcon(p));
+        h('img', { src: `/art/${p}-juvenile.svg`, alt: '' }), h('b', {}, tr(`power.${p}`)), h('small', {}, locked ? tr(`powers.from.${p}`) : tr(`power.${p}.short`)), locked ? lockIcon() : powerIcon(p));
       b.onclick = () => { tab = p; picked = true; render(); };
       box.append(b);
     }
@@ -193,7 +196,7 @@
 
   const copyBtn = (text) => {
     const b = h('button', { class: 'btn ghost sm' }, tr('powers.copy'));
-    b.onclick = () => navigator.clipboard.writeText(text).then(() => (b.textContent = '✓'));
+    b.onclick = () => openmonCopyInto(b, text, '✓');
     return b;
   };
 
@@ -257,7 +260,7 @@
     const box = $('panel');
     box.textContent = '';
     box.style.setProperty('--c', `var(--${tab})`);
-    box.append(h('h2', {}, `${tr(`power.${tab}`)} · ${tr(`power.${tab}.title`)}`), h('p', {}, tr(`power.${tab}.text`)));
+    box.append(h('h2', {}, tr(`power.${tab}.title`)), h('p', {}, tr(`power.${tab}.text`)));
     if (!data.unlocked.includes(tab)) {
       box.append(h('div', { class: 'lock' }, h('img', { src: `/art/${tab}-juvenile.svg`, alt: '' }), h('p', {}, h('b', {}, tr('powers.locked', { lineage: tr(`power.${tab}`) }))), h('p', { class: 'muted' }, tr('powers.lockedHow', { work: tr(`work.${tab}`) }))));
       return;
@@ -267,7 +270,10 @@
     box.append(view || h('div', { class: 'empty' }, tr('powers.nothing')));
   }
 
-  // The journal: the last 14 days of agent work, by kind of work.
+  // The journal: the last 14 days of agent work, by kind of work. The type
+  // colours from the art are close for some types (several blues), so the
+  // chart has its own, far-apart hues.
+  const CHART = { craft: '#e0583a', lore: '#3d6ad6', shell: '#6e7491', test: '#b9c6d2', roam: '#5fc3f0', swarm: '#f0a020', docs: '#d8c48a', git: '#6cc04a', debug: '#a77bf0', data: '#2fb7a8', style: '#e86aa6' };
   const FAMILIES = POWERS;
   let pickedDay = null;
   const dayLabel = (key, opts) => {
@@ -330,7 +336,7 @@
         if (!n) continue;
         const seg = h('i');
         seg.style.height = `${(n / total) * 100}%`;
-        seg.style.background = `var(--${fam})`;
+        seg.style.background = CHART[fam] || `var(--${fam})`;
         col.append(seg);
       }
       col.onmouseenter = () => (detail.textContent = dayText(e));
@@ -339,13 +345,13 @@
         renderJournal();
       };
       chart.append(col);
-      labels.append(h('span', { class: e.day === today ? 'today' : '' }, e.day === today ? tr('journal.today') : dayLabel(e.day, { weekday: 'narrow' })));
+      labels.append(h('span', { class: e.day === today ? 'today' : '' }, e.day === today ? tr('journal.today') : dayLabel(e.day, { weekday: 'short' }).replace('.', '')));
     }
     chart.onmouseleave = () => (detail.textContent = dayText(days.find((x) => x.day === pickedDay) || days[days.length - 1]));
     detail.textContent = dayText(days.find((x) => x.day === pickedDay) || days[days.length - 1]);
     const legend = h('div', { class: 'legend' }, FAMILIES.map((fam) => {
       const sp = h('span', {}, tr(`power.${fam}`));
-      sp.style.setProperty('--c', `var(--${fam})`);
+      sp.style.setProperty('--c', CHART[fam] || `var(--${fam})`);
       return sp;
     }));
     // The last 7 days in four numbers.
@@ -360,11 +366,12 @@
       h('div', {}, h('b', {}, String(sum('turns'))), h('small', {}, tr('journal.weekTurns'))),
       h('div', {}, h('b', {}, tests ? `${Math.round((sum('green') / tests) * 100)}%` : '–'), h('small', {}, tr('journal.weekGreen'))),
       h('div', {}, h('b', {}, dur(sum('waitMs'))), h('small', {}, tr('journal.weekWait'))),
-      h('div', { title: tr('today.tokensHelp') }, h('b', {}, new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 }).format(sum('tokens'))), h('small', {}, tr('journal.weekTokens'))),
+      // Some agents report no tokens: a dash, not a zero that looks like a bug.
+      h('div', { title: tr('today.tokensHelp') }, h('b', {}, sum('tokens') ? new Intl.NumberFormat(lang, { notation: 'compact', maximumFractionDigits: 1 }).format(sum('tokens')) : '–'), h('small', {}, tr('journal.weekTokens'))),
       h('div', {}, h('b', { style: 'font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, top ? top[0] : '–'), h('small', {}, tr('journal.weekTop'))));
     // A ready-to-paste update for your daily stand-up.
-    const standup = h('button', { class: 'btn sm', style: 'margin-top:10px' }, tr('standup.copy'));
-    standup.onclick = () => navigator.clipboard.writeText(standupText(days)).then(() => (standup.textContent = tr('standup.copied')));
+    const standup = h('button', { class: 'btn sm', style: 'margin-top:10px', title: tr('standup.copyHelp') }, tr('standup.copy'));
+    standup.onclick = () => openmonCopyInto(standup, standupText(days), tr('standup.copied'));
     const csv = h('button', { class: 'btn sm', style: 'margin:10px 0 0 8px' }, tr('csv.button'));
     csv.title = tr('csv.help');
     csv.onclick = () => {

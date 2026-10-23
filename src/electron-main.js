@@ -6,7 +6,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, BrowserWindow, Menu, Tray, Notification, dialog, globalShortcut, ipcMain, nativeImage, nativeTheme, screen, session, shell } = require('electron');
+const { app, BrowserWindow, Menu, Tray, Notification, clipboard, dialog, globalShortcut, ipcMain, nativeImage, nativeTheme, screen, session, shell } = require('electron');
 const { createDaemon } = require('./server');
 const { homeDir, adoptLegacyHome } = require('./store');
 
@@ -467,6 +467,8 @@ function openAppWindow(page = 'powers') {
   const origin = `http://127.0.0.1:${port}/`;
   powersWin.webContents.setWindowOpenHandler(({ url: target }) => {
     if (/^https?:\/\//.test(target) && !target.startsWith(origin)) shell.openExternal(target);
+    // One of our pages: open it here, in the app window, instead of nothing.
+    else if (target.startsWith(origin)) powersWin.loadURL(target);
     return { action: 'deny' };
   });
   // Pages of the daemon only; anything else opens in the browser.
@@ -892,6 +894,19 @@ function wireIpc() {
       default:
         return null;
     }
+  });
+  // Copy for the app window's pages only.
+  ipcMain.handle('copy-text', (e, text) => {
+    if (!powersWin || powersWin.isDestroyed() || e.sender !== powersWin.webContents) return false;
+    clipboard.writeText(String(text));
+    return true;
+  });
+  ipcMain.handle('copy-image', (e, dataUrl) => {
+    if (!powersWin || powersWin.isDestroyed() || e.sender !== powersWin.webContents || !/^data:image\/png;base64,/.test(dataUrl)) return false;
+    const img = nativeImage.createFromDataURL(dataUrl);
+    if (img.isEmpty()) return false;
+    clipboard.writeImage(img);
+    return true;
   });
   ipcMain.on('open-page', (_e, page) => {
     openAppWindow(page);

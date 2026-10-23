@@ -198,6 +198,7 @@ html, body {
 .lv { flex: none; font: 600 11.5px/1.5 var(--font-display); color: #2a2140; background: var(--sun); padding: 0 7px; border-radius: 99px; box-shadow: 0 0 0 1.5px var(--outline); }
 .card-form { display: flex; align-items: center; gap: 7px; margin-top: 4px; font-size: 12px; color: color-mix(in srgb, var(--ink) 70%, var(--type)); }
 .card-form > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#card-form { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 /* Long project names stay on one line. */
 .card-chips .chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -209,15 +210,18 @@ html, body {
 #card > * { flex-shrink: 0; }
 /* Every Openmon's card has the same shape: two rows of chips and a tab area
    of one fixed height (it scrolls), so two cards side by side match. */
-#card > .tab-body { flex: 0 1 128px; height: 128px; min-height: 56px; }
+/* It gives way first, but always keeps room for two agents (76px). */
+#card > .tab-body { flex: 0 1 128px; height: 128px; min-height: 76px; }
 #card > .card-chips { height: 24px; overflow: hidden; align-content: flex-start; }
 
 /* The day at a glance, between the bars and the tabs. */
-.card-day { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-height: 22px; font-size: 11.5px; }
+.card-day { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; height: 22px; overflow: hidden; font-size: 11.5px; }
 .card-day:empty { display: none; }
-.day-pill { padding: 1px 8px; border-radius: 99px; background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); font: 600 11.5px/1.6 var(--font-display); }
+.day-pill { flex: none; white-space: nowrap; padding: 1px 8px; border-radius: 99px; background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); font: 600 11.5px/1.6 var(--font-display); }
+button.day-pill { border: 0; cursor: pointer; }
+button.day-pill:hover { box-shadow: inset 0 0 0 1.5px var(--outline); }
 .day-pill.ok { background: var(--ok-soft); box-shadow: none; color: var(--ok); }
-.day-next { margin-left: auto; color: var(--brand-ink); font: 600 11.5px var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.day-next { min-width: 0; color: var(--brand-ink); font: 600 11.5px var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tab-body { min-height: 96px; overflow-y: auto; scrollbar-width: thin; margin: 0 -4px; padding: 0 4px; }
 
 /* Agents tab: one row per session; click a row to jump to its window. */
@@ -241,6 +245,7 @@ html, body {
 #sessions li.attention span { color: var(--sun-ink); font-weight: 650; }
 #sessions li .go { color: var(--muted); font: 700 11px var(--font-display); opacity: 0; }
 #sessions li.jump:hover .go, #sessions li.attention .go { opacity: 1; }
+#sessions li.attention .go { color: #2a2140; }
 #sessions li.perm-row { display: flex; gap: 6px; justify-content: flex-end; background: none; min-height: 0; padding: 0 2px 4px; }
 #sessions li.perm-row .btn { min-height: 24px; padding: 1px 10px; font-size: 12px; }
 #sessions li.empty { display: block; background: none; color: var(--muted); text-align: center; padding: 18px 0; white-space: normal; }
@@ -326,3 +331,7 @@ body.preview #stage { right: 50%; margin-right: -150px; bottom: 80px; }
 @media (prefers-reduced-motion: reduce) {
   #bubble, #bubble.attention, #card, #card.closing, #sessions li.working .dot { animation: none; }
 }
+
+.day-pill.candy { background: color-mix(in srgb, var(--sun) 30%, var(--surface)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sun) 70%, var(--outline)); }
+#sessions li.attention code { font: 700 12px var(--font-mono); color: var(--sun-ink, #3b2f00); }
+#bubble small code { font-family: var(--font-mono); font-size: 0.95em; font-weight: 700; background: none; }

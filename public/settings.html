@@ -33,7 +33,8 @@
   /* A real switch instead of a bare checkbox. */
   .switch { position: relative; width: 44px; height: 26px; flex: none; }
   .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-  .switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--surface-2); box-shadow: inset 0 0 0 2px var(--outline); transition: background 0.15s ease; pointer-events: none; }
+  /* Off is a visible, empty track; on is filled. */
+  .switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--sunken); box-shadow: inset 0 0 0 2px var(--muted); transition: background 0.15s ease; pointer-events: none; }
   .switch span::after { content: ""; position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; border-radius: 50%; background: #fffdf7; box-shadow: 0 0 0 2px var(--outline); transition: transform 0.15s ease; }
   .switch input:checked + span { background: var(--brand); }
   .switch input:checked + span::after { transform: translateX(18px); }
@@ -64,7 +65,7 @@
 <script src="i18n.js"></script>
 <script src="nav.js"></script>
 <script>
-  const { lang } = window.OpenmonI18n;
+  const { lang, t: tr } = window.OpenmonI18n;
   document.documentElement.lang = lang;
   // Only in the desktop app: start with the computer, backups to files,
   // connecting Claude Code, the pet's position, the demo.
@@ -85,6 +86,7 @@
       name: 'Apelido', nameSub: 'Sem apelido, ele usa o nome da espécie.', rename: 'Mudar…',
       size: 'Tamanho', small: 'Pequeno', normal: 'Normal', large: 'Grande',
       language: 'Idioma', languageSub: 'Do pet, dos menus e destas páginas.',
+      theme: 'Tema', themeSub: 'Claro, escuro ou o mesmo do sistema.', themeAuto: 'Sistema', themeLight: 'Claro', themeDark: 'Escuro',
       sounds: 'Sons', soundsSub: 'Pequenos sons quando ele pula, evolui ou precisa de você.',
       chatter: 'Falas e emojis', chatterSub: 'Balões curtos e reações (? ♥ ♪) quando nada importante está acontecendo.',
       stroll: 'Passear pela tela', strollSub: 'Ele anda alguns passos quando está à toa.',
@@ -131,6 +133,7 @@
       name: 'Apodo', nameSub: 'Sin apodo, usa el nombre de la especie.', rename: 'Cambiar…',
       size: 'Tamaño', small: 'Pequeño', normal: 'Normal', large: 'Grande',
       language: 'Idioma', languageSub: 'De la mascota, los menús y estas páginas.',
+      theme: 'Tema', themeSub: 'Claro, oscuro o el del sistema.', themeAuto: 'Sistema', themeLight: 'Claro', themeDark: 'Oscuro',
       sounds: 'Sonidos', soundsSub: 'Pequeños sonidos cuando salta, evoluciona o te necesita.',
       chatter: 'Frases y emojis', chatterSub: 'Globos cortos y reacciones (? ♥ ♪) cuando no pasa nada importante.',
       stroll: 'Pasear por la pantalla', strollSub: 'Da unos pasos cuando no hace nada.',
@@ -177,6 +180,7 @@
       name: 'Nickname', nameSub: 'With no nickname it goes by its species name.', rename: 'Change…',
       size: 'Size', small: 'Small', normal: 'Normal', large: 'Large',
       language: 'Language', languageSub: 'Of the pet, the menus and these pages.',
+      theme: 'Theme', themeSub: 'Light, dark, or the same as your system.', themeAuto: 'System', themeLight: 'Light', themeDark: 'Dark',
       sounds: 'Sounds', soundsSub: 'Little sounds when it hops, evolves or needs you.',
       chatter: 'Chatter and emotes', chatterSub: 'Short bubbles and reactions (? ♥ ♪) when nothing important is going on.',
       stroll: 'Walk around', strollSub: 'It takes a few steps when it is idle.',
@@ -266,6 +270,23 @@
     wrap.append(c, el('span'));
     return wrap;
   }
+  // Theme: kept in this app's own storage, so every window follows at once.
+  function themeNow() {
+    try {
+      return localStorage.getItem('openmon.theme') || 'auto';
+    } catch {
+      return 'auto';
+    }
+  }
+  function setTheme(v) {
+    try {
+      if (v === 'auto') localStorage.removeItem('openmon.theme');
+      else localStorage.setItem('openmon.theme', v);
+    } catch {}
+    if (v === 'auto') delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = v;
+    render();
+  }
   // A few choices side by side (instead of a drop-down).
   function pick(options, current, onPick) {
     const box = el('div', 'seg pick');
@@ -315,7 +336,7 @@
       }, 'btn sm primary');
       rows.push(row('', T.cloudSub, signIn, { cls: 'wide' }));
       if (cloudCode) {
-        const copy = btn(T.cloudCopy, (b) => navigator.clipboard.writeText(cloudCode.userCode).then(() => (b.textContent = T.cloudCopied)));
+        const copy = btn(T.cloudCopy, (b) => openmonCopyInto(b, cloudCode.userCode, T.cloudCopied));
         const open = btn(T.cloudOpen, () => window.open(cloudCode.uri, '_blank'), 'btn sm primary');
         rows.push(row(cloudCode.userCode, fill(T.cloudCode, { uri: cloudCode.uri, code: cloudCode.userCode }), [open, copy], { cls: 'wide' }));
       }
@@ -361,6 +382,7 @@
         card(T.look, [
           row(T.name, pet && pet.nickname ? `${pet.nickname} · ${pet.form}` : T.nameSub, rename),
           row(T.size, '', pick([[0.8, T.small], [1, T.normal], [1.25, T.large]], [0.8, 1, 1.25].find((s) => Math.abs(s - scale) < 0.01), (v) => save({ scale: v }, true))),
+          row(T.theme, T.themeSub, pick([['auto', T.themeAuto], ['light', T.themeLight], ['dark', T.themeDark]], themeNow(), setTheme)),
           row(T.language, T.languageSub, pick([['pt-BR', 'Português'], ['en', 'English'], ['es', 'Español']], lang, (v) => save({ lang: v }).then(() => location.replace(`?lang=${v}#${tab}`)))),
         ]),
         card(T.behaviour, [
@@ -461,7 +483,7 @@
     },
     more() {
       const url = `${location.origin}/?scale=1&quiet`;
-      const copy = btn(T.copy, (b) => navigator.clipboard.writeText(url).then(() => (b.textContent = T.copiedUrl)));
+      const copy = btn(T.copy, (b) => openmonCopyInto(b, url, T.copiedUrl));
       return [
         card(null, [
           row(T.keys, T.keysSub, null, { html: true }),

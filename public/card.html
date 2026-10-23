@@ -196,6 +196,12 @@
     });
   });
   document.getElementById('copy').addEventListener('click', () => {
+    // In the app: through the desktop shell. In a browser: its clipboard.
+    const desk = window.openmonSettings;
+    if (desk && desk.copyImage) {
+      desk.copyImage(canvas.toDataURL('image/png')).then((ok) => msg(tr(ok ? 'card.copied' : 'card.copyFail'))).catch(() => msg(tr('card.copyFail')));
+      return;
+    }
     canvas.toBlob(async (blob) => {
       try {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);

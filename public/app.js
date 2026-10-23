@@ -67,6 +67,8 @@
   let petClicks = [];
   let comboAt = -1e9;
   let lastTap = 0;
+  // Until when the card's candy pill waits for its confirming second click.
+  let candyArmedUntil = 0;
   let landed = 0;
   // How many Openmons the team has (a companion always has company).
   let teamSize = companionId ? 2 : 1;
@@ -353,7 +355,7 @@
           burst('confetti', 26, petCX(), GROUND - 70, 2.2, { colors: CONFETTI, gravity: 260 });
           play('evolve');
           setTimeout(() => play('cry'), 650);
-          const name = pet ? pet.name : 'Your Openmon';
+          const name = pet ? OpenmonI18n.name(pet.name) : tr('yourOpenmon');
           const dexLine = evolveFx.newDex && pet ? tr('scene.newDex', { no: String(pet.dexNo).padStart(3, '0') }) : '';
           toast = null;
           if (evolveFx.hatched) {
@@ -736,7 +738,9 @@
   function tip(id, title, sub, delayMs = 0) {
     if (!config || (config.tips || []).includes(id) || demo || params.has('quiet')) return false;
     config.tips = [...(config.tips || []), id];
-    setTimeout(() => pushToast(title, sub, 7000, 'say'), delayMs);
+    // A tip never covers a request that needs you: it waits its turn.
+    const show = () => (pose === 'attention' ? setTimeout(show, 5000) : pushToast(title, sub, 7000, 'say'));
+    setTimeout(show, delayMs);
     post('/api/config', { tipSeen: id });
     return true;
   }
@@ -851,6 +855,9 @@
     if (eyebrow) add('span', 'eyebrow', eyebrow);
     add('span', 'title', title);
     if (sub) add('small', '', sub);
+    // A request to run something: the command itself set as code.
+    const said = sub && /^attention/.test(cls) ? /^(.{1,60}?): (.+)$/s.exec(sub) : null;
+    if (said) b.lastChild.replaceChildren(`${said[1]}: `, Object.assign(document.createElement('code'), { textContent: said[2] }));
     if (choices) {
       // Allow / Deny, right on the bubble.
       const row = document.createElement('span');
@@ -908,7 +915,8 @@
       const o = restoreOffer;
       return setBubble('restore', tr('restore.title'), tr('restore.sub', { name: o.name, form: o.form, level: o.level, date: new Date(o.savedAt).toLocaleDateString() }), { jump: 'restore', action: tr('restore.action') });
     }
-    if (toast) return setBubble(toast.style || 'toast', toast.title, toast.text);
+    // Small talk and tips step aside while the agent waits for you.
+    if (toast && !(toast.style === 'say' && pose === 'attention' && live.focus)) return setBubble(toast.style || 'toast', toast.title, toast.text);
     if (nicknameOffer && Date.now() < nicknameOffer.until && pet && !pet.nickname && pose !== 'attention') {
       return setBubble('toast', tr('nick.title', { form: pet.form }), tr('nick.sub'), { jump: 'nickname', action: tr('nick.action') });
     }
@@ -945,7 +953,8 @@
       const waiting = (live.sessions || []).filter((s) => s.state === 'attention');
       const answer = { jump, action: tr('jump.answer'), id: `attention|${waiting.length > 1 ? waiting.map((s) => s.id).join(',') : f.id}|${f.since}` };
       if (waiting.length > 1) return setBubble('attention', tr('needsYou.many', { n: waiting.length }), waiting.map((s) => s.label).join(', '), answer);
-      const waited = f.since ? ` · ${clock(Date.now() - f.since)}` : '';
+      const waited = f.since ? ` · ${tr('bubble.waited', { t: clock(Date.now() - f.since) })}` : '';
+      const eyebrow = `${f.label || tr('yourAgent')}${waited}`;
       const long = f.since && Date.now() - f.since > LONG_WAIT_MS && ackedFor !== f.since;
       const pending = permissions.find((p) => p.session === f.id);
       const danger = isDanger(f.detail) || (pending && isDanger(pending.detail));
@@ -955,7 +964,7 @@
         const left = Math.max(0, Math.ceil((pending.until - Date.now()) / 1000));
         return setBubble(cls, title, trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: danger ? tr('danger.note') : tr('perm.note', { s: left }), id: answer.id });
       }
-      return setBubble(cls, title + waited, trDetail(f.detail), { ...answer, eyebrow: f.label || tr('yourAgent'), buttons: write });
+      return setBubble(cls, title, trDetail(f.detail), { ...answer, eyebrow, buttons: write });
     }
     // A wild Openmon: try an Openball or let it go. The agent comes first.
     const w = wildNow();
@@ -1001,7 +1010,7 @@
     badge.hidden = n < 2;
     badge.textContent = tr('agents', { n });
     badge.className = c.waiting ? 'waiting' : '';
-    badge.title = `${c.working || 0} working, ${c.waiting || 0} waiting for you`;
+    badge.title = tr('badge.help', { working: c.working || 0, waiting: c.waiting || 0 });
   }
 
   let stats = null;
@@ -1054,7 +1063,7 @@
     $('card-close').title = tr('card.close');
     $('card-close').setAttribute('aria-label', tr('card.close'));
 
-    $('card-name').textContent = pet.shiny && pet.stage !== 'egg' ? `${pet.name} ★` : pet.name;
+    $('card-name').textContent = pet.shiny && pet.stage !== 'egg' ? `${pet.name} ★` : OpenmonI18n.name(pet.name);
     // The card wears the colour of its Openmon's type (an egg: the brand's).
     const type = pet.legend ? null : pet.lineage || (pet.stage === 'egg' ? null : pet.starter);
     for (const c of [...card.classList]) if (c.startsWith('t-')) card.classList.remove(c);
@@ -1062,7 +1071,10 @@
     $('card-type').textContent = pet.legend ? tr('party.legendTag') : type ? statLabels[type] || type : tr(`stage.${pet.stage}`);
     // Number, stage and generation on one quiet line; the species too when a nickname takes the title.
     const dexNo = pet.dexNo ? `#${String(pet.dexNo).padStart(3, '0')}` : '';
-    $('card-form').textContent = [pet.nickname ? `${dexNo} ${pet.form}`.trim() : dexNo, pet.stage !== 'egg' && !pet.legend ? tr(`stage.${pet.stage}`) : null, (pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null].filter(Boolean).join(' · ');
+    // Where it is heading, when that is not the type it already has.
+    const leaning = pet.leaning && pet.leaning !== pet.lineage && pet.stage !== 'mythic' && pet.stage !== 'egg' && !pet.legend ? tr('card.leaningShort', { stat: statLabels[pet.leaning] || pet.leaning }) : null;
+    $('card-form').textContent = [pet.nickname ? `${dexNo} ${pet.form}`.trim() : dexNo, pet.stage !== 'egg' && !pet.legend ? tr(`stage.${pet.stage}`) : null, (pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null, leaning].filter(Boolean).join(' · ');
+    $('card-form').title = leaning ? tr('card.leaningHelp') : '';
     $('card-level').textContent = tr('card.level', { n: pet.level || 1 });
     $('card-level').title = tr('card.levelHelp');
     const pr = pet.progress;
@@ -1086,6 +1098,7 @@
     $('xp-text').textContent = !pr.next ? tr('card.max') : pr.needsStarter ? tr('card.pickStarter') : pr.needsBond && pr.xpToGo === 0 ? tr('card.needsBond', { n: pr.bondNeeded }) : tr(pet.stage === 'egg' ? 'card.hatchesIn' : 'card.toEvolve', { n: pr.xpToGo.toLocaleString(window.OpenmonI18n.lang) });
     // What the two bars mean, for anyone new to games.
     $('xp-bar').parentElement.parentElement.title = tr('meter.xp.help');
+
     $('bond-bar').parentElement.parentElement.title = tr('meter.bond.help');
     $('bond-bar').style.width = `${pet.bond}%`;
     $('bond-text').textContent = `${pet.bond}/100`;
@@ -1095,10 +1108,41 @@
     const done = dayMissions.filter((m) => m.done).length;
     const day = $('card-day');
     day.textContent = '';
-    if (dayMissions.length) day.append(el('span', `day-pill${done === dayMissions.length ? ' ok' : ''}`, tr('day.missions', { n: done, total: dayMissions.length })));
+    if (dayMissions.length) {
+      // The missions are on the Today tab: the pill takes you there.
+      const pill = el('button', `day-pill${done === dayMissions.length ? ' ok' : ''}`, tr('day.missions', { n: done, total: dayMissions.length }));
+      pill.type = 'button';
+      pill.title = tr('day.missionsHelp');
+      pill.onclick = () => setCardTab('today');
+      day.append(pill);
+    }
     if (pet.streak && pet.streak.days > 1) day.append(el('span', 'day-pill', tr('day.streak', { n: pet.streak.days })));
-    const next = pet.wild && pet.wild.until > Date.now() ? tr('day.wild', { name: pet.wild.name }) : pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null;
-    if (next) day.append(el('span', 'day-next', next));
+    // A level candy waiting in the Bag: an invitation, one click away.
+    const candies = (pet.bag && pet.bag.candy) || 0;
+    const wildOut = pet.wild && pet.wild.until > Date.now();
+    if (candies > 0 && !wildOut && pet.progress && pet.progress.next && pet.stage !== 'egg' && !pet.legend && pet.level < 100) {
+      const armed = Date.now() < candyArmedUntil;
+      const candy = el('button', 'day-pill candy', armed ? tr('card.candySure') : tr('card.candyHint', { n: candies }));
+      candy.type = 'button';
+      candy.title = tr('item.candy.text');
+      // Used right here (the level-up plays on the pet), on a second click:
+      // a candy is rare, a stray click should not spend it. The demo opens the Bag.
+      // (The armed state lives here, not on the button: the card is redrawn
+      // with every update while agents work.)
+      candy.onclick = () => {
+        if (demo) return openPage('bag');
+        if (Date.now() < candyArmedUntil) {
+          candyArmedUntil = 0;
+          return post('/api/use', { item: 'candy' });
+        }
+        candyArmedUntil = Date.now() + 3000;
+        renderCard();
+        setTimeout(renderCard, 3050);
+      };
+      day.append(candy);
+    }
+    // A wild one comes first: the row is one line, and this is the news.
+    if (pet.wild && pet.wild.until > Date.now()) day.prepend(el('span', 'day-next', tr('day.wild', { name: pet.wild.name })));
 
     // Tabs, with a count on Agents (waiting) and Today (missions left).
     const sessions = live.sessions || [];
@@ -1129,8 +1173,12 @@
         li.dataset.id = x.id;
         li.title = tr('session.jump');
       }
-      const detail = x.state === 'attention' ? trDetail(x.detail) || tr('session.needsYou') : x.state === 'working' ? trDetail(x.detail) || tr('session.working') : tr(x.state === 'done' ? 'session.done' : 'session.idle');
-      li.append(el('i', 'dot'), el('b', '', x.label), el('span', '', detail));
+      const detail = x.state === 'attention' ? trDetail(x.detail, true) || tr('session.needsYou') : x.state === 'working' ? trDetail(x.detail) || tr('session.working') : tr(x.state === 'done' ? 'session.done' : 'session.idle');
+      const what = el('span', '', detail);
+      // "Permission: npm publish": the thing asked for set as code.
+      const permAsked = x.state === 'attention' && /^(Allow|Wants)/.test(x.detail || '') ? /^([^:]{1,24}): (.+)$/s.exec(detail) : null;
+      if (permAsked) what.replaceChildren(`${permAsked[1]}: `, el('code', '', permAsked[2]));
+      li.append(el('i', 'dot'), el('b', '', x.label), what);
       // With more than one Openmon on screen: who follows this conversation.
       if (!demo && onScreen.length > 1) {
         const own = owners[x.id];
@@ -1357,7 +1405,7 @@
     const evolve = events.find((e) => e.type === 'evolve');
     if (evolve) {
       evolveFx = { start: t, from: specOf(pet), to: { stage: evolve.stage, lineage: evolve.lineage, trait: evolve.trait, chimera: evolve.chimera || null, shiny: Boolean(evolve.shiny), wear: pet && pet.wear }, toName: evolve.to, toStage: evolve.stage, hatched: Boolean(evolve.hatched), shiny: Boolean(evolve.shiny), newDex: evolve.newDex, after: [] };
-      const name = pet ? pet.name : 'Your Openmon';
+      const name = pet ? OpenmonI18n.name(pet.name) : tr('yourOpenmon');
       toasts.length = 0;
       toast = null;
       pushToast(evolve.hatched ? tr('scene.hatching') : tr('scene.evolving', { name }), '', 2400, 'scene');
@@ -1375,7 +1423,7 @@
           break;
         case 'level':
           if (!evolve) {
-            spawn('text', petCX() + 62, GROUND - 70, { text: `Lv ${e.level}!`, vy: -18, max: 1.6, sizePx: 15, color: '#d18b00' });
+            spawn('text', petCX() + 62, GROUND - 70, { text: `${tr('card.level', { n: e.level })}!`, vy: -18, max: 1.6, sizePx: 15, color: '#d18b00' });
             burst('spark', 6, petCX() + 62, GROUND - 76, 2.4, { colors: ['#ffe156', '#fff'], gravity: 120, max: 0.8 });
             play('level');
           }

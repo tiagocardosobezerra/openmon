@@ -31,7 +31,8 @@ app.disableHardwareAcceleration();
 app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-screens-profile-')));
 app.on('window-all-closed', () => {});
 
-const OUT = path.join(__dirname, '..', 'docs', 'screens');
+// OPENMON_SCREENS_OUT: somewhere else (a review, not the README).
+const OUT = process.env.OPENMON_SCREENS_OUT || path.join(__dirname, '..', 'docs', 'screens');
 const DAY = 24 * 60 * 60 * 1000;
 
 // A deterministic random, so the screenshots do not change between runs.

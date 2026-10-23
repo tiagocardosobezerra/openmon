@@ -99,6 +99,31 @@
   }
 }
 
+/* Dark chosen in Settings (Theme), whatever the system says. Keep these
+   tokens the same as the block above. */
+:root[data-theme="dark"] {
+  --bg: #15101a;
+  --surface: #241b2c;
+  --surface-2: #1d1624;
+  --sunken: #2d2338;
+  --ink: #f6f0fb;
+  --outline: #07050b;
+  --muted: #ada2bf;
+  --line: #3a2f49;
+  --gloss: inset 0 1.5px 0 rgba(255, 255, 255, 0.07);
+  --brand: #9486ff;
+  --brand-ink: #c3baff;
+  --brand-soft: #2c2547;
+  --sun: #ffd84a;
+  --sun-ink: #3b2f00;
+  --ok: #5ccf74;
+  --ok-soft: #1d3a27;
+  --bad: #ff7b7b;
+  --bad-soft: #3d1f24;
+  --info-soft: #1d2b3d;
+  color-scheme: dark;
+}
+
 /* ---- pages ------------------------------------------------------------- */
 
 body.page {
@@ -339,3 +364,8 @@ kbd { font: 600 11px var(--font-mono); padding: 1px 5px; border-radius: 5px; bor
 @media (prefers-reduced-motion: reduce) {
   .btn, .bar > i { transition: none; }
 }
+
+/* What a click did, for a moment at the bottom of the page (nav.js). */
+.page-note { position: fixed; left: 50%; bottom: 22px; z-index: 5; transform: translateX(-50%); margin: 0; padding: 9px 18px; border-radius: 99px; background: var(--sun); color: #2a2140; font: 600 14px var(--font-display); box-shadow: 0 0 0 2px var(--outline), var(--lift); }
+.page-note.bad { background: var(--bad-soft); color: var(--ink); }
+.page-note[hidden] { display: none; }

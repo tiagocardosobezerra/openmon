@@ -40,7 +40,9 @@
   /* The Nest: a wallpaper behind the stored mons, picked by the trainer. */
   /* The Nest is a scene: the resting Openmon stand on the chosen wallpaper. */
   .boxwrap { min-height: 260px; border-radius: var(--r-lg); padding: 18px; background: center / cover no-repeat var(--sunken); border: var(--bw) solid var(--outline); box-shadow: var(--lift); }
-  .boxwrap .muted { background: color-mix(in srgb, var(--surface) 88%, transparent); padding: 8px 12px; border-radius: var(--r-md); display: inline-block; }
+  .boxwrap { display: grid; }
+  .boxwrap > .grid { height: 100%; }
+  .boxwrap .nest-empty { grid-column: 1 / -1; color: var(--text); margin: 0; place-self: center; align-self: center; max-width: 360px; text-align: center; font-size: 14px; background: color-mix(in srgb, var(--surface) 90%, transparent); padding: 12px 18px; border-radius: var(--r-md); box-shadow: 0 0 0 1.5px var(--outline); }
   /* In the Nest they stand right in the scene: no card, just a name plate. */
   .boxwrap .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); align-items: end; }
   .boxwrap .mon { background: none; border: 0; box-shadow: none; padding: 0 0 6px; }
@@ -54,6 +56,7 @@
   .walls button { width: 34px; height: 22px; padding: 0; border-radius: 7px; border: 2px solid var(--line); background: center / cover no-repeat; cursor: pointer; }
   .walls button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--sun); }
   .upcoming { display: grid; gap: 6px; max-width: 640px; }
+  .upcoming > p { margin: 0; }
   .upcoming div { display: grid; grid-template-columns: 1fr 160px auto; gap: 10px; align-items: center; padding: 8px 12px; border-radius: var(--r-md); background: var(--surface); border: var(--bw) solid var(--line); }
   .switch { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
   .switch input { width: 18px; height: 18px; accent-color: var(--brand); }
@@ -90,7 +93,16 @@
   let cfg = {};
 
   async function post(path, body) {
-    await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    // A refusal is said on the page, never a silent reload.
+    let ok = true;
+    try {
+      const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
+      ok = r.ok && j.ok !== false;
+    } catch {
+      ok = false;
+    }
+    if (!ok) window.openmonNote(tr('party.failed'), false);
     await load();
   }
 
@@ -101,14 +113,16 @@
     const canvas = el('canvas');
     stage.append(canvas);
     canvases.push([canvas, p]);
-    const name = el('span', 'name', p.name);
+    const name = el('span', 'name', OpenmonI18n.name(p.name));
     if (p.shiny && p.stage !== 'egg') {
       const mark = el('span', 'shiny-mark', '✦');
       mark.title = tr('card.shinyTag');
       mark.setAttribute('aria-label', tr('card.shinyTag'));
       name.append(mark);
     }
-    c.append(stage, name, el('span', 'meta', `${tr('card.level', { n: p.level })} · ${p.form}`));
+    // The species name, unless it is already the name: then its type and stage.
+    const kind = p.name === p.form ? [p.lineage && !p.legend ? tr(`power.${p.lineage}`) : null, tr(`stage.${p.stage}`)].filter(Boolean).join(' · ') : p.form;
+    c.append(stage, name, el('span', 'meta', `${tr('card.level', { n: p.level })} · ${kind}`));
     // Legendaries, mystery eggs and wild ones belong to no project.
     const special = p.legend ? tr('party.legendTag') : p.project && p.project.startsWith('mystery:') ? tr('party.mysteryTag') : p.project && p.project.startsWith('wild:') ? tr('party.wildTag') : null;
     const mystery = !p.legend && p.project && p.project.startsWith('mystery:');
@@ -187,9 +201,28 @@
       menu.append(show);
     }
     const rename = el('button', 'btn sm quiet', tr('party.rename'));
+    rename.dataset.keepOpen = '';
+    // A nickname, typed right in the menu (the app window has no prompt()).
     rename.onclick = () => {
-      const name = window.prompt(tr('name.q'), p.nickname || '');
-      if (name !== null) post('/api/party/rename', { id: p.id, name });
+      const field = el('input', 'input');
+      field.maxLength = 24;
+      field.value = p.nickname || '';
+      field.placeholder = p.form;
+      field.setAttribute('aria-label', tr('name.q'));
+      field.title = tr('name.hint');
+      const save = () => post('/api/party/rename', { id: p.id, name: field.value.trim() });
+      field.onkeydown = (e) => {
+        if (e.key === 'Enter') save();
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          more.open = false;
+        }
+      };
+      const ok = el('button', 'btn sm primary', tr('party.renameSave'));
+      ok.type = 'button';
+      ok.onclick = save;
+      menu.replaceChildren(el('b', '', tr('name.q')), field, ok);
+      field.focus();
     };
     menu.append(rename);
     more.append(sum, menu);
@@ -212,11 +245,13 @@
     $('party-count').textContent = `${data.members.length}/${data.size}`;
     const box = $('box');
     box.textContent = '';
-    if (!data.box.length) box.append(el('p', 'muted', tr('party.boxEmpty')));
+    if (!data.box.length) box.append(el('p', 'nest-empty', tr('party.boxEmpty')));
     for (const p of data.box) box.append(card(p, data.size));
     $('box-count').textContent = data.box.length ? String(data.box.length) : '';
     const up = $('upcoming');
     up.textContent = '';
+    // Nothing on the way: one line, not a description of an empty list.
+    $('upcoming-sub').hidden = !data.upcoming.length;
     if (!data.upcoming.length) up.append(el('p', 'muted', tr('party.noUpcoming')));
     for (const u of data.upcoming) {
       const row = el('div');

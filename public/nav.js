@@ -6,6 +6,39 @@
 (function () {
   const { t: tr } = window.OpenmonI18n;
   const page = document.body.dataset.page;
+  // Copy text: through the desktop shell when there is one, else the
+  // browser's clipboard. Always a promise that says whether it worked.
+  window.openmonCopy = (text) => {
+    const desk = window.openmonSettings;
+    const via = desk && desk.copyText ? desk.copyText(text) : navigator.clipboard.writeText(text).then(() => true);
+    return Promise.resolve(via).then(Boolean).catch(() => false);
+  };
+  // A copy button: copies, says so (or says it failed), then goes back to
+  // its own label.
+  window.openmonCopyInto = (button, text, done) => {
+    const label = button.textContent;
+    return window.openmonCopy(text).then((ok) => {
+      button.textContent = ok ? done : tr('copy.failed');
+      setTimeout(() => (button.textContent = label), 1800);
+      return ok;
+    });
+  };
+  // A short line at the bottom of the page about what a click did.
+  let noteTimer = 0;
+  window.openmonNote = (text, ok = true) => {
+    let n = document.getElementById('page-note');
+    if (!n) {
+      n = document.createElement('p');
+      n.id = 'page-note';
+      n.setAttribute('role', 'status');
+      document.body.append(n);
+    }
+    n.textContent = text;
+    n.className = `page-note${ok ? '' : ' bad'}`;
+    n.hidden = false;
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(() => (n.hidden = true), 2600);
+  };
   // Which of the designer's optional files exist (public/icons, props, badges).
   window.OpenmonSlots = fetch('/art/index.json')
     .then((r) => r.json())
@@ -95,15 +128,21 @@
     for (const d of document.querySelectorAll(`${MENUS}[open]`)) if (d !== keep) d.open = false;
   };
   document.addEventListener('pointerdown', (e) => closeMenus(e.target.closest && e.target.closest(MENUS)));
-  document.addEventListener('keydown', (e) => e.key === 'Escape' && closeMenus());
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    // Back to the button that opened it, so the keyboard is not lost.
+    const open = document.querySelector(`${MENUS}[open]`);
+    closeMenus();
+    if (open) open.querySelector('summary').focus();
+  });
   document.addEventListener('toggle', (e) => e.target.matches && e.target.matches(MENUS) && e.target.open && closeMenus(e.target), true);
   // A menu item that was used closes its menu.
   document.addEventListener('click', (e) => {
     const menu = e.target.closest && e.target.closest(MENUS);
-    if (menu && e.target.closest('button, a') && !e.target.closest('summary')) menu.open = false;
+    if (menu && e.target.closest('button, a') && !e.target.closest('summary, [data-keep-open]')) menu.open = false;
   });
   window.addEventListener('blur', () => closeMenus());
-  nav.append(more, link('settings', '/settings.html', tr('card.settings'), { iconOnly: true }));
+  nav.append(more, link('settings', '/settings.html', tr('card.settings')));
 
   // Your Openmon at the corner: "you are here".
   const me = document.createElement('a');
@@ -126,8 +165,8 @@
         }
       };
       meImg.src = `/art/${encodeURIComponent(p.formKey)}${p.shiny && p.stage !== 'egg' ? '.shiny' : ''}.svg`;
-      me.title = p.name;
-      me.setAttribute('aria-label', p.name);
+      me.title = `${p.name} · ${tr('nav.me')}`;
+      me.setAttribute('aria-label', `${p.name} · ${tr('nav.me')}`);
       if (p.lineage) me.classList.add(`t-${p.lineage}`);
     })
     .catch(() => {});
