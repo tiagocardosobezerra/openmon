@@ -161,6 +161,13 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
       return applyEvents([]);
     },
 
+    // Every form of the Opendex counts as seen.
+    fillDex() {
+      const p = getPet();
+      for (const { key } of require('./species').dexEntries()) p.dex[key] = p.dex[key] || now();
+      return applyEvents([]);
+    },
+
     lang(body) {
       bus.emit('lang', /^pt/i.test(String(body.lang)) ? 'pt-BR' : /^es/i.test(String(body.lang)) ? 'es' : 'en');
       return [];
