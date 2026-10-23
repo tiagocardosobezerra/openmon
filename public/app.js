@@ -112,6 +112,18 @@
   // Agent sessions that are Openmon's own chats: session -> chat id.
   let chatSessions = {};
   const canChat = Boolean(desktop && desktop.openChat);
+  // The last answer of one of Openmon's own chats, shown in the bubble a while.
+  let chatAnswer = null;
+  // Reads a line aloud (Settings → Pet → "Read answers aloud"), offline.
+  function speak(text) {
+    if (!config.speak || config.quiet || !text || !window.speechSynthesis || companionId) return;
+    const u = new SpeechSynthesisUtterance(String(text).slice(0, 400));
+    u.lang = window.OpenmonI18n.lang;
+    const voice = speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith(u.lang.toLowerCase().slice(0, 2)));
+    if (voice) u.voice = voice;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }
   const chatQuery = (session) => (chatSessions[session] ? `?id=${chatSessions[session]}` : `?session=${encodeURIComponent(session)}`);
   function talk(kind, ref) {
     // A message to a conversation: the chat window, with the whole conversation.
@@ -1022,6 +1034,10 @@
       }
       return setBubble(cls, title, trDetail(f.detail), { ...answer, eyebrow, buttons: write });
     }
+    // An answer from one of Openmon's chats: the reply itself, and the way to it.
+    if (chatAnswer && Date.now() < chatAnswer.until && !companionId) {
+      return setBubble('done', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
+    }
     // A wild Openmon: try an Openball or let it go. The agent comes first.
     const w = wildNow();
     if (w) {
@@ -1627,7 +1643,21 @@
         }
         // Openmon's own chats and the schedule.
         case 'chat-done':
-          if (!companionId) pushToast(`💬 ${e.title || tr('chat.done')}`, e.line || '', 6000, 'done');
+          if (companionId) break;
+          // The answer itself in the bubble, longer for a quick question.
+          chatAnswer = { id: e.id, title: `💬 ${e.title || tr('chat.done')}`, text: e.answer || e.line || '', until: Date.now() + (e.quick ? 45_000 : 20_000) };
+          renderBubble();
+          if (e.quick) speak(e.answer || e.line);
+          play('done');
+          break;
+        case 'say':
+          if (!companionId) {
+            pushToast('💬', e.text, 9000, 'say');
+            speak(e.text);
+          }
+          break;
+        case 'scheduled':
+          if (!companionId) pushToast(`⏰ ${tr('scheduled.title')}`, `${e.text} · ${new Date(e.next).toLocaleString(window.OpenmonI18n.lang, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`, 6000, 'done');
           break;
         case 'reminder':
           if (!companionId) {
@@ -1933,6 +1963,15 @@
         setHover(false);
       };
       pages.appendChild(chat);
+      if (desktop.openAsk) {
+        const ask = el('button', 'btn sm', tr('chat.ask'));
+        ask.type = 'button';
+        ask.onclick = () => {
+          desktop.openAsk({});
+          setHover(false);
+        };
+        pages.appendChild(ask);
+      }
     }
     for (const [page, label] of [['dex', 'Opendex'], ['card', tr('nav.card')], ['help', tr('nav.help')], ['settings', tr('card.settings')]]) {
       const b = el('button', 'btn sm', label);
@@ -2054,6 +2093,13 @@
       return;
     }
     // "See all": the request page, with the whole diff.
+    const openChatBtn = e.target.closest && e.target.closest('[data-chat]');
+    if (openChatBtn) {
+      if (canChat) desktop.openChat(`?id=${openChatBtn.dataset.chat}`);
+      chatAnswer = null;
+      dismissBubble();
+      return;
+    }
     const seeAll = e.target.closest && e.target.closest('[data-request]');
     if (seeAll) {
       if (desktop && desktop.openRequest) desktop.openRequest(seeAll.dataset.request);

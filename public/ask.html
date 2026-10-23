@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Openmon</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body.page { min-height: 0; margin: 0; background: transparent; }
+  form { box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; background: var(--surface); border: 2.5px solid var(--outline); border-radius: 18px; }
+  .top { display: flex; align-items: center; gap: 8px; }
+  .top b { flex: 1; font: 600 14px var(--font-display); }
+  .top small { color: var(--muted); font-size: 11.5px; }
+  textarea.input { flex: 1; min-height: 0; resize: none; font: 14.5px/1.45 var(--font-body); }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .row .grow { flex: 1; }
+  .chip[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand-ink); }
+  .shot { max-height: 70px; border-radius: 8px; box-shadow: 0 0 0 1.5px var(--line); }
+  .status { color: var(--muted); font-size: 12px; min-height: 1em; }
+</style>
+</head>
+<body class="page">
+<form id="f">
+  <div class="top"><b id="title"></b><small id="hint"></small></div>
+  <textarea class="input" id="text" rows="3"></textarea>
+  <div class="row">
+    <button class="chip" id="screen" type="button" aria-pressed="false"></button>
+    <button class="chip" id="clip" type="button" aria-pressed="false"></button>
+    <img class="shot" id="preview" alt="" hidden>
+    <span class="grow"></span>
+    <button class="btn sm quiet" id="cancel" type="button"></button>
+    <button class="btn sm primary" id="send" type="submit"></button>
+  </div>
+  <p class="status" id="status"></p>
+</form>
+<script src="i18n.js"></script>
+<script>
+  // A quick question for your Openmon: one line, Enter, and the answer comes
+  // back in the pet's bubble. With the screen (what you are looking at) or
+  // what you copied, if you want. Escape closes it.
+  const { lang } = window.OpenmonI18n;
+  document.documentElement.lang = lang;
+  const TEXT = {
+    en: { title: 'Ask your Openmon', hint: 'Enter sends · Esc closes', placeholder: 'What do you want to know or get done?', screen: '📷 With the screen', clip: '📋 With what I copied', send: 'Ask', cancel: 'Close', sending: 'Sending…', failed: 'Not sent. Is Claude Code installed and signed in?', explain: 'What is this? Explain it simply.' },
+    'pt-BR': { title: 'Pergunte ao seu Openmon', hint: 'Enter envia · Esc fecha', placeholder: 'O que você quer saber ou resolver?', screen: '📷 Com a tela', clip: '📋 Com o que copiei', send: 'Perguntar', cancel: 'Fechar', sending: 'Enviando…', failed: 'Não foi. O Claude Code está instalado e com login feito?', explain: 'O que é isto? Explique de forma simples.' },
+    es: { title: 'Pregunta a tu Openmon', hint: 'Enter envía · Esc cierra', placeholder: '¿Qué quieres saber o resolver?', screen: '📷 Con la pantalla', clip: '📋 Con lo que copié', send: 'Preguntar', cancel: 'Cerrar', sending: 'Enviando…', failed: 'No se envió. ¿Claude Code está instalado y con sesión iniciada?', explain: '¿Qué es esto? Explícalo de forma simple.' },
+  };
+  const T = TEXT[lang] || TEXT.en;
+  const $ = (id) => document.getElementById(id);
+  const desk = window.openmonSettings;
+  const params = new URLSearchParams(location.search);
+  $('title').textContent = T.title;
+  $('hint').textContent = T.hint;
+  $('text').placeholder = T.placeholder;
+  $('screen').textContent = T.screen;
+  $('clip').textContent = T.clip;
+  $('send').textContent = T.send;
+  $('cancel').textContent = T.cancel;
+  let shot = null; // { type, data } of the screen, taken before this box showed
+  let clip = null;
+
+  async function toggleScreen(on) {
+    $('screen').setAttribute('aria-pressed', String(on));
+    shot = on ? await desk.call('shot').catch(() => null) : null;
+    $('preview').hidden = !shot;
+    if (shot) $('preview').src = `data:${shot.type};base64,${shot.data}`;
+    if (on && !shot) $('screen').setAttribute('aria-pressed', 'false');
+  }
+  async function toggleClip(on) {
+    $('clip').setAttribute('aria-pressed', String(on));
+    clip = on ? await desk.call('clipboard').catch(() => null) : null;
+  }
+  $('screen').onclick = () => toggleScreen($('screen').getAttribute('aria-pressed') !== 'true');
+  $('clip').onclick = () => toggleClip($('clip').getAttribute('aria-pressed') !== 'true');
+  $('cancel').onclick = () => desk.call('close');
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') desk.call('close');
+    if (e.key === 'Enter' && !e.shiftKey && e.target === $('text')) {
+      e.preventDefault();
+      $('f').requestSubmit();
+    }
+  });
+
+  $('f').onsubmit = async (e) => {
+    e.preventDefault();
+    let text = $('text').value.trim();
+    if (clip && clip.text) text = `${clip.text}\n\n${text || T.explain}`;
+    const images = [shot, clip && clip.image].filter(Boolean);
+    if (!text && images.length) text = T.explain;
+    if (!text) return;
+    $('send').disabled = true;
+    $('status').textContent = T.sending;
+    const key = await desk.contactKey().catch(() => null);
+    const r = await fetch('/api/chat/quick', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Openmon-Key': key || '' }, body: JSON.stringify({ text, images }) }).then((x) => x.json()).catch(() => null);
+    if (r && r.ok) return desk.call('close');
+    $('send').disabled = false;
+    $('status').textContent = T.failed;
+  };
+
+  (async () => {
+    if (params.get('screen') === '1') await toggleScreen(true);
+    if (params.get('clip') === '1') await toggleClip(true);
+    $('text').focus();
+  })();
+</script>
+</body>
+</html>

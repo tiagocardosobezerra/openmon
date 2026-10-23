@@ -42,7 +42,12 @@ Behind it there is a game: the egg hatches, grows and evolves into one of 39 for
 * **Reminders and tasks:** "in 30 minutes", "today at 3 pm", "every day at 9" or "weekdays at 9". A reminder makes the pet tell you; a task makes Claude work at that time, and the pet tells you when it is done.
 * **Assistant memory:** the assistant folder's `CLAUDE.md`, with what Claude should always know about you, editable from the chat.
 * **From your phone (optional):** with phone alerts on, what you send to the `<your topic>-in` topic in the ntfy app reaches the agent that waits for you, or your latest conversation.
-* **Estimated cost** of each conversation at API list prices. Monthly plans are not charged per token.
+* **Estimated cost** of each conversation at API list prices. On a monthly plan (Pro, Max, Team) the chat says "included in your Claude plan".
+* **The assistant is your Openmon:** it answers with your pet's name and manner, and the answer shows in the bubble. In Settings → Pet, the pet can read answers aloud (your computer's voices, no internet).
+* **Quick question** (`Ctrl+Alt+A`): a small box next to the pet; Enter, and the answer comes back in the bubble. `Ctrl+Alt+S` does the same with a picture of your screen ("what is this error?"). You can also send what you copied.
+* **Claude acts in Openmon:** "remind me at 3 pm to call John", "every Monday give me a summary of the week", "remember that I like bullet points". It sets reminders and tasks, saves facts in its memory, speaks through the bubble, sends notifications and reads what your agents did (Openmon's tools, which never ask for permission).
+* **Ready-made routines** in Reminders and tasks: a morning brief and an end-of-day summary, on weekdays.
+* **Organized:** pick each conversation's model (Haiku, Sonnet, Opus), pin conversations, search them all and export one as Markdown. On each answer: **Listen** and **Remember**.
 
 ## More it does
 
@@ -143,7 +148,7 @@ The egg appears in the corner of your screen and an icon shows up in the tray. S
 * **Pause all agents**: in the **More** panel, one button asks every working conversation to stop and wait for you.
 * **Claude Code permission rules** in Settings → Computer, one switch each: read and search without asking, run the tests without asking, and always ask before deleting or publishing.
 * **Several agents waiting?** The card shows the buttons under each one.
-* **Shortcuts**: `Ctrl+Alt+O` opens the card, `Ctrl+Alt+J` takes you to the agent that waits, `Ctrl+Alt+C` opens the chat with Claude.
+* **Shortcuts**: `Ctrl+Alt+O` opens the card, `Ctrl+Alt+J` takes you to the agent that waits, `Ctrl+Alt+C` opens the chat with Claude, `Ctrl+Alt+A` asks a quick question and `Ctrl+Alt+S` asks about your screen.
 
 **Numbers about your work**
 * **Tokens** used today (on the card) and per day (in the Journal), read from Claude Code's own conversation files, on your computer.

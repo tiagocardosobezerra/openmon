@@ -86,6 +86,13 @@
   .sched li small { color: var(--muted); }
   .sched { list-style: none; margin: 0 0 10px; padding: 0; }
   .menu-btn { display: none; }
+  #search { margin-top: 6px; font-size: 13px; }
+  .sm-select { width: auto; min-height: 28px; padding: 2px 8px; font-size: 12.5px; }
+  .msg-actions { display: flex; gap: 2px; margin-top: 4px; opacity: 0; transition: opacity 0.15s; }
+  .msg.assistant:hover .msg-actions, .msg.assistant:focus-within .msg-actions { opacity: 1; }
+  .msg-actions button { border: 0; background: none; color: var(--muted); font: 12px var(--font-body); padding: 2px 6px; border-radius: 6px; cursor: pointer; }
+  .msg-actions button:hover { background: var(--surface-2); color: var(--ink); }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
   @media (max-width: 720px) {
     body.page { grid-template-columns: 1fr; }
     aside { position: fixed; inset: 0 30% 0 0; z-index: 5; display: none; box-shadow: var(--lift); }
@@ -97,6 +104,7 @@
 <body class="page">
 <aside id="side">
   <button class="btn primary" id="new" type="button"></button>
+  <input class="input" id="search" type="search">
   <h2 id="h-chats"></h2>
   <div id="chats"></div>
   <h2 id="h-agents"></h2>
@@ -109,9 +117,12 @@
   <header class="head">
     <button class="icon-btn menu-btn" id="menu" type="button" aria-label="Menu">☰</button>
     <div class="t"><h1 id="title"></h1><p id="sub"></p></div>
+    <select class="input sm-select" id="model" hidden></select>
+    <button class="icon-btn" id="pin" type="button" hidden></button>
     <button class="btn sm" id="stop" type="button" hidden></button>
     <button class="btn sm quiet" id="continue" type="button" hidden></button>
     <button class="btn sm ghost" id="rename" type="button" hidden></button>
+    <button class="btn sm ghost" id="export" type="button" hidden></button>
     <button class="btn sm ghost" id="delete" type="button" hidden></button>
   </header>
   <div class="log" id="log" aria-live="polite"></div>
@@ -125,6 +136,7 @@
     <div class="box">
       <button class="icon-btn" id="attach" type="button"></button>
       <button class="icon-btn" id="paste" type="button"></button>
+      <button class="icon-btn" id="shot" type="button"></button>
       <textarea class="input" id="text" rows="1"></textarea>
       <button class="btn primary" id="send" type="button"></button>
     </div>
@@ -161,6 +173,7 @@
     </label>
     <label id="s-folder-l"><span id="s-folder-t"></span><select class="input" id="s-folder"></select></label>
   </div>
+  <div class="row presets" id="s-presets"></div>
   <p id="s-status"></p>
   <div class="end"><button class="btn" id="s-close" type="button"></button><button class="btn primary" id="s-add" type="button"></button></div>
 </dialog>
@@ -174,7 +187,7 @@
   document.documentElement.lang = lang;
   const TEXT = {
     en: {
-      title: 'Talk to Claude', newChat: 'New conversation', chats: 'Conversations', agents: 'Open elsewhere', noChats: 'None yet.', noAgents: 'No agent at work.',
+      title: 'Talk to Claude', plan: 'included in your Claude plan', login: 'Claude Code is not signed in. Open a terminal, run "claude", sign in, then send again.', model: 'Model', modelDefault: 'Default model', pin: 'Pin', unpin: 'Unpin', export: 'Export', exported: 'Saved', search: 'Search conversations…', remember: 'Remember', rememberAsk: 'Remember this about you (edit it):', remembered: 'Saved in the assistant memory', listen: 'Listen', shot: 'Attach the screen', presetMorning: '☀️ Morning brief (weekdays 9:00)', presetEvening: '🌙 End of day (weekdays 18:00)', morningPrompt: 'Give me my morning brief: my calendar for today and anything urgent in my email (use my connectors; if I have none, skip it), and what my coding agents did yesterday (use the Openmon work_summary tool with days 2). Short, in bullets.', eveningPrompt: 'Give me my end-of-day summary: what my coding agents did today (Openmon work_summary tool), what looks unfinished, and one suggestion for tomorrow. Short, in bullets.',  newChat: 'New conversation', chats: 'Conversations', agents: 'Open elsewhere', noChats: 'None yet.', noAgents: 'No agent at work.',
       viaPet: '🐣 sent from the pet', send: 'Send', stop: 'Stop', continueHere: 'Continue here', rename: 'Rename', del: 'Delete', delAsk: 'Delete this conversation from Openmon? (Claude Code keeps its own copy.)', renameAsk: 'New name:',
       placeholder: 'Write to Claude… (Enter sends, Shift+Enter makes a new line)', placeholderAgent: 'Write to this conversation… (it gets it at its next step)', cantWrite: 'This conversation cannot get messages from Openmon: start it again in Claude Code, or continue it here.',
       attach: 'Attach files', paste: 'Paste what you copied', pasted: 'Pasted', image: 'image', drop: 'Drop here to attach', folder: 'Folder:', pickFolder: 'Pick a folder…', assistant: 'Assistant (general things)',
@@ -190,7 +203,7 @@
       quick: [['What do I have today?', 'What do I have on my calendar today, and anything urgent in my email? Use my connectors; if I have none, tell me how to connect them.'], ['Explain what I copied', '{clipboard}\n\nExplain this simply.'], ['Review my changes', 'Review the uncommitted changes in this folder (git diff) and list problems, worst first.'], ['Run the tests', 'Run the tests of this project and tell me the result in one line; if they fail, explain why.'], ['Write a message about:', 'Help me write a short, friendly message about:']],
     },
     'pt-BR': {
-      title: 'Conversar com o Claude', newChat: 'Nova conversa', chats: 'Conversas', agents: 'Abertas em outro lugar', noChats: 'Nenhuma ainda.', noAgents: 'Nenhum agente trabalhando.',
+      title: 'Conversar com o Claude', plan: 'incluído no seu plano do Claude', login: 'O Claude Code não está com login feito. Abra um terminal, rode "claude", entre na sua conta e envie de novo.', model: 'Modelo', modelDefault: 'Modelo padrão', pin: 'Fixar', unpin: 'Desafixar', export: 'Exportar', exported: 'Salvo', search: 'Buscar nas conversas…', remember: 'Lembrar', rememberAsk: 'Lembrar isto sobre você (pode editar):', remembered: 'Salvo na memória do assistente', listen: 'Ouvir', shot: 'Anexar a tela', presetMorning: '☀️ Resumo da manhã (dias úteis 9:00)', presetEvening: '🌙 Fechamento do dia (dias úteis 18:00)', morningPrompt: 'Me dê o resumo da manhã: minha agenda de hoje e algo urgente no meu e-mail (use meus conectores; se eu não tiver, pule), e o que meus agentes de código fizeram ontem (use a ferramenta work_summary do Openmon com days 2). Curto, em tópicos.', eveningPrompt: 'Me dê o fechamento do dia: o que meus agentes de código fizeram hoje (ferramenta work_summary do Openmon), o que parece inacabado, e uma sugestão para amanhã. Curto, em tópicos.',  newChat: 'Nova conversa', chats: 'Conversas', agents: 'Abertas em outro lugar', noChats: 'Nenhuma ainda.', noAgents: 'Nenhum agente trabalhando.',
       viaPet: '🐣 enviada pelo pet', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aqui', rename: 'Renomear', del: 'Apagar', delAsk: 'Apagar esta conversa do Openmon? (O Claude Code guarda a cópia dele.)', renameAsk: 'Novo nome:',
       placeholder: 'Escreva para o Claude… (Enter envia, Shift+Enter quebra a linha)', placeholderAgent: 'Escreva para esta conversa… (ela recebe no próximo passo)', cantWrite: 'Esta conversa não recebe mensagens do Openmon: abra-a de novo no Claude Code, ou continue aqui.',
       attach: 'Anexar arquivos', paste: 'Colar o que você copiou', pasted: 'Colado', image: 'imagem', drop: 'Solte aqui para anexar', folder: 'Pasta:', pickFolder: 'Escolher pasta…', assistant: 'Assistente (assuntos gerais)',
@@ -206,7 +219,7 @@
       quick: [['O que tenho hoje?', 'O que tenho na agenda hoje, e algo urgente no meu e-mail? Use meus conectores; se eu não tiver nenhum, diga como conectar.'], ['Explicar o que copiei', '{clipboard}\n\nExplique isto de forma simples.'], ['Revisar mudanças', 'Revise as mudanças não commitadas desta pasta (git diff) e aponte os problemas, do mais grave ao menos grave.'], ['Rodar os testes', 'Rode os testes deste projeto e me diga o resultado em uma linha; se falharem, explique por quê.'], ['Escrever mensagem sobre:', 'Me ajude a escrever uma mensagem curta e simpática sobre:']],
     },
     es: {
-      title: 'Hablar con Claude', newChat: 'Nueva conversación', chats: 'Conversaciones', agents: 'Abiertas en otro lugar', noChats: 'Ninguna todavía.', noAgents: 'Ningún agente trabajando.',
+      title: 'Hablar con Claude', plan: 'incluido en tu plan de Claude', login: 'Claude Code no tiene la sesión iniciada. Abre una terminal, ejecuta "claude", entra en tu cuenta y envía de nuevo.', model: 'Modelo', modelDefault: 'Modelo por defecto', pin: 'Fijar', unpin: 'Quitar de arriba', export: 'Exportar', exported: 'Guardado', search: 'Buscar en las conversaciones…', remember: 'Recordar', rememberAsk: 'Recordar esto sobre ti (puedes editarlo):', remembered: 'Guardado en la memoria del asistente', listen: 'Escuchar', shot: 'Adjuntar la pantalla', presetMorning: '☀️ Resumen de la mañana (días hábiles 9:00)', presetEvening: '🌙 Cierre del día (días hábiles 18:00)', morningPrompt: 'Dame el resumen de la mañana: mi calendario de hoy y algo urgente en mi correo (usa mis conectores; si no tengo, sáltalo), y lo que hicieron ayer mis agentes de código (usa la herramienta work_summary de Openmon con days 2). Corto, en viñetas.', eveningPrompt: 'Dame el cierre del día: lo que hicieron hoy mis agentes de código (herramienta work_summary de Openmon), lo que parece sin terminar y una sugerencia para mañana. Corto, en viñetas.',  newChat: 'Nueva conversación', chats: 'Conversaciones', agents: 'Abiertas en otro lugar', noChats: 'Ninguna todavía.', noAgents: 'Ningún agente trabajando.',
       viaPet: '🐣 enviada desde la mascota', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aquí', rename: 'Renombrar', del: 'Borrar', delAsk: '¿Borrar esta conversación de Openmon? (Claude Code guarda su copia.)', renameAsk: 'Nuevo nombre:',
       placeholder: 'Escribe a Claude… (Enter envía, Shift+Enter hace una línea nueva)', placeholderAgent: 'Escribe a esta conversación… (la recibe en su próximo paso)', cantWrite: 'Esta conversación no recibe mensajes de Openmon: ábrela de nuevo en Claude Code, o continúala aquí.',
       attach: 'Adjuntar archivos', paste: 'Pegar lo que copiaste', pasted: 'Pegado', image: 'imagen', drop: 'Suelta aquí para adjuntar', folder: 'Carpeta:', pickFolder: 'Elegir carpeta…', assistant: 'Asistente (temas generales)',
@@ -238,6 +251,7 @@
   let files = []; // { path, name } from the picker or a drop
   let images = []; // { type, data } pasted
   let config = {};
+  let searchHits = null; // chat ids matching the search box, or null
   const questionPicks = {}; // question id -> the option picked for each part
 
   // Fixed text.
@@ -250,6 +264,13 @@
   $('continue').textContent = T.continueHere;
   $('rename').textContent = T.rename;
   $('delete').textContent = T.del;
+  $('export').textContent = T.export;
+  $('search').placeholder = T.search;
+  $('shot').title = T.shot;
+  $('shot').setAttribute('aria-label', T.shot);
+  $('shot').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="13" rx="2.5"/><path d="M8.5 6.5 10 4h4l1.5 2.5"/><circle cx="12" cy="13" r="3.5"/></svg>';
+  for (const [v, l] of [['', T.modelDefault], ['haiku', 'Haiku'], ['sonnet', 'Sonnet'], ['opus', 'Opus']]) $('model').append(Object.assign(document.createElement('option'), { value: v, textContent: l }));
+  $('model').title = T.model;
   $('attach').title = T.attach;
   $('attach').setAttribute('aria-label', T.attach);
   $('attach').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 12.4 19a5 5 0 0 1-7.1-7.1l8-8a3.4 3.4 0 0 1 4.8 4.8l-8 8a1.8 1.8 0 0 1-2.5-2.5L15 7"/></svg>';
@@ -342,12 +363,13 @@
   function renderSide() {
     const chats = $('chats');
     chats.textContent = '';
-    if (!list.chats.length) chats.append(el('p', 'empty', T.noChats));
-    for (const c of list.chats) {
+    const shown = searchHits ? list.chats.filter((c) => searchHits.includes(c.id)) : list.chats;
+    if (!shown.length) chats.append(el('p', 'empty', T.noChats));
+    for (const c of shown) {
       const b = el('button', 'item');
       b.type = 'button';
       b.setAttribute('aria-current', String(view.kind === 'chat' && view.id === c.id));
-      b.append(el('i', `dot ${statusOf(c)}`), el('b', '', c.title), el('small', '', `${c.cwd.split(/[\\/]/).pop()} · ${new Date(c.updatedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`));
+      b.append(el('i', `dot ${statusOf(c)}`), el('b', '', `${c.pinned ? '📌 ' : ''}${c.title}`), el('small', '', `${c.cwd.split(/[\\/]/).pop()} · ${new Date(c.updatedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`));
       b.onclick = () => go({ kind: 'chat', id: c.id });
       chats.append(b);
     }
@@ -415,9 +437,27 @@
     if (m.role === 'assistant') {
       const d = el('div', 'msg assistant');
       d.innerHTML = markdown(m.text);
+      const actions = el('div', 'msg-actions');
+      const act = (label, fn) => {
+        const b = el('button', '', label);
+        b.type = 'button';
+        b.onclick = fn;
+        actions.append(b);
+      };
+      act(`🔊 ${T.listen}`, () => speakText(m.text));
+      if (view.kind === 'chat') {
+        act(`🧠 ${T.remember}`, async () => {
+          const fact = await ask(T.rememberAsk, m.text.replace(/\s+/g, ' ').slice(0, 300));
+          if (fact && fact.trim() && (await api('/api/assistant/memory/add', { fact }))) flash(T.remembered);
+        });
+      }
+      d.append(actions);
       return d;
     }
-    if (m.role === 'error') return el('div', 'msg error', `${m.code === 'missing' ? T.missing : m.code === 'turn' ? T.turn : T.exit}${m.code === 'missing' ? '' : `\n${m.text || ''}`}`);
+    if (m.role === 'error') {
+      const head = { missing: T.missing, login: T.login, turn: T.turn }[m.code] || T.exit;
+      return el('div', 'msg error', ['missing', 'login'].includes(m.code) ? head : `${head}\n${m.text || ''}`);
+    }
     const d = el('div', `msg ${m.role === 'user' ? 'user' : m.role === 'tool' ? 'tool' : 'notice'}`, m.text || '');
     if (m.images) d.append(el('span', 'img', ` 🖼 ${m.images} ${T.image}`));
     if (m.via === 'pet') d.append(el('span', 'via', T.viaPet));
@@ -501,6 +541,16 @@
     $('continue').hidden = !isAgent;
     $('rename').hidden = !isChat;
     $('delete').hidden = !isChat;
+    $('export').hidden = !isChat;
+    $('model').hidden = !isChat;
+    $('pin').hidden = !isChat;
+    $('shot').hidden = Boolean(isAgent);
+    if (isChat) {
+      $('model').value = current.model || '';
+      $('pin').textContent = current.pinned ? '📌' : '📍';
+      $('pin').title = current.pinned ? T.unpin : T.pin;
+      $('pin').setAttribute('aria-label', $('pin').title);
+    }
     $('attach').hidden = isAgent;
     $('paste').hidden = false;
     $('text').disabled = false;
@@ -519,7 +569,7 @@
     if (isChat) {
       $('title').textContent = current.title;
       const st = current.status === 'working' ? T.working : current.status === 'waiting' ? T.waiting : T.idle;
-      $('sub').textContent = [st, fill(T.in, { dir: current.cwd }), current.costUsd ? fill(T.cost, { usd: `$${current.costUsd.toFixed(current.costUsd < 1 ? 3 : 2)}` }) : ''].filter(Boolean).join(' · ');
+      $('sub').textContent = [st, fill(T.in, { dir: current.cwd }), current.plan ? T.plan : current.costUsd ? fill(T.cost, { usd: `$${current.costUsd.toFixed(current.costUsd < 1 ? 3 : 2)}` }) : ''].filter(Boolean).join(' · ');
       $('text').placeholder = T.placeholder;
     } else {
       $('title').textContent = current.label;
@@ -544,6 +594,18 @@
     for (const c of cards()) log.append(c);
     if (atBottom || !render.once) log.scrollTop = log.scrollHeight;
     render.once = true;
+  }
+
+  // Read an answer aloud with the computer's own voices.
+  function speakText(text) {
+    if (!window.speechSynthesis) return;
+    const plain = String(text).replace(/```[\s\S]*?```/g, ' ').replace(/[*_`#>]/g, '').slice(0, 1500);
+    const u = new SpeechSynthesisUtterance(plain);
+    u.lang = lang;
+    const voice = speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith(lang.toLowerCase().slice(0, 2)));
+    if (voice) u.voice = voice;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
   }
 
   // ---- Quick actions
@@ -764,6 +826,39 @@
     go({ kind: 'new' });
   };
   $('new').onclick = () => go({ kind: 'new' });
+  let searchTimer = 0;
+  $('search').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(async () => {
+      const q = $('search').value.trim();
+      if (!q) searchHits = null;
+      else {
+        const r = await api(`/api/chats?q=${encodeURIComponent(q)}`);
+        searchHits = r ? r.hits || [] : [];
+      }
+      renderSide();
+    }, 250);
+  });
+  $('model').onchange = async () => {
+    await api('/api/chat/model', { id: view.id, model: $('model').value || null });
+    refreshList();
+  };
+  $('pin').onclick = async () => {
+    await api('/api/chat/pin', { id: view.id, pinned: !(current && current.pinned) });
+    await refreshList();
+    load();
+  };
+  $('export').onclick = async () => {
+    const r = await api(`/api/chat/markdown?id=${encodeURIComponent(view.id)}`);
+    if (r && r.markdown && desk && desk.call && (await desk.call('save-markdown', { name: current.title, text: r.markdown }).catch(() => false))) flash(T.exported);
+  };
+  $('shot').onclick = async () => {
+    const shot = desk && desk.call ? await desk.call('screenshot').catch(() => null) : null;
+    if (shot) {
+      images.push(shot);
+      renderAttached();
+    }
+  };
   $('menu').onclick = () => document.body.classList.toggle('side');
 
   // ---- Memory
@@ -822,6 +917,19 @@
       li.append(s, x);
       ul.append(li);
     }
+  }
+  for (const [label, text, time] of [[T.presetMorning, T.morningPrompt, '09:00'], [T.presetEvening, T.eveningPrompt, '18:00']]) {
+    const b = el('button', 'chip', label);
+    b.type = 'button';
+    b.onclick = () => {
+      $('s-kind').value = 'task';
+      $('s-when').value = 'weekdays';
+      $('s-time').value = time;
+      $('s-text').value = text;
+      $('s-folder').value = '';
+      schedForm();
+    };
+    $('s-presets').append(b);
   }
   $('open-sched').onclick = () => {
     const sel = $('s-folder');

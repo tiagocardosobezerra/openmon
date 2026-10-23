@@ -14,7 +14,8 @@ const FULL = new Set([2, 3, 4, 7]);
 
 // "Busy" also comes from any always-on-top window that covers the screen,
 // even a see-through overlay of another app; so for those two answers the
-// window in front must itself cover its monitor (5: not full screen).
+// window in front must itself cover its monitor, and must not be a
+// click-through overlay (WS_EX_TRANSPARENT) (5: not full screen).
 const TYPE = `
 using System; using System.Runtime.InteropServices;
 public static class Q {
@@ -23,6 +24,7 @@ public static class Q {
   [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
   [DllImport("user32.dll")] static extern IntPtr MonitorFromWindow(IntPtr h, int f);
   [DllImport("user32.dll")] static extern bool GetMonitorInfo(IntPtr m, ref MI i);
+  [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int i);
   public struct RECT { public int L, T, R, B; }
   public struct MI { public int Size; public RECT Monitor, Work; public int Flags; }
   public static int State() {
@@ -30,6 +32,7 @@ public static class Q {
     if (s != 2 && s != 7) return s;
     IntPtr h = GetForegroundWindow(); RECT r; MI i = new MI(); i.Size = Marshal.SizeOf(typeof(MI));
     if (h == IntPtr.Zero || !GetWindowRect(h, out r) || !GetMonitorInfo(MonitorFromWindow(h, 2), ref i)) return s;
+    if ((GetWindowLong(h, -20) & 0x20) != 0) return 5;
     return r.L <= i.Monitor.L && r.T <= i.Monitor.T && r.R >= i.Monitor.R && r.B >= i.Monitor.B ? s : 5;
   }
 }`;

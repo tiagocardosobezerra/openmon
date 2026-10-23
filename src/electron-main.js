@@ -6,7 +6,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, BrowserWindow, Menu, Tray, Notification, clipboard, dialog, globalShortcut, ipcMain, nativeImage, nativeTheme, screen, session, shell } = require('electron');
+const { app, BrowserWindow, Menu, Tray, Notification, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, nativeImage, nativeTheme, screen, session, shell } = require('electron');
 const { createDaemon } = require('./server');
 const { homeDir, adoptLegacyHome } = require('./store');
 
@@ -17,6 +17,7 @@ const installer = require('./install');
 const PT = {
   'Open card': 'Abrir card',
   'Talk to Claude': 'Conversar com o Claude',
+  'Ask your Openmon': 'Perguntar ao seu Openmon',
   'Claude answered': 'O Claude respondeu',
   'Reminder': 'Lembrete',
   'Scheduled task started': 'Tarefa agendada começou',
@@ -89,6 +90,7 @@ const PT = {
 // Spanish menu and notification text.
 const ES_TEXT = {
   "Talk to Claude": "Hablar con Claude",
+  "Ask your Openmon": "Preguntar a tu Openmon",
   "Claude answered": "Claude respondió",
   "Reminder": "Recordatorio",
   "Scheduled task started": "Empezó una tarea programada",
@@ -382,6 +384,7 @@ function menuTemplate() {
   return [
     ...team,
     { label: L('Talk to Claude'), ...(chatShortcut ? { accelerator: chatShortcut, registerAccelerator: false } : {}), click: () => openChatWindow() },
+    { label: L('Ask your Openmon'), ...(askShortcut ? { accelerator: askShortcut, registerAccelerator: false } : {}), click: () => openAskWindow() },
     {
       label: L('Pages'),
       submenu: [
@@ -607,6 +610,75 @@ function openTalkWindow(ask) {
 // A normal window (it takes the keyboard), one at a time.
 let chatWin = null;
 let chatShortcut = null;
+let askShortcut = null;
+
+// The screen as a picture (JPEG, at most 1600 px wide), for a question about it.
+async function captureScreen() {
+  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const scale = Math.min(1, 1600 / (display.size.width * display.scaleFactor));
+  const size = { width: Math.round(display.size.width * display.scaleFactor * scale), height: Math.round(display.size.height * display.scaleFactor * scale) };
+  const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: size });
+  const source = sources.find((x) => String(x.display_id) === String(display.id)) || sources[0];
+  if (!source || source.thumbnail.isEmpty()) return null;
+  return { type: 'image/jpeg', data: source.thumbnail.toJPEG(80).toString('base64') };
+}
+
+// A quick question: a small box next to the pet; the answer comes back in
+// the pet's bubble. The screen is taken before the box shows, if asked.
+let askWin = null;
+let askShot = null;
+async function openAskWindow({ withScreen = false, withClip = false } = {}) {
+  askShot = withScreen ? await captureScreen().catch(() => null) : null;
+  if (askWin && !askWin.isDestroyed()) askWin.close();
+  const [x, y] = win.getPosition();
+  const area = screen.getDisplayNearestPoint({ x, y }).workArea;
+  const w = 420;
+  const h = 210;
+  askWin = new BrowserWindow({
+    width: w,
+    height: h,
+    x: Math.max(area.x, Math.min(area.x + area.width - w, x - 60)),
+    y: Math.max(area.y, Math.min(area.y + area.height - h, y + WIN_H - 380)),
+    frame: false,
+    transparent: true,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    show: false,
+    icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.js') },
+  });
+  askWin.webContents.on('will-navigate', (e) => e.preventDefault());
+  askWin.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  // Clicking elsewhere closes an empty box, once it has had the keyboard
+  // (Windows may refuse it the focus at first).
+  let focused = false;
+  askWin.on('focus', () => (focused = true));
+  askWin.on('blur', () => focused && askWin && !askWin.isDestroyed() && askWin.webContents.executeJavaScript("document.getElementById('text').value.trim() === ''").then((empty) => empty && askWin && !askWin.isDestroyed() && askWin.close()).catch(() => {}));
+  askWin.on('closed', () => {
+    askWin = null;
+    askShot = null;
+  });
+  askWin.once('ready-to-show', () => bringToFront(askWin));
+  askWin.loadURL(`http://127.0.0.1:${port}/ask.html?screen=${askShot ? 1 : 0}&clip=${withClip ? 1 : 0}`);
+}
+
+function askCommand(cmd) {
+  switch (cmd) {
+    case 'shot':
+      return askShot;
+    case 'clipboard': {
+      const img = clipboard.readImage();
+      const png = img && !img.isEmpty() ? img.toPNG() : null;
+      return { text: clipboard.readText().slice(0, 20000), image: png && png.length <= 5 * 1024 * 1024 ? { type: 'image/png', data: png.toString('base64') } : null };
+    }
+    case 'close':
+      if (askWin && !askWin.isDestroyed()) askWin.close();
+      return true;
+    default:
+      return null;
+  }
+}
 function openChatWindow(query = '') {
   const q = typeof query === 'string' && /^\?(id=[a-f0-9]{16}|session=[\w.-]{1,120}|new=1)?$/.test(query) ? query : '';
   const url = `http://127.0.0.1:${port}/chat.html${q}`;
@@ -664,6 +736,20 @@ async function chatCommand(cmd, arg) {
     case 'open-request':
       if (/^[a-f0-9]{24}$/.test(String(arg))) openAppWindow('request', `?id=${arg}`);
       return true;
+    case 'screenshot': {
+      chatWin.hide();
+      await new Promise((r) => setTimeout(r, 350));
+      const shot = await captureScreen().catch(() => null);
+      chatWin.show();
+      return shot;
+    }
+    case 'save-markdown': {
+      const name = String((arg && arg.name) || 'conversa').replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 60) || 'conversa';
+      const r = await dialog.showSaveDialog(chatWin, { defaultPath: path.join(app.getPath('documents'), `${name}.md`), filters: [{ name: 'Markdown', extensions: ['md'] }] });
+      if (r.canceled || !r.filePath) return false;
+      fs.writeFileSync(r.filePath, String((arg && arg.text) || ''));
+      return true;
+    }
     default:
       return null;
   }
@@ -967,10 +1053,11 @@ function wireIpc() {
   ipcMain.on('open-talk', (_e, ask) => openTalkWindow(ask));
   // The pet's "Talk to Claude", "Message" and a chat's bubble.
   ipcMain.on('open-chat', (_e, query) => openChatWindow(String(query || '')));
+  ipcMain.on('open-ask', (_e, opts) => openAskWindow({ withScreen: Boolean(opts && opts.screen), withClip: Boolean(opts && opts.clip) }));
   // The key for free text to the agent: only for the pet windows and the
   // "write to the agent" window, never for other pages.
   ipcMain.handle('contact-key', (e) => {
-    const ours = [win, talkWin, chatWin, ...companionWins.values()].some((w) => w && !w.isDestroyed() && e.sender === w.webContents);
+    const ours = [win, talkWin, chatWin, askWin, ...companionWins.values()].some((w) => w && !w.isDestroyed() && e.sender === w.webContents);
     return ours ? daemon.contactKey() : null;
   });
   // The "connect Claude Code" bubble: same as the menu item.
@@ -986,6 +1073,7 @@ function wireIpc() {
   // Settings page actions that need the desktop (only from the app window).
   ipcMain.handle('settings', async (e, cmd, arg) => {
     if (chatWin && !chatWin.isDestroyed() && e.sender === chatWin.webContents) return chatCommand(String(cmd), arg);
+    if (askWin && !askWin.isDestroyed() && e.sender === askWin.webContents) return askCommand(String(cmd));
     if (!powersWin || powersWin.isDestroyed() || e.sender !== powersWin.webContents) return null;
     const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled(), agents: installer.otherAgents(), aider: installer.aiderLine(), rules: installer.rulesStatus() });
     switch (cmd) {
@@ -1240,6 +1328,8 @@ app.whenReady().then(async () => {
     const n = new Notification({ title: `⏰ ${L('Reminder')}`, body: item.text.slice(0, 200) });
     n.show();
   });
+  // Claude's "notify" tool.
+  daemon.bus.on('notify', (n) => notify(n.title, n.text, () => openChatWindow()));
   daemon.bus.on('task-started', (item) => notify(L('Scheduled task started'), item.text, item.chat ? () => openChatWindow(`?id=${item.chat}`) : null));
   daemon.bus.on('lang', (l) => {
     lang = l;
@@ -1288,6 +1378,10 @@ app.whenReady().then(async () => {
       // (Ctrl+Alt+Space is Claude's own app.) The first one free wins.
       chatShortcut = ['CommandOrControl+Alt+C', 'CommandOrControl+Alt+K'].find((k) => globalShortcut.register(k, () => openChatWindow('?new=1'))) || null;
       if (!chatShortcut) logError('chat shortcuts Ctrl+Alt+C and Ctrl+Alt+K are taken by other programs');
+      // A quick question; with the screen.
+      askShortcut = ['CommandOrControl+Alt+A', 'CommandOrControl+Alt+Q'].find((k) => globalShortcut.register(k, () => openAskWindow())) || null;
+      if (!askShortcut) logError('ask shortcuts Ctrl+Alt+A and Ctrl+Alt+Q are taken by other programs');
+      if (!globalShortcut.register('CommandOrControl+Alt+S', () => openAskWindow({ withScreen: true }))) logError('shortcut Ctrl+Alt+S is taken by another program');
     } catch {}
   }
   applyScale(daemon.config().scale || 1);

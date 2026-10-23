@@ -42,7 +42,12 @@ Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas 
 * **Recordatorios y tareas:** "en 30 minutos", "hoy a las 15", "todos los días a las 9" o "días hábiles a las 9". Un recordatorio hace que la mascota te avise; una tarea hace que Claude trabaje a esa hora, y la mascota avisa cuando termina.
 * **Memoria del asistente:** el `CLAUDE.md` de la carpeta del asistente, con lo que Claude debe saber siempre de ti, editable desde el chat.
 * **Desde el celular (opcional):** con el aviso en el celular activado, lo que envíes al tema `<tu tema>-in` en la app ntfy llega al agente que te espera, o a tu última conversación.
-* **Costo estimado** de cada conversación con los precios de lista de la API. Los planes mensuales no pagan por token.
+* **Costo estimado** de cada conversación con los precios de lista de la API. En un plan mensual (Pro, Max, Team), el chat dice "incluido en tu plan de Claude".
+* **El asistente es tu Openmon:** responde con el nombre y la manera de tu mascota, y la respuesta aparece en la burbuja. En Configuración → Mascota, puede leer las respuestas en voz alta (voces de tu computadora, sin internet).
+* **Pregunta rápida** (`Ctrl+Alt+A`): una cajita junto a la mascota; Enter, y la respuesta vuelve en la burbuja. `Ctrl+Alt+S` hace lo mismo con una imagen de tu pantalla ("¿qué es este error?"). También puedes enviar lo que copiaste.
+* **Claude actúa en Openmon:** "recuérdame a las 15 llamar a Juan", "cada lunes dame un resumen de la semana", "recuerda que prefiero viñetas". Crea recordatorios y tareas, guarda datos en su memoria, habla por la burbuja, envía notificaciones y lee lo que hicieron tus agentes (herramientas de Openmon, que no piden permiso).
+* **Rutinas listas** en Recordatorios y tareas: resumen de la mañana y cierre del día, en días hábiles.
+* **Ordenado:** elige el modelo de cada conversación (Haiku, Sonnet, Opus), fija conversaciones, busca en todas y exporta una en Markdown. En cada respuesta: **Escuchar** y **Recordar**.
 
 ## Más de lo que hace
 
@@ -143,7 +148,7 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 * **Pausar todos los agentes**: en el panel **Más**, un botón pide a todas las conversaciones que trabajan que paren y te esperen.
 * **Reglas de permiso de Claude Code** en Configuración → Computadora, un interruptor cada una: leer y buscar sin preguntar, correr las pruebas sin preguntar, y preguntar siempre antes de borrar o publicar.
 * **¿Varios agentes esperando?** La tarjeta muestra los botones debajo de cada uno.
-* **Atajos**: `Ctrl+Alt+O` abre la tarjeta, `Ctrl+Alt+J` te lleva al agente que espera, `Ctrl+Alt+C` abre el chat con Claude.
+* **Atajos**: `Ctrl+Alt+O` abre la tarjeta, `Ctrl+Alt+J` te lleva al agente que espera, `Ctrl+Alt+C` abre el chat con Claude, `Ctrl+Alt+A` hace una pregunta rápida y `Ctrl+Alt+S` pregunta sobre tu pantalla.
 
 **Números de tu trabajo**
 * **Tokens** usados hoy (en la tarjeta) y por día (en el Diario), leídos de los archivos de conversación del propio Claude Code, en tu computadora.
