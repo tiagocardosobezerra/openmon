@@ -128,6 +128,16 @@
   const params = new URLSearchParams(location.search);
   const revealAll = params.has('all');
   const cells = [];
+  // Which cells are on screen (scrolling brings them back to life).
+  const onScreen = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      const c = cells.find((x) => x.canvas === e.target);
+      if (!c) continue;
+      c.visible = e.isIntersecting;
+      // Back on screen: a "???" gets one more short round of drawing.
+      if (c.visible) delete c.drawnAt;
+    }
+  }, { rootMargin: '100px' });
   let open = null;
   const { t: tr, lang } = window.OpenmonI18n;
   const WORK = (lineage) => tr(`work.${lineage}`);
@@ -261,7 +271,9 @@
       el.querySelector('.sub').textContent = known && sub.toLowerCase() === OpenmonI18n.name(entry.name).toLowerCase() ? tr('dex.firstForm') : sub;
       el.addEventListener('click', () => show(entry, spec, known));
       grid.appendChild(el);
-      cells.push({ canvas: el.querySelector('canvas'), spec, known, offset: entry.no * 0.7 });
+      const cell = { canvas: el.querySelector('canvas'), spec, known, offset: entry.no * 0.7, visible: false };
+      cells.push(cell);
+      onScreen.observe(cell.canvas);
     }
     renderTypes(species, dex);
     document.getElementById('seen').textContent = `${seen}/${species.dex.length}`;
@@ -426,9 +438,18 @@
   document.getElementById('d-close').addEventListener('click', () => document.getElementById('detail').close());
   document.getElementById('detail').addEventListener('close', () => (open = null));
 
+  // Only what is on screen is drawn, and the "???" ones stand still: after
+  // a few seconds (art loaded) they are not drawn again. A full Opendex
+  // drawing all 39 every frame took most of a CPU core.
+  const STILL_AFTER = 4;
   function frame(ms) {
     const t = ms / 1000;
-    for (const c of cells) draw(c.canvas, c.spec, t + c.offset, !c.known);
+    for (const c of cells) {
+      if (!c.visible) continue;
+      if (!c.known && c.drawnAt !== undefined && t - c.drawnAt > STILL_AFTER) continue;
+      if (!c.known && c.drawnAt === undefined) c.drawnAt = t;
+      draw(c.canvas, c.spec, t + c.offset, !c.known);
+    }
     if (open) draw(document.getElementById('big'), open.spec, t, !open.known);
   }
   OpenmonArt.loadPack().then(main);

@@ -665,8 +665,8 @@
     if (evolveFx || particles.length || down || hovering || toast || emote || Math.abs(walkTo - petX) > 0.5) return 60;
     if (pose === 'attention' || pose === 'working' || pose === 'error') return 60;
     if (pose === 'done' && t - poseSince < 4) return 60;
-    if (pose === 'sleep') return 12;
-    return 30;
+    if (pose === 'sleep') return 8;
+    return 24;
   }
 
   function frame() {
