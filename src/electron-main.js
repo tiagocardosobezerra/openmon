@@ -610,15 +610,16 @@ function petUrl() {
 }
 
 // Playground control panel: a normal window; closing it ends the playground.
+let controlPanel = null;
 function openControlPanel() {
-  const panel = new BrowserWindow({
+  const panel = (controlPanel = new BrowserWindow({
     width: 470,
     height: 820,
     title: 'Openmon Playground',
     autoHideMenuBar: true,
     icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
-  });
+  }));
   panel.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
@@ -1203,7 +1204,11 @@ app.whenReady().then(async () => {
   if (capturePath) win.webContents.once('did-finish-load', capture);
 });
 
-app.on('second-instance', () => win && showPets(true));
+app.on('second-instance', () => {
+  if (win) showPets(true);
+  // `openmon playground` again: the panel comes to the front.
+  if (controlPanel && !controlPanel.isDestroyed()) bringToFront(controlPanel);
+});
 app.on('window-all-closed', (e) => e.preventDefault());
 // A new version on GitHub: checked a minute after start and once a day
 // (Settings → Computer can turn it off). Only the version number is asked
