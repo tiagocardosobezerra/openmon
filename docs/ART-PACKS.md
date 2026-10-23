@@ -28,6 +28,18 @@ Draw the poses once, in the normal colours. `node tools/build-tints.js` compares
 
 Accessories are SVGs in `public/wear/<id>.svg`, each in its own frame: a hat's base at 0,0 on a head 100 units wide, neckwear centred on the neck line of a body 100 wide, glasses centred between two eyes 40 units apart. The pet places them from each form's outline and eyes. Item icons are 40 × 40 SVGs in `public/items/`.
 
+### Interface art
+
+A file in these places replaces what the app draws in code; until it exists, the code drawing stays:
+
+| Place | What |
+| --- | --- |
+| `public/wear/<id>.svg` | any accessory, including the 12 still drawn in code (`cap`, `party`, `beanie`, `headphones`, `flower`, `nightcap`, `wizard`, `crown`, `scarf`, `bowtie`, `bandana`, `medal`) |
+| `public/items/<id>.svg` | any item, including `snack`, `candy` and `everstone` |
+| `public/props/<id>.svg` | what the pet holds while the agent works: `hammer`, `book`, `terminal`, `shield`, `spyglass`, `sign`, `thought`, `crumbs` |
+| `public/badges/<id>.svg` | one badge per achievement, and `locked.svg` for the ones not earned yet |
+| `public/ui/nest.svg`, `public/ui/nest-<place>.svg` | the Nest icon and its 12 wallpapers (960 × 540) |
+
 ## Drawing guidelines
 
 - Transparent background, the creature centred horizontally, feet on the bottom edge.

@@ -29,7 +29,7 @@
   .ptag i { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--c, #7c6cf2); box-shadow: inset 0 0 0 2px #2a2140; }
   .ptag i::before, .ptag i::after { content: ''; width: 3px; height: 5px; border-radius: 50%; background: #2a2140; }
   .ptag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* The Box: a wallpaper behind the stored mons, picked by the trainer. */
+  /* The Nest: a wallpaper behind the stored mons, picked by the trainer. */
   .boxwrap { border-radius: var(--r-lg); padding: 14px; background: center / cover no-repeat var(--sunken); border: var(--bw) solid var(--line); }
   .boxwrap .muted { background: color-mix(in srgb, var(--surface) 88%, transparent); padding: 8px 12px; border-radius: var(--r-md); display: inline-block; }
   .walls { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 10px; vertical-align: middle; }
@@ -49,7 +49,7 @@
   <h2 class="section-title" id="h-upcoming"></h2>
   <p class="muted" id="upcoming-sub" style="margin:-4px 0 10px"></p>
   <div class="upcoming" id="upcoming"></div>
-  <h2 class="section-title"><img src="/ui/box.svg" alt=""><span id="h-box"></span> <small id="box-count"></small><span class="walls" id="walls"></span></h2>
+  <h2 class="section-title"><img src="/ui/nest.svg" alt=""><span id="h-box"></span> <small id="box-count"></small><span class="walls" id="walls"></span></h2>
   <div class="boxwrap" id="boxwrap"><div class="grid" id="box"></div></div>
 </main>
 <script src="i18n.js"></script>
@@ -201,19 +201,19 @@
     cfg = s.config || {};
     if (data) render();
   }
-  // Box wallpaper: a per-viewer choice, remembered in this browser only.
+  // Nest wallpaper: a per-viewer choice, remembered in this browser only.
   const WALLS = ['sky', 'forest', 'beach', 'desert', 'snow', 'night', 'workshop', 'library', 'lab', 'city', 'garden', 'space'];
   let wall = 'sky';
   try {
     wall = WALLS.includes(localStorage.getItem('openmon.boxWall')) ? localStorage.getItem('openmon.boxWall') : 'sky';
   } catch {}
   function renderWalls() {
-    $('boxwrap').style.backgroundImage = `url(/ui/box-${wall}.svg)`;
+    $('boxwrap').style.backgroundImage = `url(/ui/nest-${wall}.svg)`;
     const box = $('walls');
     box.textContent = '';
     for (const w of WALLS) {
       const b = el('button');
-      b.style.backgroundImage = `url(/ui/box-${w}.svg)`;
+      b.style.backgroundImage = `url(/ui/nest-${w}.svg)`;
       b.title = tr(`party.wall.${w}`);
       b.setAttribute('aria-label', tr(`party.wall.${w}`));
       b.setAttribute('aria-pressed', String(w === wall));

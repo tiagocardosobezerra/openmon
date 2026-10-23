@@ -101,8 +101,11 @@
     const n = Math.max(0, (pet.bag[id] || 0) - (held[id] || 0) - (holding ? 1 : 0));
     const card = el('div', `item panel${holding ? ' holding' : ''}${!n && !holding && small ? ' empty' : ''}`);
     const icon = el('div', 'icon');
-    if (ICONS[id]) icon.innerHTML = ICONS[id];
-    else icon.append(Object.assign(el('img'), { src: `/items/${id}.svg`, alt: '' }));
+    // The designer's file wins; the three drawn here fill in until it exists.
+    const img = Object.assign(el('img'), { alt: '' });
+    if (ICONS[id]) img.onerror = () => (icon.innerHTML = ICONS[id]);
+    img.src = `/items/${id}.svg`;
+    icon.append(img);
     const stone = id.startsWith('stone-') ? id.slice(6) : null;
     const h = el('h3', '', stone ? tr('item.stone', { type: tr(`power.${stone}`) }) : tr(`item.${id}`));
     h.append(el('span', 'count', holding ? tr('bag.holding') : `×${n}`));

@@ -48,6 +48,7 @@
   .badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; padding-bottom: 48px; }
   .badge { display: flex; gap: 10px; align-items: center; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-md); padding: 10px 12px; }
   .badge .medal { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; background: var(--sun); color: #2a2140; box-shadow: 0 0 0 2px var(--outline), 0 2px 0 2px var(--outline); }
+  .badge .medal img { width: 36px; height: 36px; }
   .badge.locked { opacity: 0.6; }
   .badge.locked .medal { background: var(--sunken); color: var(--muted); }
   .badge b { display: block; font: 600 14px var(--font-display); }
@@ -166,6 +167,11 @@
       const medal = document.createElement('span');
       medal.className = 'medal';
       medal.textContent = have ? '★' : '?';
+      // The designer's badge (public/badges/<id>.svg, or locked.svg) replaces the glyph.
+      const art = new Image();
+      art.alt = '';
+      art.onload = () => medal.replaceChildren(art);
+      art.src = `/badges/${have ? encodeURIComponent(id) : 'locked'}.svg`;
       const text = document.createElement('div');
       const title = document.createElement('b');
       title.textContent = !have && a.secret ? '???' : a.title;

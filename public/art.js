@@ -855,7 +855,31 @@
     ctx.restore();
   }
 
+  // The designer's prop (public/props/<id>.svg), when there is one: beside
+  // the pet, or above its head for the sign and the thought bubble.
+  const propArt = new Map();
+  function propImage(kind) {
+    let p = propArt.get(kind);
+    if (!p) {
+      p = { img: new Image(), ready: false };
+      p.img.onload = () => (p.ready = true);
+      p.img.src = `/props/${encodeURIComponent(kind)}.svg`;
+      propArt.set(kind, p);
+    }
+    return p.ready ? p.img : null;
+  }
+
   function prop(ctx, kind, R, cy, pal, t) {
+    const art = propImage(kind);
+    if (art) {
+      const above = kind === 'sign' || kind === 'thought';
+      const S = R * (above ? 0.8 : 0.9);
+      const bob = Math.sin(t * 4) * R * 0.04;
+      const x = above ? R * 0.55 : R * 1.05;
+      const y = above ? cy - R * 1.75 : cy - S * 0.55;
+      ctx.drawImage(art, x, y + bob, S * ((art.naturalWidth || 1) / (art.naturalHeight || 1)), S);
+      return;
+    }
     ctx.save();
     switch (kind) {
       case 'hammer': {
@@ -1462,10 +1486,12 @@
     const lw = Math.max(1.6, S * 0.04);
     ctx.save();
     ctx.lineCap = 'round';
-    if (wear.neck && NECKWEAR[wear.neck]) NECKWEAR[wear.neck](ctx, S, A.neckY, Math.max(S * 0.6, A.neckW), lw, t);
+    // The designer's file (public/wear/<id>.svg) wins; the ones drawn in
+    // code fill in until it exists.
+    if (wear.neck && !wearSvg(wear.neck) && NECKWEAR[wear.neck]) NECKWEAR[wear.neck](ctx, S, A.neckY, Math.max(S * 0.6, A.neckW), lw, t);
     else if (wear.neck) drawWearSvg(ctx, wear.neck, 0, A.neckY, Math.min(Math.max(S * 0.6, A.neckW), S * 1.1) / 100);
     if (wear.face && A.face) drawWearSvg(ctx, wear.face, A.face.x, A.face.y, A.face.span / 40);
-    if (wear.head && HATS[wear.head]) HATS[wear.head](ctx, S, A.topY + S * 0.05, lw, t);
+    if (wear.head && !wearSvg(wear.head) && HATS[wear.head]) HATS[wear.head](ctx, S, A.topY + S * 0.05, lw, t);
     else if (wear.head) drawWearSvg(ctx, wear.head, 0, A.topY + S * 0.06, (S * 0.92) / 100);
     ctx.restore();
   }
