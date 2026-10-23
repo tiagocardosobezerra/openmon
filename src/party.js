@@ -20,7 +20,7 @@ const { ACHIEVEMENTS } = require('./species');
 const PARTY_SIZE = 6;
 // Real work in a project before it earns its own egg: one-off folders never do.
 const EGG_AFTER_ACTIONS = 60;
-const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'starter', 'awaitingStarter', 'chimera', 'nocturne', 'history', 'holding', 'project', 'place', 'langs', 'region', 'legend', 'friend', 'xpLog'];
+const PER_PET = ['id', 'name', 'bornAt', 'nature', 'shiny', 'generation', 'xp', 'stats', 'bond', 'stage', 'lineage', 'trait', 'starter', 'awaitingStarter', 'chimera', 'history', 'holding', 'project', 'place', 'legend', 'xpLog'];
 
 const newId = () => crypto.randomBytes(6).toString('hex');
 
@@ -40,7 +40,7 @@ function ensure(root) {
     if (m.worn.face === undefined) m.worn.face = null;
     // Legendaries arrive at Elder level (older saves gave them level 1).
     if (m.legend && (m.xp || 0) < 15000) m.xp = 15000;
-    pet.dropSprout(m);
+    pet.dropVariants(pet.dropSprout(m));
   }
   return root;
 }
@@ -245,7 +245,7 @@ function view(root) {
   ensure(root);
   const summary = (full, active) => {
     const v = pet.view(full);
-    return { id: full.id, active, place: full.place || 'party', project: full.project ?? null, name: v.name, nickname: v.nickname, form: v.form, formKey: v.formKey, stage: v.stage, lineage: v.lineage, awaitingStarter: v.awaitingStarter, trait: v.trait, chimera: v.chimera, level: v.level, shiny: v.shiny, nocturne: v.nocturne, region: full.region || null, wear: v.wear, progress: v.progress.ratio, xp: v.xp, legend: v.legend, friend: v.friend };
+    return { id: full.id, active, place: full.place || 'party', project: full.project ?? null, name: v.name, nickname: v.nickname, form: v.form, formKey: v.formKey, stage: v.stage, lineage: v.lineage, awaitingStarter: v.awaitingStarter, trait: v.trait, chimera: v.chimera, level: v.level, shiny: v.shiny, wear: v.wear, progress: v.progress.ratio, xp: v.xp, legend: v.legend };
   };
   const list = [summary(root, true), ...root.others.map((m) => summary(merge(root, m), false))];
   const projects = Object.entries(root.projects || {})

@@ -30,10 +30,9 @@ Rare work counts more, so every type can win. And there is a hidden line few wil
 
 * **Friendship** (0 to 100) only goes up: answer your agent quickly, pet it with a click, come back every day. Becoming an Elder asks for friendship 60.
 * **Personality**: every egg is born Brave, Sleepy, Curious, Cheerful, Calm or Cheeky, which changes how it moves and what it says.
-* **Rarities**: 1 in 128 hatches in shiny colours, always with a glow and little stars around it; evolving late at night gives night colours. Every form has its 5 poses in shiny and night colours too.
-* **Special evolutions**: with friendship 100 at the Elder evolution, Archsmith and Oracle grow into their **friendship form**; the hidden Chimera has its own colours for each of the 15 pairs of types.
+* **Rarities**: 1 in 128 hatches in shiny colours, always with a glow and little stars around it. Every form has its 5 poses in shiny colours too.
+* **Hidden line**: when two kinds of work are almost exactly tied, the Chimera appears.
 * **Legendaries**: three, each tied to a feat. *Mergeon* appears when your first pull request is merged, *Aeonbyte* after a year of Openmon and *Zeroday* after 100 fixes. They join your Party and never evolve.
-* **Season colours** (optional): turn them on in Settings and, in February, October and December, your Openmon wears the season's colours.
 * **Focus form**: during a long request (50 actions or more) it grows inside a ring of energy until the request ends.
 * **Nickname**: without one it goes by its species name. When it hatches, it asks whether you want to give it one.
 * It never dies, never gets sick and never loses what it earned.
@@ -53,7 +52,6 @@ Every project your agent works on enough gets **its own egg**. Up to 6 travel in
 
 **Talking to your agent through the pet.** The pet is your point of contact with the conversation it follows, not only an alert. With Claude Code: on a permission request, **Allow**, **Always allow**, **Deny** or **Explain…** (deny with a reason the agent reads, or deny and stop); on a question from the agent, its options become buttons and **Other…** lets you write your own answer; and **Message** (on the "All done!" bubble or in the card) sends a note to the conversation: an idle agent wakes up right away, a working one gets it with its next step. Nothing is ever approved on its own, text only goes out when you click Send, and only the desktop app can write to the agent. With the other agents (Codex, Gemini CLI, Cursor, OpenCode, Aider), a click on the pet still takes you to the agent's window.
 
-**Regional forms**: an Openmon raised mostly on one language evolves into that region's colours with a small mark: *Brace* (JavaScript/TypeScript), *Serpent* (Python), *Rust*, *Current* (Go), *Bean* (Java/Kotlin) and *Sharp* (C#/.NET). The Opendex records the ones you have seen.
 
 ## Something every day
 

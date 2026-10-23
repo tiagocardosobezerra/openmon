@@ -88,7 +88,6 @@
       sounds: 'Sons', soundsSub: 'Pequenos sons quando ele pula, evolui ou precisa de você.',
       chatter: 'Falas e emojis', chatterSub: 'Balões curtos e reações (? ♥ ♪) quando nada importante está acontecendo.',
       stroll: 'Passear pela tela', strollSub: 'Ele anda alguns passos quando está à toa.',
-      seasons: 'Cores de época', seasonsSub: 'Em fevereiro, outubro e dezembro, ele usa as cores da época.',
       share: 'Dividir conversas entre os Openmons na tela', shareSub: 'Cada conversa nova vai para um deles, na vez de cada um. Desligado: tudo fica com o principal, menos o que você fixar.',
       notify: 'Notificação do sistema', notifySub: 'Quando um agente espera por você e o pet não está à vista.',
       answerOn: 'Responder pelo pet', answerOnSub: 'O balão mostra Permitir e Recusar, as opções das perguntas do agente e Mensagem, para escrever à conversa (Claude Code).',
@@ -134,7 +133,6 @@
       sounds: 'Sonidos', soundsSub: 'Pequeños sonidos cuando salta, evoluciona o te necesita.',
       chatter: 'Frases y emojis', chatterSub: 'Globos cortos y reacciones (? ♥ ♪) cuando no pasa nada importante.',
       stroll: 'Pasear por la pantalla', strollSub: 'Da unos pasos cuando no hace nada.',
-      seasons: 'Colores de temporada', seasonsSub: 'En febrero, octubre y diciembre usa los colores de la temporada.',
       share: 'Repartir conversaciones entre los Openmons en pantalla', shareSub: 'Cada conversación nueva va a uno de ellos, por turno. Apagado: todo queda con el principal, salvo lo que fijes.',
       notify: 'Notificación del sistema', notifySub: 'Cuando un agente te espera y la mascota no está a la vista.',
       answerOn: 'Responder desde la mascota', answerOnSub: 'El globo muestra Permitir y Rechazar, las opciones de las preguntas del agente y Mensaje, para escribir a la conversación (Claude Code).',
@@ -180,7 +178,6 @@
       sounds: 'Sounds', soundsSub: 'Little sounds when it hops, evolves or needs you.',
       chatter: 'Chatter and emotes', chatterSub: 'Short bubbles and reactions (? ♥ ♪) when nothing important is going on.',
       stroll: 'Walk around', strollSub: 'It takes a few steps when it is idle.',
-      seasons: 'Season colours', seasonsSub: 'In February, October and December it wears the season colours.',
       share: 'Share conversations among the Openmons on screen', shareSub: 'Each new conversation goes to one of them, in turn. Off: everything stays with the main one, except what you pin.',
       notify: 'System notification', notifySub: 'When an agent waits for you and the pet is out of sight.',
       answerOn: 'Answer from the pet', answerOnSub: 'The bubble shows Allow and Deny, the options of the agent\'s questions and Message, to write to the conversation (Claude Code).',
@@ -352,7 +349,6 @@
         card(T.look, [
           row(T.name, pet && pet.nickname ? `${pet.nickname} · ${pet.form}` : T.nameSub, rename),
           row(T.size, '', pick([[0.8, T.small], [1, T.normal], [1.25, T.large]], [0.8, 1, 1.25].find((s) => Math.abs(s - scale) < 0.01), (v) => save({ scale: v }, true))),
-          row(T.seasons, T.seasonsSub, toggle('seasons')),
           row(T.language, T.languageSub, pick([['pt-BR', 'Português'], ['en', 'English'], ['es', 'Español']], lang, (v) => save({ lang: v }).then(() => location.replace(`?lang=${v}#${tab}`)))),
         ]),
         card(T.behaviour, [

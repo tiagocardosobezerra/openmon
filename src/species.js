@@ -158,9 +158,7 @@ const ACHIEVEMENTS = {
   mythic: { title: 'Elder', text: 'Became an Elder.' },
   shiny: { title: 'Shiny!', text: 'A one-in-128 shiny Openmon hatched.' },
   hidden: { title: "Who's that Openmon?", text: 'Found a hidden form.', secret: true },
-  nocturne: { title: 'Born of the night', text: 'Evolved between midnight and 5 am, into its Nocturne colours.', secret: true },
   legend: { title: 'Legendary', text: 'A legendary Openmon joined your team.' },
-  friendship: { title: 'Bond of friendship', text: 'Became an Elder with full friendship.', secret: true },
 };
 
 // Accessories: earned by playing, kept forever (across generations), worn
@@ -214,10 +212,6 @@ const ITEMS = {
 };
 for (const t of STATS) ITEMS[`stone-${t}`] = { use: 'hold', stone: t };
 
-// Elder forms that grow differently when friendship is full (100) at the
-// moment of evolving. Lineages without friendship art keep the usual form.
-const FRIEND_FORMS = ['craft', 'lore'];
-
 function stageIndex(id) {
   return STAGES.findIndex((s) => s.id === id);
 }
@@ -262,7 +256,6 @@ module.exports = {
   WEAR_SLOTS,
   ITEMS,
   LEGENDS,
-  FRIEND_FORMS,
   stageIndex,
   formKey,
   formName,

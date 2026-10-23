@@ -49,7 +49,7 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
       p.xpLog = [];
       if (STAGES[i].bond) p.bond = Math.max(p.bond, STAGES[i].bond);
       if (typeof body.shiny === 'boolean') p.shiny = body.shiny;
-      const at = body.nocturne ? atHour(now(), 3) : atHour(now(), 12);
+      const at = atHour(now(), 12);
       return applyEvents(pet.applySignal(p, { kind: 'turn-end', session: 'playground', label: 'playground' }, {}, at));
     },
 
@@ -64,8 +64,6 @@ function createPlayground({ getPet, setPet, now, applyEvents, ingest, bus }) {
       p.lineage = stage === 'egg' ? null : p.chimera ? 'chimera' : body.lineage || p.lineage || 'craft';
       p.trait = stageIndex(stage) >= stageIndex('adult') ? body.trait || null : null;
       p.shiny = Boolean(body.shiny);
-      p.nocturne = Boolean(body.nocturne);
-      p.region = typeof body.region === 'string' && /^[a-z]{2,3}$/.test(body.region) ? body.region : null;
       p.xp = Math.max(p.xp, STAGES[stageIndex(stage)].xp);
       p.dex[formKey(p.stage, p.lineage)] = p.dex[formKey(p.stage, p.lineage)] || now();
       return applyEvents([]);

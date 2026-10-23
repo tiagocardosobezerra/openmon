@@ -54,8 +54,6 @@
     </div>
     <div class="row">
       <label><input type="checkbox" id="shiny"> Shiny</label>
-      <label><input type="checkbox" id="nocturne"> Nocturne</label>
-      <select id="region" aria-label="Region"><option value="">Region: none</option><option value="js">js</option><option value="py">py</option><option value="rs">rs</option><option value="go">go</option><option value="jvm">jvm</option><option value="cs">cs</option></select>
     </div>
     <div class="row">
       <button class="primary" data-evolve="juvenile">→ Juvenile</button>
@@ -156,7 +154,7 @@
 
   function choice() {
     const lineage = $('lineage').value;
-    const body = { shiny: $('shiny').checked, nocturne: $('nocturne').checked, trait: $('trait').value || null, region: $('region').value || null };
+    const body = { shiny: $('shiny').checked, trait: $('trait').value || null };
     if (lineage === 'chimera') body.chimera = [$('ch-a').value, $('ch-b').value];
     else body.lineage = lineage;
     return body;
@@ -208,7 +206,7 @@
     const msg = JSON.parse(m.data);
     if (msg.type !== 'state') return;
     const p = msg.pet;
-    setStatus(`${p.name} · ${p.form}${p.shiny ? ' ★' : ''}${p.nocturne ? ' ☾' : ''} · Lv ${p.level} · ${p.stage} · bond ${p.bond} · ${p.nature} · ${msg.live.pose}`);
+    setStatus(`${p.name} · ${p.form}${p.shiny ? ' ★' : ''} · Lv ${p.level} · ${p.stage} · bond ${p.bond} · ${p.nature} · ${msg.live.pose}`);
     $('bond').value = p.bond;
     $('bond-v').textContent = p.bond;
     $('nature').value = p.nature;

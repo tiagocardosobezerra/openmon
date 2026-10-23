@@ -80,13 +80,10 @@ function listArt(dirs) {
   const where = {};
   let pack = null;
   // Per form: a user pack's tints win over the official ones.
-  const tints = { forms: {}, seasons: {} };
+  const tints = { forms: {} };
   for (const dir of [...dirs].reverse()) {
     const p = readPack(dir);
-    if (p.tints) {
-      Object.assign(tints.forms, p.tints.forms || {});
-      Object.assign(tints.seasons, p.tints.seasons || {});
-    }
+    if (p.tints) Object.assign(tints.forms, p.tints.forms || {});
   }
   for (const dir of dirs) {
     const p = readPack(dir);
@@ -135,14 +132,14 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, seasons: false, companions: [], shareSessions: true, follows: {} };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, companions: [], shareSessions: true, follows: {} };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
   } catch {}
-  // Season colours used to be on by default and were saved with the rest;
-  // only a choice made in Settings keeps them on.
-  if (!config.seasonsChosen) config.seasons = false;
+  // Season colours are gone; drop the old setting.
+  delete config.seasons;
+  delete config.seasonsChosen;
   // What the renderers need: the settings plus whether quiet mode is on now.
   const publicConfig = () => ({ ...config, quiet: Boolean(config.quietUntil && config.quietUntil > now()), focus: Boolean(config.focusUntil && config.focusUntil > now()) });
   let demoTimers = [];
@@ -1126,7 +1123,6 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (typeof body.notify === 'boolean') patch.notify = body.notify;
           if (typeof body.chatter === 'boolean') patch.chatter = body.chatter;
           if (typeof body.stroll === 'boolean') patch.stroll = body.stroll;
-          if (typeof body.seasons === 'boolean') Object.assign(patch, { seasons: body.seasons, seasonsChosen: true });
           // Other Openmons of the team standing next to the main one (2 at most).
           if (Array.isArray(body.companions)) patch.companions = [...new Set(body.companions.filter((id) => typeof id === 'string' && /^[a-f0-9]{6,32}$/.test(id)))].slice(0, MAX_COMPANIONS);
           if (typeof body.shareSessions === 'boolean') patch.shareSessions = body.shareSessions;

@@ -30,10 +30,9 @@ El trabajo raro vale más, así que cualquier tipo puede ganar. Y hay un linaje 
 
 * **Amistad** (0 a 100) solo sube: responde rápido al agente, acaríciala con un clic, vuelve todos los días. Llegar a Anciano pide amistad 60.
 * **Personalidad**: cada huevo nace Valiente, Dormilona, Curiosa, Alegre, Tranquila o Pícara, lo que cambia cómo se mueve y lo que dice.
-* **Rarezas**: 1 de cada 128 nace con colores brillantes (shiny), siempre con brillo y estrellitas alrededor; quien evoluciona de madrugada gana colores nocturnos. Cada forma tiene las 5 poses también en shiny y nocturna.
-* **Evoluciones especiales**: con amistad 100 en la evolución a Anciano, Archsmith y Oracle crecen en la **forma de la amistad**; la Chimera escondida tiene colores propios para cada uno de los 15 pares de tipos.
+* **Rarezas**: 1 de cada 128 nace con colores brillantes (shiny), siempre con brillo y estrellitas alrededor. Cada forma tiene las 5 poses también en shiny.
+* **Línea oculta**: cuando dos tipos de trabajo empatan casi exactamente, aparece la Chimera.
 * **Legendarios**: tres, cada uno ligado a una hazaña. *Mergeon* aparece con tu primer pull request aceptado, *Aeonbyte* después de un año de Openmon y *Zeroday* después de 100 arreglos. Entran en tu Equipo y nunca evolucionan.
-* **Colores de temporada** (opcional): actívalos en la Configuración y, en febrero, octubre y diciembre, Openmon usa los colores de la época.
 * **Forma de foco**: en un pedido largo (50 acciones o más), crece dentro de un anillo de energía hasta que el pedido termina.
 * **Apodo**: sin apodo usa el nombre de la especie. Al eclosionar, pregunta si quieres ponerle uno.
 * Nunca muere, nunca se enferma y nunca pierde lo que ganó.
@@ -53,7 +52,6 @@ Cada proyecto en el que el agente trabaja bastante gana **su propio huevo**. Has
 
 **Hablar con el agente desde la mascota.** La mascota es tu punto de contacto con la conversación que sigue, no solo un aviso. Con Claude Code: en un pedido de permiso, **Permitir**, **Permitir siempre**, **Rechazar** o **Explicar…** (rechazar con un motivo que el agente lee, o rechazar y detener); en una pregunta del agente, sus opciones se vuelven botones y **Otra…** te deja escribir tu respuesta; y **Mensaje** (en el globo de "¡Terminó!" o en la tarjeta) manda una nota a la conversación: un agente parado despierta enseguida, uno trabajando la recibe con su próximo paso. Nada se aprueba solo, el texto solo sale cuando haces clic en Enviar, y solo la app de escritorio puede escribirle al agente. Con los demás agentes (Codex, Gemini CLI, Cursor, OpenCode, Aider), un clic en la mascota sigue llevándote a la ventana del agente.
 
-**Formas regionales**: un Openmon criado sobre todo en un lenguaje evoluciona con los colores de esa región y una pequeña marca: *Llaves* (JavaScript/TypeScript), *Serpiente* (Python), *Óxido* (Rust), *Corriente* (Go), *Grano* (Java/Kotlin) y *Sostenido* (C#/.NET). La Opendex registra las que viste.
 
 ## Todos los días hay algo
 

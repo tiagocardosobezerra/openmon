@@ -4,7 +4,7 @@
 // Pure functions over a plain JSON object, so it is easy to persist, test
 // and migrate. Nothing here ever takes progress away.
 
-const { MISSIONS, MISSION_XP, PERFECT_DAY_XP, COSMETICS, ITEMS, WEAR_SLOTS, LEGENDS, FRIEND_FORMS, STARTERS, STARTER_HATCH_XP } = require('./species');
+const { MISSIONS, MISSION_XP, PERFECT_DAY_XP, COSMETICS, ITEMS, WEAR_SLOTS, LEGENDS, STARTERS, STARTER_HATCH_XP } = require('./species');
 const { STATS, STAT_WEIGHTS, STAGES, ACHIEVEMENTS, NATURES, SHINY_ODDS, CHIMERA_GAP, CHIMERA_MIN, stageIndex, formName, formKey, dexEntries } = require('./species');
 
 const VERSION = 1;
@@ -117,10 +117,21 @@ function dropSprout(p) {
   return p;
 }
 
+// Night, friendship and regional forms are gone with the old art.
+const RETIRED = ['nocturne', 'seenNight', 'friend', 'region', 'langs', 'dexRegions'];
+function dropVariants(p) {
+  for (const k of RETIRED) delete p[k];
+  if (p.achievements) {
+    delete p.achievements.nocturne;
+    delete p.achievements.friendship;
+  }
+  return p;
+}
+
 // Fills in fields added by later versions, keeps everything the user had.
 function migrate(raw, now) {
   if (!raw || typeof raw !== 'object') return newTrainer(now);
-  raw = dropSprout({ ...raw, dex: raw.dex ? { ...raw.dex } : raw.dex });
+  raw = dropVariants(dropSprout({ ...raw, dex: raw.dex ? { ...raw.dex } : raw.dex, achievements: raw.achievements ? { ...raw.achievements } : raw.achievements }));
   const name = !raw.name || OLD_DEFAULTS.has(raw.name) ? DEFAULT_NAME : raw.name;
   const fresh = createPet(raw.bornAt || now, name, () => seeded(raw.bornAt || now));
   // Pets from before shinies existed are not re-rolled.
@@ -222,13 +233,10 @@ function view(pet) {
     starter: pet.starter || null,
     awaitingStarter: Boolean(pet.awaitingStarter),
     chimera: pet.chimera || null,
-    nocturne: Boolean(pet.nocturne),
-    seenNight: pet.seenNight || {},
     form: form(pet),
     formKey: keyOf(pet),
     dexNo: dexEntries().findIndex((e) => e.key === keyOf(pet)) + 1,
     legend: pet.legend || null,
-    friend: Boolean(pet.friend),
     charmUntil: pet.charmUntil && pet.charmUntil > Date.now() ? pet.charmUntil : null,
     nature: pet.nature,
     shiny: pet.shiny,
@@ -250,9 +258,6 @@ function view(pet) {
     bag: pet.bag,
     holding: pet.holding,
     streak: pet.streak || { days: 0, best: 0 },
-    region: pet.region || null,
-    langs: pet.langs || {},
-    dexRegions: pet.dexRegions || {},
     project: pet.project ?? null,
     id: pet.id || null,
     journal: [...(pet.journal || []), journalEntry(pet.daily)].filter((e) => e.day),
@@ -590,16 +595,6 @@ function unlock(pet, id, now, events) {
   events.push({ type: 'achievement', id, ...ACHIEVEMENTS[id] });
 }
 
-const REGION_MIN = 50;
-const REGION_SHARE = 0.6;
-function regionOf(langs) {
-  const entries = Object.entries(langs || {});
-  const total = entries.reduce((a, [, n]) => a + n, 0);
-  if (total < REGION_MIN) return null;
-  const [lang, n] = entries.sort((a, b) => b[1] - a[1])[0];
-  return n / total >= REGION_SHARE ? lang : null;
-}
-
 function evolve(pet, now, events) {
   for (;;) {
     const next = nextStage(pet);
@@ -635,25 +630,12 @@ function evolve(pet, now, events) {
       pet.chimera = null;
       pet.trait = grown ? ranked[1] : null;
     }
-    // Evolving between midnight and 5 am gives the Nocturne colouring,
-    // decided again at every evolution (a time-of-day evolution).
-    pet.nocturne = new Date(now).getHours() < 5;
-    // Full friendship when it becomes an Elder: the friendship form.
-    pet.friend = next.id === 'mythic' && pet.bond >= BOND_MAX && FRIEND_FORMS.includes(pet.lineage);
-    if (pet.friend) unlock(pet, 'friendship', now, events);
-    // Regional form: raised mostly on one language (60% of 50+ files).
-    pet.region = regionOf(pet.langs);
-    if (pet.region) pet.dexRegions = { ...(pet.dexRegions || {}), [`${formKey(pet.stage, pet.lineage)}.${pet.region}`]: now };
-    if (pet.nocturne) {
-      pet.seenNight = { ...(pet.seenNight || {}), [formKey(pet.stage, pet.lineage)]: now };
-      unlock(pet, 'nocturne', now, events);
-    }
     pet.counters.evolutions++;
     pet.history.push({ stage: pet.stage, form: form(pet), lineage: pet.lineage, at: now });
     const key = formKey(pet.stage, pet.lineage);
     const firstTime = !pet.dex[key];
     if (firstTime) pet.dex[key] = now;
-    events.push({ type: 'evolve', from, to: form(pet), hatched: hatching, stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, nocturne: Boolean(pet.nocturne), shiny: pet.shiny, region: pet.region || null, friend: Boolean(pet.friend), newDex: firstTime });
+    events.push({ type: 'evolve', from, to: form(pet), hatched: hatching, stage: pet.stage, lineage: pet.lineage, trait: pet.trait, chimera: pet.chimera || null, shiny: pet.shiny, newDex: firstTime });
     if (hatching) unlock(pet, 'hatch', now, events);
     if (hatching && pet.shiny) unlock(pet, 'shiny', now, events);
     if (pet.stage === 'adult') unlock(pet, 'first-evolution', now, events);
@@ -707,7 +689,6 @@ function applySignal(pet, signal, ctx = {}, now) {
       }
       if (signal.family && pet.stats[signal.family] != null) pet.stats[signal.family]++;
       countFeats(pet, signal);
-      if (signal.lang) pet.langs = { ...(pet.langs || {}), [signal.lang]: ((pet.langs || {})[signal.lang] || 0) + 1 };
       countWork(pet, signal);
       addFix(pet, takeFix(signal, now, false), now);
       addXp(pet, XP.tool, now, events);
@@ -838,7 +819,7 @@ function layEgg(pet, now, rng = Math.random) {
   // A held item never left the Bag, so it simply stays there.
   egg.bag = { ...pet.bag };
   egg.daily = { ...pet.daily };
-  for (const k of ['streak', 'journal', 'gifts', 'seenNight', 'dexRegions', 'charmUntil']) if (pet[k] !== undefined) egg[k] = pet[k];
+  for (const k of ['streak', 'journal', 'gifts', 'charmUntil']) if (pet[k] !== undefined) egg[k] = pet[k];
   egg.hallOfFame = [...(pet.hallOfFame || []), retired];
   egg.stats = Object.fromEntries(STATS.map((s) => [s, Math.floor((pet.stats[s] || 0) / 10)]));
   return { pet: egg, events: [{ type: 'new-egg', generation: egg.generation, retired }] };
@@ -859,6 +840,7 @@ module.exports = {
   createPet,
   newTrainer,
   dropSprout,
+  dropVariants,
   chooseStarter,
   migrate,
   applySignal,
@@ -874,7 +856,6 @@ module.exports = {
   level,
   xpForLevel,
   displayName,
-  regionOf,
   wear,
   useItem,
   addTokens,

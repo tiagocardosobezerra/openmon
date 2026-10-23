@@ -13,7 +13,7 @@ test('tints.json is up to date with the art', () => {
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ART, 'tints.json'), 'utf8')), JSON.parse(build()));
 });
 
-test('tints: colour map, night moon and pupil ring', () => {
+test('tints: colour map, added elements and pupil ring', () => {
   const base = '<svg><path d="M0 0" fill="#ff9f43" stroke="rgb(42, 33, 64)"></path><ellipse class="k" cx="80" cy="100" rx="10" ry="12"></ellipse><path class="o ln" d="M1 1" fill="none" stroke="#2a2140"></path></svg>';
   const night = '<svg><path d="M0 0" fill="#5b4a86" stroke="#2a2140"></path><ellipse cx="80" cy="100" rx="12.5" ry="14.5" fill="#fff"></ellipse><ellipse class="k" cx="80" cy="100" rx="10" ry="12"></ellipse><path class="moon" fill="#ffe156" d="M5 5"></path><path class="o ln" d="M1 1" fill="none" stroke="#2a2140"></path></svg>';
   const t = compare(base, night);
@@ -24,14 +24,26 @@ test('tints: colour map, night moon and pupil ring', () => {
   assert.ok(t.extras[0].before.startsWith('path|M1 1'));
 });
 
-test('every form has its five poses, shiny and night art', () => {
+test('every form has its five poses and a shiny; the egg has no shiny', () => {
   const files = new Set(fs.readdirSync(ART));
   const species = require('../src/species');
-  const forms = species.dexEntries().map((e) => e.key).filter((k) => k !== 'egg');
-  for (const form of forms) {
-    for (const v of ['', '.shiny', '.night', '@sleep', '@working', '@attention', '@error', '@done']) {
+  for (const form of species.dexEntries().map((e) => e.key)) {
+    for (const v of ['', '@sleep', '@working', '@attention', '@error', '@done', ...(form === 'egg' ? [] : ['.shiny'])]) {
       assert.ok(files.has(`${form}${v}.svg`), `${form}${v}.svg`);
     }
+  }
+  assert.ok(!files.has('egg.shiny.svg'));
+});
+
+test('no art for retired variants (night, friendship, regional, Chimera pairs)', () => {
+  const left = fs.readdirSync(ART).filter((f) => /\.(night|friend|region-[a-z]+|[a-z]+-[a-z]+)\.svg$|^mark-/.test(f));
+  assert.deepEqual(left, []);
+});
+
+test('the official art is plain SVG: no scripts, images, gradients or filters', () => {
+  for (const f of fs.readdirSync(ART).filter((x) => x.endsWith('.svg'))) {
+    const text = fs.readFileSync(path.join(ART, f), 'utf8');
+    assert.ok(!/<(script|image|foreignObject|linearGradient|radialGradient|filter)\b|\son[a-z]+=/i.test(text), f);
   }
 });
 

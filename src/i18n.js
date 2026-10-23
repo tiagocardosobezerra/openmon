@@ -27,9 +27,7 @@ const PT_BR = {
     mythic: { title: 'Ancião', text: 'Chegou a Ancião.' },
     shiny: { title: 'Brilhante!', text: 'Nasceu um Openmon brilhante, chance de 1 em 128.' },
     hidden: { title: 'Quem é esse Openmon?', text: 'Encontrou uma forma oculta.' },
-    nocturne: { title: 'Filho da noite', text: 'Evoluiu entre meia-noite e 5 da manhã, com cores Nocturne.' },
     legend: { title: 'Lendário', text: 'Um Openmon lendário entrou no seu time.' },
-    friendship: { title: 'Laço de amizade', text: 'Virou Ancião com amizade completa.' },
   },
   dex: {
     egg: 'Quentinho ao toque. Escuta cada tecla e choca quando já ouviu o bastante.',
@@ -98,9 +96,7 @@ const ES = {
     mythic: { title: 'Anciano', text: 'Llegó a Anciano.' },
     shiny: { title: '¡Brillante!', text: 'Nació un Openmon brillante, una posibilidad entre 128.' },
     hidden: { title: '¿Quién es ese Openmon?', text: 'Encontraste una forma oculta.' },
-    nocturne: { title: 'Hijo de la noche', text: 'Evolucionó entre medianoche y las 5, con colores nocturnos.' },
     legend: { title: 'Legendario', text: 'Un Openmon legendario se unió a tu equipo.' },
-    friendship: { title: 'Lazo de amistad', text: 'Llegó a Anciano con la amistad completa.' },
   },
   dex: {
     egg: 'Tibio al tacto. Escucha cada tecla y se abre cuando ya oyó lo suficiente.',

@@ -103,21 +103,6 @@ test('the Party holds 6; the rest wait in the Box', () => {
   assert.equal(party.move(p, inBox, 'party'), true);
 });
 
-test('regional forms: a pet raised mostly on one language evolves into its regional form', () => {
-  assert.equal(fileLang({ file_path: 'src/app.tsx' }), 'js');
-  assert.equal(fileLang({ file_path: 'main.py' }), 'py');
-  assert.equal(fileLang({ file_path: 'README.md' }), null);
-  const p = fresh();
-  p.xp = 2900;
-  for (let i = 0; i < 60; i++) party.applySignal(p, tool(null, { lang: 'py' }), {}, T0 + i * 60_000);
-  for (let i = 0; i < 10; i++) party.applySignal(p, tool(null, { lang: 'js' }), {}, T0 + (60 + i) * 60_000);
-  for (let i = 0; i < 200 && p.stage !== 'adult'; i++) party.applySignal(p, tool(null), {}, T0 + (100 + i) * 60_000);
-  assert.equal(p.stage, 'adult');
-  assert.equal(p.region, 'py');
-  assert.ok(p.dexRegions['craft-adult.py']);
-  assert.equal(pet.regionOf({ py: 10 }), null);
-});
-
 test('legendaries join once when their feat is done, and never evolve', () => {
   const p = fresh();
   p.counters.merges = 1;

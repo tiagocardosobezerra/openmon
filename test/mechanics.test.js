@@ -19,7 +19,7 @@ const { createDaemon } = require('../src/server');
 const { createStore } = require('../src/store');
 const { createFocus } = require('../src/focus');
 
-const { STATS, LINEAGES, ITEMS, COSMETICS, ACHIEVEMENTS, FRIEND_FORMS } = species;
+const { STATS, LINEAGES, ITEMS, COSMETICS, ACHIEVEMENTS } = species;
 const DAY = 24 * 60 * 60 * 1000;
 const YEAR = 365 * DAY;
 // June: no seasonal accessory unlocks by accident.
@@ -467,23 +467,11 @@ const ACHIEVE = {
     step(p);
     return p;
   },
-  nocturne: () => {
-    const p = mk();
-    p.stats.craft = 5;
-    step(p, NIGHT);
-    return p;
-  },
   legend: () => {
     const root = party.ensure(mk());
     root.counters.merges = 1;
     party.applySignal(root, tool('app'), {}, T0);
     return root;
-  },
-  friendship: () => {
-    const p = mk({ stage: 'adult', lineage: 'lore', bond: 100 });
-    p.stats.lore = 100;
-    step(p);
-    return p;
   },
 };
 
@@ -616,46 +604,6 @@ test('hidden Chimera: adult and elder only from an almost exact tie; it can drif
   assert.equal(species.CHIMERA_MIN, 0.2);
 });
 
-test('friendship forms: only Craft and Lore, only with friendship 100 at the Elder evolution', () => {
-  for (const s of STATS) {
-    const p = mk({ stage: 'adult', lineage: s, bond: 100 });
-    p.stats[s] = 100;
-    step(p);
-    assert.equal(p.friend, FRIEND_FORMS.includes(s), s);
-    assert.equal(Boolean(p.achievements.friendship), FRIEND_FORMS.includes(s), s);
-  }
-  const p = mk({ stage: 'adult', lineage: 'craft', bond: 99 });
-  p.stats.craft = 100;
-  step(p);
-  assert.equal(p.friend, false);
-});
-
-test('night forms: evolving between midnight and 5 am, decided again at every evolution', () => {
-  const p = mk();
-  p.stats.test = 100;
-  step(p, NIGHT);
-  assert.equal(p.nocturne, true);
-  assert.ok(p.seenNight['test-juvenile']);
-  step(p, T0);
-  assert.equal(p.nocturne, false);
-  assert.equal(new Date(new Date(2026, 5, 10, 5).getTime()).getHours() < 5, false, '5 am is already day');
-});
-
-test('regional forms: 60% of 50+ files in one language at the evolution', () => {
-  const p = mk();
-  p.stats.craft = 100;
-  p.langs = { rs: 30, js: 19 };
-  step(p);
-  assert.equal(p.region, null, 'under 50 files');
-  p.langs = { rs: 31, js: 19 };
-  step(p);
-  assert.equal(p.region, 'rs');
-  assert.ok(p.dexRegions['craft-adult.rs']);
-  p.langs = { rs: 31, js: 30 };
-  step(p);
-  assert.equal(p.region, null, 'no language reaches 60%');
-});
-
 test('legendaries: each joins once from its feat, at the Elder stage, and never evolves', () => {
   const root = party.ensure(mk());
   root.counters.fixes = 100;
@@ -757,7 +705,6 @@ test('retiring: an Elder leaves an egg; trainer things carry on; a legendary nev
   p.streak = { days: 12, best: 20 };
   missions(p, [{ id: 'turns', done: true }]);
   p.daily.activeDays = 40;
-  p.seenNight = { 'lore-adult': T0 };
   p.journal = [{ day: '2026-06-09', tools: 3 }];
   const { pet: egg, events } = pet.layEgg(p, T0 + 1, () => 0.5);
   assert.equal(events[0].type, 'new-egg');
@@ -769,7 +716,6 @@ test('retiring: an Elder leaves an egg; trainer things carry on; a legendary nev
   assert.equal(egg.daily.activeDays, 40);
   assert.deepEqual(egg.daily.missions, [{ id: 'turns', done: true }]);
   assert.equal(egg.charmUntil, T0 + DAY);
-  assert.ok(egg.seenNight['lore-adult']);
   assert.equal(egg.journal.length, 1);
   assert.equal(egg.hallOfFame[0].form, 'Oracle');
   // The next day still counts as a streak.
@@ -881,4 +827,13 @@ test('"How it works" has the same questions in all three languages', () => {
   assert.equal(es.q.length, en.q.length);
   assert.ok(en.q.some(([q]) => /several Openmons/.test(q)));
   assert.ok(en.q.some(([, a]) => /mystery egg/.test(a)));
+});
+
+test('an old save loses the retired night, friendship and regional forms, and keeps the rest', () => {
+  const old = pet.migrate({ bornAt: T0, xp: 5000, stage: 'adult', lineage: 'lore', nocturne: true, friend: true, region: 'py', langs: { py: 80 }, seenNight: { 'lore-adult': T0 }, dexRegions: { 'lore-adult.py': T0 }, achievements: { hatch: T0, nocturne: T0, friendship: T0 } }, T0);
+  for (const k of ['nocturne', 'friend', 'region', 'langs', 'seenNight', 'dexRegions']) assert.equal(old[k], undefined, k);
+  assert.deepEqual(Object.keys(old.achievements), ['hatch']);
+  assert.equal(old.stage, 'adult');
+  assert.equal(old.lineage, 'lore');
+  assert.ok(!('nocturne' in species.ACHIEVEMENTS) && !('friendship' in species.ACHIEVEMENTS));
 });

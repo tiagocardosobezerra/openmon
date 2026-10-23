@@ -28,7 +28,7 @@ The agent notices run with [Node.js](https://nodejs.org), which Claude Code user
 
 **Privacy:** everything stays on your computer, with no account and no internet; phone alerts and GitHub are optional.
 
-Behind it there is a game: the egg hatches, grows and evolves into one of 39 forms, shaped by your agent's work. Types, items, accessories, regional forms, legendaries, skills and missions are in [docs/GAME.en.md](docs/GAME.en.md).
+Behind it there is a game: the egg hatches, grows and evolves into one of 39 forms, shaped by your agent's work. Types, items, accessories, legendaries, skills and missions are in [docs/GAME.en.md](docs/GAME.en.md).
 
 ## More it does
 
@@ -147,7 +147,7 @@ The egg appears in the corner of your screen and an icon shows up in the tray. S
 
 Right-click the pet and click **More** at the bottom of its card (or the tray icon). The menu has the card, the pages, **focus mode**, **quiet mode** and **Settings**, a page with six sections:
 
-* **Pet**: nickname, size, language, season colours, sounds, chatter, walking around and sharing conversations among the Openmons on screen.
+* **Pet**: nickname, size, language, sounds, chatter, walking around and sharing conversations among the Openmons on screen.
 * **Alerts**: system notification and answering permissions from the pet (with the waiting time).
 * **Focus and calm**: focus mode, quiet mode, presentation mode and break reminder.
 * **Phone**: phone alerts through the ntfy app (optional).
@@ -156,7 +156,7 @@ Right-click the pet and click **More** at the bottom of its card (or the tray ic
 
 ### Your own art
 
-The 39 forms ship as official vector art (`art/official`), with poses, shiny and night versions. To replace them, put images named after the form (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) in `~/.openmon/art`. The guide is [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` brings back the art drawn in code.
+The 39 forms ship as official vector art (`art/official`), with poses and shiny versions. To replace them, put images named after the form (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) in `~/.openmon/art`. The guide is [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` brings back the art drawn in code.
 
 ### Other agents
 

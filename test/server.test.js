@@ -223,9 +223,8 @@ test('playground actions exist only on a playground daemon', async () => {
     assert.equal(play.state().pet.shiny, true);
     events = await post('evolve', { stage: 'adult', chimera: ['roam', 'swarm'] });
     assert.ok(events.some((e) => e.type === 'evolve' && e.to === 'Chimera'));
-    events = await post('evolve', { stage: 'mythic', lineage: 'test', nocturne: true });
+    events = await post('evolve', { stage: 'mythic', lineage: 'test' });
     assert.ok(events.some((e) => e.type === 'evolve' && e.to === 'Aegis'));
-    assert.equal(play.state().pet.nocturne, true);
     events = await post('level', {});
     assert.ok(events.some((e) => e.type === 'level'));
     await post('signal', { kind: 'attention', reason: 'permission', detail: 'Allow Bash: npm test?' });
@@ -587,11 +586,11 @@ test('presentation mode: project names and commands never leave the daemon', asy
   }
 });
 
-test('companions: other team members on screen, never the main one; seasons off by default', async () => {
+test('companions: other team members on screen, never the main one; no season colours', async () => {
   const { daemon, port } = await boot();
   try {
     const st = daemon.state();
-    assert.equal(st.config.seasons, false);
+    assert.equal(st.config.seasons, undefined);
     // A project with enough work earns a second member.
     for (let i = 0; i < 61; i++) await request(port, 'POST', '/event', { body: JSON.stringify({ hook_event_name: 'PostToolUse', session_id: 's2', cwd: '/w/other', tool_name: 'Read', tool_input: { file_path: '/w/other/a.js' } }) });
     const party = JSON.parse((await request(port, 'GET', '/api/state')).body).party;

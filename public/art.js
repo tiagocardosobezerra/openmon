@@ -75,46 +75,7 @@
   function palette(spec) {
     if (spec.stage === 'egg') return PALETTES.egg;
     const key = spec.lineage || 'plain';
-    const base = (spec.shiny && SHINY[key]) || PALETTES[key] || PALETTES.plain;
-    return spec.nocturne ? nightify(base) : base;
-  }
-
-  // Nocturne colours: the same palette pulled toward midnight blue, with
-  // a moonlit belly and glow.
-  function mix(a, b, k) {
-    const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-    const [x, y] = [p(a), p(b)];
-    return `#${x.map((v, i) => Math.round(v + (y[i] - v) * k).toString(16).padStart(2, '0')).join('')}`;
-  }
-  const nightCache = new Map();
-  function nightify(pal) {
-    if (!nightCache.has(pal)) {
-      nightCache.set(pal, {
-        ...pal,
-        body: mix(pal.body, '#2b2f6b', 0.55),
-        dark: mix(pal.dark, '#1b1d45', 0.6),
-        belly: mix(pal.belly, '#c9d4ff', 0.5),
-        accent: mix(pal.accent, '#e8ecff', 0.35),
-        glow: '#a9dcff',
-      });
-    }
-    return nightCache.get(pal);
-  }
-
-  function moon(ctx, R, top, t) {
-    ctx.save();
-    ctx.translate(0, top + R * 0.3);
-    ctx.globalAlpha = 0.5 + Math.sin(t * 2) * 0.15;
-    ellipse(ctx, 0, 0, R * 0.22, R * 0.22);
-    ctx.fillStyle = '#a9dcff';
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.beginPath();
-    ctx.arc(0, 0, R * 0.13, 0, Math.PI * 2);
-    ctx.arc(R * 0.06, -R * 0.04, R * 0.11, 0, Math.PI * 2, true);
-    ctx.fillStyle = '#fff7c2';
-    ctx.fill('evenodd');
-    ctx.restore();
+    return (spec.shiny && SHINY[key]) || PALETTES[key] || PALETTES.plain;
   }
 
   function shapeOf(spec) {
@@ -1102,14 +1063,14 @@
   const files = new Map(); // name -> file
   const sprites = new Map(); // name -> loaded Image, or null while loading
   let packInfo = null;
-  let tints = { forms: {}, seasons: {} };
+  let tints = { forms: {} };
 
   function loadPack() {
     return fetch('/art/index.json')
       .then((r) => r.json())
       .then(({ files: list, pack, tints: t }) => {
         packInfo = pack;
-        if (t) tints = { forms: t.forms || {}, seasons: t.seasons || {} };
+        if (t) tints = { forms: t.forms || {} };
         for (const file of list || []) files.set(file.replace(/.(png|svg|webp)$/, ''), file);
       })
       .catch(() => {});
@@ -1133,82 +1094,29 @@
     return null;
   }
 
-  const CLASSIC = ['craft', 'lore', 'shell', 'test', 'roam', 'swarm'];
-
   function spriteKey(spec) {
     if (spec.legend) return spec.legend;
     return spec.stage === 'egg' || !spec.lineage ? spec.stage : `${spec.lineage}-${spec.stage}`;
   }
 
-  // The colouring a pet wears, strongest first: night, shiny, the friendship
-  // form, a Chimera's own pair of types.
-  function colourOf(spec, key) {
-    if (spec.nocturne) return 'night';
-    if (spec.shiny) return 'shiny';
-    if (spec.friend && (has(`${key}.friend`) || (tints.forms[key] || {}).friend)) return 'friend';
-    if (key === 'chimera-adult' && Array.isArray(spec.chimera) && spec.chimera.length === 2) {
-      const pair = [...spec.chimera].sort((a, b) => CLASSIC.indexOf(a) - CLASSIC.indexOf(b)).join('-');
-      if (has(`${key}.${pair}`)) return pair;
-    }
-    return null;
-  }
-
-  // Returns { img, night, regional, tint }. A pose drawn only in normal
-  // colours gets the variant's colours at draw time (tint), so shiny, night
-  // and Chimera pets keep every pose.
+  // Returns { img, tint }. Poses are drawn only in normal colours: a shiny
+  // pose gets the shiny colours at draw time (tint), so it keeps every pose.
   function spriteFor(spec) {
     const key = spriteKey(spec);
     const pose = spec.pose && spec.pose !== 'idle' ? `@${spec.pose}` : '';
-    const v = colourOf(spec, key);
-    // Choose by the file list, then load only the image chosen.
     const pick = (name, extra) => {
       const img = get(name);
-      return img ? { img, night: false, ...extra } : null;
+      return img ? { img, ...extra } : null;
     };
-    if (v) {
-      const exact = `${key}.${v}${pose}`;
-      if (has(exact)) return pick(exact, { night: v === 'night' });
-      const tint = (tints.forms[key] || {})[v];
-      if (pose && has(key + pose) && tint) return pick(key + pose, { night: v === 'night', tint: `form:${key}:${v}` });
-      const still = `${key}.${v}`;
-      if (has(still)) return pick(still, { night: v === 'night' });
-      // A pack without night art: shiny colours if it has them, then the
-      // normal image tinted at draw time.
-      if (v === 'night' && spec.shiny) {
-        const shiny = [`${key}.shiny${pose}`, `${key}.shiny`].find(has);
-        if (shiny) return pick(shiny);
-      }
+    if (spec.shiny && spec.stage !== 'egg') {
+      const exact = `${key}.shiny${pose}`;
+      if (has(exact)) return pick(exact);
+      const tint = (tints.forms[key] || {}).shiny;
+      if (pose && has(key + pose) && tint) return pick(key + pose, { tint: `form:${key}:shiny` });
+      if (has(`${key}.shiny`)) return pick(`${key}.shiny`);
     }
     const base = [key + pose, key].find(has);
-    if (!base) return null;
-    if (v === 'night' || v === 'shiny') return pick(base);
-    // Regions and seasons recolour the normal colouring only.
-    if (spec.region && !v) {
-      const regional = [`${key}.region-${spec.region}${pose}`, !pose && `${key}.region-${spec.region}`].find((n) => n && has(n));
-      if (regional) return pick(regional, { regional: true });
-      return pick(base, { region: spec.region });
-    }
-    if (spec.season && !v && tints.seasons[spec.season] && spec.stage !== 'egg') return pick(base, { tint: `season:${spec.season}:${spec.legend ? '' : spec.lineage || 'plain'}` });
-    return pick(base);
-  }
-
-  // Nocturne for packs without night art: the sprite pulled toward midnight blue.
-  const tintCanvas = document.createElement('canvas');
-  function nightTint(img) {
-    const w = img.naturalWidth || 512;
-    const h = img.naturalHeight || 512;
-    tintCanvas.width = w;
-    tintCanvas.height = h;
-    const c = tintCanvas.getContext('2d');
-    c.clearRect(0, 0, w, h);
-    c.drawImage(img, 0, 0, w, h);
-    c.globalCompositeOperation = 'source-atop';
-    c.globalAlpha = 0.38;
-    c.fillStyle = '#2b2f6b';
-    c.fillRect(0, 0, w, h);
-    c.globalAlpha = 1;
-    c.globalCompositeOperation = 'source-over';
-    return tintCanvas;
+    return base ? pick(base) : null;
   }
 
   // --- accessories ---------------------------------------------------------------
@@ -1577,14 +1485,18 @@
   function findEyes(doc) {
     const ks = [...doc.querySelectorAll('ellipse.k, circle.k')]
       .map((el) => ({ el, cx: num(el, 'cx'), cy: num(el, 'cy'), rx: num(el, 'rx') ?? num(el, 'r'), ry: num(el, 'ry') ?? num(el, 'r') }))
-      .filter((k) => k.cx != null && k.rx >= 3);
-    // The biggest mirrored pair wins (antennae and spots are smaller).
+      // A slit pupil is narrow but tall: its larger radius is what counts.
+      .filter((k) => k.cx != null && Math.max(k.rx, k.ry) >= 2.5);
+    // The biggest pair side by side wins (antennae and spots are smaller).
+    // A face turned aside is not centred on x = 100, so only the height and
+    // the gap between them count. A cyclops has a single eye.
     let pair = null;
     for (const l of ks) for (const r of ks) {
-      if (l.cx < 100 && r.cx > 100 && Math.abs(l.cx + r.cx - 200) < 8 && Math.abs(l.cy - r.cy) < 5) {
+      if (r.cx - l.cx > l.rx + r.rx && Math.abs(l.cy - r.cy) < Math.max(l.ry, r.ry)) {
         if (!pair || l.rx + r.rx > pair[0].rx + pair[1].rx) pair = [l, r];
       }
     }
+    if (!pair && ks.length) pair = [ks.reduce((a, b) => (b.rx > a.rx ? b : a))];
     if (!pair) return null;
     // Pupil parts (ink, highlights) move when it looks around; a white
     // sclera around the pupil stays put and only goes away when it closes.
@@ -1606,6 +1518,11 @@
     const path = doc.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('class', 'o ln');
     path.setAttribute('d', d);
+    // Art without a stylesheet still gets a drawn lid, in the eye's own ink.
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', eye.el.getAttribute('fill') || '#2a2140');
+    path.setAttribute('stroke-width', String(Math.max(2.5, eye.ry * 0.55)));
+    path.setAttribute('stroke-linecap', 'round');
     const tr = eye.el.getAttribute('transform');
     if (tr) path.setAttribute('transform', tr);
     eye.el.parentNode.insertBefore(path, eye.el);
@@ -1634,7 +1551,7 @@
   for (const x of [-1, 0, 1]) for (const y of [-1, 0, 1]) if (x || y) EYE_KEYS.push(`look${x}${y}`);
 
   function eyeVariants(url, region = null) {
-    // region: a region code or any tint key (see tintSvg).
+    // region: a tint key (see tintSvg).
     const cacheKey = region ? `${url}|${region}` : url;
     let entry = eyeCache.get(cacheKey);
     if (entry) return entry;
@@ -1682,7 +1599,7 @@
       const root = doc.documentElement;
       const vb = (root.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
       if (vb.length !== 4 || !vb[3]) return null;
-      const [l, r] = eyes.map((e) => place(e, root));
+      const [l, r] = eyes.length > 1 ? eyes.map((e) => place(e, root)) : ((c) => [{ x: c.x - eyes[0].rx * 1.6, y: c.y }, { x: c.x + eyes[0].rx * 1.6, y: c.y }])(place(eyes[0], root));
       const y = (l.y - vb[1]) / vb[3];
       // Eyes are always inside the picture; anything else is a misread.
       if (!(y > 0.05 && y < 0.9)) return null;
@@ -1717,24 +1634,6 @@
     return { x, y };
   }
 
-  // --- regional forms ------------------------------------------------------------
-  // A pet raised mostly on one language gets that region's colours (body,
-  // shadow and belly of its type swapped) and the region's mark on its
-  // forehead. A pack file "<form>.region-<region>.svg" replaces both.
-  const TYPE_COLORS = {
-    craft: ['#ff9f43', '#d9762b'], lore: ['#9381f2', '#6c5bcf'], shell: ['#35d0bf', '#1fa496'], test: ['#74cc63', '#4e9f42'],
-    roam: ['#5fb3ff', '#3d88d8'], swarm: ['#ff80b8', '#e0579b'], chimera: ['#b9a6ff', '#8b74e6'],
-    docs: ['#f3ead6', '#d9c9a6'], git: ['#c7835a', '#9c5e3b'], debug: ['#e5484d', '#b8323a'], data: ['#5fc8e8', '#3a98bd'], style: ['#ffb3d1', '#e787b0'],
-  };
-  const REGIONS = {
-    js: { body: '#ffd75e', shadow: '#e0b23a', belly: '#fff3c4', mark: '#3178c6' },
-    py: { body: '#5b8fd6', shadow: '#3e6cad', belly: '#dfeaff', mark: '#ffd34d' },
-    rs: { body: '#c8693c', shadow: '#9a4a26', belly: '#f6d8c4', mark: '#4fb3a0' },
-    go: { body: '#5fd0e0', shadow: '#38a6b8', belly: '#e2fafd', mark: '#ffffff' },
-    jvm: { body: '#8b5e3c', shadow: '#664229', belly: '#f1dcc6', mark: '#f2c14e' },
-    cs: { body: '#8a6ad6', shadow: '#6648b5', belly: '#ece4ff', mark: '#e8dcff' },
-  };
-
   // Colour changes for a pose drawn in normal colours: a colour map, the
   // white ring night pupils get, and added elements (the night moon) placed
   // before the same element as in the designer's variant.
@@ -1754,18 +1653,8 @@
       return to ? `${attr}="${to}"` : all;
     });
   }
-  function seasonMap(season, lineage) {
-    const to = tints.seasons[season];
-    const from = PALETTES[lineage] || PALETTES.plain;
-    if (!to) return {};
-    const map = {};
-    for (const role of ['body', 'dark', 'belly', 'accent']) if (from[role] && to[role]) map[from[role].toLowerCase()] = to[role];
-    return map;
-  }
   function tintSvg(text, tintKey) {
-    if (REGIONS[tintKey]) return regionSvg(text, tintKey);
     const [kind, a, b] = tintKey.split(':');
-    if (kind === 'season') return recolor(text, seasonMap(a, b));
     const tint = kind === 'form' && (tints.forms[a] || {})[b];
     if (!tint) return text;
     const out = recolor(text, tint.map || {});
@@ -1805,123 +1694,6 @@
     }
   }
 
-  function regionSvg(text, region) {
-    const r = REGIONS[region];
-    if (!r) return text;
-    let out = text;
-    for (const [type, [body, shadow]] of Object.entries(TYPE_COLORS)) {
-      out = out.replace(new RegExp(body, 'gi'), r.body).replace(new RegExp(shadow, 'gi'), r.shadow);
-      const belly = PALETTES[type] && PALETTES[type].belly;
-      if (belly && r.belly) out = out.replace(new RegExp(belly, 'gi'), r.belly);
-    }
-    return out;
-  }
-
-  // The region's mark on the forehead, just above the eyes: the designer's
-  // mark-<region>.svg when the pack has it, else drawn in code.
-  function drawRegionMark(ctx, sprite, region, h) {
-    const an = spriteAnchor(sprite.img);
-    if (!an) return;
-    const entry = sprite.img.__svg ? eyeVariants(sprite.img.__svg, region) : null;
-    if (has(`mark-${region}`)) {
-      const mark = get(`mark-${region}`);
-      // Wait for the mark and the eye line (each loads once, then every frame has it).
-      if (!mark || !entry || entry.eyeY == null) return;
-      const S = Math.max(8, an.headW * h * 0.24);
-      const y = -h + entry.eyeY * h - S * 1.05;
-      ctx.drawImage(mark, -S / 2, y - S / 2, S, S);
-      return;
-    }
-    drawMark(ctx, region, 0, -h + an.neckY * h + h * 0.03, an.headW * h);
-  }
-
-  function drawMark(ctx, region, x, y, S) {
-    const r = REGIONS[region];
-    if (!r) return;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.lineWidth = Math.max(1.4, S * 0.03);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = INK;
-    ctx.fillStyle = r.mark;
-    const k = S * 0.14;
-    switch (region) {
-      case 'js':
-        ctx.font = `800 ${Math.round(k * 2.2)}px Fredoka, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.lineWidth = Math.max(2, S * 0.035);
-        ctx.strokeText('{ }', 0, 0);
-        ctx.fillText('{ }', 0, 0);
-        break;
-      case 'py':
-        for (const dx of [-1.3, 0, 1.3]) {
-          ctx.beginPath();
-          ctx.moveTo(dx * k, -k * 0.8);
-          ctx.lineTo(dx * k + k * 0.55, 0);
-          ctx.lineTo(dx * k, k * 0.8);
-          ctx.lineTo(dx * k - k * 0.55, 0);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-        }
-        break;
-      case 'rs':
-        ctx.beginPath();
-        for (let i = 0; i < 10; i++) {
-          const a = (i / 10) * Math.PI * 2;
-          const rr = i % 2 ? k * 0.95 : k * 1.3;
-          ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(0, 0, k * 0.4, 0, Math.PI * 2);
-        ctx.fillStyle = INK;
-        ctx.fill();
-        break;
-      case 'go':
-        ctx.strokeStyle = r.mark;
-        ctx.lineWidth = Math.max(2, S * 0.04);
-        for (const [dy, w] of [[-0.7, 1.6], [0, 2.2], [0.7, 1.3]]) {
-          ctx.beginPath();
-          ctx.moveTo(-k * w * 0.5, dy * k);
-          ctx.lineTo(k * w * 0.5, dy * k);
-          ctx.stroke();
-        }
-        break;
-      case 'jvm':
-        ctx.beginPath();
-        ctx.ellipse(0, 0, k * 0.8, k * 1.15, 0.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(-k * 0.3, -k * 0.75);
-        ctx.quadraticCurveTo(k * 0.3, 0, -k * 0.1, k * 0.8);
-        ctx.stroke();
-        break;
-      case 'cs':
-        ctx.strokeStyle = r.mark;
-        ctx.lineWidth = Math.max(2, S * 0.035);
-        for (const d of [-0.4, 0.4]) {
-          ctx.beginPath();
-          ctx.moveTo(d * k - k * 0.15, -k);
-          ctx.lineTo(d * k + k * 0.15, k);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(-k, d * k);
-          ctx.lineTo(k, d * k);
-          ctx.stroke();
-        }
-        break;
-      default:
-        break;
-    }
-    ctx.restore();
-  }
-
   // Which eyes the body language asks for.
   function eyeKey(a) {
     if (a.eyes === 'blink' || a.eyes === 'closed') return 'blink';
@@ -1953,11 +1725,7 @@
   }
 
   function drawSprite(ctx, sprite, spec, a, R, t) {
-    // Regional colours only on the normal colouring (shiny and night win);
-    // a designer regional file is already coloured and marked.
-    const region = sprite.region && REGIONS[sprite.region] ? sprite.region : null;
-    const base = livingImage(sprite.img, a, sprite.tint || region);
-    const img = spec.nocturne && !sprite.night ? nightTint(base) : base;
+    const img = livingImage(sprite.img, a, sprite.tint || null);
     const h = heightOf(spec.stage, spec.size || 48) * ((packInfo && packInfo.scale) || 1);
     const w = ((sprite.img.naturalWidth || 1) / Math.max(1, sprite.img.naturalHeight || 1)) * h;
     ctx.save();
@@ -1969,7 +1737,6 @@
     if (spec.shiny && spec.stage !== 'egg') shine(ctx, 0, -h * 0.5, Math.max(w, h) * 0.56, t, 'back');
     ctx.drawImage(img, -w / 2, -h, w, h);
     const anchors = spec.wear && spec.stage !== 'egg' ? wearAnchors(sprite, spec, w, h) : null;
-    if (region && !sprite.regional && spec.stage !== 'egg') drawRegionMark(ctx, sprite, region, h);
     if (anchors) drawWear(ctx, spec.wear, anchors, t);
     ctx.restore();
     if (a.motes) motes(ctx, a.motes, R, -h * 0.45, palette(spec), t);
@@ -2074,14 +1841,11 @@
     ctx.restore();
 
     for (const look of looks) headFeatures(ctx, look, R, top, pal, t);
-    ctx.__shine = spec.nocturne ? '#bff4ff' : null;
     const grownEyes = stageN(spec.stage) >= 2;
     ctx.__eyeStyleL = grownEyes ? EYE_STYLE[looks[0].lineage] || 'round' : 'round';
     ctx.__eyeStyleR = grownEyes ? EYE_STYLE[(looks[1] || looks[0]).lineage] || 'round' : 'round';
     face(ctx, R, cy, pal, a, t);
     trait(ctx, spec, R, cy, top, pal, t);
-    if (spec.nocturne && stageN(spec.stage) >= 1) moon(ctx, R, top, t);
-    ctx.__shine = null;
 
     if (spec.wear && spec.stage !== 'egg') drawWear(ctx, spec.wear, { topY: top + ht * 0.08, headW: w * 1.25, neckY: cy + hb * 0.35, neckW: w * 1.7, face: { x: 0, y: cy - R * 0.12, span: R * 0.62 } }, t);
 
@@ -2111,5 +1875,5 @@
     return stage === 'egg' ? R * 2.5 : R * 2.4;
   }
 
-  window.OpenmonArt = { drawCreature, heightOf, loadPack, eyeVariants, spriteAnchor, PALETTES, SHINY, INK, REGIONS };
+  window.OpenmonArt = { drawCreature, heightOf, loadPack, eyeVariants, spriteAnchor, PALETTES, SHINY, INK };
 })();

@@ -28,7 +28,7 @@ Os avisos do agente rodam com o [Node.js](https://nodejs.org), que quem usa o Cl
 
 **Privacidade:** tudo fica no seu computador, sem conta e sem internet; o aviso no celular e o GitHub são opcionais.
 
-Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 39 formas conforme o trabalho do agente. Tipos, itens, acessórios, formas regionais, lendários, habilidades e missões estão em [docs/GAME.md](docs/GAME.md).
+Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 39 formas conforme o trabalho do agente. Tipos, itens, acessórios, lendários, habilidades e missões estão em [docs/GAME.md](docs/GAME.md).
 
 ## Mais do que ele faz
 
@@ -147,7 +147,7 @@ O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa n
 
 Clique com o botão direito no pet e em **Mais**, no pé do card (ou no ícone da bandeja). O menu tem o card, as páginas, o **modo foco**, o **modo silencioso** e as **Configurações**, uma página com seis seções:
 
-* **Pet**: apelido, tamanho, idioma, cores de época, sons, falas, passear pela tela e dividir as conversas entre os Openmons na tela.
+* **Pet**: apelido, tamanho, idioma, sons, falas, passear pela tela e dividir as conversas entre os Openmons na tela.
 * **Avisos**: notificação do sistema e responder permissões pelo pet (com o tempo de espera).
 * **Foco e calma**: modo foco, modo silencioso, modo apresentação e lembrete de pausa.
 * **Celular**: aviso no celular pelo app ntfy (opcional).
@@ -156,7 +156,7 @@ Clique com o botão direito no pet e em **Mais**, no pé do card (ou no ícone d
 
 ### Sua arte
 
-As 39 formas vêm em arte vetorial oficial (`art/official`), com poses, versões brilhantes e noturnas. Para trocar, coloque imagens com o nome da forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) em `~/.openmon/art`. O guia está em [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` volta para a arte desenhada em código.
+As 39 formas vêm em arte vetorial oficial (`art/official`), com poses e versões brilhantes. Para trocar, coloque imagens com o nome da forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) em `~/.openmon/art`. O guia está em [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` volta para a arte desenhada em código.
 
 ### Outros agentes
 

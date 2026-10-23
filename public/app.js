@@ -284,15 +284,9 @@
 
   // --- what to draw ------------------------------------------------------------
 
-  // Season colours in February, October and December (Settings can turn
-  // them off).
-  const SEASONS = { 1: 'fev', 9: 'out', 11: 'dez' };
-  function seasonNow() {
-    return config && config.seasons === false ? null : SEASONS[new Date().getMonth()] || null;
-  }
   function specOf(p) {
     if (!p) return { stage: 'egg', lineage: null, trait: null };
-    return { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera || null, nocturne: Boolean(p.nocturne), shiny: Boolean(p.shiny) && p.stage !== 'egg', wear: p.wear || null, region: p.region || null, legend: p.legend || null, friend: Boolean(p.friend), season: seasonNow() };
+    return { stage: p.stage, lineage: p.lineage, trait: p.trait, chimera: p.chimera || null, shiny: Boolean(p.shiny) && p.stage !== 'egg', wear: p.wear || null, legend: p.legend || null };
   }
   function currentSpec() {
     return force || specOf(pet);
@@ -337,7 +331,7 @@
             if (evolveFx.shiny) burst('spark', 24, petCX(), GROUND - 50, Math.PI * 2, { colors: ['#fffbe0', '#ffe156'], gravity: 40, max: 1.8 });
             pushToast(evolveFx.shiny ? tr('scene.shiny', { form: evolveFx.toName }) : tr('scene.hatched', { name }), tr(evolveFx.shiny ? 'scene.shiny.sub' : 'scene.hatched.sub'), 5500, 'scene');
           } else {
-            pushToast(tr('scene.evolved', { name, form: evolveFx.toName }), evolveFx.to.nocturne ? tr('scene.night') : dexLine || (evolveFx.toStage === 'mythic' ? tr('scene.legend') : tr('scene.evolved.sub', { stage: tr(`stage.${evolveFx.toStage}`) })), 5000, 'scene');
+            pushToast(tr('scene.evolved', { name, form: evolveFx.toName }), dexLine || (evolveFx.toStage === 'mythic' ? tr('scene.legend') : tr('scene.evolved.sub', { stage: tr(`stage.${evolveFx.toStage}`) })), 5000, 'scene');
           }
           for (const [title, text] of evolveFx.after) pushToast(title, text);
         }
@@ -892,13 +886,11 @@
       [soon ? tr(pet.stage === 'egg' ? 'card.aboutToHatch' : 'card.evolveSoon') : null, 'sun'],
       [quiet || null, ''],
       [config.focus && config.focusUntil ? tr('card.focus', { t: new Date(config.focusUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : null, 'sun'],
-      [pet.nocturne ? tr('card.night') : null, 'brand'],
       [pet.leaning && pet.stage !== 'mythic' && pet.stage !== 'egg' ? tr('card.leaning', { stat: statLabels[pet.leaning] || pet.leaning }) : null, ''],
       [pet.holding === 'everstone' ? tr(pr.next && pet.xp >= 0 && pr.ratio >= 1 ? 'card.everstoneReady' : 'card.everstone') : null, 'brand'],
       // Legendaries and mystery eggs have no project of their own.
       // With a team, every card names its project (the first Openmon has none).
       [pet.legend ? tr('party.legendTag') : pet.project && /^mystery:/.test(pet.project) ? tr('party.mysteryTag') : pet.project ? tr('party.project', { project: pet.project }) : teamSize > 1 ? tr('party.general') : null, 'brand'],
-      [pet.region ? tr('region.chip', { region: tr(`region.${pet.region}`) }) : null, ''],
       [nature ? tr('card.nature', { nature }) : null, ''],
       [(pet.generation || 1) > 1 ? tr('card.gen', { n: pet.generation }) : null, ''],
     ]) if (text) chips.appendChild(el('span', `chip ${cls}`.trim(), text));
@@ -1166,7 +1158,7 @@
     // The evolution reveal comes first; achievements from the same batch wait for it.
     const evolve = events.find((e) => e.type === 'evolve');
     if (evolve) {
-      evolveFx = { start: t, from: specOf(pet), to: { stage: evolve.stage, lineage: evolve.lineage, trait: evolve.trait, chimera: evolve.chimera || null, nocturne: Boolean(evolve.nocturne), shiny: Boolean(evolve.shiny), friend: Boolean(evolve.friend), region: evolve.region || null, wear: pet && pet.wear, season: seasonNow() }, toName: evolve.to, toStage: evolve.stage, hatched: Boolean(evolve.hatched), shiny: Boolean(evolve.shiny), newDex: evolve.newDex, after: [] };
+      evolveFx = { start: t, from: specOf(pet), to: { stage: evolve.stage, lineage: evolve.lineage, trait: evolve.trait, chimera: evolve.chimera || null, shiny: Boolean(evolve.shiny), wear: pet && pet.wear }, toName: evolve.to, toStage: evolve.stage, hatched: Boolean(evolve.hatched), shiny: Boolean(evolve.shiny), newDex: evolve.newDex, after: [] };
       const name = pet ? pet.name : 'Your Openmon';
       toasts.length = 0;
       toast = null;

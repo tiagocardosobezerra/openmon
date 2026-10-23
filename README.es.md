@@ -28,7 +28,7 @@ Los avisos del agente corren con [Node.js](https://nodejs.org), que quien usa Cl
 
 **Privacidad:** todo queda en tu computadora, sin cuenta y sin internet; el aviso en el celular y GitHub son opcionales.
 
-Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas según el trabajo del agente. Tipos, objetos, accesorios, formas regionales, legendarios, habilidades y misiones están en [docs/GAME.es.md](docs/GAME.es.md).
+Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas según el trabajo del agente. Tipos, objetos, accesorios, legendarios, habilidades y misiones están en [docs/GAME.es.md](docs/GAME.es.md).
 
 ## Más de lo que hace
 
@@ -147,7 +147,7 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 
 Haz clic derecho en la mascota y en **Más**, al pie de la tarjeta (o en el ícono de la bandeja). El menú tiene la tarjeta, las páginas, el **modo foco**, el **modo silencio** y la **Configuración**, una página con seis secciones:
 
-* **Mascota**: apodo, tamaño, idioma, colores de temporada, sonidos, frases, pasear por la pantalla y repartir las conversaciones entre los Openmons en pantalla.
+* **Mascota**: apodo, tamaño, idioma, sonidos, frases, pasear por la pantalla y repartir las conversaciones entre los Openmons en pantalla.
 * **Avisos**: notificación del sistema y responder permisos desde la mascota (con el tiempo de espera).
 * **Foco y calma**: modo foco, modo silencio, modo presentación y recordatorio de pausa.
 * **Celular**: aviso en el celular con la app ntfy (opcional).
@@ -156,7 +156,7 @@ Haz clic derecho en la mascota y en **Más**, al pie de la tarjeta (o en el íco
 
 ### Tu arte
 
-Las 39 formas vienen en arte vectorial oficial (`art/official`), con poses, versiones brillantes y nocturnas. Para cambiarlas, pon imágenes con el nombre de la forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) en `~/.openmon/art`. La guía está en [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` vuelve al arte dibujado en código.
+Las 39 formas vienen en arte vectorial oficial (`art/official`), con poses y versiones brillantes. Para cambiarlas, pon imágenes con el nombre de la forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) en `~/.openmon/art`. La guía está en [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` vuelve al arte dibujado en código.
 
 ### Otros agentes
 

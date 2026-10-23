@@ -203,21 +203,6 @@ test('a near-perfect tie between two kinds of work grows the hidden Chimera', ()
   assert.equal(pet.view(p).dexNo, 20);
 });
 
-test('evolving at night gives the Nocturne variant; by day it does not', () => {
-  const night = pet.createPet(T0, 'Byte', () => 0.5);
-  Object.assign(night, { xp: 399, stage: 'egg' });
-  night.stats.craft = 10;
-  const events = pet.applySignal(night, { kind: 'turn-end' }, {}, new Date(2026, 9, 19, 3, 0).getTime());
-  assert.equal(night.stage, 'juvenile');
-  assert.equal(night.nocturne, true);
-  assert.ok(night.seenNight['craft-juvenile']);
-  assert.ok(events.some((e) => e.type === 'achievement' && e.id === 'nocturne'));
-  const day = pet.createPet(T0, 'Byte', () => 0.5);
-  Object.assign(day, { xp: 399, stage: 'egg' });
-  pet.applySignal(day, { kind: 'turn-end' }, {}, T0);
-  assert.equal(day.nocturne, false);
-});
-
 test('without a nickname the pet goes by its species name; old defaults are dropped', () => {
   const p = pet.createPet(T0);
   assert.equal(p.name, null);
@@ -382,16 +367,6 @@ test('a held type stone decides the next evolution and is spent', () => {
   assert.equal(p.bag['stone-data'], 0);
   assert.equal(p.holding, null);
   assert.ok(events.some((e) => e.type === 'stone-used'));
-});
-
-test('full friendship at the Elder evolution gives the friendship form', () => {
-  const p = pet.createPet(T0);
-  Object.assign(p, { stage: 'adult', lineage: 'craft', xp: 14999, bond: 100 });
-  p.stats.craft = 5000;
-  pet.applySignal(p, done('craft'), {}, T0 + 1000);
-  assert.equal(p.stage, 'mythic');
-  assert.equal(p.friend, true);
-  assert.ok(p.achievements.friendship);
 });
 
 test('the XP charm doubles experience for a day; friendship candy adds 10', () => {
