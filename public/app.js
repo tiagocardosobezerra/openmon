@@ -99,6 +99,8 @@
   let restoreOffer = null;
   // Permission requests the pet can answer (only with the setting on).
   let permissions = [];
+  // Badge names in the page's language (from /api/species).
+  let badges = {};
   // The agent's questions the pet can answer, and which conversations can
   // get a message from the pet (Claude Code with up-to-date hooks).
   let questions = [];
@@ -665,8 +667,8 @@
     if (evolveFx || particles.length || down || hovering || toast || emote || Math.abs(walkTo - petX) > 0.5) return 60;
     if (pose === 'attention' || pose === 'working' || pose === 'error') return 60;
     if (pose === 'done' && t - poseSince < 4) return 60;
-    if (pose === 'sleep') return 12;
-    return 30;
+    if (pose === 'sleep') return 8;
+    return 24;
   }
 
   function frame() {
@@ -693,7 +695,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawParticles(dt);
     drawEmote(t);
-    if (toast && Date.now() > toast.until) nextToast();
+    if (toast && Date.now() > toast.until && !askingNow()) nextToast();
     const f = live.focus;
     if (pose === 'attention' && f && f.since && ackedFor !== f.since && Date.now() - f.since > LONG_WAIT_MS && renudged !== f.since) {
       renudged = f.since;
@@ -781,6 +783,8 @@
 
   // --- bubble, badge, card -------------------------------------------------------
 
+  // A permission with a clock running for the agent in focus.
+  const askingNow = () => pose === 'attention' && Boolean(live.focus) && permissions.some((p) => p.session === live.focus.id);
   function pushToast(title, text, ms = 4500, style = 'toast') {
     if (companionId) return;
     toasts.push({ title, text, ms, style });
@@ -958,8 +962,11 @@
       const o = restoreOffer;
       return setBubble('restore', tr('restore.title'), tr('restore.sub', { name: o.name, form: o.form, level: o.level, date: new Date(o.savedAt).toLocaleDateString() }), { jump: 'restore', action: tr('restore.action') });
     }
+    // A permission with a clock running comes first: a toast waits, whole,
+    // until it is answered.
+    if (toast && askingNow()) toast.until = Date.now() + toast.ms;
     // Small talk and tips step aside while the agent waits for you.
-    if (toast && !(toast.style === 'say' && pose === 'attention' && live.focus)) return setBubble(toast.style || 'toast', toast.title, toast.text);
+    else if (toast && !(toast.style === 'say' && pose === 'attention' && live.focus)) return setBubble(toast.style || 'toast', toast.title, toast.text);
     if (nicknameOffer && Date.now() < nicknameOffer.until && pet && !pet.nickname && pose !== 'attention') {
       return setBubble('toast', tr('nick.title', { form: pet.form }), tr('nick.sub'), { jump: 'nickname', action: tr('nick.action') });
     }
@@ -1005,7 +1012,7 @@
       const cls = danger ? 'attention danger' : long ? 'attention long' : 'attention';
       if (pending) {
         const left = Math.max(0, Math.ceil((pending.until - Date.now()) / 1000));
-        return setBubble(cls, title, trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: danger ? tr('danger.note') : tr('perm.note', { s: left }), id: answer.id });
+        return setBubble(cls, title, trDetail(pending.detail || f.detail), { jump, eyebrow: f.label || tr('yourAgent'), choices: pending, note: danger ? tr('danger.note') : tr('perm.note', { s: left }), id: `permission|${pending.id}` });
       }
       return setBubble(cls, title, trDetail(f.detail), { ...answer, eyebrow, buttons: write });
     }
@@ -1020,6 +1027,13 @@
       const left = Math.max(0, Math.ceil((w.until - Date.now()) / 60000));
       return setBubble(`wild t-${w.lineage}`, title, balls ? tr('wild.sub') : tr('wild.noBall'), { buttons, note: tr('wild.left', { m: left }), id: `wild|${w.at}` });
     }
+    // A looping agent (the same failure again and again) says more than one
+    // failure: open its window, or ask it to stop and wait. Until it ends.
+    const askStop = (id) => (canTalk && inbox[id] && inbox[id].canSend ? [[{ stop: id }, tr('stop.ask'), '']] : null);
+    const looping = loopAlert && Date.now() < loopAlert.until && (live.sessions || []).find((x) => x.id === loopAlert.session);
+    if (looping && looping.state !== 'done' && looping.state !== 'idle') {
+      return setBubble('warn', tr('loop.title', { n: loopAlert.n }), `${loopAlert.label} · ${trDetail(loopAlert.detail)}`, { jump: demo ? null : loopAlert.session, eyebrow: loopAlert.label, buttons: askStop(loopAlert.session), id: `loop|${loopAlert.session}|${loopAlert.n}` });
+    }
     if (pose === 'error') return setBubble('error', tr('ouch'), f.detail ? trDetail(f.detail) : tr('failed'), { jump, eyebrow: f.label || tr('yourAgent'), id: `error|${f.id}|${f.since}` });
     // Mid-task and silent for minutes, or one command running very long.
     if (updateOffer && Date.now() < updateOffer.until && pose !== 'attention' && !companionId) {
@@ -1030,11 +1044,7 @@
     if (introOffer && Date.now() < introOffer && (pose === 'idle' || pose === 'sleep') && !demo && !companionId) {
       return setBubble('toast', tr('intro'), tr('intro.sub'), { buttons: [[{ demo: 'start' }, tr('demo.watch'), 'primary']], id: 'intro' });
     }
-    // A stuck or looping agent: open its window, or ask it to stop and wait.
-    const askStop = (id) => (canTalk && inbox[id] && inbox[id].canSend ? [[{ stop: id }, tr('stop.ask'), '']] : null);
-    if (loopAlert && Date.now() < loopAlert.until && pose !== 'done') {
-      return setBubble('warn', tr('loop.title', { n: loopAlert.n }), `${loopAlert.label} · ${trDetail(loopAlert.detail)}`, { jump: demo ? null : loopAlert.session, eyebrow: loopAlert.label, buttons: askStop(loopAlert.session), id: `loop|${loopAlert.session}|${loopAlert.n}` });
-    }
+    // A stuck agent: open its window, or ask it to stop and wait.
     const stuck = (live.sessions || []).find((x) => x.stuck);
     if (stuck && pose !== 'done') return setBubble('warn', tr('stuck.title', { t: clock(stuck.stuck) }), tr('stuck.sub'), { jump: demo ? null : stuck.id, eyebrow: stuck.label, buttons: askStop(stuck.id), id: `stuck|${stuck.id}` });
     const longTool = (live.sessions || []).find((x) => x.longTool);
@@ -1645,10 +1655,13 @@
             play('green');
           }
           break;
-        case 'achievement':
-          if (evolveFx && !evolveFx.revealed) evolveFx.after.push([`🏆 ${e.title}`, e.text]);
-          else pushToast(`🏆 ${e.title}`, e.text);
+        case 'achievement': {
+          // The event carries English; the page's language comes from /api/species.
+          const a = { ...e, ...(badges[e.id] || {}) };
+          if (evolveFx && !evolveFx.revealed) evolveFx.after.push([`🏆 ${a.title}`, a.text]);
+          else pushToast(`🏆 ${a.title}`, a.text);
           break;
+        }
         case 'bond':
           if (!petted) spawn('heart', petCX() + 30, top + 4, { vy: -26, max: 1.2 });
           // Friendship that counted: say so, softly.
@@ -2101,6 +2114,7 @@
       statWeights = s.weights || {};
       natures = s.natures || {};
       stats = s.stats;
+      badges = s.achievements || {};
       const select = $('force');
       const add = (value, label) => {
         const o = document.createElement('option');

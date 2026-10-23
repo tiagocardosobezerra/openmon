@@ -884,7 +884,7 @@ function wireIpc() {
     pick.__interactive = true;
     pick.webContents.send('command', 'pointer-in');
     liftPet(pick);
-  }, 60).unref();
+  }, 100).unref();
   ipcMain.on('menu', (e) => Menu.buildFromTemplate(menuTemplate()).popup({ window: senderWin(e) || win }));
   ipcMain.on('open-powers', openPowersWindow);
   ipcMain.on('open-name', () => openNameWindow());
