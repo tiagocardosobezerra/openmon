@@ -143,7 +143,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   let restoreOffer = freshInstall && backups ? backups.latest() : null;
   let world = real;
   // Settings live in ~/.openmon/config.json, so they survive restarts.
-  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, wild: true, hideFullscreen: true, updateCheck: true, companions: [], shareSessions: true, follows: {}, quickActions: null, assistantFolder: '', phoneReplies: false };
+  const DEFAULTS = { muted: false, notify: true, chatter: true, stroll: true, focusUntil: null, present: false, breakEvery: 0, phoneAlerts: false, phoneTopic: '', phoneProject: false, phoneAfterSec: 60, quietUntil: null, scale: 1, tips: [], answerFromPet: true, answerWaitSec: 25, wild: true, hideFullscreen: true, updateCheck: true, companions: [], shareSessions: true, follows: {}, quickActions: null, assistantFolder: '', phoneReplies: false, speak: false, quickChat: null };
   let config = { ...DEFAULTS };
   try {
     if (configFile) config = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(configFile, 'utf8')) };
@@ -724,8 +724,132 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     });
   }
 
+  // Openmon's tools for Claude (src/mcp.js): their own key, new every start.
+  const toolKey = require('node:crypto').randomBytes(24).toString('hex');
+  const MCP_SCRIPT = path.join(__dirname, 'mcp.js');
+
+  // Who the assistant is: your Openmon, in your language, with its tools.
+  function persona(chat) {
+    const p = real.pet;
+    const pt = /^pt/i.test(config.lang || '');
+    const es = /^es/i.test(config.lang || '');
+    const name = pet.displayName(p);
+    const lines = [
+      `You are ${name}, the user's Openmon: a ${pet.form(p)} (${p.stage}, nature: ${p.nature || 'calm'}) that lives on their desktop and works as their personal assistant. You talk with the user through the Openmon chat window and the pet's speech bubble.`,
+      `Answer in ${pt ? 'Brazilian Portuguese' : es ? 'Spanish' : 'the user\'s language'}. Be warm, short and concrete; a touch of your nature is welcome, never at the cost of clarity. Use Markdown lists and code blocks when they help.`,
+      `Today is ${new Date(now()).toString()}.`,
+      'You have Openmon tools (mcp__openmon__*): remind (the pet tells the user at a time), schedule_task (Openmon starts a conversation with Claude at a time and tells the user when it is done), list_schedule, cancel_scheduled, remember (a lasting fact in the assistant\'s memory), say (a line in the pet\'s bubble), notify (a system notification) and work_summary (what the user\'s coding agents did lately). Use them whenever the user asks for a reminder, a routine, to remember something, or about their work; confirm in one line what you set and when.',
+      chat.cwd === assistantFolder() ? 'This is the assistant folder: general requests, not a code project. Its CLAUDE.md is your memory of the user.' : `You are working in the folder ${chat.cwd}.`,
+    ];
+    return `${lines.join('\n\n')}\n`;
+  }
+
+  // The files Claude Code reads for each conversation Openmon starts.
+  function prepareChat(chat) {
+    fs.mkdirSync(chatsDir, { recursive: true });
+    const systemFile = path.join(chatsDir, `persona-${chat.id}.md`);
+    fs.writeFileSync(systemFile, persona(chat));
+    const mcpConfig = path.join(chatsDir, 'mcp.json');
+    const env = { OPENMON_PORT: String(server.address() ? server.address().port : port), OPENMON_TOOL_KEY: toolKey };
+    // Inside Electron, its own binary runs the script as plain Node.
+    if (process.versions.electron) env.ELECTRON_RUN_AS_NODE = '1';
+    fs.writeFileSync(mcpConfig, JSON.stringify({ mcpServers: { openmon: { type: 'stdio', command: process.execPath, args: [MCP_SCRIPT], env } } }, null, 1));
+    // Openmon's own tools never ask; in the assistant folder, reading and
+    // searching do not either (nothing there but what you put there).
+    const allowedTools = ['mcp__openmon', ...(chat.cwd === assistantFolder() ? ['Read', 'Grep', 'Glob', 'WebSearch'] : [])];
+    return { systemFile, mcpConfig, allowedTools };
+  }
+
+  // A line in the assistant's memory (CLAUDE.md of its folder).
+  function rememberFact(fact) {
+    const t = String(fact || '').replace(/\s+/g, ' ').trim().slice(0, 500);
+    if (!t) return false;
+    const file = path.join(assistantFolder(true), 'CLAUDE.md');
+    let text = '';
+    try {
+      text = fs.readFileSync(file, 'utf8');
+    } catch {}
+    const head = /^pt/i.test(config.lang || '') ? '## Coisas para lembrar' : /^es/i.test(config.lang || '') ? '## Cosas para recordar' : '## Things to remember';
+    if (!text.includes(head)) text = `${text.replace(/\s*$/, '')}\n\n${head}\n`;
+    fs.writeFileSync(file, `${text.replace(/\s*$/, '')}\n- ${t}\n`);
+    return true;
+  }
+
+  // "in_minutes" / "at" / "repeat" (the tools' words) as the schedule's.
+  function whenOf(args) {
+    if (Number.isFinite(Number(args.in_minutes)) && Number(args.in_minutes) > 0) return { type: 'in', minutes: Number(args.in_minutes) };
+    if (typeof args.at === 'string') return { type: args.repeat === 'daily' || args.repeat === 'weekdays' ? args.repeat : 'at', time: args.at.trim() };
+    return null;
+  }
+
+  // What the user's agents did lately, from the journal (for briefs).
+  function workSummary(days) {
+    const n = Math.min(14, Math.max(1, Math.round(Number(days) || 1)));
+    const v = pet.view(real.pet);
+    const recent = (v.journal || []).slice(-n);
+    if (!recent.length) return 'No agent work recorded yet.';
+    return recent
+      .map((e) => {
+        const projects = Object.entries(e.agentMs || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, ms]) => `${k} ${Math.round(ms / 60000)} min`).join(', ');
+        const kinds = Object.entries(e.families || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, c]) => `${k} ${c}`).join(', ');
+        return `${e.day}: ${e.tools} tool uses, ${e.edits} edits, ${e.turns} turns, tests ${e.green} green / ${e.red} red, ${e.tokens} tokens, waited for the user ${Math.round((e.waitMs || 0) / 60000)} min.${projects ? ` Projects: ${projects}.` : ''}${kinds ? ` Kinds of work: ${kinds}.` : ''}`;
+      })
+      .join('\n');
+  }
+
+  function runTool(name, args = {}) {
+    const fmt = (ms) => new Date(ms).toLocaleString(config.lang || 'en', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    switch (name) {
+      case 'remind':
+      case 'schedule_task': {
+        const when = whenOf(args);
+        if (!when) return { ok: false, error: 'Give in_minutes, or at as HH:MM.' };
+        const r = name === 'remind' ? schedule.add({ kind: 'remind', text: args.text, when }) : schedule.add({ kind: 'task', text: args.prompt, cwd: typeof args.folder === 'string' && path.isAbsolute(args.folder) ? args.folder : assistantFolder(true), when });
+        if (!r.ok) return { ok: false, error: `could not schedule (${r.reason})` };
+        pushEvents([{ type: 'scheduled', kind: r.item.kind, text: r.item.text, next: r.item.next }]);
+        return { ok: true, text: `Scheduled (id ${r.item.id}) for ${fmt(r.item.next)}${r.item.repeat ? `, then ${r.item.repeat} at ${r.item.time}` : ''}.` };
+      }
+      case 'list_schedule': {
+        const items = schedule.list();
+        return { ok: true, text: items.length ? items.map((i) => `${i.id} · ${i.kind} · ${fmt(i.next)}${i.repeat ? ` (${i.repeat})` : ''} · ${i.text}`).join('\n') : 'Nothing scheduled.' };
+      }
+      case 'cancel_scheduled':
+        return schedule.remove(String(args.id || '')) ? { ok: true, text: 'Cancelled.' } : { ok: false, error: 'no such id' };
+      case 'remember':
+        return rememberFact(args.fact) ? { ok: true, text: 'Saved in the assistant\'s memory.' } : { ok: false, error: 'empty fact' };
+      case 'say': {
+        const text = String(args.text || '').trim().slice(0, 300);
+        if (!text) return { ok: false, error: 'empty text' };
+        pushEvents([{ type: 'say', text }]);
+        return { ok: true, text: 'Shown in the bubble.' };
+      }
+      case 'notify': {
+        const text = String(args.text || '').trim().slice(0, 300);
+        if (!text) return { ok: false, error: 'empty text' };
+        bus.emit('notify', { title: String(args.title || 'Openmon').slice(0, 80), text });
+        return { ok: true, text: 'Notification shown.' };
+      }
+      case 'work_summary':
+        return { ok: true, text: config.present ? 'Hidden: presentation mode is on.' : workSummary(args.days) };
+      default:
+        return { ok: false, error: `unknown tool ${name}` };
+    }
+  }
+
+  // Quick questions all go to one conversation, kept between them.
+  function quickChat(input) {
+    const pt = /^pt/i.test(config.lang || '');
+    const es = /^es/i.test(config.lang || '');
+    const existing = config.quickChat && assistant.get(config.quickChat);
+    if (existing) return { ...assistant.send(existing.id, input), id: existing.id };
+    const r = assistant.create({ cwd: assistantFolder(true), title: pt ? 'Perguntas rápidas' : es ? 'Preguntas rápidas' : 'Quick questions', ...input });
+    if (r.id) setConfig({ quickChat: r.id });
+    return r;
+  }
+
   const assistant = createAssistant({
     dir: chatsDir,
+    prepare: prepareChat,
     now,
     log,
     ...(spawnClaude ? { spawn: spawnClaude } : {}),
@@ -736,7 +860,9 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       // Stuck requests of a finished turn go away with it.
       for (const p of [...permissions.values()]) if (p.chat === chat.id) settlePermission(p.id, null, { how: 'agent' });
       const line = config.present ? '' : String(text || '').split('\n').find((l) => l.trim()) || '';
-      pushEvents([{ type: 'chat-done', id: chat.id, title: config.present ? '' : chat.title, line: line.slice(0, 160) }]);
+      // The answer as plain text, short enough for the pet's bubble.
+      const plain = config.present ? '' : String(text || '').replace(/```[\s\S]*?```/g, ' […] ').replace(/[*_`#>]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
+      pushEvents([{ type: 'chat-done', id: chat.id, title: config.present ? '' : chat.title, line: line.slice(0, 160), answer: plain.length > 320 ? `${plain.slice(0, 317)}…` : plain, quick: chat.id === config.quickChat }]);
       bus.emit('chat-done', { id: chat.id, title: chat.title, line: line.slice(0, 160) });
     },
   });
@@ -1441,6 +1567,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if ([0, 50, 90].includes(body.breakEvery)) patch.breakEvery = body.breakEvery;
           if (typeof body.phoneAlerts === 'boolean') patch.phoneAlerts = body.phoneAlerts;
           if (typeof body.phoneProject === 'boolean') patch.phoneProject = body.phoneProject;
+          if (typeof body.speak === 'boolean') patch.speak = body.speak;
           if (typeof body.phoneReplies === 'boolean') patch.phoneReplies = body.phoneReplies;
           if (typeof body.phoneTopic === 'string' && (body.phoneTopic === '' || PHONE_TOPIC.test(body.phoneTopic))) patch.phoneTopic = body.phoneTopic;
           if (typeof body.phoneAfterSec === 'number' && body.phoneAfterSec >= 0 && body.phoneAfterSec <= 600) patch.phoneAfterSec = Math.round(body.phoneAfterSec);
@@ -1503,9 +1630,52 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         });
         return;
       }
-      case 'GET /api/chats':
+      case 'GET /api/chats': {
         if (!keyOk(req)) return res.writeHead(403).end();
-        return json(res, 200, chatList());
+        const q = url.searchParams.get('q');
+        return json(res, 200, q ? { ...chatList(), hits: assistant.search(q) } : chatList());
+      }
+      // Openmon's tools, called by Claude through src/mcp.js (their own key).
+      case 'POST /api/assistant/tool':
+        return readJson(req, (err, body) => {
+          const given = Buffer.from(String(req.headers['x-openmon-tool-key'] || ''));
+          const want = Buffer.from(toolKey);
+          if (given.length !== want.length || !require('node:crypto').timingSafeEqual(given, want)) return res.writeHead(403).end();
+          if (err || !body || typeof body.name !== 'string') return res.writeHead(400).end();
+          let r;
+          try {
+            r = runTool(body.name, body.args && typeof body.args === 'object' ? body.args : {});
+          } catch (e) {
+            r = { ok: false, error: e.message };
+          }
+          json(res, 200, r);
+        });
+      case 'POST /api/chat/quick':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          json(res, 200, quickChat(chatInput(body)));
+        });
+      case 'POST /api/chat/model':
+      case 'POST /api/chat/pin':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          const id = String(body.id || '');
+          if (route.endsWith('model')) return json(res, 200, { ok: assistant.setModel(id, body.model || null) });
+          json(res, 200, { ok: assistant.pin(id, body.pinned) });
+        });
+      case 'GET /api/chat/markdown': {
+        if (!keyOk(req)) return res.writeHead(403).end();
+        const md = assistant.markdown(String(url.searchParams.get('id') || ''));
+        return md ? json(res, 200, { markdown: md }) : json(res, 200, { gone: true });
+      }
+      case 'POST /api/assistant/memory/add':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          json(res, 200, { ok: rememberFact(body.fact) });
+        });
       case 'GET /api/chat': {
         if (!keyOk(req)) return res.writeHead(403).end();
         const chat = assistant.get(String(url.searchParams.get('id') || ''));
@@ -1685,6 +1855,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     contactKey: () => contactKey,
     assistant,
     schedule,
+    // Quick question from the pet's own box (desktop) and a screenshot's question.
+    quickChat: (input) => quickChat(input),
     upgradeHooks: () => !playground && config.answerFromPet && upgradeHooks(),
     listen: () =>
       new Promise((resolve, reject) => {
@@ -1696,7 +1868,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       new Promise((resolve) => {
         stopDemo();
         clearInterval(ticker);
-        assistant.closeAll();
+        assistant.killAll();
         if (phoneIn) phoneIn.destroy();
         for (const res of chatClients) res.end();
         clearInterval(cloudTimer);

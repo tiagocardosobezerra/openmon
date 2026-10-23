@@ -50,6 +50,7 @@ const PAGES = [
   { path: '/powers.html?tab=shell' },
   { path: '/chat.html' },
   { path: '/chat.html?lang=pt-BR' },
+  { path: '/ask.html' },
 ];
 
 const problems = [];
@@ -78,7 +79,7 @@ async function visit(port, page) {
     for (let i = 3; i < d.length; i += 4) if (d[i]) return 'ok';
     return 'blank canvas';
   })()`);
-  if (drawn !== 'ok' && !['/name.html', '/playground.html', '/help.html', '/settings.html'].includes(page.path) && !page.path.startsWith('/powers.html') && !page.path.startsWith('/chat.html')) problems.push(`${where}: ${drawn}`);
+  if (drawn !== 'ok' && !['/name.html', '/playground.html', '/help.html', '/settings.html'].includes(page.path) && !page.path.startsWith('/powers.html') && !page.path.startsWith('/chat.html') && page.path !== '/ask.html') problems.push(`${where}: ${drawn}`);
   win.destroy();
 }
 

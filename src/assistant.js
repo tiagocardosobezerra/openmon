@@ -18,7 +18,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { spawn: spawnProcess } = require('node:child_process');
-const { toolLine } = require('./transcript');
+const { toolLine, QUIET_TOOLS } = require('./transcript');
 
 const IDLE_MS = 10 * 60 * 1000;
 const MAX_MESSAGES = 500;
@@ -26,21 +26,45 @@ const MAX_CHATS = 200;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
 
-function claudeArgs({ sessionId, resume = false, model = null }) {
+// Models you can pick per conversation (aliases Claude Code knows).
+const MODELS = ['haiku', 'sonnet', 'opus'];
+const SAFE_PATH = /^[^"\0\r\n%!^&|<>]+$/;
+
+function claudeArgs({ sessionId, resume = false, model = null, systemFile = null, mcpConfig = null, allowedTools = [] }) {
   if (!UUID.test(String(sessionId))) throw new Error('bad session id');
   const args = ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--permission-prompt-tool', 'stdio'];
   args.push(resume ? '--resume' : '--session-id', sessionId);
-  if (model && /^[a-z0-9.-]{2,40}$/i.test(model)) args.push('--model', model);
+  if (model && MODELS.includes(model)) args.push('--model', model);
+  // Files Openmon wrote itself (who the assistant is; its tools).
+  if (systemFile && SAFE_PATH.test(systemFile)) args.push('--append-system-prompt-file', systemFile);
+  if (mcpConfig && SAFE_PATH.test(mcpConfig)) args.push('--mcp-config', mcpConfig);
+  const allowed = allowedTools.filter((t) => /^[A-Za-z_][\w-]*$/.test(t));
+  if (allowed.length) args.push('--allowedTools', allowed.join(','));
   return args;
 }
 
 // Your own Claude Code. On Windows `claude` is a .cmd launcher, which only a
-// shell can start; every argument here is a fixed flag or a UUID.
+// shell can start; every argument is a fixed flag, a UUID, a model alias, a
+// tool name or a path Openmon chose (quoted, never with shell characters).
 function defaultSpawn(args, cwd, env) {
-  return spawnProcess('claude', args, { cwd, env, shell: process.platform === 'win32', windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+  const win = process.platform === 'win32';
+  const quoted = win ? args.map((a) => (/[\s()]/.test(a) ? `"${a}"` : a)) : args;
+  return spawnProcess('claude', quoted, { cwd, env, shell: win, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
 }
 
-function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () => {}, onChange = () => {}, askPermission = async () => ({ behavior: 'deny', message: 'No one to ask.' }), askQuestion = async () => null, onDone = () => {}, idleMs = IDLE_MS } = {}) {
+// The whole process tree: on Windows the shell's child (Claude Code) too.
+function killTree(child) {
+  if (!child || child.exitCode !== null) return;
+  try {
+    if (process.platform === 'win32' && child.pid) require('node:child_process').spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, timeout: 5000 });
+    else child.kill();
+  } catch {}
+}
+
+// Claude Code says so when it is not signed in.
+const LOGIN = /not logged in|please run \/login|invalid api key|authenticat|\/login/i;
+
+function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () => {}, onChange = () => {}, askPermission = async () => ({ behavior: 'deny', message: 'No one to ask.' }), askQuestion = async () => null, onDone = () => {}, prepare = () => ({}), idleMs = IDLE_MS } = {}) {
   fs.mkdirSync(dir, { recursive: true });
   const indexFile = path.join(dir, 'chats.json');
   const chats = new Map(); // id -> chat (without messages)
@@ -84,7 +108,7 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
   }
 
   function view(c) {
-    return { id: c.id, sessionId: c.sessionId, cwd: c.cwd, title: c.title, createdAt: c.createdAt, updatedAt: c.updatedAt, costUsd: c.costUsd || 0, status: c.status, draft: (procs.get(c.id) || {}).draft || '' };
+    return { id: c.id, sessionId: c.sessionId, cwd: c.cwd, title: c.title, createdAt: c.createdAt, updatedAt: c.updatedAt, costUsd: c.costUsd || 0, plan: Boolean(c.plan), model: c.model || null, pinned: Boolean(c.pinned), status: c.status, draft: (procs.get(c.id) || {}).draft || '' };
   }
 
   function add(id, message) {
@@ -119,7 +143,13 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
   // Starts (or resumes) Claude Code for this conversation.
   function start(id) {
     const c = chats.get(id);
-    const args = claudeArgs({ sessionId: c.sessionId, resume: Boolean(c.started), model: c.model });
+    let extra = {};
+    try {
+      extra = prepare(view(c)) || {};
+    } catch (err) {
+      log(`assistant: could not prepare (${err.message})`);
+    }
+    const args = claudeArgs({ sessionId: c.sessionId, resume: Boolean(c.started), model: c.model, ...extra });
     let child;
     try {
       child = spawn(args, c.cwd, { ...process.env, OPENMON_ASSISTANT: '1' });
@@ -156,7 +186,7 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
       clearTimeout(p.idle);
       procs.delete(id);
       for (const settle of p.pending) settle();
-      if (code && !p.closing) add(id, { role: 'error', code: /not recognized|not found|ENOENT/i.test(p.err) ? 'missing' : 'exit', text: p.err.trim().split('\n').slice(-3).join('\n') || `exit ${code}` });
+      if (code && !p.closing) add(id, { role: 'error', code: /not recognized|not found|ENOENT/i.test(p.err) ? 'missing' : LOGIN.test(p.err) ? 'login' : 'exit', text: p.err.trim().split('\n').slice(-3).join('\n') || `exit ${code}` });
       if (p.draft) add(id, { role: 'assistant', text: p.draft });
       setStatus(id, 'idle');
     });
@@ -182,16 +212,22 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
         if (b.type === 'text' && b.text && b.text.trim()) {
           p.draft = '';
           add(id, { role: 'assistant', text: b.text.trim() });
-        } else if (b.type === 'tool_use') add(id, { role: 'tool', text: toolLine(b.name, b.input), tool: b.name });
+        } else if (b.type === 'tool_use' && !QUIET_TOOLS.has(b.name)) add(id, { role: 'tool', text: toolLine(b.name, b.input), tool: b.name });
       }
       return;
     }
     if (event.type === 'control_request' && event.request) return control(id, p, event);
+    // Only a Claude plan (Pro, Max, Team) reports its usage limits: then
+    // there is no bill per token, and the cost is not shown as one.
+    if (event.type === 'rate_limit_event' && !c.plan) {
+      c.plan = true;
+      save(id);
+    }
     if (event.type === 'result') {
       const total = Number(event.total_cost_usd) || 0;
       if (total > p.lastCost) c.costUsd = (c.costUsd || 0) + (total - p.lastCost);
       p.lastCost = Math.max(p.lastCost, total);
-      if (event.is_error && event.result) add(id, { role: 'error', code: 'turn', text: String(event.result).slice(0, 2000) });
+      if (event.is_error && event.result) add(id, { role: 'error', code: LOGIN.test(String(event.result)) ? 'login' : 'turn', text: String(event.result).slice(0, 2000) });
       p.draft = '';
       save(id);
       c.status = 'idle';
@@ -312,6 +348,51 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
     return true;
   }
 
+  // Model for the next answers: a running conversation restarts with it.
+  function setModel(id, model) {
+    const c = chats.get(id);
+    if (!c || (model !== null && !MODELS.includes(model))) return false;
+    c.model = model;
+    save(id);
+    if (procs.has(id) && c.status === 'idle') close(id);
+    onChange(id, { op: 'list' });
+    return true;
+  }
+
+  function pin(id, on) {
+    const c = chats.get(id);
+    if (!c) return false;
+    c.pinned = Boolean(on);
+    save(id);
+    onChange(id, { op: 'list' });
+    return true;
+  }
+
+  // Conversations whose title or text has these words.
+  function search(q) {
+    const words = String(q || '').toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);
+    if (!words.length) return [];
+    const hits = [];
+    for (const c of chats.values()) {
+      const text = `${c.title}\n${messages(c.id).map((m) => m.text).join('\n')}`.toLowerCase();
+      if (words.every((w) => text.includes(w))) hits.push(c.id);
+    }
+    return hits;
+  }
+
+  // One conversation as Markdown, to keep or share.
+  function markdown(id) {
+    const c = chats.get(id);
+    if (!c) return null;
+    const who = { user: '**You**', assistant: '**Claude**' };
+    const lines = [`# ${c.title}`, '', `${c.cwd} · ${new Date(c.createdAt).toISOString().slice(0, 16).replace('T', ' ')}`, ''];
+    for (const m of messages(id)) {
+      if (m.role === 'tool') lines.push(`> ${m.text}`, '');
+      else if (who[m.role]) lines.push(`${who[m.role]}:`, '', m.text, '');
+    }
+    return lines.join('\n');
+  }
+
   function rename(id, title) {
     const c = chats.get(id);
     const t = String(title || '').trim().slice(0, 80);
@@ -323,7 +404,7 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
   }
 
   return {
-    list: () => [...chats.values()].sort((a, b) => b.updatedAt - a.updatedAt).map(view),
+    list: () => [...chats.values()].sort((a, b) => Boolean(b.pinned) - Boolean(a.pinned) || b.updatedAt - a.updatedAt).map(view),
     get: (id) => (chats.has(id) ? { ...view(chats.get(id)), messages: messages(id) } : null),
     // Is this Claude Code session one of ours (its hooks then stay out of the way)?
     owns: (sessionId) => [...chats.values()].find((c) => c.sessionId === sessionId && procs.has(c.id)) || null,
@@ -334,12 +415,24 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
     stop,
     remove,
     rename,
+    setModel,
+    pin,
+    search,
+    markdown,
     closeAll() {
       for (const id of [...procs.keys()]) close(id);
+      flush();
+    },
+    // Openmon is going away: no Claude Code is left behind, even mid-answer.
+    killAll() {
+      for (const p of procs.values()) {
+        p.closing = true;
+        killTree(p.child);
+      }
       flush();
     },
     flush,
   };
 }
 
-module.exports = { createAssistant, claudeArgs };
+module.exports = { createAssistant, claudeArgs, MODELS };

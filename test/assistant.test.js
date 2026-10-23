@@ -186,3 +186,24 @@ Revise o projeto, por favor.
   assert.deepEqual([last.role, last.text, last.via], ['user', 'Revise o projeto, por favor.', 'pet']);
   assert.deepEqual(messagesOf(null), []);
 });
+
+test('claude arguments: who the assistant is, its tools, only safe paths and names', () => {
+  const id = '7a4be6be-457a-4b1d-8748-023f7f090cf2';
+  const args = claudeArgs({ sessionId: id, model: 'haiku', systemFile: 'C:/Users/a b/.openmon/chats/persona-1.md', mcpConfig: 'C:/Users/a b/.openmon/chats/mcp.json', allowedTools: ['mcp__openmon', 'Read', 'Bash(rm -rf *)'] });
+  assert.deepEqual(args.slice(args.indexOf('--model'), args.indexOf('--model') + 2), ['--model', 'haiku']);
+  assert.ok(args.includes('--append-system-prompt-file') && args.includes('--mcp-config'));
+  assert.equal(args[args.indexOf('--allowedTools') + 1], 'mcp__openmon,Read');
+  const bad = claudeArgs({ sessionId: id, systemFile: 'C:/x" & calc & "', mcpConfig: 'a|b' });
+  assert.ok(!bad.includes('--append-system-prompt-file') && !bad.includes('--mcp-config'));
+});
+
+test('mcp: initialize, the tool list, an unknown tool', async () => {
+  const { handle, TOOLS } = require('../src/mcp');
+  const init = await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18' } });
+  assert.equal(init.result.serverInfo.name, 'openmon');
+  const list = await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
+  assert.deepEqual(list.result.tools.map((t) => t.name), TOOLS.map((t) => t.name));
+  assert.ok(['remind', 'schedule_task', 'remember', 'say', 'work_summary'].every((n) => TOOLS.some((t) => t.name === n)));
+  assert.equal((await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'nope' } })).error.code, -32602);
+  assert.equal(await handle({ jsonrpc: '2.0', method: 'notifications/initialized' }), null);
+});

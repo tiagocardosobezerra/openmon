@@ -855,3 +855,55 @@ test('assistant chat: key only, Claude asks through the pet queue, your answer g
     await daemon.close();
   }
 });
+
+test('assistant tools: their own key; reminders, memory and the bubble; quick questions share one chat', async () => {
+  const { EventEmitter } = require('node:events');
+  const { PassThrough } = require('node:stream');
+  const runs = [];
+  const spawnClaude = (args, cwd) => {
+    const child = new EventEmitter();
+    child.stdin = new PassThrough();
+    child.stdout = new PassThrough();
+    child.stderr = new PassThrough();
+    child.kill = () => {};
+    runs.push({ args, cwd });
+    return child;
+  };
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-home-'));
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-assist-'));
+  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ assistantFolder: folder, lang: 'pt-BR' }));
+  const daemon = createDaemon({ port: 0, store: createStore({ dir, delay: 10 }), hooksInstalled: () => true, bundledArt: null, configFile: path.join(dir, 'config.json'), focus: createFocus({ driver: null }), contactKey: KEY, upgradeHooks: () => {}, spawnClaude });
+  const port = await daemon.listen();
+  const post = (p, body, headers = { 'X-Openmon-Key': KEY }) => request(port, 'POST', p, { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json', ...headers } });
+  try {
+    // A quick question: the assistant folder, its persona and Openmon's tools.
+    const q1 = JSON.parse((await post('/api/chat/quick', { text: 'oi' })).body);
+    assert.equal(q1.ok, true);
+    assert.equal(runs[0].cwd, path.resolve(folder));
+    const args = runs[0].args;
+    const persona = fs.readFileSync(args[args.indexOf('--append-system-prompt-file') + 1], 'utf8');
+    assert.match(persona, /Brazilian Portuguese/);
+    assert.match(persona, /remind/);
+    const mcp = JSON.parse(fs.readFileSync(args[args.indexOf('--mcp-config') + 1], 'utf8'));
+    const toolKey = mcp.mcpServers.openmon.env.OPENMON_TOOL_KEY;
+    assert.ok(toolKey && toolKey !== KEY);
+    assert.match(args[args.indexOf('--allowedTools') + 1], /mcp__openmon/);
+    const q2 = JSON.parse((await post('/api/chat/quick', { text: 'e agora?' })).body);
+    assert.equal(q2.id, q1.id);
+    // The tools answer only to their key.
+    assert.equal((await post('/api/assistant/tool', { name: 'say', args: { text: 'x' } })).status, 403);
+    const tool = (name, a) => post('/api/assistant/tool', { name, args: a }, { 'X-Openmon-Tool-Key': toolKey }).then((r) => JSON.parse(r.body));
+    assert.equal((await tool('remind', { text: 'Beber água', in_minutes: 30 })).ok, true);
+    assert.equal(daemon.schedule.list()[0].text, 'Beber água');
+    assert.equal((await tool('schedule_task', { prompt: 'Resumo', at: '09:00', repeat: 'weekdays' })).ok, true);
+    assert.equal(daemon.schedule.list().find((i) => i.kind === 'task').repeat, 'weekdays');
+    assert.equal((await tool('remind', { text: 'sem hora' })).ok, false);
+    assert.equal((await tool('remember', { fact: 'Gosta de café sem açúcar' })).ok, true);
+    assert.match(fs.readFileSync(path.join(folder, 'CLAUDE.md'), 'utf8'), /## Coisas para lembrar\n- Gosta de café sem açúcar/);
+    assert.match((await tool('work_summary', {})).text, /No agent work|tool uses/);
+    assert.equal((await tool('list_schedule', {})).ok, true);
+    assert.equal((await tool('nope', {})).ok, false);
+  } finally {
+    await daemon.close();
+  }
+});

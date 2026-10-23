@@ -17,8 +17,17 @@ function trusted(file) {
 }
 
 // "Edit cart.js", "Bash: npm test", "Grep: total" — what a tool call did.
+// Claude Code's own plumbing (loading tool definitions), not work to show.
+const QUIET_TOOLS = new Set(['ToolSearch']);
+
 function toolLine(name, input) {
   const i = input && typeof input === 'object' ? input : {};
+  // Openmon's own tools read as what they did: "Openmon · remind: …".
+  const own = /^mcp__openmon__(\w+)$/.exec(String(name || ''));
+  if (own) {
+    const what = i.text || i.prompt || i.fact || i.title || '';
+    return `Openmon · ${own[1]}${what ? `: ${String(what).replace(/\s+/g, ' ').slice(0, 70)}` : ''}`;
+  }
   const file = (p) => (typeof p === 'string' && p ? p.split(/[\\/]/).pop() : '');
   const clip = (s, n = 80) => {
     const t = String(s || '').replace(/\s+/g, ' ').trim();
@@ -72,7 +81,7 @@ function messagesOf(event) {
     const out = [];
     for (const b of msg.content) {
       if (b && b.type === 'text' && b.text && b.text.trim()) out.push({ role: 'assistant', text: b.text.trim(), at, id: msg.id || null });
-      else if (b && b.type === 'tool_use') out.push({ role: 'tool', text: toolLine(b.name, b.input), at, id: b.id || null });
+      else if (b && b.type === 'tool_use' && !QUIET_TOOLS.has(b.name)) out.push({ role: 'tool', text: toolLine(b.name, b.input), at, id: b.id || null });
     }
     return out;
   }
@@ -118,4 +127,4 @@ function readTranscript(file, { limit = 300 } = {}) {
   return out.slice(-limit);
 }
 
-module.exports = { readTranscript, messagesOf, toolLine, trusted };
+module.exports = { readTranscript, messagesOf, toolLine, trusted, QUIET_TOOLS };
