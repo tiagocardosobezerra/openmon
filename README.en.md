@@ -32,7 +32,7 @@ Behind it there is a game: the egg hatches, grows and evolves into one of 39 for
 
 ## Your personal assistant: talk to Claude without opening Claude
 
-`Ctrl+Alt+C` (or **More → Talk to Claude**, or the tray icon) opens Openmon's chat. It runs your own Claude Code, with your login, your settings, your connectors (MCP) and your `CLAUDE.md`. No API key needed.
+`Ctrl+Alt+C` (or **More → Assistant**, the top bar of the pages, or the tray icon) opens the assistant. It runs your own Claude Code, with your login, your settings, your connectors (MCP) and your `CLAUDE.md`. No API key needed.
 
 * **Real conversations:** the answer shows while it is written, with one line per tool used ("Write: list.txt", "Bash: npm test"). Pick each conversation's folder: a project, or the **Assistant** folder (Documents/Openmon Assistant) for general things.
 * **Requests inside the chat:** when Claude needs permission, the request shows in the chat with the change, and also in the pet's bubble, the notification and the shortcuts. Nothing is ever approved on its own.

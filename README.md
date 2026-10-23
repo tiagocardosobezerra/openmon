@@ -32,7 +32,7 @@ Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 39 formas 
 
 ## Seu assistente pessoal: converse com o Claude sem abrir o Claude
 
-`Ctrl+Alt+C` (ou **Mais → Conversar com o Claude**, ou o ícone da bandeja) abre o chat do Openmon. Ele usa o seu próprio Claude Code, com o seu login, as suas configurações, os seus conectores (MCP) e o seu `CLAUDE.md`. Não precisa de chave de API.
+`Ctrl+Alt+C` (ou **Mais → Assistente**, a barra de cima das páginas ou o ícone da bandeja) abre o assistente. Ele usa o seu próprio Claude Code, com o seu login, as suas configurações, os seus conectores (MCP) e o seu `CLAUDE.md`. Não precisa de chave de API.
 
 * **Conversas de verdade:** a resposta aparece enquanto é escrita, com uma linha para cada ferramenta usada ("Write: lista.txt", "Bash: npm test"). Escolha a pasta de cada conversa: um projeto, ou a pasta do **Assistente** (Documentos/Openmon Assistente) para assuntos gerais.
 * **Pedidos dentro do chat:** quando o Claude precisa de permissão, o pedido aparece no chat com a mudança, e também no balão do pet, na notificação e nos atalhos. Nada é aprovado sozinho.

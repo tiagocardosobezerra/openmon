@@ -96,7 +96,8 @@
       render();
     }
     const left = Math.max(0, Math.ceil((r.until - Date.now()) / 1000));
-    $('left').textContent = tr('request.left', { s: left });
+    // A chat's request has no clock: it waits for you.
+    $('left').textContent = r.chat ? tr('chat.permNote') : tr('request.left', { s: left });
   }
 
   async function decide(decision) {

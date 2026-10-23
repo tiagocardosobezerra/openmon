@@ -1072,7 +1072,8 @@
     const longTool = (live.sessions || []).find((x) => x.longTool);
     if (longTool && pose === 'working') return setBubble('warn', tr('longTool.title', { t: clock(longTool.longTool.ms) }), trDetail(longTool.longTool.detail), { jump: demo ? null : longTool.id, eyebrow: longTool.label, id: `long|${longTool.id}|${longTool.longTool.detail}` });
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
-    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}`, buttons: write });
+    // (One of Openmon's own chats: its answer bubble said it already.)
+    if (pose === 'done' && now() - poseSince < 90 && !chatSessions[f.id]) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}`, buttons: write });
     // Nothing to say about the agents: whatever was dismissed is over.
     dismissed = null;
     return setBubble(null);

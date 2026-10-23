@@ -16,7 +16,7 @@ const installer = require('./install');
 // Menu and notification text follow the OS language (English or Portuguese).
 const PT = {
   'Open card': 'Abrir card',
-  'Talk to Claude': 'Conversar com o Claude',
+  'Assistant': 'Assistente',
   'Ask your Openmon': 'Perguntar ao seu Openmon',
   'Claude answered': 'O Claude respondeu',
   'Reminder': 'Lembrete',
@@ -89,7 +89,7 @@ const PT = {
 };
 // Spanish menu and notification text.
 const ES_TEXT = {
-  "Talk to Claude": "Hablar con Claude",
+  "Assistant": "Asistente",
   "Ask your Openmon": "Preguntar a tu Openmon",
   "Claude answered": "Claude respondió",
   "Reminder": "Recordatorio",
@@ -383,7 +383,7 @@ function menuTemplate() {
       ];
   return [
     ...team,
-    { label: L('Talk to Claude'), ...(chatShortcut ? { accelerator: chatShortcut, registerAccelerator: false } : {}), click: () => openChatWindow() },
+    { label: L('Assistant'), ...(chatShortcut ? { accelerator: chatShortcut, registerAccelerator: false } : {}), click: () => openChatWindow() },
     { label: L('Ask your Openmon'), ...(askShortcut ? { accelerator: askShortcut, registerAccelerator: false } : {}), click: () => openAskWindow() },
     {
       label: L('Pages'),
@@ -606,7 +606,7 @@ function openTalkWindow(ask) {
   talkWin.loadURL(`http://127.0.0.1:${port}/talk.html?kind=${kind}&ref=${encodeURIComponent(ref)}`);
 }
 
-// Talk to Claude: Openmon's own conversations, and the ones open elsewhere.
+// The assistant: Openmon's own conversations with Claude, and the ones open elsewhere.
 // A normal window (it takes the keyboard), one at a time.
 let chatWin = null;
 let chatShortcut = null;
@@ -691,7 +691,7 @@ function openChatWindow(query = '') {
     height: 760,
     minWidth: 380,
     minHeight: 420,
-    title: L('Talk to Claude'),
+    title: L('Assistant'),
     show: false,
     autoHideMenuBar: true,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#15101a' : '#f3eee4',
@@ -1051,7 +1051,7 @@ function wireIpc() {
   ipcMain.on('open-powers', openPowersWindow);
   ipcMain.on('open-name', () => openNameWindow());
   ipcMain.on('open-talk', (_e, ask) => openTalkWindow(ask));
-  // The pet's "Talk to Claude", "Message" and a chat's bubble.
+  // The pet's "Assistant", "Message" and a chat's bubble.
   ipcMain.on('open-chat', (_e, query) => openChatWindow(String(query || '')));
   ipcMain.on('open-ask', (_e, opts) => openAskWindow({ withScreen: Boolean(opts && opts.screen), withClip: Boolean(opts && opts.clip) }));
   // The key for free text to the agent: only for the pet windows and the
@@ -1077,6 +1077,12 @@ function wireIpc() {
     if (!powersWin || powersWin.isDestroyed() || e.sender !== powersWin.webContents) return null;
     const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled(), agents: installer.otherAgents(), aider: installer.aiderLine(), rules: installer.rulesStatus() });
     switch (cmd) {
+      case 'open-chat':
+        openChatWindow();
+        return true;
+      case 'open-assistant-folder':
+        shell.openPath(daemon.assistantFolder());
+        return true;
       case 'info':
         return info();
       case 'login':
@@ -1380,7 +1386,7 @@ app.whenReady().then(async () => {
       // only that one: never a request you have not seen).
       globalShortcut.register('CommandOrControl+Alt+Y', () => win && win.webContents.send('command', 'perm-allow'));
       globalShortcut.register('CommandOrControl+Alt+N', () => win && win.webContents.send('command', 'perm-deny'));
-      // Talk to Claude from anywhere.
+      // The assistant from anywhere.
       // (Ctrl+Alt+Space is Claude's own app.) The first one free wins.
       chatShortcut = ['CommandOrControl+Alt+C', 'CommandOrControl+Alt+K'].find((k) => globalShortcut.register(k, () => openChatWindow('?new=1'))) || null;
       if (!chatShortcut) logError('chat shortcuts Ctrl+Alt+C and Ctrl+Alt+K are taken by other programs');

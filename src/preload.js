@@ -18,7 +18,7 @@ contextBridge.exposeInMainWorld('openmonDesktop', {
   openPage: (page) => ipcRenderer.send('open-page', String(page)),
   openRequest: (id) => ipcRenderer.send('open-request', String(id)),
   openUpdate: () => ipcRenderer.send('open-update'),
-  // Talk to Claude: "?id=<chat>", "?session=<agent session>", "?new=1" or nothing.
+  // The assistant: "?id=<chat>", "?session=<agent session>", "?new=1" or nothing.
   openChat: (query) => ipcRenderer.send('open-chat', String(query || '')),
   // A quick question (with the screen or the clipboard if asked).
   openAsk: (opts) => ipcRenderer.send('open-ask', { screen: Boolean(opts && opts.screen), clip: Boolean(opts && opts.clip) }),

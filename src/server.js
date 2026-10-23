@@ -378,7 +378,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // The real pet routes work to the pet of each project (Party); the demo
     // pet is a single egg.
     const events = target === real ? party.applySignal(real.pet, signal, ctx, t, petForSession(signal)) : pet.applySignal(target.pet, signal, ctx, t);
-    if (target === real) events.push(...target.sessions.takeNotices());
+    // A chat of Openmon's own says it is done with its answer (chat-done), not a summary too.
+    if (target === real) events.push(...target.sessions.takeNotices().filter((e) => !(e.type === 'summary' && assistant.bySession(e.session))));
     // Now and then a wild Openmon shows up (never in quiet or presentation mode).
     if (target === real) events.push(...wild.roll(real.pet, signal, t, Math.random, config.wild !== false && !config.present && !(config.quietUntil && config.quietUntil > t)));
     if (target === real) noteActivity(t);
@@ -1890,6 +1891,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     contactKey: () => contactKey,
     assistant,
     schedule,
+    // The assistant's folder (made, with its memory, the first time).
+    assistantFolder: () => assistantFolder(true),
     upgradeHooks: () => !playground && config.answerFromPet && upgradeHooks(),
     listen: () =>
       new Promise((resolve, reject) => {
