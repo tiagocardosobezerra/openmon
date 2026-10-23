@@ -31,16 +31,22 @@
   .item .btn { margin-top: 6px; }
   .item.holding { box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--brand) 40%, transparent); }
   .wear-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-  .wear { position: relative; display: grid; gap: 2px; justify-items: center; padding: 8px 8px 12px; text-align: center; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-lg); font: inherit; color: inherit; cursor: pointer; transition: transform 0.08s ease; }
+  /* An accessory: your Openmon wearing it on its stage (edge to edge, one
+     frame), the name, and what a click does. */
+  .wear { position: relative; display: grid; gap: 2px; justify-items: center; align-content: start; padding: 0 0 12px; text-align: center; background: var(--surface); border: var(--bw) solid var(--line); border-radius: var(--r-lg); font: inherit; color: inherit; cursor: pointer; overflow: hidden; transition: transform 0.08s ease, box-shadow 0.08s ease; }
   .wear:hover:not(.locked) { transform: translateY(-2px); border-color: var(--outline); box-shadow: var(--lift); }
-  .wear.worn { border-color: var(--outline); box-shadow: var(--lift), 0 0 0 3px color-mix(in srgb, var(--sun) 70%, transparent); }
-  .wear.locked { cursor: default; background: var(--surface-2); }
-  .wear.locked canvas { filter: grayscale(1) brightness(0.35); opacity: 0.55; }
-  .wear canvas { width: 120px; height: 120px; border-radius: 14px; background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--brand) 18%, var(--surface)), var(--surface-2) 72%); }
-  .wear b { font: 600 14px var(--font-display); }
-  .wear small { font-size: 12px; color: var(--muted); }
-  .wear .tag { position: absolute; top: 8px; right: 8px; }
-  .wear .bar { width: 80%; height: 6px; margin-top: 4px; }
+  .wear.worn { border-color: var(--outline); box-shadow: var(--lift), 0 0 0 3px var(--sun); }
+  .wear.locked { cursor: default; }
+  .wear .stage { width: 100%; height: 132px; margin-bottom: 8px; border-radius: 0; box-shadow: inset 0 calc(-1 * var(--bw)) 0 color-mix(in srgb, var(--type, var(--outline)) 40%, var(--line)); }
+  .wear.locked .stage { background: var(--sunken); }
+  .wear.locked canvas { filter: brightness(0) opacity(0.55); }
+  .wear canvas { width: 128px; height: 128px; }
+  .wear b { font: 600 14.5px/1.2 var(--font-display); padding: 0 8px; }
+  .wear small { font-size: 12px; color: var(--muted); padding: 0 8px; }
+  .wear .state { margin-top: 6px; padding: 3px 12px; border-radius: 99px; font: 600 12px var(--font-display); color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .wear.worn .state { color: #2a2140; background: var(--sun); box-shadow: inset 0 0 0 1.5px var(--outline); }
+  .wear:hover:not(.locked):not(.worn) .state { color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--outline); }
+  .wear .bar { width: calc(100% - 32px); height: 6px; margin-top: 6px; border-width: 1.5px; }
   .slot-title { margin: 22px 0 10px; }
   .empty-egg { padding: 18px; }
 </style>
@@ -200,8 +206,8 @@
 
   function drawPreview(canvas, spec) {
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = 120 * dpr;
-    canvas.height = 120 * dpr;
+    canvas.width = 128 * dpr;
+    canvas.height = 128 * dpr;
     const ctx = canvas.getContext('2d');
     const k = canvas.width / 200;
     ctx.setTransform(k, 0, 0, k, 100 * k, 178 * k);
@@ -216,10 +222,16 @@
       const box = $(slot);
       box.textContent = '';
       for (const c of list.filter((x) => x.slot === slot)) {
-        const tile = el('button', `wear${c.owned ? '' : ' locked'}${c.worn ? ' worn' : ''}`);
+        const type = pet.legend ? null : pet.lineage || pet.starter;
+        const tile = el('button', `wear${c.owned ? '' : ' locked'}${c.worn ? ' worn' : ''}${type ? ` t-${type}` : ''}`);
         tile.type = 'button';
+        const stage = el('div', 'stage');
         const canvas = el('canvas');
-        tile.append(canvas, el('b', '', c.owned ? tr(`wear.${c.id}`) : '???'), el('small', '', c.worn ? tr('bag.wearing') : c.owned ? tr('bag.tapToWear') : tr(`wear.${c.id}.how`)));
+        stage.append(canvas);
+        tile.append(stage, el('b', '', c.owned ? tr(`wear.${c.id}`) : '???'));
+        if (c.owned) tile.append(el('span', 'state', c.worn ? tr('bag.wearing') : tr('bag.tapToWear')));
+        else tile.append(el('small', '', tr(`wear.${c.id}.how`)));
+        if (c.worn) tile.title = tr('bag.takeOff');
         if (!c.owned && c.progress) {
           const bar = el('div', 'bar');
           const fill = el('i');
@@ -227,7 +239,6 @@
           bar.append(fill);
           tile.append(bar, el('small', '', `${c.progress.have}/${c.progress.need}`));
         }
-        if (c.worn) tile.append(el('span', 'tag chip sun', '✓'));
         if (c.owned) tile.onclick = () => act('/api/wear', { slot, id: c.worn ? null : c.id });
         const wear = { ...pet.wear, [slot]: c.id };
         previews.push([canvas, specFor(wear)]);
@@ -250,10 +261,12 @@
     renderWear();
   }
 
-  OpenmonArt.loadPack().then(load);
-  // Eye and hat anchors finish loading in the background: draw again.
-  setTimeout(drawAll, 1200);
-  setTimeout(drawAll, 3000);
+  // Art, eyes and hat anchors finish loading in the background: draw again
+  // a few times until they have.
+  OpenmonArt.loadPack().then(load).then(() => {
+    let n = 0;
+    const again = setInterval(() => (drawAll(), ++n >= 16 && clearInterval(again)), 250);
+  });
 </script>
 </body>
 </html>

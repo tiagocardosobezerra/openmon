@@ -6,6 +6,11 @@
 (function () {
   const { t: tr } = window.OpenmonI18n;
   const page = document.body.dataset.page;
+  // Which of the designer's optional files exist (public/icons, props, badges).
+  window.OpenmonSlots = fetch('/art/index.json')
+    .then((r) => r.json())
+    .then((j) => new Set(j.slots || []))
+    .catch(() => new Set());
   const svg = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   // Drawn here until the designer's public/icons/nav-<id>.svg exists.
   const ICONS = {
@@ -23,10 +28,13 @@
     span.className = 'nav-ic';
     span.innerHTML = svg(ICONS[id]);
     // The designer's icon replaces the drawn one when it is there.
-    const img = new Image();
-    img.alt = '';
-    img.onload = () => span.replaceChildren(img);
-    img.src = `/icons/nav-${id}.svg`;
+    window.OpenmonSlots.then((slots) => {
+      if (!slots.has(`icons/nav-${id}.svg`)) return;
+      const img = new Image();
+      img.alt = '';
+      img.onload = () => span.replaceChildren(img);
+      img.src = `/icons/nav-${id}.svg`;
+    });
     return span;
   }
   function link(id, href, label, { iconOnly = false } = {}) {
@@ -80,9 +88,21 @@
   menu.append(link('card', '/card.html', tr('nav.card')), link('help', '/help.html', tr('nav.help')));
   more.append(sum, menu);
   if (page === 'card' || page === 'help') sum.setAttribute('aria-current', 'page');
+  // Every small menu on a page (this "More", a member's "⋯") is a popover:
+  // one open at a time, closed by a click anywhere else or by Esc.
+  const MENUS = 'details.nav-more, details.more';
+  const closeMenus = (keep = null) => {
+    for (const d of document.querySelectorAll(`${MENUS}[open]`)) if (d !== keep) d.open = false;
+  };
+  document.addEventListener('pointerdown', (e) => closeMenus(e.target.closest && e.target.closest(MENUS)));
+  document.addEventListener('keydown', (e) => e.key === 'Escape' && closeMenus());
+  document.addEventListener('toggle', (e) => e.target.matches && e.target.matches(MENUS) && e.target.open && closeMenus(e.target), true);
+  // A menu item that was used closes its menu.
   document.addEventListener('click', (e) => {
-    if (more.open && !more.contains(e.target)) more.open = false;
+    const menu = e.target.closest && e.target.closest(MENUS);
+    if (menu && e.target.closest('button, a') && !e.target.closest('summary')) menu.open = false;
   });
+  window.addEventListener('blur', () => closeMenus());
   nav.append(more, link('settings', '/settings.html', tr('card.settings'), { iconOnly: true }));
 
   // Your Openmon at the corner: "you are here".

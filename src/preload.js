@@ -7,6 +7,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('openmonDesktop', {
   dragStart: () => ipcRenderer.send('drag-start'),
   dragEnd: () => ipcRenderer.send('drag-end'),
+  hotRects: (rects) => ipcRenderer.send('hot-rects', Array.isArray(rects) ? rects.slice(0, 8) : []),
+  dragGrip: (fx, fy) => ipcRenderer.send('drag-grip', { fx: Number(fx), fy: Number(fy) }),
   menu: () => ipcRenderer.send('menu'),
   setInteractive: (on) => ipcRenderer.send('interactive', Boolean(on)),
   // The card is open: the window takes focus, so a click anywhere else closes it.

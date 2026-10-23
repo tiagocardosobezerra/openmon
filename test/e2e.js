@@ -83,12 +83,24 @@ async function runAll() {
     const home = seedHome(scenario);
     const port = await freePort();
     console.log(`\n# e2e ${scenario} (port ${port})`);
+    let ranAll = true;
     const code = await new Promise((resolve) => {
       const env = { ...process.env, OPENMON_HOME: home, OPENMON_PORT: String(port) };
       delete env.ELECTRON_ENABLE_LOGGING;
       const child = spawn(electron, [__filename, '--scenario', scenario], {
-        stdio: 'inherit',
+        stdio: ['ignore', 'pipe', 'inherit'],
         env,
+      });
+      // A scenario that quits before its checks (say, another Openmon holds
+      // the lock) exits cleanly: only its own summary line counts as a pass.
+      let out = '';
+      child.stdout.on('data', (d) => {
+        out += d;
+        process.stdout.write(d);
+      });
+      child.on('exit', () => {
+        const m = /: (\d+)\/(\d+) checks passed/.exec(out);
+        if (!m || m[1] !== m[2] || m[2] === '0') ranAll = false;
       });
       const timer = setTimeout(() => {
         console.error(`e2e ${scenario}: timed out`);
@@ -99,7 +111,7 @@ async function runAll() {
         resolve(c === null ? 1 : c);
       });
     });
-    if (code !== 0) failed++;
+    if (code !== 0 || !ranAll) failed++;
     fs.rmSync(home, { recursive: true, force: true });
   }
   console.log(failed ? `\n${failed} scenario(s) failed.` : '\nEnd-to-end tests passed.');
@@ -252,6 +264,47 @@ function runScenario(scenario) {
   // The pet windows show the daemon's root page (with ?lang / ?companion).
   const petWindows = () => BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed() && /^\/(\?|$)/.test(w.webContents.getURL().slice(`http://127.0.0.1:${port}`.length)) && w.webContents.getURL().startsWith(`http://127.0.0.1:${port}/`));
 
+  // The pages: opened from the pet, each one draws (not a blank window),
+  // has no script errors, and the pets step behind it while it is open.
+  async function pages(main, pets) {
+    const errors = [];
+    js(main, `openmonDesktop.openPage('bag')`);
+    const page = await until(() => BrowserWindow.getAllWindows().find((w) => !pets.includes(w) && w.isVisible() && /\/bag\.html/.test(w.webContents.getURL()) && !w.webContents.isLoading()), 8000);
+    check('pages: the Bag opens in the app window', page);
+    if (!page) return;
+    page.webContents.on('console-message', (_e, level, message) => level >= 3 && errors.push(message));
+    page.webContents.on('render-process-gone', (_e, d) => errors.push(`renderer gone: ${d.reason}`));
+    check('pages: the pets step behind an open page', pets.every((w) => !w.isAlwaysOnTop() && w.__belowPage));
+    for (const name of ['bag', 'party', 'dex', 'powers', 'card', 'help', 'settings']) {
+      if (!page.webContents.getURL().endsWith(`/${name}.html`)) {
+        // Through the top bar, as a person would.
+        await js(page, `location.href = '/${name}.html'`).catch(() => {});
+        await until(() => page.webContents.getURL().endsWith(`/${name}.html`) && !page.webContents.isLoading(), 6000);
+      }
+      await wait(900);
+      const drawn = await until(async () => {
+        const shot = await page.webContents.capturePage();
+        const { width, height } = shot.getSize();
+        const px = shot.toBitmap();
+        // Something besides the background: text, panels, art.
+        const colors = new Set();
+        for (let y = 0; y < height; y += 23) for (let x = 0; x < width; x += 17) {
+          const i = (y * width + x) * 4;
+          colors.add(`${px[i] >> 4},${px[i + 1] >> 4},${px[i + 2] >> 4}`);
+        }
+        return colors.size > 6 ? colors.size : null;
+      }, 4000, 200);
+      check(`pages: ${name} draws`, drawn, 'the window stayed blank');
+      const text = await js(page, `document.body.innerText.length`).catch(() => 0);
+      check(`pages: ${name} has its content`, text > 40, `${text} characters`);
+    }
+    check('pages: no script errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+    page.close();
+    // (Electron reports the 'floating' level as "not on top" on Windows: the
+    // shell's own record of the layer is what counts.)
+    check('pages: the pets float again once the page is closed', await until(() => pets.every((w) => w.__belowPage === false), 2000));
+  }
+
   // Clicks pass through everywhere except the pet, and again once the
   // pointer leaves (by the page's mouseleave and by the shell's safety net).
   async function clickThrough(w, label) {
@@ -310,7 +363,12 @@ function runScenario(scenario) {
     w.webContents.sendInputEvent({ type: 'mouseUp', x: cursor.x - b.x, y: cursor.y - b.y, globalX: cursor.x, globalY: cursor.y, button: 'left', clickCount: 1 });
     await wait(200);
     const after = w.getPosition();
-    check(`${label}: drag moves the window`, after[0] === before[0] + dx && after[1] === before[1] + dy, `from ${before} to ${after}, wanted a move of ${dx},${dy}`);
+    // It follows the pointer, held by the top of its head: pressed on its
+    // middle, the hand ends up on the same column but higher on the pet, so
+    // the window moves sideways with the pointer and hangs lower under it.
+    const held = { x: cursor.x - after[0], y: cursor.y - after[1] };
+    check(`${label}: drag moves the window`, after[0] === before[0] + dx && after[1] > before[1] + dy, `from ${before} to ${after}, wanted a move of ${dx} and more than ${dy}`);
+    check(`${label}: carried by the top of its head`, Math.abs(held.x - p.x) <= 2 && held.y < p.y - 10 && held.y > 0, `held at ${held.x},${held.y}, pressed at ${Math.round(p.x)},${Math.round(p.y)}`);
     check(`${label}: drag leaves the other windows alone`, others.every((o, i) => String(o.getPosition()) === String(othersBefore[i])));
     const place = await until(() => {
       const s = saved();
@@ -426,6 +484,7 @@ function runScenario(scenario) {
         const same = Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1 && Math.abs(a.w - b.w) <= 1 && Math.abs(a.h - b.h) <= 1;
         check('both cards have the same size and place over their pet', same, `main ${JSON.stringify(a)} companion ${JSON.stringify(b)}`);
       }
+      if (scenario === 'solo') await pages(main, ready);
     } catch (err) {
       check('scenario ran to the end', false, err.stack || String(err));
     }

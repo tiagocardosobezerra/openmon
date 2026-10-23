@@ -1181,7 +1181,15 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'GET /art/index.json':
         {
           const { files, pack, tints } = listArt(artDirs);
-          return json(res, 200, { files, pack, tints });
+          // The designer's optional files that are there, so pages ask only
+          // for those (no stream of 404s for the ones still drawn in code).
+          const slots = [];
+          for (const dir of ['icons', 'props', 'badges']) {
+            try {
+              for (const f of fs.readdirSync(path.join(PUBLIC_DIR, dir))) if (f.endsWith('.svg')) slots.push(`${dir}/${f}`);
+            } catch {}
+          }
+          return json(res, 200, { files, pack, tints, slots });
         }
       case 'GET /health':
         return json(res, 200, { app: 'openmon', clients: clients.size });

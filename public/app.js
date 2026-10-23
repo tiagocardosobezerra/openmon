@@ -66,6 +66,7 @@
   let lastPetFx = 0;
   let petClicks = [];
   let comboAt = -1e9;
+  let lastTap = 0;
   let landed = 0;
   // How many Openmons the team has (a companion always has company).
   let teamSize = companionId ? 2 : 1;
@@ -424,8 +425,9 @@
       anim.jump = Math.max(anim.jump || 0, Math.sin(combo * Math.PI) * 18);
       anim.eyes = 'happy';
     }
-    // Held by the cursor: lifted off the ground, a little stretched, swinging
-    // against the way it is moved, looking down at the floor it left.
+    // Held by the cursor by the top of its head: lifted off the ground, a
+    // little stretched, hanging and swinging from the hand against the way it
+    // is moved, looking down at the floor it left.
     if (carry) {
       const target = Math.max(-0.38, Math.min(0.38, -carry.vx * 0.012));
       carry.tiltV = (carry.tiltV + (target - carry.tilt) * 0.22) * 0.82;
@@ -434,7 +436,7 @@
       const up = Math.min(1, (performance.now() - carry.at) / 140);
       anim.jump = Math.max(anim.jump || 0, up * (14 + Math.sin(t * 7) * 1.5));
       anim.squash = -0.08 * up;
-      anim.tilt = carry.tilt;
+      anim.tilt = 0;
       anim.turn = 1;
       anim.lookX = Math.max(-1, Math.min(1, -carry.tilt * 2));
       anim.lookY = 1;
@@ -476,6 +478,23 @@
           ctx.restore();
         }
         ctx.scale(k, k);
+      }
+      // Carried: hanging from the hand at the top of its head, so it swings
+      // around that point, not around its feet.
+      if (carry) {
+        // Its shadow stays on the floor below, small and faint.
+        ctx.save();
+        ctx.globalAlpha = 0.12;
+        ctx.beginPath();
+        ctx.ellipse(0, 2, SIZE * 0.55, SIZE * 0.1, 0, 0, Math.PI * 2);
+        ctx.fillStyle = OpenmonArt.INK;
+        ctx.fill();
+        ctx.restore();
+        anim.shadow = false;
+        const grip = -(OpenmonArt.heightOf(spec.stage, SIZE) + (anim.jump || 0)) + 8;
+        ctx.translate(0, grip);
+        ctx.rotate(carry.tilt);
+        ctx.translate(0, -grip);
       }
       // Carried: the surprised pose, eyes wide and arms up.
       OpenmonArt.drawCreature(ctx, { ...spec, t, size: SIZE, pose: carry && spec.stage !== 'egg' ? 'attention' : showPose, anim });
@@ -666,12 +685,43 @@
       play('attention');
       burst('spark', 10, petCX(), GROUND - 90, Math.PI * 2, { colors: ['#ffe156', '#fff'], gravity: 80 });
     }
+    reportHot(t);
     // Time-based bubble rules (the 90 s "done") need a gentle re-check.
     if (t - lastUiCheck > 1) {
       lastUiCheck = t;
       renderBubble();
     }
     requestAnimationFrame(frame);
+  }
+
+  // Where this window takes clicks (the pet, its card, bubble, badge), for
+  // the desktop shell. Pet windows are big and transparent and can overlap:
+  // the shell uses these to give the click to the pet under the pointer,
+  // even when another pet's window lies on top of it.
+  let hotSent = '';
+  let hotAt = 0;
+  function reportHot(t) {
+    if (!desktop || !desktop.hotRects || t - hotAt < 0.25) return;
+    hotAt = t;
+    const r = canvas.getBoundingClientRect();
+    const sx = r.width / W;
+    const sy = r.height / H;
+    const stage = currentSpec().stage;
+    const R = radius(stage) * 1.45;
+    const h = OpenmonArt.heightOf(stage, SIZE);
+    const rects = [[r.left + (petCX() - R) * sx, r.top + (GROUND - h - 8) * sy, 2 * R * sx, (h + 16) * sy]];
+    for (const node of document.querySelectorAll('#card, #bubble, #badge, #controls')) {
+      const b = node.getBoundingClientRect();
+      const css = getComputedStyle(node);
+      if (b.width && b.height && css.display !== 'none' && css.visibility !== 'hidden' && Number(css.opacity) > 0) rects.push([b.left, b.top, b.width, b.height]);
+    }
+    const iw = window.innerWidth || 1;
+    const ih = window.innerHeight || 1;
+    const out = rects.map(([x, y, w, hh]) => [x / iw, y / ih, w / iw, hh / ih].map((v) => Math.round(v * 1000) / 1000));
+    const key = JSON.stringify(out);
+    if (key === hotSent) return;
+    hotSent = key;
+    desktop.hotRects(out);
   }
 
   // --- chatter ---------------------------------------------------------------------
@@ -1577,6 +1627,13 @@
       canvas.classList.add('dragging');
       setHover(false);
       carry = { at: performance.now(), lastX: e.screenX, vx: 0, tilt: 0, tiltV: 0 };
+      // Held from above: the window slides until the hand is on its head.
+      if (desktop && desktop.dragGrip) {
+        const r = canvas.getBoundingClientRect();
+        const gx = r.left + (petCX() * r.width) / W;
+        const gy = r.top + ((GROUND - OpenmonArt.heightOf(currentSpec().stage, SIZE) - 14 + 24) * r.height) / H;
+        desktop.dragGrip(gx / window.innerWidth, gy / window.innerHeight);
+      }
     }
     if (carry) {
       carry.vx = carry.vx * 0.5 + (e.screenX - carry.lastX) * 0.5 * 4;
@@ -1599,7 +1656,14 @@
         dismissBubble();
         jumpTo(id);
       } else if (pet && pet.awaitingStarter) openPage('starter');
-      else {
+      else if (performance.now() - lastTap < 300) {
+        // A double click opens its card, like the right button. Counted
+        // here: the desktop shell's own double click does not survive the
+        // window being lifted between the two clicks.
+        lastTap = 0;
+        setHover(true);
+      } else {
+        lastTap = performance.now();
         petFx(petCombo());
         post('/api/pet');
       }
@@ -1618,10 +1682,6 @@
   canvas.addEventListener('pointercancel', dropDrag);
   canvas.addEventListener('lostpointercapture', () => setTimeout(dropDrag, 0));
   window.addEventListener('blur', dropDrag);
-  canvas.addEventListener('dblclick', (e) => {
-    const p = localPoint(e);
-    if (overPet(p.x, p.y) && pose !== 'attention') setHover(true);
-  });
   canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     setHover(!hovering);
@@ -1889,6 +1949,7 @@
       if (cmd === 'powers') openPowers();
       // The shell made the window click-through again (the pointer left it).
       if (cmd === 'pointer-out') interactive = false;
+      if (cmd === 'pointer-in') interactive = true;
     });
   }
 

@@ -10,16 +10,20 @@
 <style>
   main { padding-bottom: 56px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-  .mon { position: relative; display: grid; justify-items: center; gap: 2px; padding: 6px 6px 12px; text-align: center; border-color: color-mix(in srgb, var(--type) 45%, var(--outline)); }
-  .mon.active { box-shadow: var(--lift), var(--gloss), 0 0 0 3px color-mix(in srgb, var(--sun) 70%, transparent); }
-  .mon .stage { width: 100%; height: 170px; margin-bottom: 6px; }
-  .mon canvas { width: 160px; height: 160px; }
-  .mon .name { font: 600 18px var(--font-display); }
+  /* A member: its stage fills the top of the card edge to edge (one frame,
+     not a box in a box), then the name, level bar, project and one button. */
+  .mon { position: relative; display: grid; justify-items: center; align-content: start; gap: 3px; padding: 0 0 14px; text-align: center; border-color: color-mix(in srgb, var(--type, var(--outline)) 55%, var(--outline)); }
+  .mon.active { box-shadow: var(--lift), var(--gloss), 0 0 0 3px var(--sun); }
+  .mon .stage { width: 100%; height: 184px; margin-bottom: 8px; border-radius: calc(var(--r-lg) - var(--bw)) calc(var(--r-lg) - var(--bw)) 0 0; box-shadow: inset 0 calc(-1 * var(--bw)) 0 color-mix(in srgb, var(--type, var(--outline)) 45%, var(--line)); }
+  .mon canvas { width: 176px; height: 176px; }
+  .mon .name { display: inline-flex; align-items: center; gap: 6px; font: 600 19px/1.15 var(--font-display); padding: 0 12px; }
+  .mon .shiny-mark { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--sun); color: #2a2140; font-size: 12px; box-shadow: 0 0 0 1.5px var(--outline); }
   .mon .meta { font-size: 12.5px; color: var(--muted); }
-  .mon .tag { position: absolute; top: 12px; left: 12px; z-index: 1; }
-  .mon .proj { margin-top: 4px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; }
-  .mon .main-act { margin-top: 10px; min-width: 60%; }
-  .mon .bar { width: 70%; height: 8px; margin-top: 6px; border-width: 1.5px; }
+  .mon .on-screen { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; padding: 7px 16px; border-radius: 99px; background: color-mix(in srgb, var(--sun) 22%, var(--surface)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sun) 70%, var(--outline)); font: 600 13.5px var(--font-display); }
+  .mon .on-screen::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--sun); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sun) 35%, transparent); }
+  .mon .proj { margin-top: 6px; max-width: calc(100% - 28px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mon .main-act { margin-top: 10px; min-width: 64%; }
+  .mon .bar { width: calc(100% - 48px); height: 8px; margin-top: 6px; border-width: 1.5px; }
   /* Everything else about a member: a small menu behind "⋯". */
   .more { position: absolute; top: 10px; right: 10px; z-index: 2; }
   .more > summary { list-style: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 80%, transparent); box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink); font: 700 18px/1 var(--font-display); cursor: pointer; }
@@ -45,6 +49,7 @@
   .boxwrap .name { padding: 1px 12px; border-radius: 99px; background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 0 0 0 1.5px var(--outline); font-size: 15px; }
   .boxwrap .main-act { margin-top: 6px; min-width: 0; }
   .boxwrap .more { top: 0; }
+  .boxwrap .stage { border-radius: 0; box-shadow: none; }
   .walls { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: 10px; vertical-align: middle; }
   .walls button { width: 34px; height: 22px; padding: 0; border-radius: 7px; border: 2px solid var(--line); background: center / cover no-repeat; cursor: pointer; }
   .walls button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--sun); }
@@ -96,22 +101,31 @@
     const canvas = el('canvas');
     stage.append(canvas);
     canvases.push([canvas, p]);
-    c.append(stage, el('span', 'name', p.shiny && p.stage !== 'egg' ? `${p.name} ★` : p.name), el('span', 'meta', `${tr('card.level', { n: p.level })} · ${p.form}`));
+    const name = el('span', 'name', p.name);
+    if (p.shiny && p.stage !== 'egg') {
+      const mark = el('span', 'shiny-mark', '✦');
+      mark.title = tr('card.shinyTag');
+      mark.setAttribute('aria-label', tr('card.shinyTag'));
+      name.append(mark);
+    }
+    c.append(stage, name, el('span', 'meta', `${tr('card.level', { n: p.level })} · ${p.form}`));
     // Legendaries, mystery eggs and wild ones belong to no project.
     const special = p.legend ? tr('party.legendTag') : p.project && p.project.startsWith('mystery:') ? tr('party.mysteryTag') : p.project && p.project.startsWith('wild:') ? tr('party.wildTag') : null;
     const mystery = !p.legend && p.project && p.project.startsWith('mystery:');
-    const proj = el('span', 'chip proj', special || p.project || tr('party.general'));
-    proj.title = mystery ? tr('party.mysteryHow') : special || (p.project ? tr('party.project', { project: p.project }) : tr('party.general'));
-    c.append(proj);
     const bar = el('div', 'bar');
     const fill = el('i');
     fill.style.width = `${Math.round((p.progress || 0) * 100)}%`;
     bar.append(fill);
     c.append(bar);
-    if (p.active || (cfg.companions || []).includes(p.id)) c.append(el('span', 'tag chip sun', tr('party.onScreen')));
+    const proj = el('span', 'chip proj', special || p.project || tr('party.general'));
+    proj.title = mystery ? tr('party.mysteryHow') : special || (p.project ? tr('party.project', { project: p.project }) : tr('party.general'));
+    c.append(proj);
+    // On screen: said where the button would be, not over the art.
+    const onScreen = p.active || (cfg.companions || []).includes(p.id);
+    if (onScreen) c.append(el('span', 'on-screen', tr('party.onScreen')));
 
     // The one main action: bring it to the screen (or back from the Nest).
-    if (!p.active) {
+    if (!onScreen) {
       const inNest = p.place === 'box';
       const main = el('button', 'btn primary main-act', inNest ? tr('party.toParty') : tr('party.show'));
       main.onclick = () => (inNest ? post('/api/party/move', { id: p.id, place: 'party' }) : post('/api/party/active', { id: p.id }));
@@ -150,6 +164,12 @@
       // Also on screen, next to the main one (up to 2 more).
       const list = cfg.companions || [];
       const on = list.includes(p.id);
+      // Already beside the main one: it can still become the main one.
+      if (on) {
+        const main = el('button', 'btn sm quiet', tr('party.show'));
+        main.onclick = () => post('/api/party/active', { id: p.id });
+        menu.append(main);
+      }
       const also = el('button', 'btn sm quiet', tr(on ? 'party.alsoOff' : 'party.alsoOn'));
       if (!on && list.length >= 2) {
         also.disabled = true;
@@ -214,9 +234,9 @@
     const dpr = window.devicePixelRatio || 1;
     const t = ms / 1000;
     canvases.forEach(([canvas, p], i) => {
-      if (canvas.width !== 160 * dpr) {
-        canvas.width = 160 * dpr;
-        canvas.height = 160 * dpr;
+      if (canvas.width !== 176 * dpr) {
+        canvas.width = 176 * dpr;
+        canvas.height = 176 * dpr;
       }
       const ctx = canvas.getContext('2d');
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -269,7 +289,6 @@
   }
   renderWalls();
   OpenmonArt.loadPack().then(load).then(() => requestAnimationFrame(frame));
-  setTimeout(drawAll, 3500);
 </script>
 </body>
 </html>

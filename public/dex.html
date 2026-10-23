@@ -132,7 +132,7 @@
     const k = canvas.width / 200;
     ctx.setTransform(k, 0, 0, k, 100 * k, 168 * k);
     const anim = OpenmonMotion.poseAnim({ ...spec, pose: silhouette ? 'sleep' : 'idle', t, since: 0 });
-    OpenmonArt.drawCreature(ctx, { ...spec, t, size: 44, pose: 'idle', anim, plain: silhouette });
+    OpenmonArt.drawCreature(ctx, { ...spec, t, size: 44, pose: 'idle', anim });
     if (silhouette) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalCompositeOperation = 'source-atop';
@@ -188,10 +188,14 @@
       medal.className = 'medal';
       medal.textContent = have ? '★' : '?';
       // The designer's badge (public/badges/<id>.svg, or locked.svg) replaces the glyph.
-      const art = new Image();
-      art.alt = '';
-      art.onload = () => medal.replaceChildren(art);
-      art.src = `/badges/${have ? encodeURIComponent(id) : 'locked'}.svg`;
+      const file = `${have ? id : 'locked'}.svg`;
+      window.OpenmonSlots.then((slots) => {
+        if (!slots.has(`badges/${file}`)) return;
+        const art = new Image();
+        art.alt = '';
+        art.onload = () => medal.replaceChildren(art);
+        art.src = `/badges/${encodeURIComponent(file)}`;
+      });
       const text = document.createElement('div');
       const title = document.createElement('b');
       title.textContent = !have && a.secret ? '???' : a.title;

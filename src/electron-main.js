@@ -6,7 +6,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, BrowserWindow, Menu, Tray, Notification, dialog, globalShortcut, ipcMain, nativeImage, nativeTheme, screen, shell } = require('electron');
+const { app, BrowserWindow, Menu, Tray, Notification, dialog, globalShortcut, ipcMain, nativeImage, nativeTheme, screen, session, shell } = require('electron');
 const { createDaemon } = require('./server');
 const { homeDir, adoptLegacyHome } = require('./store');
 
@@ -180,6 +180,10 @@ process.on('unhandledRejection', logError);
 // The GPU process crashes on some Windows setups with transparent windows.
 // A 300×340 canvas is cheap in software, so use that unless asked not to.
 if (process.env.OPENMON_GPU !== '1') app.disableHardwareAcceleration();
+// The pets are see-through windows over everything: Chromium's occlusion
+// check can take a page window for hidden behind them and stop painting it
+// (a blank page). Every window here paints, always.
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
 app.on('child-process-gone', (_e, d) => logError(`child process gone: ${d.type} ${d.reason} (${d.exitCode})`));
 // `openmon autostart on|off|status` runs this file just to change the
 // login item, then exits; it must not fight the running pet for the lock.
@@ -199,7 +203,14 @@ if (autostartArg >= 0) {
 } else if (PLAYGROUND) {
   // The playground runs beside the real pet: own profile, no instance lock.
   app.setPath('userData', path.join(require('node:os').tmpdir(), 'openmon-playground-profile'));
-} else if (!app.requestSingleInstanceLock()) app.quit();
+} else {
+  // Its own profile folder, the one the installed app uses too. Run from
+  // source, Electron would otherwise share a generic "Electron" folder (and
+  // its caches) with any other app started the same way.
+  // A run on another home (tests, a second save) gets a profile of its own.
+  app.setPath('userData', process.env.OPENMON_HOME ? path.join(homeDir(), 'electron-profile') : path.join(app.getPath('appData'), 'Openmon'));
+  if (!app.requestSingleInstanceLock()) app.quit();
+}
 
 let tray = null;
 let trayAlert = false;
@@ -210,6 +221,7 @@ let port = null;
 let latest = null;
 let notifiedFor = null;
 let dragTimer = null;
+let dragGrip = null;
 
 const placeFile = () => path.join(homeDir(), 'window.json');
 
@@ -451,7 +463,7 @@ function openAppWindow(page = 'powers') {
   // While you use a page, the pets step behind it; back on top when you leave.
   powersWin.on('focus', () => petsOnTop(false));
   powersWin.on('blur', () => petsOnTop(true));
-  powersWin.on('closed', () => petsOnTop(true));
+  powersWin.on('closed', () => petsOnTop(true, true));
   const origin = `http://127.0.0.1:${port}/`;
   powersWin.webContents.setWindowOpenHandler(({ url: target }) => {
     if (/^https?:\/\//.test(target) && !target.startsWith(origin)) shell.openExternal(target);
@@ -463,6 +475,8 @@ function openAppWindow(page = 'powers') {
     e.preventDefault();
     if (/^https?:\/\//.test(target)) shell.openExternal(target);
   });
+  powersWin.on('minimize', () => petsOnTop(true));
+  powersWin.on('hide', () => petsOnTop(true));
   powersWin.once('ready-to-show', () => bringToFront(powersWin));
   powersWin.loadURL(url);
 }
@@ -470,12 +484,16 @@ const openPowersWindow = () => openAppWindow('powers');
 
 // A page in use stays in front of the pets; they float again when it is left.
 let pageInFront = false;
-function petsOnTop(on) {
+function petsOnTop(on, force = false) {
+  if (pageInFront === !on && !force) return;
   pageInFront = !on;
   for (const w of [win, ...companionWins.values()]) {
     if (!w || w.isDestroyed()) continue;
     if (on) w.setAlwaysOnTop(true, 'floating');
     else w.setAlwaysOnTop(false);
+    // Electron reports the 'floating' level as not on top on Windows, so
+    // the layer is kept here too.
+    w.__belowPage = !on;
   }
 }
 
@@ -483,6 +501,9 @@ function petsOnTop(on) {
 // behind whatever app is active. A brief always-on-top puts them in front.
 function bringToFront(w) {
   if (!w || w.isDestroyed()) return;
+  // Opening a page: the pets step back at once. Windows may refuse the
+  // focus (no 'focus' event then), so this does not wait for it.
+  if (w === powersWin) petsOnTop(false);
   if (w.isMinimized()) w.restore();
   w.show();
   w.setAlwaysOnTop(true);
@@ -620,7 +641,9 @@ function petWindow(place, size = { width: WIN_W, height: WIN_H }) {
       backgroundThrottling: false,
     },
   });
-  w.setAlwaysOnTop(true, 'floating');
+  if (pageInFront) w.setAlwaysOnTop(false);
+  else w.setAlwaysOnTop(true, 'floating');
+  w.__belowPage = pageInFront;
   w.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   w.setIgnoreMouseEvents(true, { forward: true });
   // Only our own page, never anything else.
@@ -666,7 +689,10 @@ function companionUrl(id) {
   const base = petUrl();
   return `${base}${base.includes('?') ? '&' : '?'}companion=${encodeURIComponent(id)}`;
 }
+// Hidden from the tray ("Show pet" off): companions made meanwhile stay hidden too.
+let petsHidden = false;
 function showPets(on) {
+  petsHidden = !on;
   for (const w of [win, ...companionWins.values()]) {
     if (!w || w.isDestroyed()) continue;
     if (on) {
@@ -710,7 +736,9 @@ function syncCompanions(state) {
     if (!onScreen(place)) place = { x: mx + step, y: my };
     const w = petWindow(place, { width: mw, height: mh });
     w.__companion = id;
-    if (!win.isVisible()) w.once('ready-to-show', () => w.hide());
+    // Hidden only if the pets were hidden on purpose, not because the main
+    // window has not shown yet at start-up.
+    if (petsHidden) w.once('ready-to-show', () => w.hide());
     w.loadURL(companionUrl(id));
     w.on('closed', () => companionWins.delete(id));
     companionWins.set(id, w);
@@ -759,6 +787,41 @@ function wireIpc() {
       w.webContents.send('command', 'pointer-out');
     }
   }, 250).unref();
+  // Pet windows are big and transparent, and two can overlap: the one on
+  // top lets the clicks through where it has nothing, but only it hears the
+  // pointer moving. So the shell itself watches the pointer over each pet's
+  // own spots (its body, card, bubble) and hands the click to that window,
+  // lifting it above the others.
+  ipcMain.on('hot-rects', (e, rects) => {
+    const w = senderWin(e);
+    if (!w || w.isDestroyed() || !Array.isArray(rects)) return;
+    const [ww, wh] = w.getSize();
+    const had = (w.__hot || []).length;
+    w.__hot = rects
+      .filter((r) => Array.isArray(r) && r.length === 4 && r.every(Number.isFinite))
+      .map(([x, y, rw, rh]) => [x * ww, y * wh, rw * ww, rh * wh]);
+    // A bubble or card just appeared: this pet comes above the others, so
+    // what it says is not hidden behind a neighbour.
+    if (w.__hot.length > had && w.__hot.length > 1) {
+      w.__lifted = 0;
+      liftPet(w);
+    }
+  });
+  setInterval(() => {
+    if (dragTimer) return;
+    const p = screen.getCursorScreenPoint();
+    const inside = (b, x, y, rw, rh) => p.x >= b.x + x && p.x < b.x + x + rw && p.y >= b.y + y && p.y < b.y + y + rh;
+    // Only where pet windows overlap; alone, a window hears the pointer itself.
+    const pets = [win, ...companionWins.values()].filter((w) => w && !w.isDestroyed() && w.isVisible() && inside(w.getBounds(), 0, 0, w.getBounds().width, w.getBounds().height));
+    if (pets.length < 2) return;
+    const over = pets.filter((w) => (w.__hot || []).some(([x, y, rw, rh]) => inside(w.getBounds(), x, y, rw, rh)));
+    if (!over.length || over.some((w) => w.__interactive)) return;
+    const pick = over.sort((a, b) => (b.__lifted || 0) - (a.__lifted || 0))[0];
+    pick.setIgnoreMouseEvents(false);
+    pick.__interactive = true;
+    pick.webContents.send('command', 'pointer-in');
+    liftPet(pick);
+  }, 60).unref();
   ipcMain.on('menu', (e) => Menu.buildFromTemplate(menuTemplate()).popup({ window: senderWin(e) || win }));
   ipcMain.on('open-powers', openPowersWindow);
   ipcMain.on('open-name', () => openNameWindow());
@@ -839,18 +902,35 @@ function wireIpc() {
     dragging = senderWin(e) || win;
     const start = screen.getCursorScreenPoint();
     const [wx, wy] = dragging.getPosition();
+    dragging.__dragFrom = `${wx},${wy}`;
     const offset = { x: start.x - wx, y: start.y - wy };
+    dragGrip = null;
     dragTimer = setInterval(() => {
       const c = screen.getCursorScreenPoint();
-      if (dragging && !dragging.isDestroyed()) dragging.setPosition(c.x - offset.x, c.y - offset.y);
+      // Once lifted, it slides so the hand holds it by the top of its head.
+      if (dragGrip) {
+        offset.x += (dragGrip.x - offset.x) * 0.25;
+        offset.y += (dragGrip.y - offset.y) * 0.25;
+      }
+      if (dragging && !dragging.isDestroyed()) dragging.setPosition(Math.round(c.x - offset.x), Math.round(c.y - offset.y));
     }, 16);
+  });
+  // Where the pet is held, as a fraction of its window (the top of its head).
+  ipcMain.on('drag-grip', (e, g) => {
+    const w = senderWin(e);
+    if (!dragTimer || !w || w !== dragging || !g || !Number.isFinite(g.fx) || !Number.isFinite(g.fy)) return;
+    const [ww, wh] = w.getSize();
+    dragGrip = { x: Math.max(0, Math.min(1, g.fx)) * ww, y: Math.max(0, Math.min(1, g.fy)) * wh };
   });
   ipcMain.on('drag-end', () => {
     clearInterval(dragTimer);
     dragTimer = null;
-    if (dragging && dragging.__companion) saveCompanionPlace(dragging.__companion, dragging);
-    else savePlace();
-    if (dragging) {
+    // A plain click (no move) changes nothing: re-stacking the window under
+    // the pointer there would swallow the second click of a double click.
+    const moved = dragging && !dragging.isDestroyed() && String(dragging.getPosition()) !== dragging.__dragFrom;
+    if (moved) {
+      if (dragging.__companion) saveCompanionPlace(dragging.__companion, dragging);
+      else savePlace();
       dragging.__lifted = 0;
       liftPet(dragging);
     }
@@ -899,6 +979,11 @@ async function capture() {
 
 app.whenReady().then(async () => {
   if (autostartArg >= 0) return;
+  // Pages and art come from the local daemon and change with each update:
+  // never draw from a cache of an older version.
+  try {
+    await session.defaultSession.clearCache();
+  } catch {}
   if (process.platform === 'darwin' && app.dock) app.dock.hide();
   daemon = createDaemon({ playground: PLAYGROUND, cloud: PLAYGROUND ? null : require('./cloud').createCloud() });
   try {
