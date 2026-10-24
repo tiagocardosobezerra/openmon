@@ -61,13 +61,25 @@ test('accessories and items: one file each', () => {
   for (const id of Object.keys(species.ITEMS)) if (!['snack', 'candy', 'everstone'].includes(id)) assert.ok(items.has(`${id}.svg`), id);
 });
 
-test('the English and Spanish README animations match the designer\'s Portuguese ones', () => {
-  const { translate, FILES, LANGS } = require('../tools/build-banner');
-  const lf = (s) => s.replace(/\r\n/g, '\n');
-  for (const name of Object.keys(FILES)) {
-    for (const lang of LANGS) {
-      const copy = fs.readFileSync(path.join(__dirname, '..', 'assets', name.replace(/\.svg$/, `.${lang}.svg`)), 'utf8');
-      assert.equal(lf(copy), lf(translate(name, lang)), `${name} ${lang}`);
+// The README animations, each language drawn by the designer: what GitHub
+// shows and what the brief (docs/VIDEO-BRIEF.md) asks of them.
+test('the README animations: 1280×640, accessible, still with reduced motion, nothing GitHub drops', () => {
+  for (const name of ['openmon-banner', 'openmon-dentro']) {
+    for (const suffix of ['', '.en', '.es']) {
+      const file = path.join(__dirname, '..', 'assets', `${name}${suffix}.svg`);
+      const svg = fs.readFileSync(file, 'utf8');
+      const where = `${name}${suffix}.svg`;
+      assert.ok(fs.statSync(file).size <= 250 * 1024, `${where}: at most 250 KB`);
+      assert.match(svg, /viewBox="0 0 1280 640"/, where);
+      assert.match(svg, /role="img"/, where);
+      assert.match(svg, /aria-label="[^"]{80,}"/, where);
+      assert.match(svg, /<title>[^<]+<\/title>/, where);
+      assert.match(svg, /prefers-reduced-motion/, where);
+      assert.doesNotMatch(svg, /<script|<foreignObject|<animate|<set\s|\son[a-z]+=/i, `${where}: no script, no SMIL`);
+      assert.doesNotMatch(svg, /(?:href|src)="https?:|url\(\s*['"]?https?:/i, `${where}: nothing from outside`);
+      // One timeline: every animation loops on the same length.
+      const lengths = new Set([...svg.matchAll(/animation(?:-duration)?\s*:\s*[^;}"]*?(\d+(?:\.\d+)?s)\b/g)].map((m) => m[1]));
+      assert.equal(lengths.size, 1, `${where}: one loop length (${[...lengths].join(', ')})`);
     }
   }
 });
