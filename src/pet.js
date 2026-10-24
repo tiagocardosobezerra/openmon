@@ -890,6 +890,28 @@ function petIt(pet, now) {
   return events;
 }
 
+// The assistant answered you (one of Openmon's own chats): it counts for
+// the day's "ask the assistant" mission and, a few times a day, friendship.
+function assistantAnswered(pet, now) {
+  const events = [];
+  rollDay(pet, now, events);
+  pet.counters.asks = (pet.counters.asks || 0) + 1;
+  pet.daily.asks = (pet.daily.asks || 0) + 1;
+  if (pet.daily.asks <= 3) addBond(pet, 1, now, events);
+  unlock(pet, 'assistant', now, events);
+  checkMissions(pet, now, events);
+  evolve(pet, now, events);
+  checkCosmetics(pet, now, events);
+  return events;
+}
+
+// A reminder or a task was scheduled (in the assistant, or by Claude).
+function scheduled(pet, now) {
+  const events = [];
+  unlock(pet, 'organized', now, events);
+  return events;
+}
+
 // Post-game: an Elder retires to the Hall of Fame and leaves an egg, whose
 // starter the player picks again.
 // The Opendex, achievements and Hall of Fame carry over, and the egg
@@ -940,6 +962,8 @@ module.exports = {
   applySignal,
   nextStage,
   petIt,
+  assistantAnswered,
+  scheduled,
   rename,
   layEgg,
   view,

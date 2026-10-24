@@ -140,6 +140,7 @@ const MISSIONS = [
   { id: 'pets', counter: 'pets', target: 3 },
   { id: 'tools', counter: 'tools', target: 100 },
   { id: 'edits', counter: 'edits', target: 20 },
+  { id: 'asks', counter: 'asks', target: 3 },
 ];
 const MISSION_XP = 25;
 const PERFECT_DAY_XP = 50;
@@ -166,6 +167,8 @@ const ACHIEVEMENTS = {
   trader: { title: 'Good trade', text: 'Traded an Openmon with a friend.' },
   'week-type': { title: 'Theme week', text: '100 actions of the type of the week in one week.' },
   'month-20': { title: 'Steady month', text: '20 days of work in 30.' },
+  assistant: { title: 'Personal assistant', text: 'Your Openmon answered you as your assistant.' },
+  organized: { title: 'Organized', text: 'A first reminder or scheduled task.' },
 };
 
 // Accessories: earned by playing, kept forever (across generations), worn

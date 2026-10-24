@@ -809,6 +809,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         if (!when) return { ok: false, error: 'Give in_minutes, or at as HH:MM.' };
         const r = name === 'remind' ? schedule.add({ kind: 'remind', text: args.text, when }) : schedule.add({ kind: 'task', text: args.prompt, cwd: typeof args.folder === 'string' && path.isAbsolute(args.folder) ? args.folder : assistantFolder(true), when });
         if (!r.ok) return { ok: false, error: `could not schedule (${r.reason})` };
+        pushEvents(pet.scheduled(real.pet, now()));
         pushEvents([{ type: 'scheduled', kind: r.item.kind, text: config.present ? '' : r.item.text, next: r.item.next }]);
         return { ok: true, text: `Scheduled (id ${r.item.id}) for ${fmt(r.item.next)}${r.item.repeat ? `, then ${r.item.repeat} at ${r.item.time}` : ''}.` };
       }
@@ -868,6 +869,12 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       // The answer as plain text, short enough for the pet's bubble.
       const plain = config.present ? '' : String(text || '').replace(/```[\s\S]*?```/g, ' […] ').replace(/[*_`#>]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
       pushEvents([{ type: 'chat-done', id: chat.id, title: config.present ? '' : chat.title, line: line.slice(0, 160), answer: plain.length > 320 ? `${plain.slice(0, 317)}…` : plain, quick: chat.id === config.quickChat }]);
+      // The game counts it too: the day's mission, friendship, a badge.
+      if (world === real && text) {
+        pushEvents(pet.assistantAnswered(real.pet, now()));
+        persist(false);
+        pushState();
+      }
       bus.emit('chat-done', { id: chat.id, title: chat.title, line: line.slice(0, 160) });
     },
   });
@@ -1809,6 +1816,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (!keyOk(req)) return res.writeHead(403).end();
           const cwd = body.kind === 'task' ? (typeof body.cwd === 'string' && body.cwd ? body.cwd : assistantFolder(true)) : null;
           const r = schedule.add({ kind: body.kind, text: body.text, cwd, when: body.when });
+          if (r.ok) pushEvents(pet.scheduled(real.pet, now()));
           pushState(true);
           json(res, 200, r);
         });

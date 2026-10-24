@@ -496,6 +496,16 @@ const ACHIEVE = {
     for (let i = 0; i < 100; i++) pet.applySignal(p, { kind: 'tool-done', family: type, detail: 'x' }, {}, T0 + i * 60_000);
     return p;
   },
+  assistant: () => {
+    const p = mk();
+    pet.assistantAnswered(p, T0);
+    return p;
+  },
+  organized: () => {
+    const p = mk();
+    pet.scheduled(p, T0);
+    return p;
+  },
   'month-20': () => {
     const p = mk();
     // One action on each of 21 days in a row: the 21st day closes the 20th.

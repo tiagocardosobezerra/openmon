@@ -895,6 +895,8 @@ test('assistant tools: their own key; reminders, memory and the bubble; quick qu
     const tool = (name, a) => post('/api/assistant/tool', { name, args: a }, { 'X-Openmon-Tool-Key': toolKey }).then((r) => JSON.parse(r.body));
     assert.equal((await tool('remind', { text: 'Beber água', in_minutes: 30 })).ok, true);
     assert.equal(daemon.schedule.list()[0].text, 'Beber água');
+    // The game counts it: a first schedule is a badge.
+    assert.ok(daemon.state().pet.achievements.organized);
     assert.equal((await tool('schedule_task', { prompt: 'Resumo', at: '09:00', repeat: 'weekdays' })).ok, true);
     assert.equal(daemon.schedule.list().find((i) => i.kind === 'task').repeat, 'weekdays');
     assert.equal((await tool('remind', { text: 'sem hora' })).ok, false);
