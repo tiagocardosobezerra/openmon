@@ -73,8 +73,9 @@ html, body {
 }
 #bubble .title { font: 600 14px/1.25 var(--font-display); }
 #bubble small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; max-width: 236px; overflow: hidden; overflow-wrap: anywhere; margin-top: 1px; color: var(--muted); font: 500 12px/1.35 var(--font-body); }
-/* The assistant's answer: the reply itself, so up to six lines, a bit wider. */
-#bubble.answer small { -webkit-line-clamp: 6; max-width: 280px; color: var(--text); }
+/* Text meant to be read whole (the assistant's answer, the tour): up to six
+   lines, a bit wider. */
+#bubble.fulltext small { -webkit-line-clamp: 6; max-width: 280px; color: var(--text); }
 
 /* Status layout: icon on the left, text on the right. */
 #bubble.status { grid-template-columns: 28px minmax(0, 1fr); column-gap: 9px; justify-items: start; text-align: left; padding: 8px 12px 9px 9px; min-width: 170px; }

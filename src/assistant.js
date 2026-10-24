@@ -63,6 +63,14 @@ function killTree(child) {
 
 // Claude Code says so when it is not signed in.
 const LOGIN = /not logged in|please run \/login|invalid api key|authenticat|\/login/i;
+// An answer that is really the API failing: "API Error: 529 Overloaded…".
+// 529 / 503: Claude is busy; 429: a usage limit; anything else, an API error.
+function apiError(text) {
+  const m = /^API Error:\s*(\d{3})/.exec(String(text || '').trim());
+  if (!m) return null;
+  const status = Number(m[1]);
+  return status === 529 || status === 503 ? 'busy' : status === 429 ? 'limit' : 'api';
+}
 
 function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () => {}, onChange = () => {}, askPermission = async () => ({ behavior: 'deny', message: 'No one to ask.' }), askQuestion = async () => null, onDone = () => {}, prepare = () => ({}), idleMs = IDLE_MS } = {}) {
   fs.mkdirSync(dir, { recursive: true });
@@ -86,7 +94,7 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
   function flush() {
     clearTimeout(saveTimer);
     saveTimer = null;
-    const list = [...chats.values()].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_CHATS);
+    const list = [...chats.values()].filter((c) => !c.spare).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_CHATS);
     try {
       fs.writeFileSync(indexFile, JSON.stringify(list.map(({ status, ...c }) => c), null, 1));
       for (const id of dirty) if (messagesOf.has(id)) fs.writeFileSync(path.join(dir, `${id}.json`), JSON.stringify(messagesOf.get(id)));
@@ -108,7 +116,8 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
   }
 
   function view(c) {
-    return { id: c.id, sessionId: c.sessionId, cwd: c.cwd, title: c.title, createdAt: c.createdAt, updatedAt: c.updatedAt, costUsd: c.costUsd || 0, plan: Boolean(c.plan), model: c.model || null, pinned: Boolean(c.pinned), status: c.status, draft: (procs.get(c.id) || {}).draft || '' };
+    const p = procs.get(c.id);
+    return { id: c.id, sessionId: c.sessionId, cwd: c.cwd, title: c.title, createdAt: c.createdAt, updatedAt: c.updatedAt, costUsd: c.costUsd || 0, plan: Boolean(c.plan), model: c.model || null, pinned: Boolean(c.pinned), status: c.status, draft: (p && p.draft) || '', activity: (p && c.status !== 'idle' && p.activity) || null };
   }
 
   function add(id, message) {
@@ -126,6 +135,13 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
     if (!c || c.status === status) return;
     c.status = status;
     onChange(id, { op: 'status', status, costUsd: c.costUsd || 0 });
+  }
+
+  // What the conversation is doing right now, for the chat and the quick box:
+  // { kind: 'waking' | 'thinking' | 'tool', text }.
+  function activity(id, p, kind, text = '') {
+    p.activity = { kind, text };
+    onChange(id, { op: 'activity', activity: p.activity });
   }
 
   function write(p, obj) {
@@ -157,9 +173,7 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
       add(id, { role: 'error', code: 'missing', text: err.message });
       return null;
     }
-    c.started = true;
-    save(id);
-    const p = { child, buf: '', draft: '', lastCost: 0, err: '', gotResult: false, pending: new Set() };
+    const p = { child, buf: '', draft: '', lastCost: 0, err: '', gotResult: false, pending: new Set(), ready: false, activity: { kind: 'waking', text: '' } };
     procs.set(id, p);
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', (d) => {
@@ -185,6 +199,12 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
     child.on('exit', (code) => {
       clearTimeout(p.idle);
       procs.delete(id);
+      // A spare that was never used goes with its process.
+      if (c.spare) {
+        chats.delete(id);
+        if (spare === id) spare = null;
+        return;
+      }
       for (const settle of p.pending) settle();
       if (code && !p.closing) add(id, { role: 'error', code: /not recognized|not found|ENOENT/i.test(p.err) ? 'missing' : LOGIN.test(p.err) ? 'login' : 'exit', text: p.err.trim().split('\n').slice(-3).join('\n') || `exit ${code}` });
       if (p.draft) add(id, { role: 'assistant', text: p.draft });
@@ -198,9 +218,17 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
   function handle(id, p, event) {
     const c = chats.get(id);
     if (!c) return;
+    // Claude Code is up (its answer to the handshake, or its first word).
+    if (!p.ready && (event.type === 'control_response' || (event.type === 'system' && event.subtype === 'init'))) {
+      p.ready = true;
+      if (c.status === 'working') activity(id, p, 'thinking');
+    }
     if (event.type === 'stream_event' && event.event) {
       const e = event.event;
-      if (e.type === 'message_start') p.draft = '';
+      if (e.type === 'message_start') {
+        p.draft = '';
+        activity(id, p, 'thinking');
+      }
       if (e.type === 'content_block_delta' && e.delta && e.delta.type === 'text_delta' && e.delta.text) {
         p.draft += e.delta.text;
         onChange(id, { op: 'delta', text: e.delta.text });
@@ -211,8 +239,14 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
       for (const b of event.message.content) {
         if (b.type === 'text' && b.text && b.text.trim()) {
           p.draft = '';
-          add(id, { role: 'assistant', text: b.text.trim() });
-        } else if (b.type === 'tool_use' && !QUIET_TOOLS.has(b.name)) add(id, { role: 'tool', text: toolLine(b.name, b.input), tool: b.name });
+          const failed = apiError(b.text);
+          if (failed) add(id, { role: 'error', code: failed, text: b.text.trim().slice(0, 500) });
+          else add(id, { role: 'assistant', text: b.text.trim() });
+        } else if (b.type === 'tool_use' && !QUIET_TOOLS.has(b.name)) {
+          const line = toolLine(b.name, b.input);
+          add(id, { role: 'tool', text: line, tool: b.name });
+          activity(id, p, 'tool', line);
+        }
       }
       return;
     }
@@ -232,8 +266,13 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
       save(id);
       c.status = 'idle';
       onChange(id, { op: 'status', status: 'idle', costUsd: c.costUsd || 0 });
-      const last = [...messages(id)].reverse().find((m) => m.role === 'assistant');
-      onDone(view(c), last ? last.text : '');
+      // The answer of this turn (none if the turn ended in an error).
+      const list = messages(id);
+      const lastUser = list.map((m) => m.role).lastIndexOf('user');
+      const turn = list.slice(lastUser + 1);
+      const last = [...turn].reverse().find((m) => m.role === 'assistant');
+      const failed = [...turn].reverse().find((m) => m.role === 'error');
+      onDone(view(c), last && !(failed && turn.indexOf(failed) > turn.indexOf(last)) ? last.text : '', failed ? failed.code : null);
       armIdle(id);
     }
   }
@@ -285,9 +324,14 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
     if (!p) p = start(id);
     if (!p) return { ok: false, reason: 'missing' };
     clearTimeout(p.idle);
+    if (!c.started) {
+      c.started = true;
+      save(id);
+    }
     add(id, { role: 'user', text: String(text).trim(), images: content.filter((b) => b.type === 'image').length });
     write(p, { type: 'user', message: { role: 'user', content } });
     setStatus(id, 'working');
+    activity(id, p, p.ready ? 'thinking' : 'waking');
     return { ok: true };
   }
 
@@ -298,9 +342,26 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
     } catch {}
     if (!stat || !stat.isDirectory()) return { ok: false, reason: 'folder' };
     if (sessionId && !UUID.test(sessionId)) return { ok: false, reason: 'session' };
-    const id = crypto.randomBytes(8).toString('hex');
     const first = String(text).trim();
-    const c = { id, sessionId: sessionId || crypto.randomUUID(), cwd: path.resolve(String(cwd)), title: (title || first.split('\n')[0] || path.basename(String(cwd))).slice(0, 80), createdAt: now(), updatedAt: now(), costUsd: 0, status: 'idle', started: Boolean(resume), model };
+    const folder = path.resolve(String(cwd));
+    const name = (title || first.split('\n')[0] || path.basename(String(cwd))).slice(0, 80);
+    // A Claude Code already warmed up for this folder becomes this conversation.
+    const warm = !sessionId && !model && spare && chats.get(spare);
+    if (warm && warm.cwd === folder) {
+      spare = null;
+      delete warm.spare;
+      Object.assign(warm, { title: name, createdAt: now(), updatedAt: now() });
+      messagesOf.set(warm.id, []);
+      save(warm.id);
+      onChange(warm.id, { op: 'list' });
+      if (first || images.length) {
+        const r = send(warm.id, { text: first, images });
+        if (!r.ok) return { ...r, id: warm.id };
+      }
+      return { ok: true, id: warm.id };
+    }
+    const id = crypto.randomBytes(8).toString('hex');
+    const c = { id, sessionId: sessionId || crypto.randomUUID(), cwd: folder, title: name, createdAt: now(), updatedAt: now(), costUsd: 0, status: 'idle', started: Boolean(resume), model };
     chats.set(id, c);
     messagesOf.set(id, seed.slice(-MAX_MESSAGES));
     save(id);
@@ -310,6 +371,39 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
       if (!r.ok) return { ...r, id };
     }
     return { ok: true, id };
+  }
+
+  // A conversation about to get a message (the quick box opened): its Claude
+  // Code starts now, so the answer does not wait for it to wake up.
+  function warm(id) {
+    const c = chats.get(id);
+    if (!c || procs.has(id)) return false;
+    if (!start(id)) return false;
+    armIdle(id);
+    return true;
+  }
+
+  // A spare Claude Code for a new conversation in this folder (the chat
+  // window opened on "New conversation"); unused, it goes after a while.
+  let spare = null;
+  function prewarm(cwd) {
+    let stat;
+    try {
+      stat = fs.statSync(String(cwd));
+    } catch {}
+    if (!stat || !stat.isDirectory()) return false;
+    const folder = path.resolve(String(cwd));
+    if (spare && chats.get(spare) && chats.get(spare).cwd === folder) return true;
+    if (spare) close(spare);
+    const id = crypto.randomBytes(8).toString('hex');
+    chats.set(id, { id, sessionId: crypto.randomUUID(), cwd: folder, title: '', createdAt: now(), updatedAt: now(), costUsd: 0, status: 'idle', started: false, model: null, spare: true });
+    if (!start(id)) {
+      chats.delete(id);
+      return false;
+    }
+    spare = id;
+    armIdle(id);
+    return true;
   }
 
   function stop(id) {
@@ -404,14 +498,16 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
   }
 
   return {
-    list: () => [...chats.values()].sort((a, b) => Boolean(b.pinned) - Boolean(a.pinned) || b.updatedAt - a.updatedAt).map(view),
-    get: (id) => (chats.has(id) ? { ...view(chats.get(id)), messages: messages(id) } : null),
+    list: () => [...chats.values()].filter((c) => !c.spare).sort((a, b) => Boolean(b.pinned) - Boolean(a.pinned) || b.updatedAt - a.updatedAt).map(view),
+    get: (id) => (chats.has(id) && !chats.get(id).spare ? { ...view(chats.get(id)), messages: messages(id) } : null),
     // Is this Claude Code session one of ours (its hooks then stay out of the way)?
     owns: (sessionId) => [...chats.values()].find((c) => c.sessionId === sessionId && procs.has(c.id)) || null,
-    bySession: (sessionId) => [...chats.values()].find((c) => c.sessionId === sessionId) || null,
+    bySession: (sessionId) => [...chats.values()].find((c) => c.sessionId === sessionId && !c.spare) || null,
     running: () => procs.size,
     create,
     send,
+    warm,
+    prewarm,
     stop,
     remove,
     rename,
