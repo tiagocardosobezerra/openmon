@@ -1060,7 +1060,7 @@
     // An answer from one of Openmon's chats: the reply itself, and the way to it.
     // After what needs you and what went wrong; before the plain "done".
     if (chatAnswer && Date.now() < chatAnswer.until && !companionId) {
-      return setBubble('done', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
+      return setBubble('done answer', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
     }
     // A wild Openmon: try an Openball or let it go. The agents, and what went wrong, come first.
     const w = wildNow();
@@ -1306,7 +1306,8 @@
       const box = inbox[x.id];
       if (!req && (asked || (!demo && canTalk && box && box.canSend))) {
         const row = el('li', 'perm-row');
-        const b = el('button', `btn sm${asked ? ' primary' : ''}`, asked ? tr('q.answer') : `${tr('talk.write')}${box.queued ? ' ·' : ''}`);
+        // An assistant conversation opens in the assistant; others get a message.
+        const b = el('button', `btn sm${asked ? ' primary' : ''}`, asked ? tr('q.answer') : chatSessions[x.id] ? tr('jump.open') : `${tr('talk.write')}${box.queued ? ' ·' : ''}`);
         b.type = 'button';
         b.dataset.talk = asked ? 'question' : 'message';
         b.dataset.ref = asked ? asked.id : x.id;
