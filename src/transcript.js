@@ -123,14 +123,14 @@ function messagesOf(event) {
   return [];
 }
 
-// The last `limit` messages of a conversation file.
-function readTranscript(file, { limit = 300 } = {}) {
+// The last `limit` messages of a conversation file (from its last `tail` bytes).
+function readTranscript(file, { limit = 300, tail = TAIL_BYTES } = {}) {
   if (!trusted(file)) return null;
   let text;
   try {
     const size = fs.statSync(file).size;
     const fd = fs.openSync(file, 'r');
-    const start = Math.max(0, size - TAIL_BYTES);
+    const start = Math.max(0, size - tail);
     const buf = Buffer.alloc(size - start);
     fs.readSync(fd, buf, 0, buf.length, start);
     fs.closeSync(fd);

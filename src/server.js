@@ -402,7 +402,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // The turn ended with a "next step" box (Claude's app draws one): its
     // question and answers for the bubble too.
     if (target === real && signal.kind === 'turn-end' && payload.transcript_path) {
-      const next = lastNext(readTranscript(String(payload.transcript_path), { limit: 40 }));
+      const next = lastNext(readTranscript(String(payload.transcript_path), { limit: 40, tail: 64 * 1024 }));
       if (next) {
         nextSteps.delete(signal.session);
         nextSteps.set(signal.session, { recap: next.recap, ask: next.ask, actions: next.actions });
