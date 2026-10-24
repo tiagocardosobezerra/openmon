@@ -38,9 +38,9 @@
   --brand-soft: #efebff;
   --sun: #ffe156;
   --sun-ink: #5c4a00;
-  --ok: #2f9e55;
+  --ok: #1f7a43; /* 4.7:1 on --ok-soft, readable as text */
   --ok-soft: #ddf7e3;
-  --bad: #d64545;
+  --bad: #b83232; /* 4.9:1 on --bad-soft */
   --bad-soft: #ffe3e1;
   --info-soft: #e5f2ff;
   --bond: #ff7fa3;

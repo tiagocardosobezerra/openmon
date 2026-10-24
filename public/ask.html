@@ -89,7 +89,7 @@
   let busy = false;
 
   async function api(path, body) {
-    if (!key) key = await desk.contactKey().catch(() => null);
+    if (!key && desk && desk.contactKey) key = await desk.contactKey().catch(() => null);
     const opts = body === undefined ? { headers: { 'X-Openmon-Key': key || '' } } : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Openmon-Key': key || '' }, body: JSON.stringify(body) };
     const r = await fetch(path, opts).catch(() => null);
     return r && r.ok ? r.json().catch(() => null) : null;
@@ -224,7 +224,7 @@
 
   // The answer as it is written, and what Claude is doing meanwhile.
   async function listen() {
-    if (!key) key = await desk.contactKey().catch(() => null);
+    if (!key && desk && desk.contactKey) key = await desk.contactKey().catch(() => null);
     if (!key) return;
     const stream = new EventSource(`/api/chat/stream?key=${encodeURIComponent(key)}`);
     stream.onmessage = (e) => {

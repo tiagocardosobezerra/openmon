@@ -335,6 +335,8 @@ body.preview #stage { right: 50%; margin-right: -150px; bottom: 80px; }
 @media (prefers-reduced-motion: reduce) {
   #bubble, #bubble.attention, #card, #card.closing, #sessions li.working .dot { animation: none; }
 }
+/* Where the keyboard is, on the card and the bubble (Tab after Ctrl+Alt+O). */
+#card button:focus-visible, #bubble button:focus-visible, #card [tabindex]:focus-visible, #controls button:focus-visible { outline: none; box-shadow: var(--focus); }
 
 .day-pill.candy { background: color-mix(in srgb, var(--sun) 30%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--sun), 0 2px 0 var(--outline); }
 .day-pill.candy::after { content: '▸'; margin-left: 5px; }

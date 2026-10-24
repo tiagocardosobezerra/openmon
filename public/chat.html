@@ -23,7 +23,7 @@
   .dot.waiting, .dot.attention { background: var(--sun); box-shadow: 0 0 0 1.5px var(--outline); }
   .dot.done { background: var(--ok); }
   @keyframes pulse { 50% { opacity: 0.35; } }
-  @media (prefers-reduced-motion: reduce) { .dot.working { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .dot.working, .msg.assistant.live::after { animation: none; } }
   aside .empty { margin: 2px 8px; color: var(--muted); font-size: 12.5px; }
   aside .grow { flex: 1; }
   main.chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -100,9 +100,10 @@
   .msg pre { position: relative; }
   .msg pre .copy { position: absolute; top: 4px; right: 4px; border: 0; border-radius: 6px; padding: 2px 8px; background: var(--surface); color: var(--muted); font: 600 11.5px var(--font-body); cursor: pointer; opacity: 0; }
   .msg pre:hover .copy, .msg pre .copy:focus-visible { opacity: 1; }
-  .tk-c { color: #7b8794; font-style: italic; } .tk-s { color: #2f9e55; } .tk-n { color: #c2410c; } .tk-k { color: #7c6cf2; font-weight: 600; }
-  :root[data-theme="dark"] .tk-s { color: #7ee2a0; } :root[data-theme="dark"] .tk-n { color: #ffb37a; } :root[data-theme="dark"] .tk-k { color: #b9adff; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tk-s { color: #7ee2a0; } :root:not([data-theme="light"]) .tk-n { color: #ffb37a; } :root:not([data-theme="light"]) .tk-k { color: #b9adff; } }
+  /* At least 4.5:1 on the code background, in both themes. */
+  .tk-c { color: #56616d; font-style: italic; } .tk-s { color: #1c6e3c; } .tk-n { color: #a8360a; } .tk-k { color: #5a49d6; font-weight: 600; }
+  :root[data-theme="dark"] .tk-c { color: #9aa5b1; } :root[data-theme="dark"] .tk-s { color: #7ee2a0; } :root[data-theme="dark"] .tk-n { color: #ffb37a; } :root[data-theme="dark"] .tk-k { color: #b9adff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tk-c { color: #9aa5b1; } :root:not([data-theme="light"]) .tk-s { color: #7ee2a0; } :root:not([data-theme="light"]) .tk-n { color: #ffb37a; } :root:not([data-theme="light"]) .tk-k { color: #b9adff; } }
   /* Days, and what it is doing now. */
   .day { align-self: center; margin: 6px 0 2px; padding: 1px 10px; border-radius: 99px; background: var(--surface-2); color: var(--muted); font: 600 11.5px var(--font-display); }
   .doing { align-self: flex-start; color: var(--muted); font: 500 12.5px var(--font-mono); padding: 0 8px; }
