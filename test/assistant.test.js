@@ -207,3 +207,51 @@ test('mcp: initialize, the tool list, an unknown tool', async () => {
   assert.equal((await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'nope' } })).error.code, -32602);
   assert.equal(await handle({ jsonrpc: '2.0', method: 'notifications/initialized' }), null);
 });
+
+test('warm and spare: Claude Code is up before the first message, and says what it does', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-chat-'));
+  const fake = fakeClaude();
+  const changes = [];
+  const a = createAssistant({ dir, spawn: fake.spawn, onChange: (id, c) => changes.push({ id, ...c }) });
+  // A spare for the folder: not listed, and becomes the next conversation there.
+  assert.equal(a.prewarm(dir), true);
+  assert.equal(fake.runs.length, 1);
+  assert.deepEqual(a.list(), []);
+  const r = a.create({ cwd: dir, text: 'oi' });
+  assert.equal(fake.runs.length, 1, 'no second Claude Code: the spare is used');
+  assert.equal(a.list()[0].id, r.id);
+  assert.equal(a.list()[0].activity.kind, 'waking');
+  // Up: thinking; then a tool.
+  const run = fake.runs[0];
+  run.say({ type: 'system', subtype: 'init' });
+  run.say({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Read', input: { file_path: 'C:/x/cart.js' } }] } });
+  await tick();
+  const acts = changes.filter((c) => c.op === 'activity').map((c) => c.activity.kind);
+  assert.ok(acts.includes('thinking') && acts.includes('tool'));
+  assert.equal(a.list()[0].activity.text, 'Read: cart.js');
+  // warm(): an existing conversation starts its process before a message, and
+  // a warm process that never got one is not "started" (no --resume next time).
+  const b = a.create({ cwd: dir, title: 'later' });
+  assert.equal(a.warm(b.id), true);
+  assert.deepEqual(fake.runs[1].args.slice(-2).includes('--session-id') || fake.runs[1].args.includes('--session-id'), true);
+  a.closeAll();
+  await tick();
+  assert.equal(a.warm(b.id), true);
+  assert.ok(fake.runs[2].args.includes('--session-id'), 'still a new session');
+  a.closeAll();
+});
+
+test('an API failure is an error, not an answer (and not a win for the game)', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'openmon-chat-'));
+  const fake = fakeClaude();
+  const done = [];
+  const a = createAssistant({ dir, spawn: fake.spawn, onDone: (chat, text, failed) => done.push([text, failed]) });
+  const { id } = a.create({ cwd: dir, text: 'oi' });
+  fake.runs[0].say({ type: 'assistant', message: { content: [{ type: 'text', text: 'API Error: 529 Overloaded. This is a server-side issue.' }] } });
+  fake.runs[0].say({ type: 'result', is_error: false, total_cost_usd: 0 });
+  await tick();
+  const last = a.get(id).messages.pop();
+  assert.deepEqual([last.role, last.code], ['error', 'busy']);
+  assert.deepEqual(done, [['', 'busy']]);
+  a.closeAll();
+});

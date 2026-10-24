@@ -15,42 +15,64 @@
   .top b { flex: 1; font: 600 14px var(--font-display); }
   .top small { color: var(--muted); font-size: 11.5px; }
   .top .me { width: 28px; height: 28px; object-fit: contain; }
-  textarea.input { flex: 1; min-height: 0; resize: none; font: 14.5px/1.45 var(--font-body); }
+  textarea.input { flex: none; min-height: 58px; max-height: 120px; resize: none; font: 14.5px/1.45 var(--font-body); }
   .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .row .grow { flex: 1; }
   .chip[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand-ink); }
-  .shot { max-height: 70px; border-radius: 8px; box-shadow: 0 0 0 1.5px var(--line); }
-  .status { color: var(--muted); font-size: 12px; min-height: 1em; }
+  .shot { max-height: 46px; border-radius: 6px; box-shadow: 0 0 0 1.5px var(--line); }
+  .status { color: var(--muted); font-size: 12px; min-height: 1em; margin: 0; }
+  /* The conversation, right here: your question and the answer as it comes. */
+  .talk { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; }
+  .q { align-self: flex-end; max-width: 88%; padding: 6px 10px; border-radius: 12px 12px 4px 12px; background: var(--brand); color: #fff; font-size: 13.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .a { align-self: flex-start; max-width: 96%; padding: 8px 11px; border-radius: 12px 12px 12px 4px; background: var(--surface-2); border: 1.5px solid var(--line); font-size: 13.5px; line-height: 1.45; overflow-wrap: anywhere; }
+  .a p { margin: 0 0 6px; } .a p:last-child { margin: 0; }
+  .a ul { margin: 2px 0 6px; padding-left: 20px; }
+  .a code { font: 500 12.5px var(--font-mono); background: var(--sunken); padding: 1px 4px; border-radius: 4px; }
+  .a pre { margin: 4px 0; padding: 8px; background: var(--sunken); border-radius: 8px; overflow: auto; }
+  .a pre code { background: none; padding: 0; white-space: pre; }
+  .a.live::after { content: "▍"; color: var(--brand); }
+  .doing { align-self: flex-start; color: var(--muted); font: 500 12px var(--font-mono); }
+  .doing::before { content: "● "; color: var(--brand); }
+  /* A request in this conversation: answered right here. */
+  .ask { align-self: stretch; padding: 8px 10px; border-radius: 10px; border: 2px solid var(--outline); background: var(--surface); font-size: 13px; }
+  .ask b { display: block; margin-bottom: 6px; }
+  .ask .row { gap: 6px; }
+  @media (prefers-reduced-motion: no-preference) { .doing::before { animation: blink 1s infinite; } }
+  @keyframes blink { 50% { opacity: 0.2; } }
 </style>
 </head>
 <body class="page">
-<form id="f">
+<form id="f" aria-labelledby="title">
   <div class="top"><img class="me" id="me" alt="" hidden><b id="title"></b><small id="hint"></small></div>
-  <textarea class="input" id="text" rows="3"></textarea>
+  <div class="talk" id="talk" aria-live="polite" hidden></div>
+  <textarea class="input" id="text" rows="2"></textarea>
   <div class="row">
     <button class="chip" id="screen" type="button" aria-pressed="false"></button>
     <button class="chip" id="clip" type="button" aria-pressed="false"></button>
     <img class="shot" id="preview" alt="" hidden>
     <span class="grow"></span>
+    <button class="btn sm quiet" id="open" type="button" hidden></button>
     <button class="btn sm quiet" id="cancel" type="button"></button>
     <button class="btn sm primary" id="send" type="submit"></button>
   </div>
-  <p class="status" id="status"></p>
+  <p class="status" id="status" role="status"></p>
 </form>
 <script src="i18n.js"></script>
 <script>
   // A quick question for your Openmon: one line, Enter, and the answer comes
-  // back in the pet's bubble. With the screen (what you are looking at) or
-  // what you copied, if you want. Escape closes it.
+  // right here as it is written (and in the pet's bubble if you close this).
+  // "Reply" goes on in the same conversation; "Open in the assistant" shows
+  // it whole. With the screen or what you copied, if you want. Esc closes.
   const { lang } = window.OpenmonI18n;
   document.documentElement.lang = lang;
   const TEXT = {
-    en: { title: 'Ask your Openmon', titleNamed: 'Ask {name}', hint: 'Enter sends · Esc closes', placeholder: 'What do you want to know or get done?', screen: '📷 With the screen', clip: '📋 With what I copied', send: 'Ask', cancel: 'Close', sending: 'Sending…', failed: 'Not sent. Is Claude Code installed and signed in?', explain: 'What is this? Explain it simply.' },
-    'pt-BR': { title: 'Pergunte ao seu Openmon', titleNamed: 'Pergunte a {name}', hint: 'Enter envia · Esc fecha', placeholder: 'O que você quer saber ou resolver?', screen: '📷 Com a tela', clip: '📋 Com o que copiei', send: 'Perguntar', cancel: 'Fechar', sending: 'Enviando…', failed: 'Não foi. O Claude Code está instalado e com login feito?', explain: 'O que é isto? Explique de forma simples.' },
-    es: { title: 'Pregunta a tu Openmon', titleNamed: 'Pregunta a {name}', hint: 'Enter envía · Esc cierra', placeholder: '¿Qué quieres saber o resolver?', screen: '📷 Con la pantalla', clip: '📋 Con lo que copié', send: 'Preguntar', cancel: 'Cerrar', sending: 'Enviando…', failed: 'No se envió. ¿Claude Code está instalado y con sesión iniciada?', explain: '¿Qué es esto? Explícalo de forma simple.' },
+    en: { title: 'Ask your Openmon', titleNamed: 'Ask {name}', hint: 'Enter sends · Esc closes', placeholder: 'What do you want to know or get done?', reply: 'Reply…', screen: '📷 With the screen', clip: '📋 With what I copied', send: 'Ask', again: 'Reply', cancel: 'Close', open: 'Open in the assistant', failed: 'Not sent. Is Claude Code installed and signed in?', explain: 'What is this? Explain it simply.', waking: 'Waking Claude up…', thinking: 'Thinking…', waits: 'Claude asks:', allow: 'Allow', deny: 'Deny', missing: 'Claude Code is not installed: npm install -g @anthropic-ai/claude-code, then run "claude" once.', login: 'Claude Code is not signed in: run "claude" in a terminal once.', busy: 'Claude is overloaded right now. Try again in a moment.', limit: 'You reached a usage limit of your Claude plan.', error: 'Claude could not answer. Open the assistant to see why.' },
+    'pt-BR': { title: 'Pergunte ao seu Openmon', titleNamed: 'Pergunte a {name}', hint: 'Enter envia · Esc fecha', placeholder: 'O que você quer saber ou resolver?', reply: 'Responder…', screen: '📷 Com a tela', clip: '📋 Com o que copiei', send: 'Perguntar', again: 'Responder', cancel: 'Fechar', open: 'Abrir no assistente', failed: 'Não foi. O Claude Code está instalado e com login feito?', explain: 'O que é isto? Explique de forma simples.', waking: 'Acordando o Claude…', thinking: 'Pensando…', waits: 'O Claude pede:', allow: 'Permitir', deny: 'Recusar', missing: 'O Claude Code não está instalado: npm install -g @anthropic-ai/claude-code, depois rode "claude" uma vez.', login: 'O Claude Code está sem login: rode "claude" num terminal uma vez.', busy: 'O Claude está sobrecarregado agora. Tente de novo daqui a pouco.', limit: 'Você chegou a um limite de uso do seu plano do Claude.', error: 'O Claude não conseguiu responder. Abra o assistente para ver o motivo.' },
+    es: { title: 'Pregunta a tu Openmon', titleNamed: 'Pregunta a {name}', hint: 'Enter envía · Esc cierra', placeholder: '¿Qué quieres saber o resolver?', reply: 'Responder…', screen: '📷 Con la pantalla', clip: '📋 Con lo que copié', send: 'Preguntar', again: 'Responder', cancel: 'Cerrar', open: 'Abrir en el asistente', failed: 'No se envió. ¿Claude Code está instalado y con sesión iniciada?', explain: '¿Qué es esto? Explícalo de forma simple.', waking: 'Despertando a Claude…', thinking: 'Pensando…', waits: 'Claude pide:', allow: 'Permitir', deny: 'Rechazar', missing: 'Claude Code no está instalado: npm install -g @anthropic-ai/claude-code, luego ejecuta "claude" una vez.', login: 'Claude Code no tiene la sesión iniciada: ejecuta "claude" en una terminal una vez.', busy: 'Claude está sobrecargado ahora. Inténtalo de nuevo en un momento.', limit: 'Llegaste a un límite de uso de tu plan de Claude.', error: 'Claude no pudo responder. Abre el asistente para ver por qué.' },
   };
   const T = TEXT[lang] || TEXT.en;
   const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => Object.assign(document.createElement(tag), cls ? { className: cls } : {}, text !== undefined ? { textContent: text } : {});
   const desk = window.openmonSettings;
   const params = new URLSearchParams(location.search);
   $('title').textContent = T.title;
@@ -60,8 +82,93 @@
   $('clip').textContent = T.clip;
   $('send').textContent = T.send;
   $('cancel').textContent = T.cancel;
+  $('open').textContent = T.open;
   let shot = null; // { type, data } of the screen, taken before this box showed
   let clip = null;
+  let key = null;
+  // The conversation this box talks to: the shared quick one, or a given one
+  // ("Reply" on a notification).
+  let chatId = /^[a-f0-9]{16}$/.test(params.get('chat') || '') ? params.get('chat') : null;
+  let draft = null; // the answer being written
+  let busy = false;
+
+  async function api(path, body) {
+    if (!key && desk && desk.contactKey) key = await desk.contactKey().catch(() => null);
+    const opts = body === undefined ? { headers: { 'X-Openmon-Key': key || '' } } : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Openmon-Key': key || '' }, body: JSON.stringify(body) };
+    const r = await fetch(path, opts).catch(() => null);
+    return r && r.ok ? r.json().catch(() => null) : null;
+  }
+
+  // A light Markdown, like the assistant's (escaped first).
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+  function markdown(text) {
+    const html = (t) => esc(t).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+    return String(text)
+      .split(/```[^\n]*\n?/)
+      .map((part, i) => {
+        if (i % 2) return `<pre><code>${esc(part.replace(/\n$/, ''))}</code></pre>`;
+        const out = [];
+        let items = null;
+        const close = () => {
+          if (items) out.push(`<ul>${items.join('')}</ul>`);
+          items = null;
+        };
+        for (const line of part.split('\n')) {
+          const item = /^\s*(?:[-*•]|\d+[.)])\s+(.*)$/.exec(line);
+          if (item) (items = items || []).push(`<li>${html(item[1])}</li>`);
+          else {
+            close();
+            if (line.trim()) out.push(`<p>${html(line)}</p>`);
+          }
+        }
+        close();
+        return out.join('');
+      })
+      .join('');
+  }
+
+  // The box grows to show the conversation (up to a limit).
+  function fit() {
+    const talk = $('talk');
+    const extra = talk.hidden ? 0 : Math.max(0, talk.scrollHeight - talk.clientHeight);
+    const want = Math.min(560, Math.max(210, $('f').scrollHeight + extra + 4));
+    if (desk && desk.call) desk.call('resize', want);
+  }
+
+  function doing(text) {
+    let d = $('talk').querySelector('.doing');
+    if (!text) return d && d.remove();
+    if (!d) d = el('div', 'doing');
+    d.textContent = text;
+    $('talk').append(d);
+  }
+
+  function talkTo(text) {
+    $('talk').hidden = false;
+    $('talk').append(el('div', 'q', text));
+    draft = el('div', 'a live');
+    draft.hidden = true;
+    $('talk').append(draft);
+    doing(T.waking);
+    $('talk').scrollTop = $('talk').scrollHeight;
+    fit();
+  }
+
+  function finished() {
+    busy = false;
+    doing('');
+    if (draft && !draft.dataset.text) draft.remove();
+    else if (draft) draft.classList.remove('live');
+    draft = null;
+    $('send').disabled = false;
+    $('send').textContent = T.again;
+    $('text').placeholder = T.reply;
+    $('open').hidden = !chatId;
+    $('text').focus();
+    fit();
+  }
 
   async function toggleScreen(on) {
     $('screen').setAttribute('aria-pressed', String(on));
@@ -77,9 +184,13 @@
   $('screen').onclick = () => toggleScreen($('screen').getAttribute('aria-pressed') !== 'true');
   $('clip').onclick = () => toggleClip($('clip').getAttribute('aria-pressed') !== 'true');
   $('cancel').onclick = () => desk.call('close');
+  $('open').onclick = () => {
+    desk.call('open-chat', chatId);
+    desk.call('close');
+  };
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') desk.call('close');
-    if (e.key === 'Enter' && !e.shiftKey && e.target === $('text')) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.target === $('text')) {
       e.preventDefault();
       $('f').requestSubmit();
     }
@@ -87,18 +198,97 @@
 
   $('f').onsubmit = async (e) => {
     e.preventDefault();
-    let text = $('text').value.trim();
+    if (busy) return;
+    const typed = $('text').value.trim();
+    let text = typed;
     if (clip && clip.text) text = `${clip.text}\n\n${text || T.explain}`;
     const images = [shot, clip && clip.image].filter(Boolean);
     if (!text && images.length) text = T.explain;
     if (!text) return;
+    busy = true;
     $('send').disabled = true;
-    $('status').textContent = T.sending;
-    const key = await desk.contactKey().catch(() => null);
-    const r = await fetch('/api/chat/quick', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Openmon-Key': key || '' }, body: JSON.stringify({ text, images }) }).then((x) => x.json()).catch(() => null);
-    if (r && r.ok) return desk.call('close');
-    $('send').disabled = false;
-    $('status').textContent = T.failed;
+    $('status').textContent = '';
+    const r = chatId ? await api('/api/chat/send', { id: chatId, text, images }) : await api('/api/chat/quick', { text, images });
+    if (!r || !r.ok) {
+      busy = false;
+      $('send').disabled = false;
+      $('status').textContent = T.failed;
+      return;
+    }
+    if (r.id) chatId = r.id;
+    talkTo(typed || (images.length ? `🖼 ${T.explain}` : text));
+    $('text').value = '';
+    // Sent once: the screen and the clipboard do not go again with a reply.
+    shot = null;
+    clip = null;
+    $('preview').hidden = true;
+    $('screen').setAttribute('aria-pressed', 'false');
+    $('clip').setAttribute('aria-pressed', 'false');
+  };
+
+  // The answer as it is written, and what Claude is doing meanwhile.
+  async function listen() {
+    if (!key && desk && desk.contactKey) key = await desk.contactKey().catch(() => null);
+    if (!key) return;
+    const stream = new EventSource(`/api/chat/stream?key=${encodeURIComponent(key)}`);
+    stream.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.type !== 'chat' || m.id !== chatId || !busy) return;
+      if (m.op === 'delta' && draft) {
+        draft.hidden = false;
+        draft.dataset.text = (draft.dataset.text || '') + m.text;
+        draft.innerHTML = markdown(draft.dataset.text);
+        doing('');
+      } else if (m.op === 'message' && m.message.role === 'assistant' && draft) {
+        draft.hidden = false;
+        draft.dataset.text = m.message.text;
+        draft.innerHTML = markdown(m.message.text);
+        draft.classList.remove('live');
+        // More may follow (after a tool): a fresh bubble for it.
+        draft = el('div', 'a live');
+        draft.hidden = true;
+        $('talk').append(draft);
+      } else if (m.op === 'message' && m.message.role === 'error') {
+        $('status').textContent = { busy: T.busy, limit: T.limit, missing: T.missing, login: T.login }[m.message.code] || T.error;
+      } else if (m.op === 'activity') doing(m.activity.kind === 'tool' ? m.activity.text : m.activity.kind === 'waking' ? T.waking : T.thinking);
+      else if (m.op === 'status' && m.status === 'waiting') doing('');
+      else if (m.op === 'status' && m.status === 'idle') finished();
+      $('talk').scrollTop = $('talk').scrollHeight;
+      fit();
+    };
+  }
+
+  // A request of this conversation (from the pet's state): Allow / Deny here.
+  function showRequest(pending) {
+    let card = $('talk').querySelector('.ask');
+    if (!pending) return card && card.remove();
+    if (card && card.dataset.id === pending.id) return;
+    if (card) card.remove();
+    card = el('div', 'ask');
+    card.dataset.id = pending.id;
+    card.append(el('b', '', (window.OpenmonI18n.detail || ((x) => x))(pending.detail || '') || T.waits));
+    const row = el('div', 'row');
+    for (const [decision, label, cls] of [['allow', T.allow, 'primary'], ['deny', T.deny, '']]) {
+      const b = el('button', `btn sm ${cls}`.trim(), label);
+      b.type = 'button';
+      b.onclick = () => {
+        fetch('/api/permission/decide', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: pending.id, decision }) });
+        card.remove();
+        fit();
+      };
+      row.append(b);
+    }
+    card.append(row);
+    doing('');
+    $('talk').append(card);
+    $('talk').scrollTop = $('talk').scrollHeight;
+    fit();
+  }
+  const state = new EventSource('/stream');
+  state.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.type !== 'state' || !chatId) return;
+    showRequest((m.permissions || []).find((p) => p.chat === chatId) || null);
   };
 
   // Your Openmon's name and picture.
@@ -115,9 +305,40 @@
     })
     .catch(() => {});
 
+  // Back within a quarter of an hour: the last exchange, to go on from it.
+  async function resume() {
+    if (chatId) return;
+    const s = await fetch('/api/state').then((r) => r.json()).catch(() => null);
+    const id = s && s.config && s.config.quickChat;
+    if (!id) return;
+    const chat = await api(`/api/chat?id=${encodeURIComponent(id)}`);
+    if (!chat || chat.gone || chat.present || Date.now() - chat.updatedAt > 15 * 60_000) return;
+    const msgs = chat.messages || [];
+    const lastUser = msgs.map((m) => m.role).lastIndexOf('user');
+    const answer = msgs.slice(lastUser + 1).reverse().find((m) => m.role === 'assistant');
+    if (lastUser < 0 || !answer) return;
+    chatId = id;
+    $('talk').hidden = false;
+    $('talk').append(el('div', 'q', msgs[lastUser].text || '🖼'));
+    const a = el('div', 'a');
+    a.dataset.text = answer.text;
+    a.innerHTML = markdown(answer.text);
+    $('talk').append(a);
+    $('send').textContent = T.again;
+    $('text').placeholder = T.reply;
+    $('open').hidden = false;
+    $('talk').scrollTop = $('talk').scrollHeight;
+    fit();
+  }
+
   (async () => {
+    listen();
+    await resume();
+    // Claude Code wakes up while you type.
+    api('/api/chat/warm', chatId ? { id: chatId } : { quick: true });
     if (params.get('screen') === '1') await toggleScreen(true);
     if (params.get('clip') === '1') await toggleClip(true);
+    if (chatId) $('text').placeholder = T.reply;
     $('text').focus();
   })();
 </script>

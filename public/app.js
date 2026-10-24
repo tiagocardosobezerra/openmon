@@ -112,8 +112,25 @@
   // Agent sessions that are Openmon's own chats: session -> chat id.
   let chatSessions = {};
   const canChat = Boolean(desktop && desktop.openChat);
+  // The first-time tour, right after the egg hatches: who I am, my card, the
+  // assistant. Then the nickname question.
+  let tour = null;
+  function endTour() {
+    tour = null;
+    for (const id of ['tour', 'rightclick', 'assistant']) if (!(config.tips || []).includes(id)) {
+      config.tips = [...(config.tips || []), id];
+      post('/api/config', { tipSeen: id });
+    }
+    nicknameOffer = { until: Date.now() + 120_000 };
+    renderBubble();
+  }
+
   // The last answer of one of Openmon's own chats, shown in the bubble a while.
   let chatAnswer = null;
+  // The quick box is open: its answers show in it, not also here. Same for
+  // the conversation the assistant window shows.
+  let askOpen = false;
+  let chatViewing = null;
   // Reads a line aloud (Settings → Pet → "Read answers aloud"), offline.
   function speak(text) {
     if (!config.speak || config.quiet || !text || !window.speechSynthesis || companionId) return;
@@ -386,7 +403,8 @@
           const dexLine = evolveFx.newDex && pet ? tr('scene.newDex', { no: String(pet.dexNo).padStart(3, '0') }) : '';
           toast = null;
           if (evolveFx.hatched) {
-            nicknameOffer = { until: Date.now() + 120_000 };
+            if (!(config.tips || []).includes('tour') && !companionId && !demo) tour = { step: 0 };
+            else nicknameOffer = { until: Date.now() + 120_000 };
             // After the nickname question, where to find help.
             tip('help', tr('tip.help'), tr('tip.help.sub'), 130_000);
             if (evolveFx.shiny) burst('spark', 24, petCX(), GROUND - 50, Math.PI * 2, { colors: ['#fffbe0', '#ffe156'], gravity: 40, max: 1.8 });
@@ -980,6 +998,14 @@
       const o = restoreOffer;
       return setBubble('restore', tr('restore.title'), tr('restore.sub', { name: o.name, form: o.form, level: o.level, date: new Date(o.savedAt).toLocaleDateString() }), { jump: 'restore', action: tr('restore.action') });
     }
+    // The tour (a few seconds after hatching), unless an agent needs you.
+    if (tour && pose !== 'attention' && !evolveFx) {
+      const last = tour.step === 2;
+      const buttons = last
+        ? [...(canChat && desktop.openAsk ? [[{ tour: 'try' }, tr('tour.try'), 'primary']] : []), [{ tour: 'end' }, tr('tour.done'), canChat ? '' : 'primary']]
+        : [[{ tour: 'next' }, tr('tour.next'), 'primary'], [{ tour: 'end' }, tr('tour.skip'), '']];
+      return setBubble('toast fulltext', tr(`tour.${tour.step + 1}`), tr(`tour.${tour.step + 1}.sub`), { buttons, id: `tour|${tour.step}` });
+    }
     // A permission with a clock running comes first: a toast waits, whole,
     // until it is answered.
     if (toast && askingNow()) toast.until = Date.now() + toast.ms;
@@ -1060,7 +1086,7 @@
     // An answer from one of Openmon's chats: the reply itself, and the way to it.
     // After what needs you and what went wrong; before the plain "done".
     if (chatAnswer && Date.now() < chatAnswer.until && !companionId) {
-      return setBubble('done answer', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
+      return setBubble('done fulltext', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
     }
     // A wild Openmon: try an Openball or let it go. The agents, and what went wrong, come first.
     const w = wildNow();
@@ -1649,7 +1675,13 @@
         // Openmon's own chats and the schedule.
         case 'chat-done':
           if (companionId) break;
-          // The answer itself in the bubble, longer for a quick question.
+          // The answer itself in the bubble, longer for a quick question
+          // (unless the quick box, open, shows it already).
+          if ((e.quick && askOpen) || e.id === chatViewing) break;
+          if (e.failed) {
+            pushToast(tr(e.failed === 'busy' ? 'chat.busy' : e.failed === 'limit' ? 'chat.limit' : 'chat.failed'), e.title || '', 7000, 'error');
+            break;
+          }
           chatAnswer = { id: e.id, title: `💬 ${e.title || tr('chat.done')}`, text: e.answer || e.line || '', until: Date.now() + (e.quick ? 45_000 : 20_000) };
           renderBubble();
           if (e.quick) speak(e.answer || e.line);
@@ -2097,6 +2129,18 @@
       return;
     }
     // "See all": the request page, with the whole diff.
+    const tourBtn = e.target.closest && e.target.closest('[data-tour]');
+    if (tourBtn) {
+      const what = tourBtn.dataset.tour;
+      if (what === 'next' && tour) {
+        tour.step++;
+        renderBubble();
+      } else {
+        if (what === 'try' && desktop && desktop.openAsk) desktop.openAsk({});
+        endTour();
+      }
+      return;
+    }
     const openChatBtn = e.target.closest && e.target.closest('[data-chat]');
     if (openChatBtn) {
       if (canChat) desktop.openChat(openChatBtn.dataset.chat === 'new' ? '?new=1' : `?id=${openChatBtn.dataset.chat}`);
@@ -2222,6 +2266,14 @@
       if (cmd && cmd.type === 'update') {
         updateOffer = { ...cmd, until: Date.now() + 5 * 60_000 };
         return renderBubble();
+      }
+      if (cmd && cmd.type === 'chat-viewing') {
+        chatViewing = cmd.id || null;
+        return undefined;
+      }
+      if (cmd && cmd.type === 'ask-open') {
+        askOpen = Boolean(cmd.on);
+        return undefined;
       }
       if (cmd === 'card') setHover(!hovering);
       // Clicked somewhere else: the card closes.

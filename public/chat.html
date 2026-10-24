@@ -23,7 +23,7 @@
   .dot.waiting, .dot.attention { background: var(--sun); box-shadow: 0 0 0 1.5px var(--outline); }
   .dot.done { background: var(--ok); }
   @keyframes pulse { 50% { opacity: 0.35; } }
-  @media (prefers-reduced-motion: reduce) { .dot.working { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .dot.working, .msg.assistant.live::after { animation: none; } }
   aside .empty { margin: 2px 8px; color: var(--muted); font-size: 12.5px; }
   aside .grow { flex: 1; }
   main.chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -88,6 +88,32 @@
   .sched li small { color: var(--muted); }
   .sched { list-style: none; margin: 0 0 10px; padding: 0; }
   .menu-btn { display: none; }
+  /* The tools of one answer, folded into one line. */
+  details.steps { align-self: flex-start; max-width: min(760px, 92%); color: var(--muted); font: 500 12.5px var(--font-mono); }
+  details.steps > summary { cursor: pointer; list-style: none; padding: 2px 8px; border-radius: 6px; }
+  details.steps > summary::-webkit-details-marker { display: none; }
+  details.steps > summary::before { content: "› "; }
+  details.steps[open] > summary::before { content: "⌄ "; }
+  details.steps > summary:hover { background: var(--surface-2); color: var(--ink); }
+  details.steps div { padding: 1px 8px 1px 22px; }
+  /* Code: a copy button, and a few colours. */
+  .msg pre { position: relative; }
+  .msg pre .copy { position: absolute; top: 4px; right: 4px; border: 0; border-radius: 6px; padding: 2px 8px; background: var(--surface); color: var(--muted); font: 600 11.5px var(--font-body); cursor: pointer; opacity: 0; }
+  .msg pre:hover .copy, .msg pre .copy:focus-visible { opacity: 1; }
+  /* At least 4.5:1 on the code background, in both themes. */
+  .tk-c { color: #56616d; font-style: italic; } .tk-s { color: #1c6e3c; } .tk-n { color: #a8360a; } .tk-k { color: #5a49d6; font-weight: 600; }
+  :root[data-theme="dark"] .tk-c { color: #9aa5b1; } :root[data-theme="dark"] .tk-s { color: #7ee2a0; } :root[data-theme="dark"] .tk-n { color: #ffb37a; } :root[data-theme="dark"] .tk-k { color: #b9adff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tk-c { color: #9aa5b1; } :root:not([data-theme="light"]) .tk-s { color: #7ee2a0; } :root:not([data-theme="light"]) .tk-n { color: #ffb37a; } :root:not([data-theme="light"]) .tk-k { color: #b9adff; } }
+  /* Days, and what it is doing now. */
+  .day { align-self: center; margin: 6px 0 2px; padding: 1px 10px; border-radius: 99px; background: var(--surface-2); color: var(--muted); font: 600 11.5px var(--font-display); }
+  .doing { align-self: flex-start; color: var(--muted); font: 500 12.5px var(--font-mono); padding: 0 8px; }
+  /* Attached pictures, seen before they go. */
+  .attached .thumb { position: relative; }
+  .attached .thumb img { height: 54px; max-width: 96px; object-fit: cover; border-radius: 8px; box-shadow: 0 0 0 1.5px var(--line); display: block; }
+  .attached .thumb button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: 0; background: var(--outline); color: #fff; font-size: 11px; cursor: pointer; }
+  aside .group { margin: 8px 8px 2px; color: var(--muted); font: 600 11px var(--font-display); }
+  aside .item { border-left: 3px solid var(--hue, transparent); }
+  :focus-visible { outline: none; box-shadow: var(--focus); }
   #search { margin-top: 6px; font-size: 13px; }
   .sm-select { width: auto; min-height: 28px; padding: 2px 8px; font-size: 12.5px; }
   .msg-actions { display: flex; gap: 2px; margin-top: 4px; opacity: 0; transition: opacity 0.15s; }
@@ -191,7 +217,7 @@
   const TEXT = {
     en: {
       title: 'Assistant', plan: 'included in your Claude plan', login: 'Claude Code is not signed in. Open a terminal, run "claude", sign in, then send again.', model: 'Model', modelDefault: 'Default model', pin: 'Pin', unpin: 'Unpin', export: 'Export', exported: 'Saved', search: 'Search conversations…', remember: 'Remember', rememberAsk: 'Remember this about you (edit it):', remembered: 'Saved in the assistant memory', listen: 'Listen', shot: 'Attach the screen', presetMorning: '☀️ Morning brief (weekdays 9:00)', presetEvening: '🌙 End of day (weekdays 18:00)', morningPrompt: 'Give me my morning brief: my calendar for today and anything urgent in my email (use my connectors; if I have none, skip it), and what my coding agents did yesterday (use the Openmon work_summary tool with days 2). Short, in bullets.', eveningPrompt: 'Give me my end-of-day summary: what my coding agents did today (Openmon work_summary tool), what looks unfinished, and one suggestion for tomorrow. Short, in bullets.',  newChat: 'New conversation', chats: 'Conversations', agents: 'Open elsewhere', noChats: 'None yet.', noAgents: 'No agent at work.',
-      viaPet: '🐣 sent from the pet', queuedNote: 'Your message waits for the next step of this conversation.', discard: 'Discard', send: 'Send', stop: 'Stop', continueHere: 'Continue here', rename: 'Rename', del: 'Delete', delAsk: 'Delete this conversation from Openmon? (Claude Code keeps its own copy.)', renameAsk: 'New name:',
+      viaPet: '🐣 sent from the pet', steps: '{n} steps', stepsEdit: 'edited {n}', stepsRead: 'read {n}', stepsRun: 'ran {n}', copy: 'Copy', copied: 'Copied', today: 'Today', yesterday: 'Yesterday', week: 'This week', older: 'Earlier', pinned: 'Pinned', waking: 'Waking Claude up…', thinking: 'Thinking…', keys: 'Ctrl+N new · Ctrl+K search · Esc stops · ↑ last message', busy: 'Claude is overloaded right now (not you, not Openmon). Send it again in a moment.', limit: 'You reached a usage limit of your Claude plan. It comes back by itself; Claude Code says when.', apiError: 'Claude could not answer:', queuedNote: 'Your message waits for the next step of this conversation.', discard: 'Discard', send: 'Send', stop: 'Stop', continueHere: 'Continue here', rename: 'Rename', del: 'Delete', delAsk: 'Delete this conversation from Openmon? (Claude Code keeps its own copy.)', renameAsk: 'New name:',
       placeholder: 'Write to Claude… (Enter sends, Shift+Enter makes a new line)', placeholderAgent: 'Write to this conversation… (it gets it at its next step)', cantWrite: 'This conversation cannot get messages from Openmon: start it again in Claude Code, or continue it here.',
       attach: 'Attach files', paste: 'Paste what you copied', image: 'image', drop: 'Drop here to attach', folder: 'Folder:', pickFolder: 'Pick a folder…', assistant: 'Assistant (general things)',
       welcome: 'What can I do for you?', welcomeSub: 'Claude answers here as your Openmon, with your own Claude Code: it can read and change files in the folder you pick, run commands (with your OK) and use your connectors. Openmon asks you before anything that needs it.',
@@ -207,7 +233,7 @@
     },
     'pt-BR': {
       title: 'Assistente', plan: 'incluído no seu plano do Claude', login: 'O Claude Code não está com login feito. Abra um terminal, rode "claude", entre na sua conta e envie de novo.', model: 'Modelo', modelDefault: 'Modelo padrão', pin: 'Fixar', unpin: 'Desafixar', export: 'Exportar', exported: 'Salvo', search: 'Buscar nas conversas…', remember: 'Lembrar', rememberAsk: 'Lembrar isto sobre você (pode editar):', remembered: 'Salvo na memória do assistente', listen: 'Ouvir', shot: 'Anexar a tela', presetMorning: '☀️ Resumo da manhã (dias úteis 9:00)', presetEvening: '🌙 Fechamento do dia (dias úteis 18:00)', morningPrompt: 'Me dê o resumo da manhã: minha agenda de hoje e algo urgente no meu e-mail (use meus conectores; se eu não tiver, pule), e o que meus agentes de código fizeram ontem (use a ferramenta work_summary do Openmon com days 2). Curto, em tópicos.', eveningPrompt: 'Me dê o fechamento do dia: o que meus agentes de código fizeram hoje (ferramenta work_summary do Openmon), o que parece inacabado, e uma sugestão para amanhã. Curto, em tópicos.',  newChat: 'Nova conversa', chats: 'Conversas', agents: 'Abertas em outro lugar', noChats: 'Nenhuma ainda.', noAgents: 'Nenhum agente trabalhando.',
-      viaPet: '🐣 enviada pelo pet', queuedNote: 'Sua mensagem espera o próximo passo desta conversa.', discard: 'Descartar', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aqui', rename: 'Renomear', del: 'Apagar', delAsk: 'Apagar esta conversa do Openmon? (O Claude Code guarda a cópia dele.)', renameAsk: 'Novo nome:',
+      viaPet: '🐣 enviada pelo pet', steps: '{n} passos', stepsEdit: 'editou {n}', stepsRead: 'leu {n}', stepsRun: 'rodou {n}', copy: 'Copiar', copied: 'Copiado', today: 'Hoje', yesterday: 'Ontem', week: 'Esta semana', older: 'Antes', pinned: 'Fixadas', waking: 'Acordando o Claude…', thinking: 'Pensando…', keys: 'Ctrl+N nova · Ctrl+K busca · Esc para · ↑ última mensagem', busy: 'O Claude está sobrecarregado agora (não é você nem o Openmon). Envie de novo daqui a pouco.', limit: 'Você chegou a um limite de uso do seu plano do Claude. Ele volta sozinho; o Claude Code diz quando.', apiError: 'O Claude não conseguiu responder:', queuedNote: 'Sua mensagem espera o próximo passo desta conversa.', discard: 'Descartar', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aqui', rename: 'Renomear', del: 'Apagar', delAsk: 'Apagar esta conversa do Openmon? (O Claude Code guarda a cópia dele.)', renameAsk: 'Novo nome:',
       placeholder: 'Escreva para o Claude… (Enter envia, Shift+Enter quebra a linha)', placeholderAgent: 'Escreva para esta conversa… (ela recebe no próximo passo)', cantWrite: 'Esta conversa não recebe mensagens do Openmon: abra-a de novo no Claude Code, ou continue aqui.',
       attach: 'Anexar arquivos', paste: 'Colar o que você copiou', image: 'imagem', drop: 'Solte aqui para anexar', folder: 'Pasta:', pickFolder: 'Escolher pasta…', assistant: 'Assistente (assuntos gerais)',
       welcome: 'Em que posso ajudar?', welcomeSub: 'O Claude responde aqui como o seu Openmon, com o seu próprio Claude Code: ele pode ler e mudar arquivos da pasta que você escolher, rodar comandos (com o seu OK) e usar seus conectores. O Openmon pergunta antes de tudo o que precisa.',
@@ -223,7 +249,7 @@
     },
     es: {
       title: 'Asistente', plan: 'incluido en tu plan de Claude', login: 'Claude Code no tiene la sesión iniciada. Abre una terminal, ejecuta "claude", entra en tu cuenta y envía de nuevo.', model: 'Modelo', modelDefault: 'Modelo por defecto', pin: 'Fijar', unpin: 'Quitar de arriba', export: 'Exportar', exported: 'Guardado', search: 'Buscar en las conversaciones…', remember: 'Recordar', rememberAsk: 'Recordar esto sobre ti (puedes editarlo):', remembered: 'Guardado en la memoria del asistente', listen: 'Escuchar', shot: 'Adjuntar la pantalla', presetMorning: '☀️ Resumen de la mañana (días hábiles 9:00)', presetEvening: '🌙 Cierre del día (días hábiles 18:00)', morningPrompt: 'Dame el resumen de la mañana: mi calendario de hoy y algo urgente en mi correo (usa mis conectores; si no tengo, sáltalo), y lo que hicieron ayer mis agentes de código (usa la herramienta work_summary de Openmon con days 2). Corto, en viñetas.', eveningPrompt: 'Dame el cierre del día: lo que hicieron hoy mis agentes de código (herramienta work_summary de Openmon), lo que parece sin terminar y una sugerencia para mañana. Corto, en viñetas.',  newChat: 'Nueva conversación', chats: 'Conversaciones', agents: 'Abiertas en otro lugar', noChats: 'Ninguna todavía.', noAgents: 'Ningún agente trabajando.',
-      viaPet: '🐣 enviada desde la mascota', queuedNote: 'Tu mensaje espera el próximo paso de esta conversación.', discard: 'Descartar', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aquí', rename: 'Renombrar', del: 'Borrar', delAsk: '¿Borrar esta conversación de Openmon? (Claude Code guarda su copia.)', renameAsk: 'Nuevo nombre:',
+      viaPet: '🐣 enviada desde la mascota', steps: '{n} pasos', stepsEdit: 'editó {n}', stepsRead: 'leyó {n}', stepsRun: 'corrió {n}', copy: 'Copiar', copied: 'Copiado', today: 'Hoy', yesterday: 'Ayer', week: 'Esta semana', older: 'Antes', pinned: 'Fijadas', waking: 'Despertando a Claude…', thinking: 'Pensando…', keys: 'Ctrl+N nueva · Ctrl+K busca · Esc para · ↑ último mensaje', busy: 'Claude está sobrecargado ahora (no eres tú ni Openmon). Envíalo de nuevo en un momento.', limit: 'Llegaste a un límite de uso de tu plan de Claude. Vuelve solo; Claude Code dice cuándo.', apiError: 'Claude no pudo responder:', queuedNote: 'Tu mensaje espera el próximo paso de esta conversación.', discard: 'Descartar', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aquí', rename: 'Renombrar', del: 'Borrar', delAsk: '¿Borrar esta conversación de Openmon? (Claude Code guarda su copia.)', renameAsk: 'Nuevo nombre:',
       placeholder: 'Escribe a Claude… (Enter envía, Shift+Enter hace una línea nueva)', placeholderAgent: 'Escribe a esta conversación… (la recibe en su próximo paso)', cantWrite: 'Esta conversación no recibe mensajes de Openmon: ábrela de nuevo en Claude Code, o continúala aquí.',
       attach: 'Adjuntar archivos', paste: 'Pegar lo que copiaste', image: 'imagen', drop: 'Suelta aquí para adjuntar', folder: 'Carpeta:', pickFolder: 'Elegir carpeta…', assistant: 'Asistente (temas generales)',
       welcome: '¿En qué te ayudo?', welcomeSub: 'Claude responde aquí como tu Openmon, con tu propio Claude Code: puede leer y cambiar archivos de la carpeta que elijas, correr comandos (con tu OK) y usar tus conectores. Openmon te pregunta antes de todo lo que lo necesite.',
@@ -322,11 +348,28 @@
       .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
       .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   }
+  const KEYWORDS = new Set('const let var function return if else for while do switch case break continue new class extends import from export default async await try catch finally throw typeof instanceof in of null undefined true false this def elif lambda pass yield with as None True False self print fn pub mut impl struct enum match use mod package func go defer type interface public private static void int string bool select where insert update delete create table and or not'.split(' '));
+  function highlight(code) {
+    const re = /(\/\/[^\n]*|(?<=^|\s)#\s[^\n]*|(?<=^|\s)#$|\/\*[\s\S]*?\*\/|(?<=^|\s)--\s[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(\d+(?:\.\d+)?)\b|\b([A-Za-z_]\w*)\b/g;
+    let out = '';
+    let at = 0;
+    for (const m of code.matchAll(re)) {
+      out += esc(code.slice(at, m.index));
+      const [all, comment, str, num, word] = m;
+      if (comment) out += `<span class="tk-c">${esc(all)}</span>`;
+      else if (str) out += `<span class="tk-s">${esc(all)}</span>`;
+      else if (num) out += `<span class="tk-n">${esc(all)}</span>`;
+      else if (word && KEYWORDS.has(word)) out += `<span class="tk-k">${esc(all)}</span>`;
+      else out += esc(all);
+      at = m.index + all.length;
+    }
+    return out + esc(code.slice(at));
+  }
   function markdown(text) {
     const out = [];
     const parts = String(text).split(/```[^\n]*\n?/);
     parts.forEach((part, i) => {
-      if (i % 2) return out.push(`<pre><code>${esc(part.replace(/\n$/, ''))}</code></pre>`);
+      if (i % 2) return out.push(`<pre><code>${highlight(part.replace(/\n$/, ''))}</code></pre>`);
       let list = null;
       const flush = () => {
         if (list) out.push(`<${list.tag}>${list.items.map((x) => `<li>${inline(x)}</li>`).join('')}</${list.tag}>`);
@@ -369,9 +412,13 @@
     chats.textContent = '';
     const shown = searchHits ? list.chats.filter((c) => searchHits.includes(c.id)) : list.chats;
     if (!shown.length) chats.append(el('p', 'empty', T.noChats));
+    let group = null;
     for (const c of shown) {
+      const g = c.pinned ? T.pinned : dayGroup(c.updatedAt);
+      if (g !== group) chats.append(el('div', 'group', (group = g)));
       const b = el('button', 'item');
       b.type = 'button';
+      b.style.setProperty('--hue', folderHue(c.cwd));
       b.setAttribute('aria-current', String(view.kind === 'chat' && view.id === c.id));
       b.append(el('i', `dot ${statusOf(c)}`), el('b', '', `${c.pinned ? '📌 ' : ''}${c.title}`), el('small', '', `${c.cwd.split(/[\\/]/).pop()} · ${new Date(c.updatedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}`));
       b.onclick = () => go({ kind: 'chat', id: c.id });
@@ -388,6 +435,23 @@
       b.onclick = () => go({ kind: 'agent', session: a.session });
       agents.append(b);
     }
+  }
+
+  // "Today", "Yesterday", "This week", "Earlier".
+  function dayGroup(ms) {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const day = 86_400_000;
+    if (ms >= start.getTime()) return T.today;
+    if (ms >= start.getTime() - day) return T.yesterday;
+    if (ms >= start.getTime() - 6 * day) return T.week;
+    return T.older;
+  }
+  // The same folder, the same colour, everywhere in the list.
+  function folderHue(dir) {
+    let h = 0;
+    for (const ch of String(dir)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return `hsl(${h % 360} 60% 55%)`;
   }
 
   async function refreshList() {
@@ -408,22 +472,27 @@
     add('__pick', T.pickFolder);
     if (keep && [...sel.options].some((o) => o.value === keep)) sel.value = keep;
   }
+  const warmFolder = () => view.kind === 'new' && $('folder').value && $('folder').value !== '__pick' && api('/api/chat/warm', { cwd: $('folder').value });
   $('folder').onchange = async () => {
-    if ($('folder').value !== '__pick') return;
+    if ($('folder').value !== '__pick') return warmFolder();
     const dir = desk && desk.call ? await desk.call('pick-folder').catch(() => null) : null;
     if (dir) {
       if (![...$('folder').options].some((o) => o.value === dir)) $('folder').insertBefore(Object.assign(el('option', '', dir), { value: dir }), $('folder').lastChild);
       $('folder').value = dir;
     } else $('folder').value = list.assistantFolder;
+    warmFolder();
   };
 
   // ---- The conversation on screen
+  // The pet does not repeat in its bubble what this window shows.
+  const tellViewing = () => desk && desk.call && desk.call('viewing', view.kind === 'chat' ? view.id : null).catch(() => {});
   function go(next) {
     view = next;
     document.body.classList.remove('side');
     draft = '';
     current = null;
     history.replaceState(null, '', next.kind === 'chat' ? `?id=${next.id}` : next.kind === 'agent' ? `?session=${encodeURIComponent(next.session)}` : '?new=1');
+    tellViewing();
     load();
     renderSide();
   }
@@ -435,12 +504,47 @@
     if (current && current.gone) return go({ kind: 'new' });
     if (current && current.draft) draft = current.draft;
     render();
+    // A new conversation: its Claude Code starts now, in the folder shown.
+    if (view.kind === 'new') setTimeout(warmFolder, 300);
+  }
+
+  function dayLabel(ms) {
+    const g = dayGroup(ms);
+    return g === T.today || g === T.yesterday ? g : new Date(ms).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
+  // "› 6 steps · edited 2 · ran 1": the tools of one answer, folded.
+  function stepsNode(run, open) {
+    const n = (re) => run.filter((m) => re.test(m.tool || m.text)).length;
+    const edit = n(/^(Edit|MultiEdit|Write|NotebookEdit)\b/);
+    const read = n(/^(Read|Grep|Glob|LS)\b/);
+    const exec = n(/^(Bash|PowerShell)\b/);
+    const bits = [edit && fill(T.stepsEdit, { n: edit }), read && fill(T.stepsRead, { n: read }), exec && fill(T.stepsRun, { n: exec })].filter(Boolean);
+    if (run.length === 1) return el('div', 'msg tool', run[0].text);
+    const d = el('details', 'steps');
+    d.open = open;
+    d.append(el('summary', '', [fill(T.steps, { n: run.length }), ...bits].join(' · ')));
+    for (const m of run) d.append(el('div', '', m.text));
+    return d;
+  }
+
+  function addCopy(pre) {
+    if (pre.querySelector('.copy')) return;
+    const b = el('button', 'copy', T.copy);
+    b.type = 'button';
+    b.onclick = async () => {
+      const ok = await (desk && desk.copyText ? desk.copyText(pre.querySelector('code').textContent) : navigator.clipboard.writeText(pre.querySelector('code').textContent).then(() => true)).catch(() => false);
+      b.textContent = ok ? T.copied : T.copy;
+      setTimeout(() => (b.textContent = T.copy), 1500);
+    };
+    pre.append(b);
   }
 
   function msgNode(m) {
     if (m.role === 'assistant') {
       const d = el('div', 'msg assistant');
       d.innerHTML = markdown(m.text);
+      if (m.at) d.title = new Date(m.at).toLocaleString();
       const actions = el('div', 'msg-actions');
       const act = (label, fn) => {
         const b = el('button', '', label);
@@ -459,10 +563,11 @@
       return d;
     }
     if (m.role === 'error') {
-      const head = { missing: T.missing, login: T.login, turn: T.turn }[m.code] || T.exit;
-      return el('div', 'msg error', ['missing', 'login'].includes(m.code) ? head : `${head}\n${m.text || ''}`);
+      const head = { missing: T.missing, login: T.login, turn: T.turn, busy: T.busy, limit: T.limit, api: T.apiError }[m.code] || T.exit;
+      return el('div', 'msg error', ['missing', 'login', 'busy', 'limit'].includes(m.code) ? head : `${head}\n${m.text || ''}`);
     }
     const d = el('div', `msg ${m.role === 'user' ? 'user' : m.role === 'tool' ? 'tool' : 'notice'}`, m.text || '');
+    if (m.at) d.title = new Date(m.at).toLocaleString();
     if (m.images) d.append(el('span', 'img', ` 🖼 ${m.images} ${T.image}`));
     if (m.via === 'pet') d.append(el('span', 'via', T.viaPet));
     return d;
@@ -575,11 +680,13 @@
     if (isChat) {
       $('title').textContent = current.title;
       const st = current.status === 'working' ? T.working : current.status === 'waiting' ? T.waiting : T.idle;
-      $('sub').textContent = [st, fill(T.in, { dir: current.cwd }), current.plan ? T.plan : current.costUsd ? fill(T.cost, { usd: `$${current.costUsd.toFixed(current.costUsd < 1 ? 3 : 2)}` }) : ''].filter(Boolean).join(' · ');
+      $('sub').title = current.cwd;
+      $('sub').textContent = [st, fill(T.in, { dir: current.cwd.split(/[\\/]/).pop() }), current.plan ? T.plan : current.costUsd ? fill(T.cost, { usd: `$${current.costUsd.toFixed(current.costUsd < 1 ? 3 : 2)}` }) : ''].filter(Boolean).join(' · ');
       $('text').placeholder = T.placeholder;
     } else {
       $('title').textContent = current.label;
-      $('sub').textContent = [current.state === 'working' ? T.working : current.state === 'attention' ? T.waiting : current.state === 'ended' ? T.ended : T.idle, current.cwd ? fill(T.in, { dir: current.cwd }) : ''].filter(Boolean).join(' · ');
+      $('sub').title = current.cwd || '';
+      $('sub').textContent = [current.state === 'working' ? T.working : current.state === 'attention' ? T.waiting : current.state === 'ended' ? T.ended : T.idle, current.cwd ? fill(T.in, { dir: current.cwd.split(/[\\/]/).pop() }) : ''].filter(Boolean).join(' · ');
       $('text').placeholder = current.canSend ? T.placeholderAgent : T.cantWrite;
     }
     // A conversation elsewhere that cannot hear Openmon: "Continue here" instead.
@@ -591,12 +698,34 @@
       log.append(el('div', 'msg notice', T.present));
       return;
     }
-    for (const m of current.messages || []) log.append(msgNode(m));
+    const msgs = current.messages || [];
+    let lastDay = null;
+    for (let i = 0; i < msgs.length; i++) {
+      const m = msgs[i];
+      const day = m.at ? new Date(m.at).toDateString() : lastDay;
+      if (day && day !== lastDay && m.at) log.append(el('div', 'day', dayLabel(m.at)));
+      lastDay = day;
+      if (m.role === 'tool') {
+        // The tools in a row: one line that opens.
+        const run = [];
+        while (i < msgs.length && msgs[i].role === 'tool') run.push(msgs[i++]);
+        i--;
+        const working = isChat && current.status !== 'idle' && i === msgs.length - 1;
+        log.append(stepsNode(run, working));
+        continue;
+      }
+      log.append(msgNode(m));
+    }
     if (draft) {
       const d = el('div', 'msg assistant live');
       d.innerHTML = markdown(draft);
       log.append(d);
-    } else if (isChat && current.status === 'working') log.append(el('div', 'msg assistant live thinking', ''));
+    } else if (isChat && current.status === 'working') {
+      log.append(el('div', 'msg assistant live thinking', ''));
+      const a = current.activity;
+      if (a) log.append(el('div', 'doing', a.kind === 'tool' ? a.text : a.kind === 'waking' ? T.waking : T.thinking));
+    }
+    for (const pre of log.querySelectorAll('.msg pre')) addCopy(pre);
     for (const c of cards()) log.append(c);
     // A message to a conversation elsewhere that has not reached it yet.
     if (isAgent && current.queued) {
@@ -721,7 +850,19 @@
       box.append(c);
     };
     files.forEach((f, i) => chip(`📎 ${f.name}`, () => files.splice(i, 1)));
-    images.forEach((_, i) => chip(`🖼 ${T.image} ${i + 1}`, () => images.splice(i, 1)));
+    images.forEach((img, i) => {
+      const t = el('span', 'thumb');
+      t.append(Object.assign(el('img'), { src: `data:${img.type};base64,${img.data}`, alt: `${T.image} ${i + 1}` }));
+      const x = el('button', '', '✕');
+      x.type = 'button';
+      x.setAttribute('aria-label', T.remove);
+      x.onclick = () => {
+        images.splice(i, 1);
+        renderAttached();
+      };
+      t.append(x);
+      box.append(t);
+    });
   }
   function addPaths(paths) {
     for (const p of paths || []) if (p && !files.some((f) => f.path === p)) files.push({ path: p, name: p.split(/[\\/]/).pop() });
@@ -781,7 +922,32 @@
       e.preventDefault();
       send();
     }
+    // ↑ in an empty box: your last message, to send again or change.
+    if (e.key === 'ArrowUp' && !$('text').value && current && current.messages) {
+      const mine = [...current.messages].reverse().find((m) => m.role === 'user' && m.text);
+      if (mine) {
+        e.preventDefault();
+        $('text').value = mine.text;
+        grow();
+      }
+    }
   });
+  document.addEventListener('keydown', (e) => {
+    if (document.querySelector('dialog[open]')) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === 'n') {
+      e.preventDefault();
+      go({ kind: 'new' });
+    } else if (mod && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      $('search').focus();
+      $('search').select();
+    } else if (e.key === 'Escape' && view.kind === 'chat' && current && current.status !== 'idle') {
+      e.preventDefault();
+      api('/api/chat/stop', { id: view.id });
+    }
+  });
+  $('text').title = T.keys;
 
   async function send() {
     const text = $('text').value.trim();
@@ -1005,6 +1171,11 @@
         if (m.message.role === 'assistant') draft = '';
         current.messages = [...(current.messages || []), m.message];
         render();
+      } else if (m.op === 'activity') {
+        current.activity = m.activity;
+        const d = document.querySelector('.doing');
+        if (d) d.textContent = m.activity.kind === 'tool' ? m.activity.text : m.activity.kind === 'waking' ? T.waking : T.thinking;
+        else render();
       } else if (m.op === 'status') {
         current.status = m.status;
         current.costUsd = m.costUsd;
@@ -1047,6 +1218,7 @@
         render();
       }
     }
+    tellViewing();
     $('text').focus();
   })();
 </script>

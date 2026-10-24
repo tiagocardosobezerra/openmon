@@ -18,6 +18,7 @@ const PT = {
   'Open card': 'Abrir card',
   'Assistant': 'Assistente',
   'Quick question': 'Pergunta rápida',
+  'Reply': 'Responder',
   'Claude answered': 'O Claude respondeu',
   'Reminder': 'Lembrete',
   'Open the assistant to see it.': 'Abra o assistente para ver.',
@@ -92,6 +93,7 @@ const PT = {
 const ES_TEXT = {
   "Assistant": "Asistente",
   "Quick question": "Pregunta rápida",
+  "Reply": "Responder",
   "Claude answered": "Claude respondió",
   "Reminder": "Recordatorio",
   "Open the assistant to see it.": "Abre el asistente para verlo.",
@@ -612,6 +614,13 @@ function openTalkWindow(ask) {
 // A normal window (it takes the keyboard), one at a time.
 let chatWin = null;
 let chatShortcut = null;
+// The conversation the assistant window shows; while it is minimized, the
+// pet shows answers again.
+let chatViewing = null;
+function tellViewing() {
+  const seen = chatWin && !chatWin.isDestroyed() && !chatWin.isMinimized() && chatWin.isVisible() ? chatViewing : null;
+  if (win && !win.isDestroyed()) win.webContents.send('command', { type: 'chat-viewing', id: seen });
+}
 let askShortcut = null;
 
 // The screen as a picture (JPEG, at most 1600 px wide), for a question about it.
@@ -629,24 +638,33 @@ async function captureScreen() {
 // the pet's bubble. The screen is taken before the box shows, if asked.
 let askWin = null;
 let askShot = null;
-async function openAskWindow({ withScreen = false, withClip = false } = {}) {
+// `chat`: go on in that conversation ("Reply" on a notification).
+async function openAskWindow({ withScreen = false, withClip = false, chat = null } = {}) {
+  // Already open (the shortcut again): to the front, the conversation kept.
+  if (askWin && !askWin.isDestroyed() && !withScreen && !withClip && !chat) return bringToFront(askWin);
   askShot = withScreen ? await captureScreen().catch(() => null) : null;
   if (askWin && !askWin.isDestroyed()) askWin.close();
   const [x, y] = win.getPosition();
+  const [ww] = win.getSize();
   const area = screen.getDisplayNearestPoint({ x, y }).workArea;
   const w = 420;
   const h = 210;
+  // Beside the pet (its bubble stays free), on the side with more room,
+  // its bottom level with the pet's feet; it grows upward.
+  const left = x + ww / 2 - area.x > area.x + area.width - (x + ww / 2);
+  const bx = left ? x + ww / 2 - 150 - w : x + ww / 2 + 150;
   askWin = new BrowserWindow({
     width: w,
     height: h,
-    x: Math.max(area.x, Math.min(area.x + area.width - w, x - 60)),
-    y: Math.max(area.y, Math.min(area.y + area.height - h, y + WIN_H - 380)),
+    x: Math.max(area.x, Math.min(area.x + area.width - w, Math.round(bx))),
+    y: Math.max(area.y, Math.min(area.y + area.height - h, y + WIN_H - 40 - h)),
     frame: false,
     transparent: true,
     resizable: false,
     alwaysOnTop: true,
     skipTaskbar: true,
     show: false,
+    title: L('Quick question'),
     icon: fs.existsSync(APP_ICON) ? APP_ICON : undefined,
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.js') },
   });
@@ -656,17 +674,36 @@ async function openAskWindow({ withScreen = false, withClip = false } = {}) {
   // (Windows may refuse it the focus at first).
   let focused = false;
   askWin.on('focus', () => (focused = true));
-  askWin.on('blur', () => focused && askWin && !askWin.isDestroyed() && askWin.webContents.executeJavaScript("document.getElementById('text').value.trim() === ''").then((empty) => empty && askWin && !askWin.isDestroyed() && askWin.close()).catch(() => {}));
+  // A box that already shows a conversation stays until you close it.
+  askWin.on('blur', () => focused && askWin && !askWin.isDestroyed() && askWin.webContents.executeJavaScript("document.getElementById('text').value.trim() === '' && document.getElementById('talk').hidden").then((empty) => empty && askWin && !askWin.isDestroyed() && askWin.close()).catch(() => {}));
+  // While it is open, its answers show in it, not also in the pet's bubble.
+  if (win && !win.isDestroyed()) win.webContents.send('command', { type: 'ask-open', on: true });
   askWin.on('closed', () => {
     askWin = null;
     askShot = null;
+    if (win && !win.isDestroyed()) win.webContents.send('command', { type: 'ask-open', on: false });
   });
   askWin.once('ready-to-show', () => bringToFront(askWin));
-  askWin.loadURL(`http://127.0.0.1:${port}/ask.html?screen=${askShot ? 1 : 0}&clip=${withClip ? 1 : 0}`);
+  const goOn = typeof chat === 'string' && /^[a-f0-9]{16}$/.test(chat) ? `&chat=${chat}` : '';
+  askWin.loadURL(`http://127.0.0.1:${port}/ask.html?screen=${askShot ? 1 : 0}&clip=${withClip ? 1 : 0}${goOn}`);
 }
 
-function askCommand(cmd) {
+function askCommand(cmd, arg) {
   switch (cmd) {
+    // The box grows with its conversation, upward from where it sits.
+    case 'resize': {
+      if (!askWin || askWin.isDestroyed()) return false;
+      const h = Math.max(180, Math.min(560, Math.round(Number(arg) || 0)));
+      const b = askWin.getBounds();
+      if (Math.abs(b.height - h) < 4) return true;
+      const area = screen.getDisplayMatching(b).workArea;
+      const y = Math.max(area.y, b.y + b.height - h);
+      askWin.setBounds({ x: b.x, y, width: b.width, height: Math.min(h, area.y + area.height - y) });
+      return true;
+    }
+    case 'open-chat':
+      openChatWindow(typeof arg === 'string' && /^[a-f0-9]{16}$/.test(arg) ? `?id=${arg}` : '');
+      return true;
     case 'shot':
       return askShot;
     case 'clipboard': {
@@ -702,8 +739,12 @@ function openChatWindow(query = '') {
   });
   chatWin.on('focus', () => petsOnTop(false));
   chatWin.on('blur', () => petsOnTop(true));
+  chatWin.on('minimize', tellViewing);
+  chatWin.on('restore', tellViewing);
   chatWin.on('closed', () => {
     chatWin = null;
+    chatViewing = null;
+    tellViewing();
     petsOnTop(true, true);
   });
   // Links in an answer open in your browser; the window never leaves the chat.
@@ -745,6 +786,11 @@ async function chatCommand(cmd, arg) {
       chatWin.show();
       return shot;
     }
+    // The conversation on screen: the pet does not repeat its answers.
+    case 'viewing':
+      chatViewing = typeof arg === 'string' && /^[a-f0-9]{16}$/.test(arg) ? arg : null;
+      tellViewing();
+      return true;
     case 'save-markdown': {
       const name = String((arg && arg.name) || 'conversa').replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 60) || 'conversa';
       const r = await dialog.showSaveDialog(chatWin, { defaultPath: path.join(app.getPath('documents'), `${name}.md`), filters: [{ name: 'Markdown', extensions: ['md'] }] });
@@ -1075,12 +1121,12 @@ function wireIpc() {
   // Settings page actions that need the desktop (only from the app window).
   ipcMain.handle('settings', async (e, cmd, arg) => {
     if (chatWin && !chatWin.isDestroyed() && e.sender === chatWin.webContents) return chatCommand(String(cmd), arg);
-    if (askWin && !askWin.isDestroyed() && e.sender === askWin.webContents) return askCommand(String(cmd));
+    if (askWin && !askWin.isDestroyed() && e.sender === askWin.webContents) return askCommand(String(cmd), arg);
     if (!powersWin || powersWin.isDestroyed() || e.sender !== powersWin.webContents) return null;
     const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled(), agents: installer.otherAgents(), aider: installer.aiderLine(), rules: installer.rulesStatus() });
     switch (cmd) {
       case 'open-chat':
-        openChatWindow();
+        openChatWindow(typeof arg === 'string' && /^[a-f0-9]{16}$/.test(arg) ? `?id=${arg}` : '');
         return true;
       case 'open-assistant-folder':
         shell.openPath(daemon.assistantFolder());
@@ -1326,16 +1372,18 @@ app.whenReady().then(async () => {
   daemon.upgradeHooks();
   daemon.bus.on('shutdown', () => app.quit());
   // A chat answered while you were elsewhere; a reminder is due.
-  const notify = (title, body, click) => {
+  const notify = (title, body, click, reply = null) => {
     const c = daemon.config();
     if (!c.notify || c.quiet || !Notification.isSupported()) return;
-    const n = new Notification({ title, body: String(body || '').slice(0, 200), silent: true });
+    const n = new Notification({ title, body: String(body || '').slice(0, 200), silent: true, ...(reply ? { actions: [{ type: 'button', text: L('Reply') }] } : {}) });
     if (click) n.on('click', click);
+    if (reply) n.on('action', reply);
     n.show();
   };
   daemon.bus.on('chat-done', (d) => {
     if (chatWin && !chatWin.isDestroyed() && chatWin.isFocused()) return;
-    notify(L('Claude answered'), daemon.config().present ? '' : [d.title, d.line].filter(Boolean).join(': '), () => openChatWindow(`?id=${d.id}`));
+    if (askWin && !askWin.isDestroyed()) return;
+    notify(L('Claude answered'), daemon.config().present ? '' : [d.title, d.line].filter(Boolean).join(': '), () => openChatWindow(`?id=${d.id}`), () => openAskWindow({ chat: d.id }));
   });
   daemon.bus.on('reminder', (item) => {
     if (!Notification.isSupported()) return;

@@ -44,9 +44,10 @@ Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas 
 * **Desde el celular (opcional):** con el aviso en el celular activado, lo que envíes al tema `<tu tema>-in` en la app ntfy llega al agente que te espera, o a tu última conversación.
 * **Costo estimado** de cada conversación con los precios de lista de la API. En un plan mensual (Pro, Max, Team), el chat dice "incluido en tu plan de Claude".
 * **El asistente es tu Openmon:** responde con el nombre y la manera de tu mascota, y la respuesta aparece en la burbuja. En Configuración → Mascota, puede leer las respuestas en voz alta (voces de tu computadora, sin internet).
-* **Pregunta rápida** (`Ctrl+Alt+A`): una cajita junto a la mascota; Enter, y la respuesta vuelve en la burbuja. `Ctrl+Alt+S` hace lo mismo con una imagen de tu pantalla ("¿qué es este error?"). También puedes enviar lo que copiaste.
+* **Pregunta rápida** (`Ctrl+Alt+A`): una cajita junto a la mascota; Enter, y la respuesta aparece ahí mismo, con lo que Claude está haciendo. **Responder** sigue la conversación, **Abrir en el asistente** la muestra entera; con la cajita cerrada, la respuesta llega en la burbuja. `Ctrl+Alt+S` hace lo mismo con una imagen de tu pantalla ("¿qué es este error?"). También puedes enviar lo que copiaste.
 * **Claude actúa en Openmon:** "recuérdame a las 15 llamar a Juan", "cada lunes dame un resumen de la semana", "recuerda que prefiero viñetas". Crea recordatorios y tareas, guarda datos en su memoria, habla por la burbuja, envía notificaciones y lee lo que hicieron tus agentes (herramientas de Openmon, que no piden permiso).
 * **Rutinas listas** en Recordatorios y tareas: resumen de la mañana y cierre del día, en días hábiles.
+* **En el chat:** los pasos de cada respuesta caben en una línea que se abre ("6 pasos · editó 2 · corrió 1"); código con colores y **Copiar**; `Ctrl+N` nueva conversación, `Ctrl+K` busca, `Esc` para, `↑` trae tu último mensaje. La notificación "Claude respondió" tiene **Responder**.
 * **Ordenado:** elige el modelo de cada conversación (Haiku, Sonnet, Opus), fija conversaciones, busca en todas y exporta una en Markdown. En cada respuesta: **Escuchar** y **Recordar**.
 
 ## Más de lo que hace

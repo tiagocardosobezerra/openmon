@@ -862,13 +862,13 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     onChange: (id, change) => chatBroadcast({ type: 'chat', id, ...change }),
     askPermission: askFromChat,
     askQuestion: questionFromChat,
-    onDone: (chat, text) => {
+    onDone: (chat, text, failed = null) => {
       // Stuck requests of a finished turn go away with it.
       for (const p of [...permissions.values()]) if (p.chat === chat.id) settlePermission(p.id, null, { how: 'agent' });
       const line = config.present ? '' : String(text || '').split('\n').find((l) => l.trim()) || '';
       // The answer as plain text, short enough for the pet's bubble.
       const plain = config.present ? '' : String(text || '').replace(/```[\s\S]*?```/g, ' […] ').replace(/[*_`#>]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
-      pushEvents([{ type: 'chat-done', id: chat.id, title: config.present ? '' : chat.title, line: line.slice(0, 160), answer: plain.length > 320 ? `${plain.slice(0, 317)}…` : plain, quick: chat.id === config.quickChat }]);
+      pushEvents([{ type: 'chat-done', id: chat.id, title: config.present ? '' : chat.title, line: line.slice(0, 160), answer: plain.length > 320 ? `${plain.slice(0, 317)}…` : plain, quick: chat.id === config.quickChat, failed }]);
       // The game counts it too: the day's mission, friendship, a badge.
       if (world === real && text) {
         pushEvents(pet.assistantAnswered(real.pet, now()));
@@ -1700,6 +1700,20 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
             r = { ok: false, error: e.message };
           }
           json(res, 200, r);
+        });
+      // Claude Code up before the first message: the quick box (its shared
+      // conversation, or a spare in the assistant folder), a chat (by id), or
+      // a new conversation in a folder.
+      case 'POST /api/chat/warm':
+        return readJson(req, (err, body) => {
+          if (err || !body) return res.writeHead(400).end();
+          if (!keyOk(req)) return res.writeHead(403).end();
+          if (body.quick) {
+            const q = config.quickChat && assistant.get(config.quickChat);
+            return json(res, 200, { ok: q ? assistant.warm(q.id) || true : assistant.prewarm(assistantFolder(true)) });
+          }
+          if (typeof body.id === 'string') return json(res, 200, { ok: assistant.warm(body.id) });
+          json(res, 200, { ok: assistant.prewarm(typeof body.cwd === 'string' && body.cwd ? body.cwd : assistantFolder(true)) });
         });
       case 'POST /api/chat/quick':
         return readJson(req, (err, body) => {

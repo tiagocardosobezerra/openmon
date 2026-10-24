@@ -379,7 +379,11 @@ async function main() {
 
     case 'status': {
       console.log((await isRunning()) ? `Daemon: running on port ${DEFAULT_PORT}` : 'Daemon: not running');
-      return console.log(installer.isInstalled({ settingsPath: option('settings') }) ? 'Hooks: installed' : 'Hooks: not installed');
+      console.log(installer.isInstalled({ settingsPath: option('settings') }) ? 'Hooks: installed' : 'Hooks: not installed');
+      // The assistant runs your Claude Code: is it there?
+      const { spawnSync } = require('node:child_process');
+      const v = process.platform === 'win32' ? spawnSync('claude --version', { encoding: 'utf8', shell: true, timeout: 15000, windowsHide: true }) : spawnSync('claude', ['--version'], { encoding: 'utf8', timeout: 15000 });
+      return console.log(v.status === 0 && v.stdout.trim() ? `Assistant: ready (${v.stdout.trim().split('\n')[0]})` : 'Assistant: Claude Code not found (npm install -g @anthropic-ai/claude-code, then run "claude" once)');
     }
 
     default:
