@@ -52,6 +52,9 @@
   .msg a { color: var(--brand-ink); }
   .card { align-self: stretch; max-width: 760px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface); border: var(--bw) solid var(--outline); box-shadow: var(--lift-sm); }
   .card.danger { border-color: var(--bad); }
+  .card.next { border-color: var(--brand); }
+  .card.next.past { box-shadow: none; border-color: var(--line); }
+  .card.next p { margin: 0 0 4px; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
   .card .k { font: 600 12px var(--font-display); color: var(--muted); }
   .card h3 { margin: 2px 0 6px; font: 600 15px var(--font-display); }
   .card .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -217,7 +220,7 @@
   const TEXT = {
     en: {
       title: 'Assistant', plan: 'included in your Claude plan', login: 'Claude Code is not signed in. Open a terminal, run "claude", sign in, then send again.', model: 'Model', modelDefault: 'Default model', pin: 'Pin', unpin: 'Unpin', export: 'Export', exported: 'Saved', search: 'Search conversations…', remember: 'Remember', rememberAsk: 'Remember this about you (edit it):', remembered: 'Saved in the assistant memory', listen: 'Listen', shot: 'Attach the screen', presetMorning: '☀️ Morning brief (weekdays 9:00)', presetEvening: '🌙 End of day (weekdays 18:00)', morningPrompt: 'Give me my morning brief: my calendar for today and anything urgent in my email (use my connectors; if I have none, skip it), and what my coding agents did yesterday (use the Openmon work_summary tool with days 2). Short, in bullets.', eveningPrompt: 'Give me my end-of-day summary: what my coding agents did today (Openmon work_summary tool), what looks unfinished, and one suggestion for tomorrow. Short, in bullets.',  newChat: 'New conversation', chats: 'Conversations', agents: 'Open elsewhere', noChats: 'None yet.', noAgents: 'No agent at work.',
-      viaPet: '🐣 sent from the pet', steps: '{n} steps', stepsEdit: 'edited {n}', stepsRead: 'read {n}', stepsRun: 'ran {n}', copy: 'Copy', copied: 'Copied', today: 'Today', yesterday: 'Yesterday', week: 'This week', older: 'Earlier', pinned: 'Pinned', waking: 'Waking Claude up…', thinking: 'Thinking…', keys: 'Ctrl+N new · Ctrl+K search · Esc stops · ↑ last message', busy: 'Claude is overloaded right now (not you, not Openmon). Send it again in a moment.', limit: 'You reached a usage limit of your Claude plan. It comes back by itself; Claude Code says when.', apiError: 'Claude could not answer:', queuedNote: 'Your message waits for the next step of this conversation.', discard: 'Discard', send: 'Send', stop: 'Stop', continueHere: 'Continue here', rename: 'Rename', del: 'Delete', delAsk: 'Delete this conversation from Openmon? (Claude Code keeps its own copy.)', renameAsk: 'New name:',
+      viaPet: '🐣 sent from the pet', nextStep: 'Next step', steps: '{n} steps', stepsEdit: 'edited {n}', stepsRead: 'read {n}', stepsRun: 'ran {n}', copy: 'Copy', copied: 'Copied', today: 'Today', yesterday: 'Yesterday', week: 'This week', older: 'Earlier', pinned: 'Pinned', waking: 'Waking Claude up…', thinking: 'Thinking…', keys: 'Ctrl+N new · Ctrl+K search · Esc stops · ↑ last message', busy: 'Claude is overloaded right now (not you, not Openmon). Send it again in a moment.', limit: 'You reached a usage limit of your Claude plan. It comes back by itself; Claude Code says when.', apiError: 'Claude could not answer:', queuedNote: 'Your message waits for the next step of this conversation.', discard: 'Discard', send: 'Send', stop: 'Stop', continueHere: 'Continue here', rename: 'Rename', del: 'Delete', delAsk: 'Delete this conversation from Openmon? (Claude Code keeps its own copy.)', renameAsk: 'New name:',
       placeholder: 'Write to Claude… (Enter sends, Shift+Enter makes a new line)', placeholderAgent: 'Write to this conversation… (it gets it at its next step)', cantWrite: 'This conversation cannot get messages from Openmon: start it again in Claude Code, or continue it here.',
       attach: 'Attach files', paste: 'Paste what you copied', image: 'image', drop: 'Drop here to attach', folder: 'Folder:', pickFolder: 'Pick a folder…', assistant: 'Assistant (general things)',
       welcome: 'What can I do for you?', welcomeSub: 'Claude answers here as your Openmon, with your own Claude Code: it can read and change files in the folder you pick, run commands (with your OK) and use your connectors. Openmon asks you before anything that needs it.',
@@ -233,7 +236,7 @@
     },
     'pt-BR': {
       title: 'Assistente', plan: 'incluído no seu plano do Claude', login: 'O Claude Code não está com login feito. Abra um terminal, rode "claude", entre na sua conta e envie de novo.', model: 'Modelo', modelDefault: 'Modelo padrão', pin: 'Fixar', unpin: 'Desafixar', export: 'Exportar', exported: 'Salvo', search: 'Buscar nas conversas…', remember: 'Lembrar', rememberAsk: 'Lembrar isto sobre você (pode editar):', remembered: 'Salvo na memória do assistente', listen: 'Ouvir', shot: 'Anexar a tela', presetMorning: '☀️ Resumo da manhã (dias úteis 9:00)', presetEvening: '🌙 Fechamento do dia (dias úteis 18:00)', morningPrompt: 'Me dê o resumo da manhã: minha agenda de hoje e algo urgente no meu e-mail (use meus conectores; se eu não tiver, pule), e o que meus agentes de código fizeram ontem (use a ferramenta work_summary do Openmon com days 2). Curto, em tópicos.', eveningPrompt: 'Me dê o fechamento do dia: o que meus agentes de código fizeram hoje (ferramenta work_summary do Openmon), o que parece inacabado, e uma sugestão para amanhã. Curto, em tópicos.',  newChat: 'Nova conversa', chats: 'Conversas', agents: 'Abertas em outro lugar', noChats: 'Nenhuma ainda.', noAgents: 'Nenhum agente trabalhando.',
-      viaPet: '🐣 enviada pelo pet', steps: '{n} passos', stepsEdit: 'editou {n}', stepsRead: 'leu {n}', stepsRun: 'rodou {n}', copy: 'Copiar', copied: 'Copiado', today: 'Hoje', yesterday: 'Ontem', week: 'Esta semana', older: 'Antes', pinned: 'Fixadas', waking: 'Acordando o Claude…', thinking: 'Pensando…', keys: 'Ctrl+N nova · Ctrl+K busca · Esc para · ↑ última mensagem', busy: 'O Claude está sobrecarregado agora (não é você nem o Openmon). Envie de novo daqui a pouco.', limit: 'Você chegou a um limite de uso do seu plano do Claude. Ele volta sozinho; o Claude Code diz quando.', apiError: 'O Claude não conseguiu responder:', queuedNote: 'Sua mensagem espera o próximo passo desta conversa.', discard: 'Descartar', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aqui', rename: 'Renomear', del: 'Apagar', delAsk: 'Apagar esta conversa do Openmon? (O Claude Code guarda a cópia dele.)', renameAsk: 'Novo nome:',
+      viaPet: '🐣 enviada pelo pet', nextStep: 'Próximo passo', steps: '{n} passos', stepsEdit: 'editou {n}', stepsRead: 'leu {n}', stepsRun: 'rodou {n}', copy: 'Copiar', copied: 'Copiado', today: 'Hoje', yesterday: 'Ontem', week: 'Esta semana', older: 'Antes', pinned: 'Fixadas', waking: 'Acordando o Claude…', thinking: 'Pensando…', keys: 'Ctrl+N nova · Ctrl+K busca · Esc para · ↑ última mensagem', busy: 'O Claude está sobrecarregado agora (não é você nem o Openmon). Envie de novo daqui a pouco.', limit: 'Você chegou a um limite de uso do seu plano do Claude. Ele volta sozinho; o Claude Code diz quando.', apiError: 'O Claude não conseguiu responder:', queuedNote: 'Sua mensagem espera o próximo passo desta conversa.', discard: 'Descartar', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aqui', rename: 'Renomear', del: 'Apagar', delAsk: 'Apagar esta conversa do Openmon? (O Claude Code guarda a cópia dele.)', renameAsk: 'Novo nome:',
       placeholder: 'Escreva para o Claude… (Enter envia, Shift+Enter quebra a linha)', placeholderAgent: 'Escreva para esta conversa… (ela recebe no próximo passo)', cantWrite: 'Esta conversa não recebe mensagens do Openmon: abra-a de novo no Claude Code, ou continue aqui.',
       attach: 'Anexar arquivos', paste: 'Colar o que você copiou', image: 'imagem', drop: 'Solte aqui para anexar', folder: 'Pasta:', pickFolder: 'Escolher pasta…', assistant: 'Assistente (assuntos gerais)',
       welcome: 'Em que posso ajudar?', welcomeSub: 'O Claude responde aqui como o seu Openmon, com o seu próprio Claude Code: ele pode ler e mudar arquivos da pasta que você escolher, rodar comandos (com o seu OK) e usar seus conectores. O Openmon pergunta antes de tudo o que precisa.',
@@ -249,7 +252,7 @@
     },
     es: {
       title: 'Asistente', plan: 'incluido en tu plan de Claude', login: 'Claude Code no tiene la sesión iniciada. Abre una terminal, ejecuta "claude", entra en tu cuenta y envía de nuevo.', model: 'Modelo', modelDefault: 'Modelo por defecto', pin: 'Fijar', unpin: 'Quitar de arriba', export: 'Exportar', exported: 'Guardado', search: 'Buscar en las conversaciones…', remember: 'Recordar', rememberAsk: 'Recordar esto sobre ti (puedes editarlo):', remembered: 'Guardado en la memoria del asistente', listen: 'Escuchar', shot: 'Adjuntar la pantalla', presetMorning: '☀️ Resumen de la mañana (días hábiles 9:00)', presetEvening: '🌙 Cierre del día (días hábiles 18:00)', morningPrompt: 'Dame el resumen de la mañana: mi calendario de hoy y algo urgente en mi correo (usa mis conectores; si no tengo, sáltalo), y lo que hicieron ayer mis agentes de código (usa la herramienta work_summary de Openmon con days 2). Corto, en viñetas.', eveningPrompt: 'Dame el cierre del día: lo que hicieron hoy mis agentes de código (herramienta work_summary de Openmon), lo que parece sin terminar y una sugerencia para mañana. Corto, en viñetas.',  newChat: 'Nueva conversación', chats: 'Conversaciones', agents: 'Abiertas en otro lugar', noChats: 'Ninguna todavía.', noAgents: 'Ningún agente trabajando.',
-      viaPet: '🐣 enviada desde la mascota', steps: '{n} pasos', stepsEdit: 'editó {n}', stepsRead: 'leyó {n}', stepsRun: 'corrió {n}', copy: 'Copiar', copied: 'Copiado', today: 'Hoy', yesterday: 'Ayer', week: 'Esta semana', older: 'Antes', pinned: 'Fijadas', waking: 'Despertando a Claude…', thinking: 'Pensando…', keys: 'Ctrl+N nueva · Ctrl+K busca · Esc para · ↑ último mensaje', busy: 'Claude está sobrecargado ahora (no eres tú ni Openmon). Envíalo de nuevo en un momento.', limit: 'Llegaste a un límite de uso de tu plan de Claude. Vuelve solo; Claude Code dice cuándo.', apiError: 'Claude no pudo responder:', queuedNote: 'Tu mensaje espera el próximo paso de esta conversación.', discard: 'Descartar', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aquí', rename: 'Renombrar', del: 'Borrar', delAsk: '¿Borrar esta conversación de Openmon? (Claude Code guarda su copia.)', renameAsk: 'Nuevo nombre:',
+      viaPet: '🐣 enviada desde la mascota', nextStep: 'Próximo paso', steps: '{n} pasos', stepsEdit: 'editó {n}', stepsRead: 'leyó {n}', stepsRun: 'corrió {n}', copy: 'Copiar', copied: 'Copiado', today: 'Hoy', yesterday: 'Ayer', week: 'Esta semana', older: 'Antes', pinned: 'Fijadas', waking: 'Despertando a Claude…', thinking: 'Pensando…', keys: 'Ctrl+N nueva · Ctrl+K busca · Esc para · ↑ último mensaje', busy: 'Claude está sobrecargado ahora (no eres tú ni Openmon). Envíalo de nuevo en un momento.', limit: 'Llegaste a un límite de uso de tu plan de Claude. Vuelve solo; Claude Code dice cuándo.', apiError: 'Claude no pudo responder:', queuedNote: 'Tu mensaje espera el próximo paso de esta conversación.', discard: 'Descartar', send: 'Enviar', stop: 'Parar', continueHere: 'Continuar aquí', rename: 'Renombrar', del: 'Borrar', delAsk: '¿Borrar esta conversación de Openmon? (Claude Code guarda su copia.)', renameAsk: 'Nuevo nombre:',
       placeholder: 'Escribe a Claude… (Enter envía, Shift+Enter hace una línea nueva)', placeholderAgent: 'Escribe a esta conversación… (la recibe en su próximo paso)', cantWrite: 'Esta conversación no recibe mensajes de Openmon: ábrela de nuevo en Claude Code, o continúala aquí.',
       attach: 'Adjuntar archivos', paste: 'Pegar lo que copiaste', image: 'imagen', drop: 'Suelta aquí para adjuntar', folder: 'Carpeta:', pickFolder: 'Elegir carpeta…', assistant: 'Asistente (temas generales)',
       welcome: '¿En qué te ayudo?', welcomeSub: 'Claude responde aquí como tu Openmon, con tu propio Claude Code: puede leer y cambiar archivos de la carpeta que elijas, correr comandos (con tu OK) y usar tus conectores. Openmon te pregunta antes de todo lo que lo necesite.',
@@ -540,6 +543,31 @@
     pre.append(b);
   }
 
+  // The next-step box a turn ended with: what is done, the question and its
+  // answers. Only the latest, with nothing said after it, can be answered;
+  // a click sends that answer as your message.
+  function nextNode(m, open) {
+    const d = el('div', `card next${open ? '' : ' past'}`);
+    d.append(el('div', 'k', T.nextStep));
+    if (m.recap) d.append(el('p', '', m.recap));
+    if (m.ask) d.append(el('h3', '', m.ask));
+    if (open && m.actions && m.actions.length) {
+      const row = el('div', 'row');
+      m.actions.forEach((a, i) => {
+        const b = el('button', `btn sm${i === 0 ? ' primary' : ''}`, a.label);
+        b.type = 'button';
+        b.title = a.message;
+        b.onclick = () => {
+          $('text').value = a.message;
+          send();
+        };
+        row.append(b);
+      });
+      d.append(row);
+    }
+    return d;
+  }
+
   function msgNode(m) {
     if (m.role === 'assistant') {
       const d = el('div', 'msg assistant');
@@ -712,6 +740,12 @@
         i--;
         const working = isChat && current.status !== 'idle' && i === msgs.length - 1;
         log.append(stepsNode(run, working));
+        continue;
+      }
+      if (m.role === 'next') {
+        const later = msgs.slice(i + 1).some((x) => x.role === 'user' || x.role === 'next');
+        const open = !later && (isChat ? current.status === 'idle' : current.canSend && !current.queued);
+        log.append(nextNode(m, open));
         continue;
       }
       log.append(msgNode(m));

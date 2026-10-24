@@ -930,3 +930,31 @@ test('bad requests never take the daemon down: broken %-encoding, a null body, a
     await daemon.close();
   }
 });
+
+test('next step: a turn that ends with a question puts it on the pet, until the next request', async () => {
+  const { daemon, port, dir } = await boot();
+  try {
+    const file = path.join(dir, '.claude', 'projects', 'shop', 'n1.jsonl');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const box = { recap: 'PR #21 is open. CI passed.', ask: 'Merge PR #21 into main?', actions: [{ label: 'Merge', message: 'Merge PR #21.' }, { label: 'Not now' }, { action: 'commit' }] };
+    fs.writeFileSync(file, `${[
+      { type: 'user', message: { role: 'user', content: 'open the PR' } },
+      { type: 'assistant', message: { id: 'a1', content: [{ type: 'tool_use', id: 't1', name: 'mcp__ccd_turn__wrap_up', input: box }] } },
+    ].map((l) => JSON.stringify(l)).join('\n')}\n`);
+    const json = { 'Content-Type': 'application/json' };
+    const ev = (name) => request(port, 'POST', '/event', { body: JSON.stringify({ session_id: 'n1', cwd: '/w/shop', hook_event_name: name, transcript_path: file }), headers: json });
+    await ev('UserPromptSubmit');
+    await ev('Stop');
+    const focus = () => request(port, 'GET', '/api/state').then((r) => JSON.parse(r.body).live.focus);
+    assert.deepEqual((await focus()).next, { recap: 'PR #21 is open. CI passed.', ask: 'Merge PR #21 into main?', actions: [{ label: 'Merge', message: 'Merge PR #21.' }, { label: 'Not now', message: 'Not now' }] });
+    // Presentation mode shows no conversation text.
+    daemon.setConfig({ present: true });
+    assert.equal((await focus()).next, null);
+    daemon.setConfig({ present: false });
+    // A new request: the question is over.
+    await ev('UserPromptSubmit');
+    assert.ok(!(await focus()).next);
+  } finally {
+    await daemon.close();
+  }
+});

@@ -8,7 +8,7 @@ const path = require('node:path');
 const { EventEmitter } = require('node:events');
 const { PassThrough } = require('node:stream');
 const { createAssistant, claudeArgs } = require('../src/assistant');
-const { readTranscript, messagesOf } = require('../src/transcript');
+const { readTranscript, messagesOf, nextStep, lastNext } = require('../src/transcript');
 
 // A stand-in for `claude -p`: records what Openmon writes, and lets the test
 // play Claude Code's side of the conversation.
@@ -185,6 +185,21 @@ Revise o projeto, por favor.
   const last = readTranscript(file).pop();
   assert.deepEqual([last.role, last.text, last.via], ['user', 'Revise o projeto, por favor.', 'pet']);
   assert.deepEqual(messagesOf(null), []);
+});
+
+test('next step: the box of the Claude app and of the Openmon tool, as one; only messages can answer it', () => {
+  const box = (name, input) => messagesOf({ type: 'assistant', message: { id: 'm', content: [{ type: 'tool_use', id: 't', name, input }] } });
+  const [app] = box('mcp__ccd_turn__wrap_up', { recap: ' Done.\n All  green. ', ask: 'Merge?', actions: [{ label: 'Merge', message: 'Merge it.' }, { action: 'create_pr' }, { label: 'Later' }, { label: 'Third' }] });
+  assert.deepEqual([app.role, app.recap, app.ask, app.actions], ['next', 'Done. All green.', 'Merge?', [{ label: 'Merge', message: 'Merge it.' }, { label: 'Later', message: 'Later' }]]);
+  assert.equal(box('mcp__openmon__next_step', { ask: 'Send it?', actions: [{ label: 'Send' }] })[0].ask, 'Send it?');
+  // A recap alone has no buttons; nothing at all is no box.
+  assert.deepEqual(nextStep({ recap: 'Done.', actions: [{ label: 'x' }] }), { recap: 'Done.', ask: '', actions: [] });
+  assert.equal(nextStep({ ask: 42 }), null);
+  // The app's own task list is not work to show.
+  assert.deepEqual(box('mcp__ccd_turn__update_plan', { items: [] }), []);
+  // Only the latest box, and only while nothing was said after it.
+  assert.equal(lastNext([{ role: 'user' }, app, { role: 'assistant', text: 'ok' }]), app);
+  assert.equal(lastNext([app, { role: 'user', text: 'Merge it.' }]), null);
 });
 
 test('claude arguments: who the assistant is, its tools, only safe paths and names', () => {
