@@ -614,6 +614,13 @@ function openTalkWindow(ask) {
 // A normal window (it takes the keyboard), one at a time.
 let chatWin = null;
 let chatShortcut = null;
+// The conversation the assistant window shows; while it is minimized, the
+// pet shows answers again.
+let chatViewing = null;
+function tellViewing() {
+  const seen = chatWin && !chatWin.isDestroyed() && !chatWin.isMinimized() && chatWin.isVisible() ? chatViewing : null;
+  if (win && !win.isDestroyed()) win.webContents.send('command', { type: 'chat-viewing', id: seen });
+}
 let askShortcut = null;
 
 // The screen as a picture (JPEG, at most 1600 px wide), for a question about it.
@@ -633,6 +640,8 @@ let askWin = null;
 let askShot = null;
 // `chat`: go on in that conversation ("Reply" on a notification).
 async function openAskWindow({ withScreen = false, withClip = false, chat = null } = {}) {
+  // Already open (the shortcut again): to the front, the conversation kept.
+  if (askWin && !askWin.isDestroyed() && !withScreen && !withClip && !chat) return bringToFront(askWin);
   askShot = withScreen ? await captureScreen().catch(() => null) : null;
   if (askWin && !askWin.isDestroyed()) askWin.close();
   const [x, y] = win.getPosition();
@@ -730,9 +739,12 @@ function openChatWindow(query = '') {
   });
   chatWin.on('focus', () => petsOnTop(false));
   chatWin.on('blur', () => petsOnTop(true));
+  chatWin.on('minimize', tellViewing);
+  chatWin.on('restore', tellViewing);
   chatWin.on('closed', () => {
     chatWin = null;
-    if (win && !win.isDestroyed()) win.webContents.send('command', { type: 'chat-viewing', id: null });
+    chatViewing = null;
+    tellViewing();
     petsOnTop(true, true);
   });
   // Links in an answer open in your browser; the window never leaves the chat.
@@ -776,7 +788,8 @@ async function chatCommand(cmd, arg) {
     }
     // The conversation on screen: the pet does not repeat its answers.
     case 'viewing':
-      if (win && !win.isDestroyed()) win.webContents.send('command', { type: 'chat-viewing', id: typeof arg === 'string' && /^[a-f0-9]{16}$/.test(arg) ? arg : null });
+      chatViewing = typeof arg === 'string' && /^[a-f0-9]{16}$/.test(arg) ? arg : null;
+      tellViewing();
       return true;
     case 'save-markdown': {
       const name = String((arg && arg.name) || 'conversa').replace(/[\\/:*?"<>|]+/g, ' ').trim().slice(0, 60) || 'conversa';
