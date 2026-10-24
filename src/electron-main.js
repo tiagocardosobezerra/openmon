@@ -1126,7 +1126,7 @@ function wireIpc() {
     const info = () => ({ loginItem: app.getLoginItemSettings(LOGIN_ITEM).openAtLogin, hooked: installer.isInstalled(), agents: installer.otherAgents(), aider: installer.aiderLine(), rules: installer.rulesStatus() });
     switch (cmd) {
       case 'open-chat':
-        openChatWindow();
+        openChatWindow(typeof arg === 'string' && /^[a-f0-9]{16}$/.test(arg) ? `?id=${arg}` : '');
         return true;
       case 'open-assistant-folder':
         shell.openPath(daemon.assistantFolder());

@@ -75,6 +75,7 @@
     $('h').textContent = tr('request.wants');
     $('what').textContent = trDetail(req.detail) || '';
     $('always').hidden = !req.canAlways;
+    if (req.chat) $('release').textContent = tr('request.openChat');
     const box = $('diffbox');
     box.textContent = '';
     if (req.diff) {
@@ -105,7 +106,13 @@
     if (!r.ok) return finish(tr('request.gone'));
     finish(decision === 'deny' ? tr('request.denied') : decision === 'release' ? tr('request.released') : tr('request.allowed'));
   }
-  for (const d of ['allow', 'always', 'deny', 'release']) $(d).onclick = () => decide(d);
+  for (const d of ['allow', 'always', 'deny']) $(d).onclick = () => decide(d);
+  // An agent's request can be answered in its own window; the assistant's
+  // has none: its conversation opens instead.
+  $('release').onclick = () => {
+    if (req && req.chat && window.openmonSettings) window.openmonSettings.call('open-chat', req.chat);
+    else decide('release');
+  };
   document.addEventListener('keydown', (e) => {
     if (answered || !req || e.target.closest('input, textarea')) return;
     if (e.key === 'y' || e.key === 'Y') decide('allow');
