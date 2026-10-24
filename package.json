@@ -27,7 +27,6 @@
     "e2e": "node test/e2e.js",
     "brand": "node tools/build-brand.js",
     "screens": "node tools/screens.js",
-    "banner": "node tools/build-banner.js",
     "dist": "node tools/dist.js",
     "dist:dir": "node tools/dist.js --dir"
   },

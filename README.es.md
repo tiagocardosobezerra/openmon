@@ -10,7 +10,7 @@
 ![100% local](https://img.shields.io/badge/datos-100%25%20locales-2ea44f?style=flat-square)
 ![MIT](https://img.shields.io/badge/licencia-MIT-blue?style=flat-square)
 
-<img width="100%" alt="Animación de Openmon: un huevo eclosiona en la esquina de la pantalla, la criatura lee, martillea y prueba junto con el agente de IA, salta con un cartel cuando te necesita y evoluciona con el trabajo. Tu agente trabaja. Tu Openmon crece." src="assets/openmon-banner.es.svg" />
+<img width="100%" alt="Animación de Openmon: un huevo eclosiona en la esquina de la pantalla; la mascota lee, martillea y prueba junto con el agente de IA; cuando el agente necesita permiso, salta con un cartel y respondes con un clic; también es tu asistente: pides un recordatorio en una cajita junto a ella y, a la hora, te avisa; evoluciona con el trabajo y se vuelve una colección de 39 formas, con brillantes y legendarias. Tu agente trabaja. Tu Openmon crece y te ayuda." src="assets/openmon-banner.es.svg" />
 
 ## Lo que hace por ti
 
@@ -220,12 +220,13 @@ El servidor solo escucha en `127.0.0.1` y rechaza pedidos de otras páginas web 
 
 ## Cómo funciona por dentro
 
-<img width="100%" alt="Cómo funciona Openmon por dentro: los agentes avisan cada paso con hooks, un servidor local en 127.0.0.1:4747 convierte cada aviso en una señal, la mascota elige la pose, gana XP y anota lo que hizo el agente, y todo aparece en la esquina de la pantalla" src="assets/openmon-dentro.es.svg" />
+<img width="100%" alt="Cómo funciona Openmon por dentro: los agentes de IA avisan cada paso por hooks; un servidor local en 127.0.0.1:4747 convierte cada aviso en señal; la mascota elige la pose, gana experiencia y registra lo que hizo el agente; todo aparece en la esquina de la pantalla; y, como asistente, responde con tu propio Claude Code, que puede crear recordatorios, guardar lo que debe recordar y hablar por la burbuja. Openmon no envía nada más." src="assets/openmon-dentro.es.svg" />
 
 1. **El agente avisa.** Claude Code, Gemini CLI, Cursor, OpenCode y Aider ya avisan cada paso que dan (hooks). Openmon solo escucha, sin bloquear nada.
 2. **Se vuelve señal.** Un servidor local en `127.0.0.1:4747` convierte cada aviso en una señal simple: herramienta usada, prueba en verde o en rojo, "te necesita".
 3. **La mascota decide.** Elige la pose, gana experiencia en el tipo de trabajo correcto y anota lo que hizo el agente en las Habilidades.
 4. **Aparece en pantalla.** Todo queda en la esquina de tu pantalla. Nada tuyo sale de tu computadora; solo revisa una vez al día si hay versión nueva (el aviso en el celular y GitHub son opcionales: uno solo envía "Tu agente te necesita", el otro guarda tu mascota en un Gist secreto de tu cuenta).
+5. **Y responde.** Como asistente, usa tu propio Claude Code (`claude -p`, con tu cuenta y tus conectores, sin clave de API), que habla con Anthropic como siempre. Claude puede usar las herramientas de Openmon: crear recordatorios y tareas, guardar en la memoria, hablar por la burbuja. Openmon no envía nada más.
 
 ## Desarrollar
 
