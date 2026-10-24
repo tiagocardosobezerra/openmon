@@ -1034,21 +1034,6 @@
       }
       return setBubble(cls, title, trDetail(f.detail), { ...answer, eyebrow, buttons: write });
     }
-    // An answer from one of Openmon's chats: the reply itself, and the way to it.
-    if (chatAnswer && Date.now() < chatAnswer.until && !companionId) {
-      return setBubble('done', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
-    }
-    // A wild Openmon: try an Openball or let it go. The agent comes first.
-    const w = wildNow();
-    if (w) {
-      const bag = pet.bag || {};
-      const owned = [['openball', 'wild.throw'], ['openball-plus', 'wild.throwPlus'], ['openball-master', 'wild.throwMaster']].filter(([id]) => bag[id] > 0);
-      const balls = owned.length;
-      const title = tr(w.shiny ? 'wild.titleShiny' : 'wild.title', { name: w.name || w.lineage });
-      const buttons = [...owned.map(([id, key], i) => [{ wild: 'throw', ball: id }, tr(key, { n: bag[id] }), i === 0 ? 'primary' : '']), [{ wild: 'release' }, tr('wild.release'), '']];
-      const left = Math.max(0, Math.ceil((w.until - Date.now()) / 60000));
-      return setBubble(`wild t-${w.lineage}`, title, balls ? tr('wild.sub') : tr('wild.noBall'), { buttons, note: tr('wild.left', { m: left }), id: `wild|${w.at}` });
-    }
     // A looping agent (the same failure again and again) says more than one
     // failure: open its window, or ask it to stop and wait. Until it ends.
     const askStop = (id) => (canTalk && inbox[id] && inbox[id].canSend ? [[{ stop: id }, tr('stop.ask'), '']] : null);
@@ -1064,15 +1049,33 @@
     // The very first minute: what this is, and a demo for those without an
     // agent at hand.
     if (introOffer && Date.now() < introOffer && (pose === 'idle' || pose === 'sleep') && !demo && !companionId) {
-      return setBubble('toast', tr('intro'), tr('intro.sub'), { buttons: [[{ demo: 'start' }, tr('demo.watch'), 'primary']], id: 'intro' });
+      const buttons = [...(canChat ? [[{ chat: 'new' }, tr('chat.open'), 'primary']] : []), [{ demo: 'start' }, tr('demo.watch'), canChat ? '' : 'primary']];
+      return setBubble('toast', tr('intro'), tr(canChat ? 'intro.subAssistant' : 'intro.sub'), { buttons, id: 'intro' });
     }
     // A stuck agent: open its window, or ask it to stop and wait.
     const stuck = (live.sessions || []).find((x) => x.stuck);
     if (stuck && pose !== 'done') return setBubble('warn', tr('stuck.title', { t: clock(stuck.stuck) }), tr('stuck.sub'), { jump: demo ? null : stuck.id, eyebrow: stuck.label, buttons: askStop(stuck.id), id: `stuck|${stuck.id}` });
     const longTool = (live.sessions || []).find((x) => x.longTool);
     if (longTool && pose === 'working') return setBubble('warn', tr('longTool.title', { t: clock(longTool.longTool.ms) }), trDetail(longTool.longTool.detail), { jump: demo ? null : longTool.id, eyebrow: longTool.label, id: `long|${longTool.id}|${longTool.longTool.detail}` });
+    // An answer from one of Openmon's chats: the reply itself, and the way to it.
+    // After what needs you and what went wrong; before the plain "done".
+    if (chatAnswer && Date.now() < chatAnswer.until && !companionId) {
+      return setBubble('done answer', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
+    }
+    // A wild Openmon: try an Openball or let it go. The agents, and what went wrong, come first.
+    const w = wildNow();
+    if (w) {
+      const bag = pet.bag || {};
+      const owned = [['openball', 'wild.throw'], ['openball-plus', 'wild.throwPlus'], ['openball-master', 'wild.throwMaster']].filter(([id]) => bag[id] > 0);
+      const balls = owned.length;
+      const title = tr(w.shiny ? 'wild.titleShiny' : 'wild.title', { name: w.name || w.lineage });
+      const buttons = [...owned.map(([id, key], i) => [{ wild: 'throw', ball: id }, tr(key, { n: bag[id] }), i === 0 ? 'primary' : '']), [{ wild: 'release' }, tr('wild.release'), '']];
+      const left = Math.max(0, Math.ceil((w.until - Date.now()) / 60000));
+      return setBubble(`wild t-${w.lineage}`, title, balls ? tr('wild.sub') : tr('wild.noBall'), { buttons, note: tr('wild.left', { m: left }), id: `wild|${w.at}` });
+    }
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
-    if (pose === 'done' && now() - poseSince < 90) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}`, buttons: write });
+    // (One of Openmon's own chats: its answer bubble said it already.)
+    if (pose === 'done' && now() - poseSince < 90 && !chatSessions[f.id]) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}`, buttons: write });
     // Nothing to say about the agents: whatever was dismissed is over.
     dismissed = null;
     return setBubble(null);
@@ -1272,7 +1275,7 @@
       // "Permission: npm publish": the thing asked for set as code.
       const permAsked = x.state === 'attention' && /^(Allow|Wants)/.test(x.detail || '') ? /^([^:]{1,24}): (.+)$/s.exec(detail) : null;
       if (permAsked) what.replaceChildren(`${permAsked[1]}: `, el('code', '', permAsked[2]));
-      li.append(el('i', 'dot'), el('b', '', x.label), what);
+      li.append(el('i', 'dot'), el('b', '', chatSessions[x.id] ? `💬 ${tr('nav.assistant')}` : x.label), what);
       // With more than one Openmon on screen: who follows this conversation.
       if (!demo && onScreen.length > 1) {
         const own = owners[x.id];
@@ -1303,7 +1306,8 @@
       const box = inbox[x.id];
       if (!req && (asked || (!demo && canTalk && box && box.canSend))) {
         const row = el('li', 'perm-row');
-        const b = el('button', `btn sm${asked ? ' primary' : ''}`, asked ? tr('q.answer') : `${tr('talk.write')}${box.queued ? ' ·' : ''}`);
+        // An assistant conversation opens in the assistant; others get a message.
+        const b = el('button', `btn sm${asked ? ' primary' : ''}`, asked ? tr('q.answer') : chatSessions[x.id] ? tr('jump.open') : `${tr('talk.write')}${box.queued ? ' ·' : ''}`);
         b.type = 'button';
         b.dataset.talk = asked ? 'question' : 'message';
         b.dataset.ref = asked ? asked.id : x.id;
@@ -1383,7 +1387,8 @@
       setTimeout(() => pose === 'done' && showEmote('♪', now()), 3000);
       burst('confetti', 18, petCX(), headY(stage) + 10, 1.8, { colors: CONFETTI, gravity: 260 });
       play('done');
-      tip('rightclick', tr('tip.rightclick'), tr('tip.rightclick.sub'), 15_000);
+      // The first tip of all, then (another time) the assistant, unless used already.
+      if (!tip('rightclick', tr('tip.rightclick'), tr('tip.rightclick.sub'), 15_000) && canChat && !Object.keys(chatSessions).length) tip('assistant', tr('tip.assistant'), tr('tip.assistant.sub'), 12_000);
     } else if (next === 'attention') {
       tip('jump', tr('tip.jump'), tr('tip.jump.sub'), 6000);
       // One chime per 20 s at most, however many prompts arrive.
@@ -1648,7 +1653,6 @@
           chatAnswer = { id: e.id, title: `💬 ${e.title || tr('chat.done')}`, text: e.answer || e.line || '', until: Date.now() + (e.quick ? 45_000 : 20_000) };
           renderBubble();
           if (e.quick) speak(e.answer || e.line);
-          play('done');
           break;
         case 'say':
           if (!companionId) {
@@ -1661,7 +1665,7 @@
           break;
         case 'reminder':
           if (!companionId) {
-            pushToast(`⏰ ${tr('reminder.title')}`, e.text, 12000, 'say');
+            pushToast(`⏰ ${tr('reminder.title')}`, e.text || tr('reminder.hidden'), 12000, 'say');
             play('attention');
           }
           break;
@@ -2095,7 +2099,7 @@
     // "See all": the request page, with the whole diff.
     const openChatBtn = e.target.closest && e.target.closest('[data-chat]');
     if (openChatBtn) {
-      if (canChat) desktop.openChat(`?id=${openChatBtn.dataset.chat}`);
+      if (canChat) desktop.openChat(openChatBtn.dataset.chat === 'new' ? '?new=1' : `?id=${openChatBtn.dataset.chat}`);
       chatAnswer = null;
       dismissBubble();
       return;

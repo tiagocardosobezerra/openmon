@@ -895,6 +895,8 @@ test('assistant tools: their own key; reminders, memory and the bubble; quick qu
     const tool = (name, a) => post('/api/assistant/tool', { name, args: a }, { 'X-Openmon-Tool-Key': toolKey }).then((r) => JSON.parse(r.body));
     assert.equal((await tool('remind', { text: 'Beber água', in_minutes: 30 })).ok, true);
     assert.equal(daemon.schedule.list()[0].text, 'Beber água');
+    // The game counts it: a first schedule is a badge.
+    assert.ok(daemon.state().pet.achievements.organized);
     assert.equal((await tool('schedule_task', { prompt: 'Resumo', at: '09:00', repeat: 'weekdays' })).ok, true);
     assert.equal(daemon.schedule.list().find((i) => i.kind === 'task').repeat, 'weekdays');
     assert.equal((await tool('remind', { text: 'sem hora' })).ok, false);
@@ -903,6 +905,11 @@ test('assistant tools: their own key; reminders, memory and the bubble; quick qu
     assert.match((await tool('work_summary', {})).text, /No agent work|tool uses/);
     assert.equal((await tool('list_schedule', {})).ok, true);
     assert.equal((await tool('nope', {})).ok, false);
+    // Presentation mode: nothing personal on a shared screen.
+    daemon.setConfig({ present: true });
+    assert.match((await tool('say', { text: 'segredo' })).text, /presentation/);
+    assert.match((await tool('notify', { text: 'segredo' })).text, /presentation/);
+    assert.match((await tool('work_summary', {})).text, /presentation/i);
   } finally {
     await daemon.close();
   }

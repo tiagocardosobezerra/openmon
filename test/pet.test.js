@@ -60,10 +60,12 @@ test('becoming an Elder needs bond as well as XP', () => {
 
 test('XP is capped per 10 minutes so loops cannot farm it', () => {
   const p = pet.createPet(T0);
+  // Work XP only: a mission of the day (say, 100 actions) pays on top.
+  const missionXp = () => (p.daily.missions || []).filter((m) => m.done).length * require('../src/species').MISSION_XP;
   feed(p, done('shell'), 500, T0, 100);
-  assert.equal(p.xp, pet.XP_WINDOW_CAP);
+  assert.equal(p.xp - missionXp(), pet.XP_WINDOW_CAP);
   feed(p, done('shell'), 1, T0 + pet.XP_WINDOW_MS + 60_000);
-  assert.equal(p.xp, pet.XP_WINDOW_CAP + 1);
+  assert.equal(p.xp - missionXp(), pet.XP_WINDOW_CAP + 1);
   // Stats still count every call.
   assert.equal(p.stats.shell, 501);
 });

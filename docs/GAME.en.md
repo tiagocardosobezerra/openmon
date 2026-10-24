@@ -56,7 +56,7 @@ Every project your agent works on enough gets **its own egg**. Up to 6 travel in
 
 ## Something every day
 
-* **Missions**: three a day, like "answer your agent within 30 s, 3 times" or "3 green test runs". Each gives experience, friendship and a Snack.
+* **Missions**: three a day, like "answer your agent within 30 s, 3 times" or "3 green test runs", or "ask the assistant for 3 things". Each gives experience, friendship and a Snack.
 * **Bag**: *Snack* (+2 friendship), *Level candy* (one level up), *Friendship candy* (+10), *XP charm* (double experience for a day), *Mystery egg* (hatches a new member, with better shiny odds), *Steady stone* (while it holds it, it does not evolve) and 11 *Type stones* (hold one and the next evolution goes to that type).
 * **30 accessories** for the head, face and neck: cap, crown, scarf, round glasses, sunglasses, monocle, hero mask, hard hat, leaf crown, explorer hat, chef hat, ribbon bow, star tiara, pumpkin hat, Santa hat, necktie, pearl necklace, cape, little bell, little backpack and more, each unlocked by an achievement (100 commits, 50 fixes, 200 pages read…). They show on the pet, in the Bag and on the trainer card.
 * **Daily gift and streak**: a Snack per day of use, a Type stone every 3 days in a row, a Level candy every 7, an XP charm every 14 and a Mystery egg every 30.

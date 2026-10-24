@@ -222,6 +222,7 @@
       [tr('steps.session'), Boolean(pet.counters && pet.counters.tools > 0)],
       [tr('steps.starter'), pet.stage !== 'egg' || Boolean(pet.starter)],
       [tr('steps.pet'), Boolean(pet.counters && pet.counters.pets > 0)],
+      [tr('steps.assistant'), Object.keys(state.chatSessions || {}).length > 0],
       [tr('steps.name'), Boolean(pet.nickname)],
       [tr('steps.evolve'), Boolean(pet.achievements && pet.achievements['first-evolution'])],
     ];

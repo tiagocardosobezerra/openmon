@@ -35,6 +35,8 @@ const PT_BR = {
     trader: { title: 'Boa troca', text: 'Trocou um Openmon com um amigo.' },
     'week-type': { title: 'Semana temática', text: '100 ações do tipo da semana numa mesma semana.' },
     'month-20': { title: 'Mês constante', text: '20 dias de trabalho em 30.' },
+    assistant: { title: 'Assistente pessoal', text: 'Seu Openmon respondeu você como assistente.' },
+    organized: { title: 'Organizado', text: 'Um primeiro lembrete ou tarefa agendada.' },
   },
   dex: {
     egg: 'Quentinho ao toque. Escuta cada tecla e choca quando já ouviu o bastante.',
@@ -111,6 +113,8 @@ const ES = {
     trader: { title: 'Buen intercambio', text: 'Intercambiaste un Openmon con un amigo.' },
     'week-type': { title: 'Semana temática', text: '100 acciones del tipo de la semana en una misma semana.' },
     'month-20': { title: 'Mes constante', text: '20 días de trabajo en 30.' },
+    assistant: { title: 'Asistente personal', text: 'Tu Openmon te respondió como asistente.' },
+    organized: { title: 'Organizado', text: 'Un primer recordatorio o tarea programada.' },
   },
   dex: {
     egg: 'Tibio al tacto. Escucha cada tecla y se abre cuando ya oyó lo suficiente.',

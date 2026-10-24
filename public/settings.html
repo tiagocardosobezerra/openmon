@@ -18,6 +18,7 @@
   .side button[aria-selected="true"] { color: var(--ink); background: var(--surface); border-color: var(--outline); box-shadow: 0 2px 0 var(--outline); }
   .pane h2 { margin: 0 0 2px; font-size: 20px; }
   .pane > p.lead { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; }
+  .pane > p.note { margin: 10px 4px 0; color: var(--muted); font-size: 12.5px; }
   .card { padding: 4px 16px; margin-bottom: 14px; box-shadow: var(--lift), var(--gloss); }
   .card h3 { margin: 12px 0 0; font: 600 12px var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .row { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
@@ -73,9 +74,10 @@
   const TEXT = {
     'pt-BR': {
       title: 'Configurações', sub: 'Escolha uma seção. Tudo vale na hora e fica salvo.',
-      tabs: { pet: 'Pet', alerts: 'Avisos', focus: 'Foco e calma', phone: 'Celular', computer: 'Computador', more: 'Avançado' },
+      tabs: { pet: 'Pet', assistant: 'Assistente', alerts: 'Avisos', focus: 'Foco e calma', phone: 'Celular', computer: 'Computador', more: 'Avançado' },
       leads: {
         pet: 'Como ele aparece e se comporta na tela.',
+        assistant: 'O Claude, como o seu Openmon: conversas, perguntas rápidas, lembretes e memória, sem abrir o Claude.',
         alerts: 'Como você fica sabendo que um agente precisa de você.',
         focus: 'Para reuniões, tela compartilhada ou trabalho concentrado.',
         phone: 'Opcional. Usa o ntfy (app gratuito e aberto) e só manda "Seu agente precisa de você".',
@@ -88,6 +90,7 @@
       language: 'Idioma', languageSub: 'Do pet, dos menus e destas páginas.',
       theme: 'Tema', themeSub: 'Claro, escuro ou o mesmo do sistema.', themeAuto: 'Sistema', themeLight: 'Claro', themeDark: 'Escuro',
       sounds: 'Sons', soundsSub: 'Pequenos sons quando ele pula, evolui ou precisa de você.',
+      openChat: 'Abrir o assistente', openChatSub: 'Ctrl+Alt+C, ou Mais → Assistente no pet. Ctrl+Alt+A faz uma pergunta rápida; Ctrl+Alt+S pergunta sobre a tela.', open: 'Abrir', folder: 'Pasta e memória', folderSub: 'A pasta onde o assistente trabalha em assuntos gerais. O CLAUDE.md dela é a memória: o que ele sabe sobre você (edite no assistente, em Memória do assistente).', openFolder: 'Abrir a pasta', assistantMore: 'Lembretes, tarefas agendadas e ações rápidas ficam no próprio assistente. Respostas pelo celular: Celular.',
       speak: 'Ler respostas em voz alta', speakSub: 'O pet lê as respostas das perguntas rápidas e o que o Claude manda dizer, com as vozes do seu computador (sem internet).',
       chatter: 'Falas e emojis', chatterSub: 'Balões curtos e reações (? ♥ ♪) quando nada importante está acontecendo.',
       stroll: 'Passear pela tela', strollSub: 'Ele anda alguns passos quando está à toa.',
@@ -96,7 +99,7 @@
       hideFull: 'Sair do caminho em tela cheia', hideFullSub: 'Some durante apresentações, jogos e vídeos em tela cheia, e volta depois (Windows e macOS).',
       tokenLimit: 'Limite de tokens por dia', tokenLimitSub: 'Avisa uma vez quando seus agentes passam disso no dia. Não bloqueia nada.', off: 'Desligado',
       wild: 'Encontros selvagens', wildSub: 'De vez em quando um Openmon selvagem aparece ao lado do pet. Nunca no modo silencioso ou apresentação.',
-      answerOn: 'Responder pelo pet', answerOnSub: 'O balão mostra Permitir e Recusar, as opções das perguntas do agente e Mensagem, para escrever à conversa (Claude Code).',
+      answerOn: 'Responder pelo pet', answerOnSub: 'O balão mostra Permitir e Recusar, as opções das perguntas do agente e Mensagem, para escrever à conversa (Claude Code). Os pedidos do assistente sempre aparecem aqui, ligado ou não.',
       wait: 'Tempo de espera', waitSub: 'Quanto o Claude Code espera sua resposta no pet; depois ele pergunta como sempre.',
       focusMode: 'Modo foco', focusModeSub: 'Só o "precisa de você" aparece; o resto espera.', quiet: 'Modo silencioso', quietSub: 'Sem sons, falas nem notificações.',
       until: 'até {t}', off: 'Desligado', tomorrow: 'Até amanhã', min: '{n} min', end: 'Desligar',
@@ -116,7 +119,7 @@
       copyNow: 'Fazer cópia agora', copied: 'Cópia feita ✓', exportFile: 'Exportar…', importFile: 'Trazer de um arquivo…', openFolder: 'Abrir pasta',
       position: 'Posição na tela', positionSub: 'Leva o pet de volta para o canto da tela.', reset: 'Voltar ao canto',
       demo: 'Demonstração', demoSub: 'Mostra tudo o que ele faz em um minuto.', play: 'Ver',
-      keys: 'Atalhos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre o card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> leva ao agente que está esperando.',
+      keys: 'Atalhos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre o card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> leva ao agente que está esperando · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Y</kbd> / <kbd>N</kbd> permite ou recusa o pedido do balão · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd> abre o assistente · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> pergunta rápida · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd> pergunta sobre a tela.',
       obs: 'Pet no OBS (live)', obsSub: 'Adicione uma Fonte de Navegador no OBS com este endereço, 300 × 560. O fundo é transparente.', copy: 'Copiar', copiedUrl: 'Copiado ✓',
       desktopOnly: 'Disponível no app do Openmon.',
       cloud: 'Seu pet em qualquer computador', cloudSub: 'Entre com o GitHub e seu pet fica salvo num Gist secreto da sua conta. Em outro computador, entre com a mesma conta e ele vem junto.',
@@ -127,9 +130,10 @@
     },
     es: {
       title: 'Ajustes', sub: 'Elige una sección. Todo se aplica al instante y queda guardado.',
-      tabs: { pet: 'Mascota', alerts: 'Avisos', focus: 'Foco y calma', phone: 'Celular', computer: 'Computadora', more: 'Avanzado' },
+      tabs: { pet: 'Mascota', assistant: 'Asistente', alerts: 'Avisos', focus: 'Foco y calma', phone: 'Celular', computer: 'Computadora', more: 'Avanzado' },
       leads: {
         pet: 'Cómo aparece y se comporta en la pantalla.',
+        assistant: 'Claude, como tu Openmon: conversaciones, preguntas rápidas, recordatorios y memoria, sin abrir Claude.',
         alerts: 'Cómo te enteras de que un agente te necesita.',
         focus: 'Para reuniones, pantalla compartida o trabajo concentrado.',
         phone: 'Opcional. Usa ntfy (una app gratuita y abierta) y solo envía "Tu agente te necesita".',
@@ -142,6 +146,7 @@
       language: 'Idioma', languageSub: 'De la mascota, los menús y estas páginas.',
       theme: 'Tema', themeSub: 'Claro, oscuro o el del sistema.', themeAuto: 'Sistema', themeLight: 'Claro', themeDark: 'Oscuro',
       sounds: 'Sonidos', soundsSub: 'Pequeños sonidos cuando salta, evoluciona o te necesita.',
+      openChat: 'Abrir el asistente', openChatSub: 'Ctrl+Alt+C, o Más → Asistente en la mascota. Ctrl+Alt+A hace una pregunta rápida; Ctrl+Alt+S pregunta sobre la pantalla.', open: 'Abrir', folder: 'Carpeta y memoria', folderSub: 'La carpeta donde el asistente trabaja en temas generales. Su CLAUDE.md es la memoria: lo que sabe de ti (edítalo en el asistente, en Memoria del asistente).', openFolder: 'Abrir la carpeta', assistantMore: 'Recordatorios, tareas programadas y acciones rápidas están en el propio asistente. Respuestas desde el celular: Celular.',
       speak: 'Leer respuestas en voz alta', speakSub: 'La mascota lee las respuestas de las preguntas rápidas y lo que Claude le pide decir, con las voces de tu computadora (sin internet).',
       chatter: 'Frases y emojis', chatterSub: 'Globos cortos y reacciones (? ♥ ♪) cuando no pasa nada importante.',
       stroll: 'Pasear por la pantalla', strollSub: 'Da unos pasos cuando no hace nada.',
@@ -150,7 +155,7 @@
       hideFull: 'Apartarse en pantalla completa', hideFullSub: 'Se oculta durante presentaciones, juegos y videos en pantalla completa, y vuelve después (Windows y macOS).',
       tokenLimit: 'Límite de tokens por día', tokenLimitSub: 'Avisa una vez cuando tus agentes lo pasan en el día. No bloquea nada.', off: 'Apagado',
       wild: 'Encuentros salvajes', wildSub: 'De vez en cuando aparece un Openmon salvaje junto a la mascota. Nunca en modo silencioso o presentación.',
-      answerOn: 'Responder desde la mascota', answerOnSub: 'El globo muestra Permitir y Rechazar, las opciones de las preguntas del agente y Mensaje, para escribir a la conversación (Claude Code).',
+      answerOn: 'Responder desde la mascota', answerOnSub: 'El globo muestra Permitir y Rechazar, las opciones de las preguntas del agente y Mensaje, para escribir a la conversación (Claude Code). Los pedidos del asistente siempre aparecen aquí, esté activado o no.',
       wait: 'Tiempo de espera', waitSub: 'Cuánto espera Claude Code tu respuesta en la mascota; después pregunta como siempre.',
       focusMode: 'Modo foco', focusModeSub: 'Solo aparece "te necesita"; lo demás espera.', quiet: 'Modo silencio', quietSub: 'Sin sonidos, frases ni notificaciones.',
       until: 'hasta {t}', off: 'Apagado', tomorrow: 'Hasta mañana', min: '{n} min', end: 'Apagar',
@@ -170,7 +175,7 @@
       copyNow: 'Hacer copia ahora', copied: 'Copia hecha ✓', exportFile: 'Exportar…', importFile: 'Traer de un archivo…', openFolder: 'Abrir carpeta',
       position: 'Posición en pantalla', positionSub: 'Lleva la mascota de vuelta a la esquina.', reset: 'Volver a la esquina',
       demo: 'Demostración', demoSub: 'Muestra todo lo que hace en un minuto.', play: 'Ver',
-      keys: 'Atajos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre la tarjeta · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> te lleva al agente que espera.',
+      keys: 'Atajos de teclado', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> abre la tarjeta · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> te lleva al agente que espera · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Y</kbd> / <kbd>N</kbd> permite o rechaza el pedido de la burbuja · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd> abre el asistente · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> pregunta rápida · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd> pregunta sobre la pantalla.',
       obs: 'Mascota en OBS (directo)', obsSub: 'Agrega una Fuente de navegador en OBS con esta dirección, 300 × 560. El fondo es transparente.', copy: 'Copiar', copiedUrl: 'Copiado ✓',
       desktopOnly: 'Disponible en la app de Openmon.',
       cloud: 'Tu mascota en cualquier computadora', cloudSub: 'Inicia sesión con GitHub y tu mascota queda guardada en un Gist secreto de tu cuenta. En otra computadora, inicia sesión con la misma cuenta y viene contigo.',
@@ -181,9 +186,10 @@
     },
     en: {
       title: 'Settings', sub: 'Pick a section. Everything applies right away and is saved.',
-      tabs: { pet: 'Pet', alerts: 'Alerts', focus: 'Focus and calm', phone: 'Phone', computer: 'Computer', more: 'Advanced' },
+      tabs: { pet: 'Pet', assistant: 'Assistant', alerts: 'Alerts', focus: 'Focus and calm', phone: 'Phone', computer: 'Computer', more: 'Advanced' },
       leads: {
         pet: 'How it looks and behaves on screen.',
+        assistant: 'Claude, as your Openmon: conversations, quick questions, reminders and memory, without opening Claude.',
         alerts: 'How you learn that an agent needs you.',
         focus: 'For meetings, shared screens or deep work.',
         phone: 'Optional. Uses ntfy (a free, open app) and only sends "Your agent needs you".',
@@ -196,6 +202,7 @@
       language: 'Language', languageSub: 'Of the pet, the menus and these pages.',
       theme: 'Theme', themeSub: 'Light, dark, or the same as your system.', themeAuto: 'System', themeLight: 'Light', themeDark: 'Dark',
       sounds: 'Sounds', soundsSub: 'Little sounds when it hops, evolves or needs you.',
+      openChat: 'Open the assistant', openChatSub: 'Ctrl+Alt+C, or More → Assistant on the pet. Ctrl+Alt+A asks a quick question; Ctrl+Alt+S asks about the screen.', open: 'Open', folder: 'Folder and memory', folderSub: 'The folder where the assistant works on general things. Its CLAUDE.md is the memory: what it knows about you (edit it in the assistant, under Assistant memory).', openFolder: 'Open the folder', assistantMore: 'Reminders, scheduled tasks and quick actions are in the assistant itself. Answers from the phone: Phone.',
       speak: 'Read answers aloud', speakSub: 'The pet reads the answers to quick questions, and what Claude asks it to say, with the voices of your computer (no internet).',
       chatter: 'Chatter and emotes', chatterSub: 'Short bubbles and reactions (? ♥ ♪) when nothing important is going on.',
       stroll: 'Walk around', strollSub: 'It takes a few steps when it is idle.',
@@ -204,7 +211,7 @@
       hideFull: 'Step aside in full screen', hideFullSub: 'Hides during presentations, games and full-screen videos, and comes back after (Windows and macOS).',
       tokenLimit: 'Daily token limit', tokenLimitSub: 'Says so once when your agents go past it in a day. Blocks nothing.', off: 'Off',
       wild: 'Wild encounters', wildSub: 'Now and then a wild Openmon shows up next to the pet. Never in quiet or presentation mode.',
-      answerOn: 'Answer from the pet', answerOnSub: 'The bubble shows Allow and Deny, the options of the agent\'s questions and Message, to write to the conversation (Claude Code).',
+      answerOn: 'Answer from the pet', answerOnSub: 'The bubble shows Allow and Deny, the options of the agent\'s questions and Message, to write to the conversation (Claude Code). The assistant asks here either way.',
       wait: 'Waiting time', waitSub: 'How long Claude Code waits for your answer on the pet; after that it asks you as usual.',
       focusMode: 'Focus mode', focusModeSub: 'Only "needs you" shows up; the rest waits.', quiet: 'Quiet mode', quietSub: 'No sounds, chatter or notifications.',
       until: 'until {t}', off: 'Off', tomorrow: 'Until tomorrow', min: '{n} min', end: 'Turn off',
@@ -224,7 +231,7 @@
       copyNow: 'Make a copy now', copied: 'Copy made ✓', exportFile: 'Export…', importFile: 'Bring back from a file…', openFolder: 'Open folder',
       position: 'Position on screen', positionSub: 'Puts the pet back in the corner of the screen.', reset: 'Back to the corner',
       demo: 'Demo', demoSub: 'Shows everything it does in one minute.', play: 'Play',
-      keys: 'Keyboard shortcuts', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> opens the card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> takes you to the agent that waits.',
+      keys: 'Keyboard shortcuts', keysSub: '<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> opens the card · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>J</kbd> takes you to the agent that waits · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Y</kbd> / <kbd>N</kbd> allows or denies the request in the bubble · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>C</kbd> opens the assistant · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> quick question · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd> asks about the screen.',
       obs: 'Pet in OBS (streaming)', obsSub: 'Add a Browser Source in OBS with this address, 300 × 560. The background is transparent.', copy: 'Copy', copiedUrl: 'Copied ✓',
       desktopOnly: 'Available in the Openmon app.',
       cloud: 'Your pet on any computer', cloudSub: 'Sign in with GitHub and your pet is saved in a secret Gist in your account. On another computer, sign in with the same account and it comes along.',
@@ -238,6 +245,7 @@
   // Drawn icons for the sections (24 × 24, in the text colour).
   const SECTION_ICON = {
     pet: '<path d="M12 4c3.9 0 6.5 5.4 6.5 9 0 3.6-2.9 6.5-6.5 6.5S5.5 16.6 5.5 13c0-3.6 2.6-9 6.5-9z"/><path d="M9 8.5l1.5 1.5L12 8.5l1.5 1.5L15 8.5"/>',
+    assistant: '<path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.5 3.5V16.5a2 2 0 0 1-2-2z"/><path d="M8.5 9.5h7M8.5 12.5h4.5"/>',
     alerts: '<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
     focus: '<path d="M4.5 15v-3a7.5 7.5 0 0 1 15 0v3"/><rect x="3.5" y="14" width="4" height="6" rx="1.5"/><rect x="16.5" y="14" width="4" height="6" rx="1.5"/>',
     phone: '<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 17.5h2"/>',
@@ -396,6 +404,16 @@
 
   // --- sections ------------------------------------------------------------
   const VIEWS = {
+    assistant() {
+      return [
+        card(null, [
+          desk ? row(T.openChat, T.openChatSub, btn(T.open, () => desk.call('open-chat'), 'btn sm primary')) : row(T.openChat, T.desktopOnly, null),
+          desk ? row(T.folder, T.folderSub, btn(T.openFolder, () => desk.call('open-assistant-folder'))) : null,
+          row(T.speak, T.speakSub, toggle('speak')),
+        ].filter(Boolean)),
+        el('p', 'note', T.assistantMore),
+      ];
+    },
     pet() {
       const scale = config.scale || 1;
       const rename = btn(T.rename, () => (desk ? desk.openName() : window.open('/name.html', '_blank', 'width=340,height=170')));
@@ -409,7 +427,6 @@
         card(T.behaviour, [
           row(T.sounds, T.soundsSub, toggle('muted', { invert: true })),
           row(T.chatter, T.chatterSub, toggle('chatter')),
-          row(T.speak, T.speakSub, toggle('speak')),
           row(T.stroll, T.strollSub, toggle('stroll')),
           row(T.wild, T.wildSub, toggle('wild')),
           row(T.hideFull, T.hideFullSub, toggle('hideFullscreen')),

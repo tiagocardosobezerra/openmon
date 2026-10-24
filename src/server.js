@@ -378,7 +378,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     // The real pet routes work to the pet of each project (Party); the demo
     // pet is a single egg.
     const events = target === real ? party.applySignal(real.pet, signal, ctx, t, petForSession(signal)) : pet.applySignal(target.pet, signal, ctx, t);
-    if (target === real) events.push(...target.sessions.takeNotices());
+    // A chat of Openmon's own says it is done with its answer (chat-done), not a summary too.
+    if (target === real) events.push(...target.sessions.takeNotices().filter((e) => !(e.type === 'summary' && assistant.bySession(e.session))));
     // Now and then a wild Openmon shows up (never in quiet or presentation mode).
     if (target === real) events.push(...wild.roll(real.pet, signal, t, Math.random, config.wild !== false && !config.present && !(config.quietUntil && config.quietUntil > t)));
     if (target === real) noteActivity(t);
@@ -808,7 +809,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         if (!when) return { ok: false, error: 'Give in_minutes, or at as HH:MM.' };
         const r = name === 'remind' ? schedule.add({ kind: 'remind', text: args.text, when }) : schedule.add({ kind: 'task', text: args.prompt, cwd: typeof args.folder === 'string' && path.isAbsolute(args.folder) ? args.folder : assistantFolder(true), when });
         if (!r.ok) return { ok: false, error: `could not schedule (${r.reason})` };
-        pushEvents([{ type: 'scheduled', kind: r.item.kind, text: r.item.text, next: r.item.next }]);
+        pushEvents(pet.scheduled(real.pet, now()));
+        pushEvents([{ type: 'scheduled', kind: r.item.kind, text: config.present ? '' : r.item.text, next: r.item.next }]);
         return { ok: true, text: `Scheduled (id ${r.item.id}) for ${fmt(r.item.next)}${r.item.repeat ? `, then ${r.item.repeat} at ${r.item.time}` : ''}.` };
       }
       case 'list_schedule': {
@@ -822,12 +824,14 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'say': {
         const text = String(args.text || '').trim().slice(0, 300);
         if (!text) return { ok: false, error: 'empty text' };
+        if (config.present) return { ok: true, text: 'Not shown: presentation mode is on.' };
         pushEvents([{ type: 'say', text }]);
         return { ok: true, text: 'Shown in the bubble.' };
       }
       case 'notify': {
         const text = String(args.text || '').trim().slice(0, 300);
         if (!text) return { ok: false, error: 'empty text' };
+        if (config.present) return { ok: true, text: 'Not shown: presentation mode is on.' };
         bus.emit('notify', { title: String(args.title || 'Openmon').slice(0, 80), text });
         return { ok: true, text: 'Notification shown.' };
       }
@@ -865,6 +869,12 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       // The answer as plain text, short enough for the pet's bubble.
       const plain = config.present ? '' : String(text || '').replace(/```[\s\S]*?```/g, ' […] ').replace(/[*_`#>]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
       pushEvents([{ type: 'chat-done', id: chat.id, title: config.present ? '' : chat.title, line: line.slice(0, 160), answer: plain.length > 320 ? `${plain.slice(0, 317)}…` : plain, quick: chat.id === config.quickChat }]);
+      // The game counts it too: the day's mission, friendship, a badge.
+      if (world === real && text) {
+        pushEvents(pet.assistantAnswered(real.pet, now()));
+        persist(false);
+        pushState();
+      }
       bus.emit('chat-done', { id: chat.id, title: chat.title, line: line.slice(0, 160) });
     },
   });
@@ -876,6 +886,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const es = /^es/i.test(config.lang || '');
     const dir = config.assistantFolder || path.join(require('node:os').homedir(), 'Documents', pt ? 'Openmon Assistente' : es ? 'Openmon Asistente' : 'Openmon Assistant');
     if (create) {
+      if (!config.assistantFolder && configFile) setConfig({ assistantFolder: dir });
       try {
         fs.mkdirSync(dir, { recursive: true });
         const memory = path.join(dir, 'CLAUDE.md');
@@ -938,7 +949,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const live = real.sessions.snapshot(now());
     const s = (live.sessions || []).find((x) => x.id === session);
     const t = transcripts.get(session);
-    return { session, label: s ? s.label : t && t.cwd ? path.basename(t.cwd) : session, state: s ? s.state : 'ended', detail: s ? s.detail : null, cwd: t ? t.cwd : null, canSend: reachable.has(session), queued: inbox.has(session), messages: config.present ? [] : (t && readTranscript(t.file)) || [] };
+    return { session, agent: s ? s.agent || 'claude' : 'claude', label: s ? s.label : t && t.cwd ? path.basename(t.cwd) : session, state: s ? s.state : 'ended', detail: s ? s.detail : null, cwd: t ? t.cwd : null, canSend: reachable.has(session), queued: inbox.has(session), messages: config.present ? [] : (t && readTranscript(t.file)) || [] };
   }
 
   function chatList() {
@@ -952,8 +963,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     file: path.join(chatsDir, 'schedule.json'),
     now,
     onReminder: (item) => {
-      pushEvents([{ type: 'reminder', id: item.id, text: item.text }]);
-      bus.emit('reminder', item);
+      // On a shared screen (presentation mode): that there is one, not what.
+      const text = config.present ? '' : item.text;
+      pushEvents([{ type: 'reminder', id: item.id, text }]);
+      bus.emit('reminder', { ...item, text });
     },
     onTask: (item) => {
       const r = assistant.create({ cwd: item.cwd, text: item.text });
@@ -1803,6 +1816,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
           if (!keyOk(req)) return res.writeHead(403).end();
           const cwd = body.kind === 'task' ? (typeof body.cwd === 'string' && body.cwd ? body.cwd : assistantFolder(true)) : null;
           const r = schedule.add({ kind: body.kind, text: body.text, cwd, when: body.when });
+          if (r.ok) pushEvents(pet.scheduled(real.pet, now()));
           pushState(true);
           json(res, 200, r);
         });
@@ -1890,6 +1904,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     contactKey: () => contactKey,
     assistant,
     schedule,
+    // The assistant's folder (made, with its memory, the first time).
+    assistantFolder: () => assistantFolder(true),
     upgradeHooks: () => !playground && config.answerFromPet && upgradeHooks(),
     listen: () =>
       new Promise((resolve, reject) => {

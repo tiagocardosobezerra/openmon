@@ -26,13 +26,13 @@
 
 Los avisos del agente corren con [Node.js](https://nodejs.org), que quien usa Claude Code ya tiene. Los instaladores aún no están firmados: en Windows, haz clic en "Más información → Ejecutar de todas formas"; en macOS, clic derecho en la app y "Abrir". ¿Prefieres el código? Mira [Instalar desde el código](#instalar-desde-el-código).
 
-**Privacidad:** todo queda en tu computadora, sin cuenta. Su única salida a internet es una vez al día, para ver en GitHub si hay una versión nueva (se puede apagar); el aviso en el celular y GitHub son opcionales.
+**Privacidad:** todo queda en tu computadora, sin cuenta. Su única salida a internet es una vez al día, para ver en GitHub si hay una versión nueva (se puede apagar); el aviso en el celular y GitHub son opcionales. El asistente usa tu Claude Code, que habla con Anthropic como siempre; Openmon no envía nada más.
 
 Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas según el trabajo del agente. Tipos, objetos, accesorios, legendarios, habilidades y misiones están en [docs/GAME.es.md](docs/GAME.es.md).
 
 ## Tu asistente personal: habla con Claude sin abrir Claude
 
-`Ctrl+Alt+C` (o **Más → Hablar con Claude**, o el ícono de la bandeja) abre el chat de Openmon. Usa tu propio Claude Code, con tu cuenta, tu configuración, tus conectores (MCP) y tu `CLAUDE.md`. No hace falta clave de API.
+`Ctrl+Alt+C` (o **Más → Asistente**, la barra de arriba de las páginas o el ícono de la bandeja) abre el asistente. Usa tu propio Claude Code, con tu cuenta, tu configuración, tus conectores (MCP) y tu `CLAUDE.md`. No hace falta clave de API.
 
 * **Conversaciones de verdad:** la respuesta aparece mientras se escribe, con una línea por herramienta usada ("Write: lista.txt", "Bash: npm test"). Elige la carpeta de cada conversación: un proyecto, o la carpeta del **Asistente** (Documentos/Openmon Asistente) para temas generales.
 * **Pedidos dentro del chat:** cuando Claude necesita permiso, el pedido aparece en el chat con el cambio, y también en la burbuja de la mascota, la notificación y los atajos. Nada se aprueba solo.
@@ -173,9 +173,10 @@ El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre un
 
 ### Configuración
 
-Haz clic derecho en la mascota y en **Más**, al pie de la tarjeta (o en el ícono de la bandeja). El menú tiene la tarjeta, las páginas, el **modo foco**, el **modo silencio** y la **Configuración**, una página con seis secciones:
+Haz clic derecho en la mascota y en **Más**, al pie de la tarjeta (o en el ícono de la bandeja). El menú tiene la tarjeta, las páginas, el **modo foco**, el **modo silencio** y la **Configuración**, una página con siete secciones:
 
 * **Mascota**: apodo, tamaño, idioma, sonidos, frases, pasear por la pantalla y repartir las conversaciones entre los Openmons en pantalla.
+* **Asistente**: abrir el asistente, su carpeta y su memoria, y leer las respuestas en voz alta.
 * **Avisos**: notificación del sistema y responder permisos desde la mascota (con el tiempo de espera).
 * **Foco y calma**: modo foco, modo silencio, modo presentación y recordatorio de pausa.
 * **Celular**: aviso en el celular con la app ntfy (opcional).

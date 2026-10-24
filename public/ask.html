@@ -14,6 +14,7 @@
   .top { display: flex; align-items: center; gap: 8px; }
   .top b { flex: 1; font: 600 14px var(--font-display); }
   .top small { color: var(--muted); font-size: 11.5px; }
+  .top .me { width: 28px; height: 28px; object-fit: contain; }
   textarea.input { flex: 1; min-height: 0; resize: none; font: 14.5px/1.45 var(--font-body); }
   .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .row .grow { flex: 1; }
@@ -24,7 +25,7 @@
 </head>
 <body class="page">
 <form id="f">
-  <div class="top"><b id="title"></b><small id="hint"></small></div>
+  <div class="top"><img class="me" id="me" alt="" hidden><b id="title"></b><small id="hint"></small></div>
   <textarea class="input" id="text" rows="3"></textarea>
   <div class="row">
     <button class="chip" id="screen" type="button" aria-pressed="false"></button>
@@ -44,9 +45,9 @@
   const { lang } = window.OpenmonI18n;
   document.documentElement.lang = lang;
   const TEXT = {
-    en: { title: 'Ask your Openmon', hint: 'Enter sends · Esc closes', placeholder: 'What do you want to know or get done?', screen: '📷 With the screen', clip: '📋 With what I copied', send: 'Ask', cancel: 'Close', sending: 'Sending…', failed: 'Not sent. Is Claude Code installed and signed in?', explain: 'What is this? Explain it simply.' },
-    'pt-BR': { title: 'Pergunte ao seu Openmon', hint: 'Enter envia · Esc fecha', placeholder: 'O que você quer saber ou resolver?', screen: '📷 Com a tela', clip: '📋 Com o que copiei', send: 'Perguntar', cancel: 'Fechar', sending: 'Enviando…', failed: 'Não foi. O Claude Code está instalado e com login feito?', explain: 'O que é isto? Explique de forma simples.' },
-    es: { title: 'Pregunta a tu Openmon', hint: 'Enter envía · Esc cierra', placeholder: '¿Qué quieres saber o resolver?', screen: '📷 Con la pantalla', clip: '📋 Con lo que copié', send: 'Preguntar', cancel: 'Cerrar', sending: 'Enviando…', failed: 'No se envió. ¿Claude Code está instalado y con sesión iniciada?', explain: '¿Qué es esto? Explícalo de forma simple.' },
+    en: { title: 'Ask your Openmon', titleNamed: 'Ask {name}', hint: 'Enter sends · Esc closes', placeholder: 'What do you want to know or get done?', screen: '📷 With the screen', clip: '📋 With what I copied', send: 'Ask', cancel: 'Close', sending: 'Sending…', failed: 'Not sent. Is Claude Code installed and signed in?', explain: 'What is this? Explain it simply.' },
+    'pt-BR': { title: 'Pergunte ao seu Openmon', titleNamed: 'Pergunte a {name}', hint: 'Enter envia · Esc fecha', placeholder: 'O que você quer saber ou resolver?', screen: '📷 Com a tela', clip: '📋 Com o que copiei', send: 'Perguntar', cancel: 'Fechar', sending: 'Enviando…', failed: 'Não foi. O Claude Code está instalado e com login feito?', explain: 'O que é isto? Explique de forma simples.' },
+    es: { title: 'Pregunta a tu Openmon', titleNamed: 'Pregunta a {name}', hint: 'Enter envía · Esc cierra', placeholder: '¿Qué quieres saber o resolver?', screen: '📷 Con la pantalla', clip: '📋 Con lo que copié', send: 'Preguntar', cancel: 'Cerrar', sending: 'Enviando…', failed: 'No se envió. ¿Claude Code está instalado y con sesión iniciada?', explain: '¿Qué es esto? Explícalo de forma simple.' },
   };
   const T = TEXT[lang] || TEXT.en;
   const $ = (id) => document.getElementById(id);
@@ -99,6 +100,20 @@
     $('send').disabled = false;
     $('status').textContent = T.failed;
   };
+
+  // Your Openmon's name and picture.
+  fetch('/api/state')
+    .then((r) => r.json())
+    .then((s) => {
+      const p = s && !s.demo && s.pet;
+      if (!p || !p.name) return;
+      $('title').textContent = T.titleNamed.replace('{name}', p.name);
+      if (p.formKey) {
+        $('me').onload = () => ($('me').hidden = false);
+        $('me').src = `/art/${encodeURIComponent(p.formKey)}.svg`;
+      }
+    })
+    .catch(() => {});
 
   (async () => {
     if (params.get('screen') === '1') await toggleScreen(true);

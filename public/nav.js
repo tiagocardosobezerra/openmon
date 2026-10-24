@@ -55,6 +55,7 @@
     card: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><circle cx="8.5" cy="11" r="2"/><path d="M6 15.5c.6-1.2 1.5-1.8 2.5-1.8s1.9.6 2.5 1.8M14 10h4M14 13.5h3"/>',
     help: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.6"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+    assistant: '<path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.5 3.5V16.5h0a2 2 0 0 1-2-2z"/><path d="M8.5 9.5h7M8.5 12.5h4.5"/>',
     more: '<circle cx="5.5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   };
   function icon(id) {
@@ -117,6 +118,7 @@
   moreLabel.className = 'nav-label';
   moreLabel.textContent = tr('nav.more');
   sum.append(moreLabel);
+  sum.title = tr('nav.more');
   const menu = document.createElement('div');
   menu.className = 'nav-menu';
   menu.append(link('card', '/card.html', tr('nav.card')), link('help', '/help.html', tr('nav.help')));
@@ -143,7 +145,19 @@
     if (menu && e.target.closest('button, a') && !e.target.closest('summary, [data-keep-open]')) menu.open = false;
   });
   window.addEventListener('blur', () => closeMenus());
-  nav.append(more, link('settings', '/settings.html', tr('card.settings')));
+  // The assistant opens its own window (desktop app only: it needs the key).
+  const desk = window.openmonSettings;
+  if (desk && desk.call) {
+    const chat = link('assistant', '/chat.html', tr('nav.assistant'));
+    chat.addEventListener('click', (e) => {
+      e.preventDefault();
+      desk.call('open-chat');
+    });
+    nav.append(chat);
+  }
+  const settings = link('settings', '/settings.html', tr('card.settings'));
+  settings.title = tr('card.settings');
+  nav.append(more, settings);
 
   // Your Openmon: "you are here".
   const me = document.createElement('a');

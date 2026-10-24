@@ -182,6 +182,12 @@ body.page * { box-sizing: border-box; }
 .nav-me img { width: 36px; height: 36px; object-fit: contain; }
 /* Loading (or no pet yet): invisible, but its place stays, so nothing moves. */
 .nav-me[hidden] { display: grid; visibility: hidden; }
+/* Medium windows (the app's own is 900 px): Settings and More, which everyone
+   knows by their icon, lose their label first. */
+@media (max-width: 1080px) {
+  .topbar nav a[data-id="settings"] .nav-label, .topbar .nav-more > summary .nav-label { display: none; }
+  .topbar nav a[data-id="settings"], .topbar .nav-more > summary { padding: 7px 8px; }
+}
 /* Narrow windows: icons only, so the bar never wraps. */
 @media (max-width: 760px) {
   .topbar { gap: 8px; }

@@ -26,13 +26,13 @@
 
 The agent notices run with [Node.js](https://nodejs.org), which Claude Code users already have. The installers are not signed yet: on Windows, click "More info → Run anyway"; on macOS, right-click the app and choose "Open". Prefer the source? See [Install from source](#install-from-source).
 
-**Privacy:** everything stays on your computer, with no account. Its only trip to the internet is once a day, to check GitHub for a new version (you can turn it off); phone alerts and GitHub are optional.
+**Privacy:** everything stays on your computer, with no account. Its only trip to the internet is once a day, to check GitHub for a new version (you can turn it off); phone alerts and GitHub are optional. The assistant uses your Claude Code, which talks to Anthropic as it always does; Openmon sends nothing more.
 
 Behind it there is a game: the egg hatches, grows and evolves into one of 39 forms, shaped by your agent's work. Types, items, accessories, legendaries, skills and missions are in [docs/GAME.en.md](docs/GAME.en.md).
 
 ## Your personal assistant: talk to Claude without opening Claude
 
-`Ctrl+Alt+C` (or **More → Talk to Claude**, or the tray icon) opens Openmon's chat. It runs your own Claude Code, with your login, your settings, your connectors (MCP) and your `CLAUDE.md`. No API key needed.
+`Ctrl+Alt+C` (or **More → Assistant**, the top bar of the pages, or the tray icon) opens the assistant. It runs your own Claude Code, with your login, your settings, your connectors (MCP) and your `CLAUDE.md`. No API key needed.
 
 * **Real conversations:** the answer shows while it is written, with one line per tool used ("Write: list.txt", "Bash: npm test"). Pick each conversation's folder: a project, or the **Assistant** folder (Documents/Openmon Assistant) for general things.
 * **Requests inside the chat:** when Claude needs permission, the request shows in the chat with the change, and also in the pet's bubble, the notification and the shortcuts. Nothing is ever approved on its own.
@@ -173,9 +173,10 @@ The egg appears in the corner of your screen and an icon shows up in the tray. S
 
 ### Settings
 
-Right-click the pet and click **More** at the bottom of its card (or the tray icon). The menu has the card, the pages, **focus mode**, **quiet mode** and **Settings**, a page with six sections:
+Right-click the pet and click **More** at the bottom of its card (or the tray icon). The menu has the card, the pages, **focus mode**, **quiet mode** and **Settings**, a page with seven sections:
 
 * **Pet**: nickname, size, language, sounds, chatter, walking around and sharing conversations among the Openmons on screen.
+* **Assistant**: open the assistant, its folder and memory, and reading answers aloud.
 * **Alerts**: system notification and answering permissions from the pet (with the waiting time).
 * **Focus and calm**: focus mode, quiet mode, presentation mode and break reminder.
 * **Phone**: phone alerts through the ntfy app (optional).
