@@ -9,6 +9,7 @@ const path = require('node:path');
 const { app, BrowserWindow, Menu, Tray, Notification, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, nativeImage, nativeTheme, screen, session, shell } = require('electron');
 const { createDaemon } = require('./server');
 const { homeDir, adoptLegacyHome } = require('./store');
+const { onSpot } = require('./hotspots');
 
 adoptLegacyHome();
 const installer = require('./install');
@@ -1060,11 +1061,13 @@ function wireIpc() {
       w.webContents.send('command', 'pointer-out');
     }
   }, 250).unref();
-  // Pet windows are big and transparent, and two can overlap: the one on
-  // top lets the clicks through where it has nothing, but only it hears the
-  // pointer moving. So the shell itself watches the pointer over each pet's
-  // own spots (its body, card, bubble) and hands the click to that window,
-  // lifting it above the others.
+  // Pet windows are big and transparent, and let the clicks through where
+  // they have nothing. Each page says when the pointer reaches the pet, but
+  // it only hears the pointer while Windows passes the mouse moves on: two
+  // pets can overlap (only the one on top hears it), and Windows drops that
+  // pass-on when Openmon is busy. So the shell itself watches the pointer
+  // over each pet's own spots (its body, card, bubble) and hands the click
+  // to that window, lifting it above the others.
   ipcMain.on('hot-rects', (e, rects) => {
     const w = senderWin(e);
     if (!w || w.isDestroyed() || !Array.isArray(rects)) return;
@@ -1084,10 +1087,8 @@ function wireIpc() {
     if (dragTimer) return;
     const p = screen.getCursorScreenPoint();
     const inside = (b, x, y, rw, rh) => p.x >= b.x + x && p.x < b.x + x + rw && p.y >= b.y + y && p.y < b.y + y + rh;
-    // Only where pet windows overlap; alone, a window hears the pointer itself.
     const pets = [win, ...companionWins.values()].filter((w) => w && !w.isDestroyed() && w.isVisible() && inside(w.getBounds(), 0, 0, w.getBounds().width, w.getBounds().height));
-    if (pets.length < 2) return;
-    const over = pets.filter((w) => (w.__hot || []).some(([x, y, rw, rh]) => inside(w.getBounds(), x, y, rw, rh)));
+    const over = pets.filter((w) => onSpot(w.getBounds(), w.__hot, p));
     if (!over.length || over.some((w) => w.__interactive)) return;
     const pick = over.sort((a, b) => (b.__lifted || 0) - (a.__lifted || 0))[0];
     pick.setIgnoreMouseEvents(false);
