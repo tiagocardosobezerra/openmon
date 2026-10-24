@@ -47,9 +47,10 @@ function claudeArgs({ sessionId, resume = false, model = null, systemFile = null
 // shell can start; every argument is a fixed flag, a UUID, a model alias, a
 // tool name or a path Openmon chose (quoted, never with shell characters).
 function defaultSpawn(args, cwd, env) {
-  const win = process.platform === 'win32';
-  const quoted = win ? args.map((a) => (/[\s()]/.test(a) ? `"${a}"` : a)) : args;
-  return spawnProcess('claude', quoted, { cwd, env, shell: win, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+  if (process.platform !== 'win32') return spawnProcess('claude', args, { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
+  // One command line for the shell, every argument already quoted.
+  const line = ['claude', ...args.map((a) => (/[\s()]/.test(a) ? `"${a}"` : a))].join(' ');
+  return spawnProcess(line, { cwd, env, shell: true, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
 }
 
 // The whole process tree: on Windows the shell's child (Claude Code) too.

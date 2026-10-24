@@ -305,8 +305,35 @@
     })
     .catch(() => {});
 
+  // Back within a quarter of an hour: the last exchange, to go on from it.
+  async function resume() {
+    if (chatId) return;
+    const s = await fetch('/api/state').then((r) => r.json()).catch(() => null);
+    const id = s && s.config && s.config.quickChat;
+    if (!id) return;
+    const chat = await api(`/api/chat?id=${encodeURIComponent(id)}`);
+    if (!chat || chat.gone || chat.present || Date.now() - chat.updatedAt > 15 * 60_000) return;
+    const msgs = chat.messages || [];
+    const lastUser = msgs.map((m) => m.role).lastIndexOf('user');
+    const answer = msgs.slice(lastUser + 1).reverse().find((m) => m.role === 'assistant');
+    if (lastUser < 0 || !answer) return;
+    chatId = id;
+    $('talk').hidden = false;
+    $('talk').append(el('div', 'q', msgs[lastUser].text || '🖼'));
+    const a = el('div', 'a');
+    a.dataset.text = answer.text;
+    a.innerHTML = markdown(answer.text);
+    $('talk').append(a);
+    $('send').textContent = T.again;
+    $('text').placeholder = T.reply;
+    $('open').hidden = false;
+    $('talk').scrollTop = $('talk').scrollHeight;
+    fit();
+  }
+
   (async () => {
     listen();
+    await resume();
     // Claude Code wakes up while you type.
     api('/api/chat/warm', chatId ? { id: chatId } : { quick: true });
     if (params.get('screen') === '1') await toggleScreen(true);
