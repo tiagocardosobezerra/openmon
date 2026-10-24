@@ -44,9 +44,10 @@ Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 39 formas 
 * **Pelo celular (opcional):** com o aviso no celular ligado, o que você manda no tópico `<seu tópico>-in` do app ntfy vai para o agente que espera você, ou para a sua última conversa.
 * **Custo estimado** de cada conversa pelos preços de tabela da API. Em plano mensal (Pro, Max, Team), o chat mostra "incluído no seu plano".
 * **O assistente é o seu Openmon:** ele responde com o nome e o jeito do seu pet, e a resposta aparece no balão. Em Configurações → Pet, o pet pode ler as respostas em voz alta (vozes do computador, sem internet).
-* **Pergunta rápida** (`Ctrl+Alt+A`): uma caixinha ao lado do pet; Enter, e a resposta volta no balão. `Ctrl+Alt+S` faz o mesmo mandando uma imagem da tela ("o que é esse erro?"). Também dá para mandar o que você copiou.
+* **Pergunta rápida** (`Ctrl+Alt+A`): uma caixinha ao lado do pet; Enter, e a resposta aparece ali mesmo, com o que o Claude está fazendo. **Responder** continua a conversa, **Abrir no assistente** mostra inteira; fechada a caixinha, a resposta vem no balão. `Ctrl+Alt+S` faz o mesmo mandando uma imagem da tela ("o que é esse erro?"). Também dá para mandar o que você copiou.
 * **O Claude age no Openmon:** "me lembra às 15h de ligar pro João", "toda segunda me dá um resumo da semana", "lembre que eu prefiro tópicos". Ele cria lembretes e tarefas, guarda fatos na memória, fala pelo balão, manda notificações e lê o que seus agentes fizeram (ferramentas do Openmon, que não pedem permissão).
 * **Rotinas prontas** em Lembretes e tarefas: resumo da manhã e fechamento do dia, nos dias úteis.
+* **No chat:** os passos de cada resposta ficam numa linha que abre ("6 passos · editou 2 · rodou 1"); código com cores e **Copiar**; `Ctrl+N` nova conversa, `Ctrl+K` busca, `Esc` para, `↑` repete a última mensagem. A notificação "O Claude respondeu" tem **Responder**.
 * **Organização:** escolha o modelo de cada conversa (Haiku, Sonnet, Opus), fixe conversas, busque em todas e exporte uma em Markdown. Em cada resposta: **Ouvir** e **Lembrar**.
 
 ## Mais do que ele faz

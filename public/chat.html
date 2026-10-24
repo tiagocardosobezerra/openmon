@@ -680,11 +680,13 @@
     if (isChat) {
       $('title').textContent = current.title;
       const st = current.status === 'working' ? T.working : current.status === 'waiting' ? T.waiting : T.idle;
-      $('sub').textContent = [st, fill(T.in, { dir: current.cwd }), current.plan ? T.plan : current.costUsd ? fill(T.cost, { usd: `$${current.costUsd.toFixed(current.costUsd < 1 ? 3 : 2)}` }) : ''].filter(Boolean).join(' · ');
+      $('sub').title = current.cwd;
+      $('sub').textContent = [st, fill(T.in, { dir: current.cwd.split(/[\\/]/).pop() }), current.plan ? T.plan : current.costUsd ? fill(T.cost, { usd: `$${current.costUsd.toFixed(current.costUsd < 1 ? 3 : 2)}` }) : ''].filter(Boolean).join(' · ');
       $('text').placeholder = T.placeholder;
     } else {
       $('title').textContent = current.label;
-      $('sub').textContent = [current.state === 'working' ? T.working : current.state === 'attention' ? T.waiting : current.state === 'ended' ? T.ended : T.idle, current.cwd ? fill(T.in, { dir: current.cwd }) : ''].filter(Boolean).join(' · ');
+      $('sub').title = current.cwd || '';
+      $('sub').textContent = [current.state === 'working' ? T.working : current.state === 'attention' ? T.waiting : current.state === 'ended' ? T.ended : T.idle, current.cwd ? fill(T.in, { dir: current.cwd.split(/[\\/]/).pop() }) : ''].filter(Boolean).join(' · ');
       $('text').placeholder = current.canSend ? T.placeholderAgent : T.cantWrite;
     }
     // A conversation elsewhere that cannot hear Openmon: "Continue here" instead.

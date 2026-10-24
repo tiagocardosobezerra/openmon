@@ -72,6 +72,16 @@ function apiError(text) {
   return status === 529 || status === 503 ? 'busy' : status === 429 ? 'limit' : 'api';
 }
 
+// A conversation's name from its first message: the first sentence, cut at
+// a word, short enough for the list.
+function shortTitle(text, max = 48) {
+  const first = String(text || '').split('\n').find((l) => l.trim()) || '';
+  const sentence = first.split(/(?<=[.!?:;])\s/)[0].trim();
+  if (sentence.length <= max) return sentence;
+  const cut = sentence.slice(0, max);
+  return `${cut.slice(0, cut.lastIndexOf(' ') > max * 0.5 ? cut.lastIndexOf(' ') : max).replace(/[\s,;:.-]+$/, '')}…`;
+}
+
 function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () => {}, onChange = () => {}, askPermission = async () => ({ behavior: 'deny', message: 'No one to ask.' }), askQuestion = async () => null, onDone = () => {}, prepare = () => ({}), idleMs = IDLE_MS } = {}) {
   fs.mkdirSync(dir, { recursive: true });
   const indexFile = path.join(dir, 'chats.json');
@@ -344,7 +354,7 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
     if (sessionId && !UUID.test(sessionId)) return { ok: false, reason: 'session' };
     const first = String(text).trim();
     const folder = path.resolve(String(cwd));
-    const name = (title || first.split('\n')[0] || path.basename(String(cwd))).slice(0, 80);
+    const name = (title || shortTitle(first) || path.basename(String(cwd))).slice(0, 80);
     // A Claude Code already warmed up for this folder becomes this conversation.
     const warm = !sessionId && !model && spare && chats.get(spare);
     if (warm && warm.cwd === folder) {
@@ -531,4 +541,4 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
   };
 }
 
-module.exports = { createAssistant, claudeArgs, MODELS };
+module.exports = { createAssistant, claudeArgs, MODELS, shortTitle };
