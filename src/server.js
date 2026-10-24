@@ -949,7 +949,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const live = real.sessions.snapshot(now());
     const s = (live.sessions || []).find((x) => x.id === session);
     const t = transcripts.get(session);
-    return { session, label: s ? s.label : t && t.cwd ? path.basename(t.cwd) : session, state: s ? s.state : 'ended', detail: s ? s.detail : null, cwd: t ? t.cwd : null, canSend: reachable.has(session), queued: inbox.has(session), messages: config.present ? [] : (t && readTranscript(t.file)) || [] };
+    return { session, agent: s ? s.agent || 'claude' : 'claude', label: s ? s.label : t && t.cwd ? path.basename(t.cwd) : session, state: s ? s.state : 'ended', detail: s ? s.detail : null, cwd: t ? t.cwd : null, canSend: reachable.has(session), queued: inbox.has(session), messages: config.present ? [] : (t && readTranscript(t.file)) || [] };
   }
 
   function chatList() {

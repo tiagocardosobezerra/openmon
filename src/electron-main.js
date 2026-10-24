@@ -1262,7 +1262,7 @@ function watchPermissions(state) {
       actions: [{ type: 'button', text: L('Allow') }, { type: 'button', text: L('Deny') }],
     });
     n.on('action', (_e, index) => daemon.decidePermission(p.id, index === 0 ? 'allow' : 'deny'));
-    n.on('click', () => openAppWindow('request', `?id=${p.id}`));
+    n.on('click', () => (p.chat ? openChatWindow(`?id=${p.chat}`) : openAppWindow('request', `?id=${p.id}`)));
     permissionNotes.set(p.id, n);
     n.show();
   }

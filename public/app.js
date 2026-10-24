@@ -1385,7 +1385,8 @@
       setTimeout(() => pose === 'done' && showEmote('♪', now()), 3000);
       burst('confetti', 18, petCX(), headY(stage) + 10, 1.8, { colors: CONFETTI, gravity: 260 });
       play('done');
-      tip('rightclick', tr('tip.rightclick'), tr('tip.rightclick.sub'), 15_000);
+      // The first tip of all, then (another time) the assistant, unless used already.
+      if (!tip('rightclick', tr('tip.rightclick'), tr('tip.rightclick.sub'), 15_000) && canChat && !Object.keys(chatSessions).length) tip('assistant', tr('tip.assistant'), tr('tip.assistant.sub'), 12_000);
     } else if (next === 'attention') {
       tip('jump', tr('tip.jump'), tr('tip.jump.sub'), 6000);
       // One chime per 20 s at most, however many prompts arrive.

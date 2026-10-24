@@ -542,7 +542,8 @@
     const isAgent = view.kind === 'agent' && current;
     $('newbar').hidden = view.kind !== 'new';
     $('stop').hidden = !(isChat && current.status !== 'idle');
-    $('continue').hidden = !isAgent;
+    // Only Claude Code can pick a conversation up here (--resume), and only with its folder.
+    $('continue').hidden = !(isAgent && current.agent === 'claude' && current.cwd);
     $('rename').hidden = !isChat;
     $('delete').hidden = !isChat;
     $('export').hidden = !isChat;
