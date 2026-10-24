@@ -33,6 +33,10 @@
   .a.live::after { content: "▍"; color: var(--brand); }
   .doing { align-self: flex-start; color: var(--muted); font: 500 12px var(--font-mono); }
   .doing::before { content: "● "; color: var(--brand); }
+  /* A request in this conversation: answered right here. */
+  .ask { align-self: stretch; padding: 8px 10px; border-radius: 10px; border: 2px solid var(--outline); background: var(--surface); font-size: 13px; }
+  .ask b { display: block; margin-bottom: 6px; }
+  .ask .row { gap: 6px; }
   @media (prefers-reduced-motion: no-preference) { .doing::before { animation: blink 1s infinite; } }
   @keyframes blink { 50% { opacity: 0.2; } }
 </style>
@@ -62,9 +66,9 @@
   const { lang } = window.OpenmonI18n;
   document.documentElement.lang = lang;
   const TEXT = {
-    en: { title: 'Ask your Openmon', titleNamed: 'Ask {name}', hint: 'Enter sends · Esc closes', placeholder: 'What do you want to know or get done?', reply: 'Reply…', screen: '📷 With the screen', clip: '📋 With what I copied', send: 'Ask', again: 'Reply', cancel: 'Close', open: 'Open in the assistant', failed: 'Not sent. Is Claude Code installed and signed in?', explain: 'What is this? Explain it simply.', waking: 'Waking Claude up…', thinking: 'Thinking…', waits: 'Waiting for your OK in the bubble or the assistant…', busy: 'Claude is overloaded right now. Try again in a moment.', limit: 'You reached a usage limit of your Claude plan.', error: 'Claude could not answer. Open the assistant to see why.' },
-    'pt-BR': { title: 'Pergunte ao seu Openmon', titleNamed: 'Pergunte a {name}', hint: 'Enter envia · Esc fecha', placeholder: 'O que você quer saber ou resolver?', reply: 'Responder…', screen: '📷 Com a tela', clip: '📋 Com o que copiei', send: 'Perguntar', again: 'Responder', cancel: 'Fechar', open: 'Abrir no assistente', failed: 'Não foi. O Claude Code está instalado e com login feito?', explain: 'O que é isto? Explique de forma simples.', waking: 'Acordando o Claude…', thinking: 'Pensando…', waits: 'Esperando o seu OK no balão ou no assistente…', busy: 'O Claude está sobrecarregado agora. Tente de novo daqui a pouco.', limit: 'Você chegou a um limite de uso do seu plano do Claude.', error: 'O Claude não conseguiu responder. Abra o assistente para ver o motivo.' },
-    es: { title: 'Pregunta a tu Openmon', titleNamed: 'Pregunta a {name}', hint: 'Enter envía · Esc cierra', placeholder: '¿Qué quieres saber o resolver?', reply: 'Responder…', screen: '📷 Con la pantalla', clip: '📋 Con lo que copié', send: 'Preguntar', again: 'Responder', cancel: 'Cerrar', open: 'Abrir en el asistente', failed: 'No se envió. ¿Claude Code está instalado y con sesión iniciada?', explain: '¿Qué es esto? Explícalo de forma simple.', waking: 'Despertando a Claude…', thinking: 'Pensando…', waits: 'Esperando tu OK en la burbuja o en el asistente…', busy: 'Claude está sobrecargado ahora. Inténtalo de nuevo en un momento.', limit: 'Llegaste a un límite de uso de tu plan de Claude.', error: 'Claude no pudo responder. Abre el asistente para ver por qué.' },
+    en: { title: 'Ask your Openmon', titleNamed: 'Ask {name}', hint: 'Enter sends · Esc closes', placeholder: 'What do you want to know or get done?', reply: 'Reply…', screen: '📷 With the screen', clip: '📋 With what I copied', send: 'Ask', again: 'Reply', cancel: 'Close', open: 'Open in the assistant', failed: 'Not sent. Is Claude Code installed and signed in?', explain: 'What is this? Explain it simply.', waking: 'Waking Claude up…', thinking: 'Thinking…', waits: 'Claude asks:', allow: 'Allow', deny: 'Deny', missing: 'Claude Code is not installed: npm install -g @anthropic-ai/claude-code, then run "claude" once.', login: 'Claude Code is not signed in: run "claude" in a terminal once.', busy: 'Claude is overloaded right now. Try again in a moment.', limit: 'You reached a usage limit of your Claude plan.', error: 'Claude could not answer. Open the assistant to see why.' },
+    'pt-BR': { title: 'Pergunte ao seu Openmon', titleNamed: 'Pergunte a {name}', hint: 'Enter envia · Esc fecha', placeholder: 'O que você quer saber ou resolver?', reply: 'Responder…', screen: '📷 Com a tela', clip: '📋 Com o que copiei', send: 'Perguntar', again: 'Responder', cancel: 'Fechar', open: 'Abrir no assistente', failed: 'Não foi. O Claude Code está instalado e com login feito?', explain: 'O que é isto? Explique de forma simples.', waking: 'Acordando o Claude…', thinking: 'Pensando…', waits: 'O Claude pede:', allow: 'Permitir', deny: 'Recusar', missing: 'O Claude Code não está instalado: npm install -g @anthropic-ai/claude-code, depois rode "claude" uma vez.', login: 'O Claude Code está sem login: rode "claude" num terminal uma vez.', busy: 'O Claude está sobrecarregado agora. Tente de novo daqui a pouco.', limit: 'Você chegou a um limite de uso do seu plano do Claude.', error: 'O Claude não conseguiu responder. Abra o assistente para ver o motivo.' },
+    es: { title: 'Pregunta a tu Openmon', titleNamed: 'Pregunta a {name}', hint: 'Enter envía · Esc cierra', placeholder: '¿Qué quieres saber o resolver?', reply: 'Responder…', screen: '📷 Con la pantalla', clip: '📋 Con lo que copié', send: 'Preguntar', again: 'Responder', cancel: 'Cerrar', open: 'Abrir en el asistente', failed: 'No se envió. ¿Claude Code está instalado y con sesión iniciada?', explain: '¿Qué es esto? Explícalo de forma simple.', waking: 'Despertando a Claude…', thinking: 'Pensando…', waits: 'Claude pide:', allow: 'Permitir', deny: 'Rechazar', missing: 'Claude Code no está instalado: npm install -g @anthropic-ai/claude-code, luego ejecuta "claude" una vez.', login: 'Claude Code no tiene la sesión iniciada: ejecuta "claude" en una terminal una vez.', busy: 'Claude está sobrecargado ahora. Inténtalo de nuevo en un momento.', limit: 'Llegaste a un límite de uso de tu plan de Claude.', error: 'Claude no pudo responder. Abre el asistente para ver por qué.' },
   };
   const T = TEXT[lang] || TEXT.en;
   const $ = (id) => document.getElementById(id);
@@ -245,14 +249,47 @@
         draft.hidden = true;
         $('talk').append(draft);
       } else if (m.op === 'message' && m.message.role === 'error') {
-        $('status').textContent = { busy: T.busy, limit: T.limit }[m.message.code] || T.error;
+        $('status').textContent = { busy: T.busy, limit: T.limit, missing: T.missing, login: T.login }[m.message.code] || T.error;
       } else if (m.op === 'activity') doing(m.activity.kind === 'tool' ? m.activity.text : m.activity.kind === 'waking' ? T.waking : T.thinking);
-      else if (m.op === 'status' && m.status === 'waiting') doing(T.waits);
+      else if (m.op === 'status' && m.status === 'waiting') doing('');
       else if (m.op === 'status' && m.status === 'idle') finished();
       $('talk').scrollTop = $('talk').scrollHeight;
       fit();
     };
   }
+
+  // A request of this conversation (from the pet's state): Allow / Deny here.
+  function showRequest(pending) {
+    let card = $('talk').querySelector('.ask');
+    if (!pending) return card && card.remove();
+    if (card && card.dataset.id === pending.id) return;
+    if (card) card.remove();
+    card = el('div', 'ask');
+    card.dataset.id = pending.id;
+    card.append(el('b', '', (window.OpenmonI18n.detail || ((x) => x))(pending.detail || '') || T.waits));
+    const row = el('div', 'row');
+    for (const [decision, label, cls] of [['allow', T.allow, 'primary'], ['deny', T.deny, '']]) {
+      const b = el('button', `btn sm ${cls}`.trim(), label);
+      b.type = 'button';
+      b.onclick = () => {
+        fetch('/api/permission/decide', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: pending.id, decision }) });
+        card.remove();
+        fit();
+      };
+      row.append(b);
+    }
+    card.append(row);
+    doing('');
+    $('talk').append(card);
+    $('talk').scrollTop = $('talk').scrollHeight;
+    fit();
+  }
+  const state = new EventSource('/stream');
+  state.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.type !== 'state' || !chatId) return;
+    showRequest((m.permissions || []).find((p) => p.chat === chatId) || null);
+  };
 
   // Your Openmon's name and picture.
   fetch('/api/state')
