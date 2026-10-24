@@ -809,7 +809,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         if (!when) return { ok: false, error: 'Give in_minutes, or at as HH:MM.' };
         const r = name === 'remind' ? schedule.add({ kind: 'remind', text: args.text, when }) : schedule.add({ kind: 'task', text: args.prompt, cwd: typeof args.folder === 'string' && path.isAbsolute(args.folder) ? args.folder : assistantFolder(true), when });
         if (!r.ok) return { ok: false, error: `could not schedule (${r.reason})` };
-        pushEvents([{ type: 'scheduled', kind: r.item.kind, text: r.item.text, next: r.item.next }]);
+        pushEvents([{ type: 'scheduled', kind: r.item.kind, text: config.present ? '' : r.item.text, next: r.item.next }]);
         return { ok: true, text: `Scheduled (id ${r.item.id}) for ${fmt(r.item.next)}${r.item.repeat ? `, then ${r.item.repeat} at ${r.item.time}` : ''}.` };
       }
       case 'list_schedule': {
@@ -823,12 +823,14 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       case 'say': {
         const text = String(args.text || '').trim().slice(0, 300);
         if (!text) return { ok: false, error: 'empty text' };
+        if (config.present) return { ok: true, text: 'Not shown: presentation mode is on.' };
         pushEvents([{ type: 'say', text }]);
         return { ok: true, text: 'Shown in the bubble.' };
       }
       case 'notify': {
         const text = String(args.text || '').trim().slice(0, 300);
         if (!text) return { ok: false, error: 'empty text' };
+        if (config.present) return { ok: true, text: 'Not shown: presentation mode is on.' };
         bus.emit('notify', { title: String(args.title || 'Openmon').slice(0, 80), text });
         return { ok: true, text: 'Notification shown.' };
       }
@@ -877,6 +879,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     const es = /^es/i.test(config.lang || '');
     const dir = config.assistantFolder || path.join(require('node:os').homedir(), 'Documents', pt ? 'Openmon Assistente' : es ? 'Openmon Asistente' : 'Openmon Assistant');
     if (create) {
+      if (!config.assistantFolder && configFile) setConfig({ assistantFolder: dir });
       try {
         fs.mkdirSync(dir, { recursive: true });
         const memory = path.join(dir, 'CLAUDE.md');
@@ -953,8 +956,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     file: path.join(chatsDir, 'schedule.json'),
     now,
     onReminder: (item) => {
-      pushEvents([{ type: 'reminder', id: item.id, text: item.text }]);
-      bus.emit('reminder', item);
+      // On a shared screen (presentation mode): that there is one, not what.
+      const text = config.present ? '' : item.text;
+      pushEvents([{ type: 'reminder', id: item.id, text }]);
+      bus.emit('reminder', { ...item, text });
     },
     onTask: (item) => {
       const r = assistant.create({ cwd: item.cwd, text: item.text });

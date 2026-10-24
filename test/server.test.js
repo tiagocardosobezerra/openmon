@@ -903,6 +903,11 @@ test('assistant tools: their own key; reminders, memory and the bubble; quick qu
     assert.match((await tool('work_summary', {})).text, /No agent work|tool uses/);
     assert.equal((await tool('list_schedule', {})).ok, true);
     assert.equal((await tool('nope', {})).ok, false);
+    // Presentation mode: nothing personal on a shared screen.
+    daemon.setConfig({ present: true });
+    assert.match((await tool('say', { text: 'segredo' })).text, /presentation/);
+    assert.match((await tool('notify', { text: 'segredo' })).text, /presentation/);
+    assert.match((await tool('work_summary', {})).text, /presentation/i);
   } finally {
     await daemon.close();
   }

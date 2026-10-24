@@ -26,7 +26,7 @@
 
 Os avisos do agente rodam com o [Node.js](https://nodejs.org), que quem usa o Claude Code já tem. Os instaladores ainda não são assinados: no Windows, clique em "Mais informações → Executar assim mesmo"; no macOS, clique com o botão direito no app e em "Abrir". Prefere pelo código? Veja [Instalar pelo código](#instalar-pelo-código).
 
-**Privacidade:** tudo fica no seu computador, sem conta. A única ida à internet é uma vez por dia, para ver no GitHub se há versão nova (dá para desligar); o aviso no celular e o GitHub são opcionais.
+**Privacidade:** tudo fica no seu computador, sem conta. A única ida à internet é uma vez por dia, para ver no GitHub se há versão nova (dá para desligar); o aviso no celular e o GitHub são opcionais. O assistente usa o seu Claude Code, que conversa com a Anthropic como sempre; o Openmon não manda nada a mais.
 
 Por trás disso há um jogo: o ovo choca, cresce e evolui para uma de 39 formas conforme o trabalho do agente. Tipos, itens, acessórios, lendários, habilidades e missões estão em [docs/GAME.md](docs/GAME.md).
 

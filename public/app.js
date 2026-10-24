@@ -1662,7 +1662,7 @@
           break;
         case 'reminder':
           if (!companionId) {
-            pushToast(`⏰ ${tr('reminder.title')}`, e.text, 12000, 'say');
+            pushToast(`⏰ ${tr('reminder.title')}`, e.text || tr('reminder.hidden'), 12000, 'say');
             play('attention');
           }
           break;

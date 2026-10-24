@@ -20,6 +20,7 @@ const PT = {
   'Quick question': 'Pergunta rápida',
   'Claude answered': 'O Claude respondeu',
   'Reminder': 'Lembrete',
+  'Open the assistant to see it.': 'Abra o assistente para ver.',
   'Scheduled task started': 'Tarefa agendada começou',
   'Nickname…': 'Apelido…',
   'Play demo': 'Ver demonstração',
@@ -93,6 +94,7 @@ const ES_TEXT = {
   "Quick question": "Pregunta rápida",
   "Claude answered": "Claude respondió",
   "Reminder": "Recordatorio",
+  "Open the assistant to see it.": "Abre el asistente para verlo.",
   "Scheduled task started": "Empezó una tarea programada",
   Lv: "Nv",
   main: "principal",
@@ -1337,7 +1339,7 @@ app.whenReady().then(async () => {
   });
   daemon.bus.on('reminder', (item) => {
     if (!Notification.isSupported()) return;
-    const n = new Notification({ title: `⏰ ${L('Reminder')}`, body: item.text.slice(0, 200) });
+    const n = new Notification({ title: `⏰ ${L('Reminder')}`, body: item.text ? item.text.slice(0, 200) : L('Open the assistant to see it.') });
     n.show();
   });
   // Claude's "notify" tool.
