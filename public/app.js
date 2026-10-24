@@ -1034,21 +1034,6 @@
       }
       return setBubble(cls, title, trDetail(f.detail), { ...answer, eyebrow, buttons: write });
     }
-    // An answer from one of Openmon's chats: the reply itself, and the way to it.
-    if (chatAnswer && Date.now() < chatAnswer.until && !companionId) {
-      return setBubble('done', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
-    }
-    // A wild Openmon: try an Openball or let it go. The agent comes first.
-    const w = wildNow();
-    if (w) {
-      const bag = pet.bag || {};
-      const owned = [['openball', 'wild.throw'], ['openball-plus', 'wild.throwPlus'], ['openball-master', 'wild.throwMaster']].filter(([id]) => bag[id] > 0);
-      const balls = owned.length;
-      const title = tr(w.shiny ? 'wild.titleShiny' : 'wild.title', { name: w.name || w.lineage });
-      const buttons = [...owned.map(([id, key], i) => [{ wild: 'throw', ball: id }, tr(key, { n: bag[id] }), i === 0 ? 'primary' : '']), [{ wild: 'release' }, tr('wild.release'), '']];
-      const left = Math.max(0, Math.ceil((w.until - Date.now()) / 60000));
-      return setBubble(`wild t-${w.lineage}`, title, balls ? tr('wild.sub') : tr('wild.noBall'), { buttons, note: tr('wild.left', { m: left }), id: `wild|${w.at}` });
-    }
     // A looping agent (the same failure again and again) says more than one
     // failure: open its window, or ask it to stop and wait. Until it ends.
     const askStop = (id) => (canTalk && inbox[id] && inbox[id].canSend ? [[{ stop: id }, tr('stop.ask'), '']] : null);
@@ -1072,6 +1057,22 @@
     if (stuck && pose !== 'done') return setBubble('warn', tr('stuck.title', { t: clock(stuck.stuck) }), tr('stuck.sub'), { jump: demo ? null : stuck.id, eyebrow: stuck.label, buttons: askStop(stuck.id), id: `stuck|${stuck.id}` });
     const longTool = (live.sessions || []).find((x) => x.longTool);
     if (longTool && pose === 'working') return setBubble('warn', tr('longTool.title', { t: clock(longTool.longTool.ms) }), trDetail(longTool.longTool.detail), { jump: demo ? null : longTool.id, eyebrow: longTool.label, id: `long|${longTool.id}|${longTool.longTool.detail}` });
+    // An answer from one of Openmon's chats: the reply itself, and the way to it.
+    // After what needs you and what went wrong; before the plain "done".
+    if (chatAnswer && Date.now() < chatAnswer.until && !companionId) {
+      return setBubble('done', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
+    }
+    // A wild Openmon: try an Openball or let it go. The agents, and what went wrong, come first.
+    const w = wildNow();
+    if (w) {
+      const bag = pet.bag || {};
+      const owned = [['openball', 'wild.throw'], ['openball-plus', 'wild.throwPlus'], ['openball-master', 'wild.throwMaster']].filter(([id]) => bag[id] > 0);
+      const balls = owned.length;
+      const title = tr(w.shiny ? 'wild.titleShiny' : 'wild.title', { name: w.name || w.lineage });
+      const buttons = [...owned.map(([id, key], i) => [{ wild: 'throw', ball: id }, tr(key, { n: bag[id] }), i === 0 ? 'primary' : '']), [{ wild: 'release' }, tr('wild.release'), '']];
+      const left = Math.max(0, Math.ceil((w.until - Date.now()) / 60000));
+      return setBubble(`wild t-${w.lineage}`, title, balls ? tr('wild.sub') : tr('wild.noBall'), { buttons, note: tr('wild.left', { m: left }), id: `wild|${w.at}` });
+    }
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
     // (One of Openmon's own chats: its answer bubble said it already.)
     if (pose === 'done' && now() - poseSince < 90 && !chatSessions[f.id]) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}`, buttons: write });

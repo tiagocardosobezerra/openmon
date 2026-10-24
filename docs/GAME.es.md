@@ -56,7 +56,7 @@ Cada proyecto en el que el agente trabaja bastante gana **su propio huevo**. Has
 
 ## Todos los días hay algo
 
-* **Misiones**: tres por día, como "responder al agente en menos de 30 s, 3 veces" o "3 rondas de pruebas en verde". Cada una da experiencia, amistad y una Galleta.
+* **Misiones**: tres por día, como "responder al agente en menos de 30 s, 3 veces" o "3 rondas de pruebas en verde", o "pídele 3 cosas al asistente". Cada una da experiencia, amistad y una Galleta.
 * **Mochila**: *Galleta* (+2 de amistad), *Caramelo de nivel* (sube un nivel), *Dulce de amistad* (+10), *Amuleto de XP* (experiencia doble por un día), *Huevo misterioso* (eclosiona un nuevo miembro, con más probabilidad de shiny), *Piedra firme* (mientras la sostiene, no evoluciona) y 11 *Piedras de tipo* (sostén una y la próxima evolución va hacia ese tipo).
 * **30 accesorios** en la cabeza, la cara y el cuello: gorra, corona, bufanda, gafas redondas y de sol, monóculo, máscara de héroe, casco de obra, corona de hojas, sombrero de explorador, gorro de chef, lazo, tiara de estrellas, sombrero de calabaza, gorro de Navidad, corbata, collar de perlas, capa, cascabel, mochilita y otros, cada uno ganado con un logro (100 commits, 50 arreglos, 200 páginas leídas…). Aparecen en la mascota, en la Mochila y en la tarjeta de entrenador.
 * **Regalo del día y racha**: una Galleta por día de uso, una Piedra de tipo cada 3 días seguidos, un Caramelo de nivel cada 7, un Amuleto de XP cada 14 y un Huevo misterioso cada 30.

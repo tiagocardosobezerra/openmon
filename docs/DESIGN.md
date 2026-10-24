@@ -2,6 +2,7 @@
 
 > A desktop pet that lives on top of your screen and grows from the work your AI coding agent does.
 > It tells you, from the corner of your eye, when the agent needs you, when it is done and when it broke something.
+> And it is your assistant: Claude, as your Openmon, answers you right there, without opening Claude.
 
 ## 1. Why this can go mainstream
 
@@ -12,7 +13,9 @@ Openmon starts from a real, growing pain:
 - Agents take minutes per task. You switch windows, and you miss the moment the agent stops to ask for permission. The agent sits idle, waiting for you.
 - People now run several agents at once. Nobody can watch five terminals.
 
-So the pet is first an **ambient status light with a face**, and second a **creature you raise**. The utility keeps it installed on day 30. The creature makes people talk about it on day 1.
+So the pet is first an **ambient status light with a face**, second a **creature you raise**, and third **the assistant you talk to**. The utility keeps it installed on day 30. The creature makes people talk about it on day 1. The assistant makes it the one place you go to.
+
+The three are one thing, not three apps in a box: the assistant speaks as your Openmon, its requests come in the pet's bubble like any agent's, its work grows the pet, and the game counts it (a daily mission, friendship, badges).
 
 Design rules that follow from this:
 
@@ -155,17 +158,15 @@ Codex CLI ───notify─────────▶ src/hook.js --codex ─�
 
 **v0.4** (done): art packs, Nocturne variant, Brazilian Portuguese, `openmon autostart`, renderer smoke test, Content-Security-Policy on every page.
 
-**v0.4.x**: commission a hand-drawn art pack, Gemini CLI adapter, Spanish, run `npm run smoke` in CI.
+**v0.5** (done): Party, Nest, wild encounters, trades, answer from the pet and from the system notification, the whole change of a request, estimated cost, Gemini CLI, Cursor, OpenCode and Aider, Spanish, smoke and e2e tests in CI.
 
-**v0.3: "Many agents"**: one helper creature per running session, click a helper to see that session, per-project nests.
+**v0.6 "Assistant"** (done): Claude as your Openmon, running your own Claude Code: the chat window, quick questions and questions about the screen, Openmon's tools for Claude (reminders, scheduled tasks, memory), the assistant's folder and memory, answers from the phone.
 
-**v0.4: "Ecosystem"**: theme/species packs as npm packages, community art contest, seasonal events (Halloween egg skins), VS Code status bar companion.
-
-**v1.0: "Social" (opt-in)**: visit a friend's pet by link, team "habitat" for shared repos, weekly digest. Still no account required for the core.
+**Next**: a hand-drawn art pack, a VS Code status bar companion, visiting a friend's pet by link (opt-in, still no account for the core).
 
 ## 6. What we will not do
 
 - No crypto, no tokens, no NFTs.
 - No paid evolution or loot boxes. If there is ever money, it is cosmetic packs from artists, with a revenue share.
 - No mechanics that punish time away from the computer.
-- No reading of prompt text, code or file contents beyond what is needed to classify a tool call. Nothing leaves the machine.
+- No reading of prompt text, code or file contents beyond what is needed to classify a tool call, and to show you your own conversations in the assistant (read from Claude Code's files, on your computer). Openmon sends nothing anywhere; the assistant is your Claude Code, which talks to Anthropic as it always does.
