@@ -1,0 +1,143 @@
+# Guia do Openmon
+
+**Português** | [English](GUIDE.en.md) | [Español](GUIDE.es.md)
+
+Esta página reúne tudo o que o Openmon faz além do essencial. Para o essencial e como instalar, veja o [README](../README.md).
+
+## Mais do que ele faz
+
+* **Guarda um diário.** O que seus agentes fizeram em cada dia, por tipo de trabalho e por projeto, e quanto tempo esperaram por você.
+* **Não se perde.** Ele faz cópias em Documentos/Openmon Backups. Formatou o PC? Numa instalação nova ele pergunta se você quer trazê-lo de volta.
+* **Vai com você para outro computador (opcional).** Entre com o GitHub (`openmon login` ou Configurações → Computador) e seu pet fica salvo num Gist secreto da sua conta. Em outro computador, entre com a mesma conta e ele continua de onde parou. Se ele mudou nos dois, o Openmon pergunta qual manter. Sem servidor do Openmon: o app fala direto com o GitHub.
+
+## Utilidades do dia a dia
+
+**Avisos que poupam tempo**
+* **Parece travado**: no meio de uma tarefa, sem nenhuma ferramenta rodando e nada acontecendo há 4 minutos. Um clique leva ao agente.
+* **Ainda rodando**: um comando (testes, build) rodando há mais de 8 minutos.
+* **Em loop**: a mesma falha 3 vezes seguidas.
+* **Comando perigoso**: `rm -rf`, `git push --force`, `git reset --hard`, `DROP TABLE`, `curl … | sh` e parecidos deixam o pedido de permissão **vermelho**.
+* **Commit**: 30 edições em 45 minutos sem commit ganham um lembrete gentil.
+* **Conversa longa**: avisa quando o Claude resume a conversa para continuar.
+* **Testes de volta ao verde**: comemora quando testes que falhavam voltam a passar.
+
+**Responder sem sair do que está fazendo**
+* **Permitir, Sempre permitir e Recusar** no balão. "Sempre permitir" aplica a regra que o próprio Claude Code sugere para aquele pedido. **Explicar…** recusa com um motivo que o agente lê (ou recusa e para o agente).
+* **Perguntas do agente**: as opções viram botões no balão; **Outra…** abre uma janelinha para escrever a sua resposta.
+* **Mensagem para a conversa**: no balão de "Terminou!" ou no card, **Mensagem** abre uma janelinha. Agente parado: ela o acorda na hora; trabalhando: vai junto com o próximo passo.
+* **Abrir** passa a pergunta ou o pedido para a janela do agente na hora, sem esperar o pet.
+* **Ver tudo**: o balão mostra o começo da mudança; **Ver tudo** abre uma página com a mudança inteira. Lá, `Y` permite e `N` recusa.
+* **Pela notificação do sistema**: se você não olhar o pet, a notificação chega com **Permitir** e **Recusar**.
+* **Pausar todos os agentes**: no painel **Mais**, um botão pede a todas as conversas que trabalham para parar e esperar você.
+* **Regras de permissão do Claude Code** em Configurações → Computador, uma chave cada: ler e buscar sem perguntar, rodar os testes sem perguntar, e sempre perguntar antes de apagar ou publicar.
+* **Vários agentes esperando?** O card mostra os botões embaixo de cada um.
+* **Atalhos**: `Ctrl+Alt+O` abre o card, `Ctrl+Alt+J` leva ao agente que espera, `Ctrl+Alt+C` abre o chat com o Claude, `Ctrl+Alt+A` faz uma pergunta rápida e `Ctrl+Alt+S` pergunta sobre a tela.
+
+**Números do seu trabalho**
+* **Tokens** usados hoje (no card) e por dia (no Diário), lidos dos arquivos de conversa do próprio Claude Code, no seu computador.
+* **Custo estimado** em dólares por projeto e nos últimos 7 dias, pelos preços de tabela da API da Anthropic. É uma estimativa: planos mensais (Pro, Max, Team) não pagam por token.
+* **Pedidos de hoje**: cada permissão pedida no dia, como foi respondida (pelo pet, no agente ou sem resposta) e a mudança que vinha junto.
+* **Ontem em uma linha** no primeiro uso do dia.
+* **Texto para a daily**: um botão no Diário copia "último dia de trabalho" e "hoje" prontos para colar.
+* **Horas por projeto (CSV)**: tempo de trabalho do agente por projeto e dia, para planilha de horas.
+* **Linha do tempo** de cada sessão e **busca** em todas ("em que sessão o agente mexeu em cart.ts?").
+
+**Para o seu dia**
+* **Modo foco** (25, 50 ou 90 minutos): só "precisa de você" aparece; no fim, uma sugestão de pausa.
+* **Lembrete de pausa** depois de 50 ou 90 minutos seguidos de trabalho.
+* **Sai da frente em tela cheia**: com um jogo, um vídeo ou uma apresentação em tela cheia, os pets se escondem e voltam quando ela acaba (Windows e macOS; dá para desligar em Configurações → Pet).
+* **Primeiros passos**: na Opendex, uma lista mostra o que falta para começar (conectar, primeira sessão, escolher o inicial…) até tudo estar feito.
+* **Versão nova**: quando sai uma versão, o pet avisa e o ícone da bandeja ganha **Baixar**.
+* **Modo apresentação**: troca nomes de projeto por "Projeto A, B…" e esconde comandos em tudo o que o Openmon mostra, para compartilhar a tela.
+* **Aviso no celular** (opcional, via app gratuito ntfy): se um agente espera há um tempo, chega um aviso. Manda só "Seu agente precisa de você".
+* **No OBS**: o pet com fundo transparente para lives (endereço na página de Configurações).
+
+## Para ir além
+
+### Configurações
+
+Clique com o botão direito no pet e em **Mais**, no pé do card (ou no ícone da bandeja). O menu tem o card, as páginas, o **modo foco**, o **modo silencioso** e as **Configurações**, uma página com sete seções:
+
+* **Pet**: apelido, tamanho, idioma, sons, falas, passear pela tela e dividir as conversas entre os Openmons na tela.
+* **Assistente**: abrir o assistente, a pasta dele e a memória, e ler as respostas em voz alta.
+* **Avisos**: notificação do sistema e responder permissões pelo pet (com o tempo de espera).
+* **Foco e calma**: modo foco, modo silencioso, modo apresentação e lembrete de pausa.
+* **Celular**: aviso no celular pelo app ntfy (opcional).
+* **Computador**: iniciar com o computador, conectar o Claude Code e outros agentes, regras de permissão do Claude Code, procurar versão nova, seu pet em qualquer computador (conta do GitHub), cópias do pet (fazer agora, exportar, trazer de um arquivo) e voltar o pet ao canto da tela.
+* **Avançado**: atalhos de teclado, OBS e demonstração.
+
+### Sua arte
+
+As 39 formas vêm em arte vetorial oficial (`art/official`), com poses e versões brilhantes. Para trocar, coloque imagens com o nome da forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) em `~/.openmon/art`. O guia está em [ART-PACKS.md](ART-PACKS.md). `OPENMON_CLASSIC=1` volta para a arte desenhada em código.
+
+### Outros agentes
+
+* **Gemini CLI**: `openmon install --agent gemini`. Mostra ferramentas, testes, fim de tarefa e pedidos de permissão.
+* **Cursor**: `openmon install --agent cursor`. Mostra ferramentas, testes e fim de tarefa (o Cursor não avisa quando espera por você).
+* **OpenCode**: `openmon install --agent opencode` instala um plugin que mostra ferramentas, fim de tarefa e pedidos de permissão.
+* **Aider**: `openmon install --agent aider` mostra o comando para iniciar o Aider com aviso de "sua vez".
+* **Codex CLI**: `openmon codex` mostra a linha para colar em `~/.codex/config.toml`. O Codex só avisa tarefas terminadas, então o pet comemora e cresce, mas não mostra as ferramentas.
+* **Qualquer outro**: mande um POST para `http://127.0.0.1:4747/event` com `{"_agent":"signal","session":"meu-agente","kind":"tool-done","family":"craft"}`. Os tipos estão em [`src/classify.js`](../src/classify.js).
+
+## Instalar pelo código
+
+Você precisa do [Node.js](https://nodejs.org) 22.12 ou mais novo e do [Claude Code](https://claude.com/claude-code).
+
+### 1. Instale
+
+```bash
+git clone https://github.com/tiagocardosobezerra/openmon.git
+cd openmon
+npm install
+npm link
+```
+
+O `npm link` cria o comando `openmon`. Na primeira vez que o pet abre, o Electron baixa o próprio programa (cerca de 100 MB).
+
+### 2. Ligue no Claude Code
+
+```bash
+openmon install
+```
+
+Adiciona os avisos (hooks) em `~/.claude/settings.json` e guarda um backup. Só para um projeto: `openmon install --settings .claude/settings.json`. Esqueceu? O próprio ovo mostra um botão **Conectar**.
+
+### 3. Chame seu Openmon
+
+```bash
+openmon start
+```
+
+O ovo aparece no canto da tela e um ícone surge na bandeja. Abra uma conversa nova no Claude Code e trabalhe normalmente: ele choca durante a sua primeira sessão. Quer ver antes? `openmon demo`.
+
+| Comando | O que faz |
+|---|---|
+| `openmon start` / `openmon stop` | Abre ou guarda o pet |
+| `openmon install` / `openmon uninstall` | Liga ou desliga os avisos do Claude Code (seu pet fica guardado) |
+| `openmon demo` | Mostra uma sessão de exemplo num ovo descartável |
+| `openmon playground` | Um pet de testes com painel: veja todas as formas e cenas em minutos |
+| `openmon dex` / `openmon card` | Abre a Opendex ou o cartão de treinador |
+| `openmon name <apelido>` | Dá um apelido (`--clear` volta ao nome da espécie) |
+| `openmon backup [arquivo]` / `openmon restore <arquivo\|latest>` | Faz uma cópia ou traz um pet de volta |
+| `openmon login` / `openmon sync` / `openmon logout` | Leva seu pet entre computadores pela sua conta do GitHub |
+| `openmon install --agent gemini\|cursor\|opencode\|aider` | Liga o Openmon no Gemini CLI, Cursor, OpenCode ou Aider |
+| `openmon autostart on\|off` | Abre o pet quando você liga o computador |
+| `openmon stats` / `openmon status` | O pet no terminal / se está tudo ligado |
+
+## Por dentro do código
+
+```
+Claude Code ──hook (async)──▶ src/hook.js ──POST /event──▶ daemon (127.0.0.1:4747)
+                                                             │ classify → sessions → pet
+                                                             ▼                       │
+                                     janela do pet / navegador / OBS ◀── SSE /stream └─▶ ~/.openmon/pet.json
+```
+
+* [`classify.js`](../src/classify.js): transforma o aviso do agente num sinal pequeno.
+* [`sessions.js`](../src/sessions.js): o estado de cada conversa e a pose que mais importa.
+* [`pet.js`](../src/pet.js): XP, amizade, evolução, missões, itens e acessórios, como funções puras.
+* [`focus.js`](../src/focus.js): acha e traz para a frente a janela do agente.
+* [`backup.js`](../src/backup.js): as cópias em Documentos e a volta numa instalação nova.
+* [`public/art.js`](../public/art.js): desenha a arte oficial, com olhos que piscam e acessórios no lugar certo.
+
+O servidor só escuta em `127.0.0.1` e recusa pedidos de outras páginas da web (checagem de Origin e Host). O hook nunca imprime nada, sempre sai com 0 e desiste em até 1,5 s. `openmon start` roda o pet com um supervisor que o traz de volta em dois segundos se ele cair.

@@ -2,7 +2,7 @@
 
 [Português](README.md) | [English](README.en.md) | **Español**
 
-**Tu agente de IA trabaja. Una criatura en la esquina de la pantalla muestra lo que está haciendo, te avisa cuando te necesita y crece con cada tarea.**
+**¿Tu agente de IA se detuvo a pedir permiso y no lo viste? Openmon es una criatura en la esquina de la pantalla que te avisa en el momento en que el agente te espera, y respondes con un clic.**
 
 ![Node.js 22.12+](https://img.shields.io/badge/node.js-22.12%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white)
 ![Electron](https://img.shields.io/badge/electron-44-47848F?style=flat-square&logo=electron&logoColor=white)
@@ -12,52 +12,17 @@
 
 <img width="100%" alt="Animación de Openmon: un huevo eclosiona en la esquina de la pantalla; la mascota lee, martillea y prueba junto con el agente de IA; cuando el agente necesita permiso, salta con un cartel y respondes con un clic; también es tu asistente: pides un recordatorio en una cajita junto a ella y, a la hora, te avisa; evoluciona con el trabajo y se vuelve una colección de 39 formas, con brillantes y legendarias. Tu agente trabaja. Tu Openmon crece y te ayuda." src="assets/openmon-banner.es.svg" />
 
+Agentes como Claude Code trabajan solos durante minutos, pero se detienen en silencio cuando te necesitan: un permiso, una pregunta, el fin de la tarea. Vuelves media hora después y estaba esperando desde el principio. Openmon sigue cada conversación y te llama solo cuando importa.
+
 ## Lo que hace por ti
 
 * **Te avisa cuando el agente te necesita.** Pedido de permiso o pregunta: salta con un cartel, muestra el proyecto y el pedido en palabras simples ("Pide permiso para ejecutar un comando: npm publish") y suena un aviso suave. Si no miras, llega una notificación.
-* **Te lleva al agente con un clic.** Un clic en la mascota, en el globo o en la notificación trae al frente la ventana donde corre el agente: terminal, VS Code o la app de Claude.
-* **Resume cada tarea.** Cuando el agente termina: "shop-api terminó ✓ · 3 archivos · 12 comandos · pruebas ✓ · 2m 10s".
-
-## Instala en 3 pasos
-
-1. Descarga el instalador en [Releases](https://github.com/tiagocardosobezerra/openmon/releases/latest): Windows `.exe`, macOS `.dmg` (Apple Silicon) o Linux `.AppImage`.
-2. Abre Openmon y haz clic en **Conectar** en el globo del huevo. Así se conecta Claude Code.
-3. Elige tu primer Openmon: Tinkit (ediciones), Owlet (lectura y búsqueda) o Sparkle (comandos). Después abre una conversación nueva en Claude Code y trabaja normalmente: el huevo eclosiona durante tu primera sesión.
-
-Los avisos del agente corren con [Node.js](https://nodejs.org), que quien usa Claude Code ya tiene. Los instaladores aún no están firmados: en Windows, haz clic en "Más información → Ejecutar de todas formas"; en macOS, clic derecho en la app y "Abrir". ¿Prefieres el código? Mira [Instalar desde el código](#instalar-desde-el-código).
-
-**Privacidad:** todo queda en tu computadora, sin cuenta. Su única salida a internet es una vez al día, para ver en GitHub si hay una versión nueva (se puede apagar); el aviso en el celular y GitHub son opcionales. El asistente usa tu Claude Code, que habla con Anthropic como siempre; Openmon no envía nada más.
-
-Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas según el trabajo del agente. Tipos, objetos, accesorios, legendarios, habilidades y misiones están en [docs/GAME.es.md](docs/GAME.es.md).
-
-## Tu asistente personal: habla con Claude sin abrir Claude
-
-`Ctrl+Alt+C` (o **Más → Asistente**, la barra de arriba de las páginas o el ícono de la bandeja) abre el asistente. Usa tu propio Claude Code, con tu cuenta, tu configuración, tus conectores (MCP) y tu `CLAUDE.md`. No hace falta clave de API.
-
-* **Conversaciones de verdad:** la respuesta aparece mientras se escribe, con una línea por herramienta usada ("Write: lista.txt", "Bash: npm test"). Elige la carpeta de cada conversación: un proyecto, o la carpeta del **Asistente** (Documentos/Openmon Asistente) para temas generales.
-* **Pedidos dentro del chat:** cuando Claude necesita permiso, el pedido aparece en el chat con el cambio, y también en la burbuja de la mascota, la notificación y los atajos. Nada se aprueba solo.
-* **Conversaciones abiertas en otro lugar:** las de la terminal o el editor están en la lista y se leen en vivo. Puedes escribirles, o **Continuar aquí**.
-* **Acciones rápidas:** "¿Qué tengo hoy?", "Explicar lo que copié", "Revisar cambios", "Correr las pruebas" y las tuyas. `{clipboard}` se vuelve lo que copiaste.
-* **Archivos e imágenes:** suéltalos en la ventana, adjúntalos con el clip o pega una captura. Las imágenes van a Claude para que las vea.
-* **Recordatorios y tareas:** "en 30 minutos", "hoy a las 15", "todos los días a las 9" o "días hábiles a las 9". Un recordatorio hace que la mascota te avise; una tarea hace que Claude trabaje a esa hora, y la mascota avisa cuando termina.
-* **Memoria del asistente:** el `CLAUDE.md` de la carpeta del asistente, con lo que Claude debe saber siempre de ti, editable desde el chat.
-* **Desde el celular (opcional):** con el aviso en el celular activado, lo que envíes al tema `<tu tema>-in` en la app ntfy llega al agente que te espera, o a tu última conversación.
-* **Costo estimado** de cada conversación con los precios de lista de la API. En un plan mensual (Pro, Max, Team), el chat dice "incluido en tu plan de Claude".
-* **El asistente es tu Openmon:** responde con el nombre y la manera de tu mascota, y la respuesta aparece en la burbuja. En Configuración → Mascota, puede leer las respuestas en voz alta (voces de tu computadora, sin internet).
-* **Pregunta rápida** (`Ctrl+Alt+A`): una cajita junto a la mascota; Enter, y la respuesta aparece ahí mismo, con lo que Claude está haciendo. **Responder** sigue la conversación, **Abrir en el asistente** la muestra entera; con la cajita cerrada, la respuesta llega en la burbuja. `Ctrl+Alt+S` hace lo mismo con una imagen de tu pantalla ("¿qué es este error?"). También puedes enviar lo que copiaste.
-* **Claude actúa en Openmon:** "recuérdame a las 15 llamar a Juan", "cada lunes dame un resumen de la semana", "recuerda que prefiero viñetas". Crea recordatorios y tareas, guarda datos en su memoria, habla por la burbuja, envía notificaciones y lee lo que hicieron tus agentes (herramientas de Openmon, que no piden permiso).
-* **Rutinas listas** en Recordatorios y tareas: resumen de la mañana y cierre del día, en días hábiles.
-* **En el chat:** los pasos de cada respuesta caben en una línea que se abre ("6 pasos · editó 2 · corrió 1"); código con colores y **Copiar**; `Ctrl+N` nueva conversación, `Ctrl+K` busca, `Esc` para, `↑` trae tu último mensaje. La notificación "Claude respondió" tiene **Responder**.
-* **Ordenado:** elige el modelo de cada conversación (Haiku, Sonnet, Opus), fija conversaciones, busca en todas y exporta una en Markdown. En cada respuesta: **Escuchar** y **Recordar**.
-
-## Más de lo que hace
-
 * **Te deja responder y hablar con el agente ahí mismo.** Con Claude Code, el globo gana **Permitir** y **Rechazar** en los pedidos de permiso y las opciones de cada pregunta del agente; **Mensaje** escribe a la conversación que sigue la mascota, y llega enseguida si el agente está parado. Claude Code espera tu respuesta en la mascota hasta 25 segundos; después pregunta como siempre. Nada se aprueba solo: solo tu clic responde. Se desactiva en Configuración → "Responder desde la mascota".
+* **Te lleva al agente con un clic.** Un clic en la mascota, en el globo o en la notificación trae al frente la ventana donde corre el agente: terminal, VS Code o la app de Claude.
 * **Muestra lo que pasa, sin mirar la terminal.** Martillo es editar, libro es leer, escudo es probar, catalejo es web. ¿Varios agentes a la vez? La tarjeta lista cada uno, con lo que está haciendo.
-* **Lleva un diario.** Lo que hicieron tus agentes cada día, por tipo de trabajo y por proyecto, y cuánto tiempo te esperaron.
+* **También avisa cuando algo parece mal.** El agente detenido 4 minutos en medio de una tarea, el mismo fallo 3 veces seguidas, o un comando peligroso (`rm -rf`, `git push --force`, `DROP TABLE`) que pone la solicitud en **rojo**.
+* **Resume cada tarea.** Cuando el agente termina: "shop-api terminó ✓ · 3 archivos · 12 comandos · pruebas ✓ · 2m 10s".
 * **No molesta y no sale de tu computadora.** Los clics atraviesan la ventana, nunca bloquea ni retrasa al agente, no usa cuenta ni manda nada tuyo a internet (solo revisa una vez al día si hay versión nueva; el aviso en el celular y GitHub los activas si quieres), y las contraseñas y claves aparecen ocultas (`•••`).
-* **No se pierde.** Hace copias en Documentos/Openmon Backups. ¿Formateaste la PC? En una instalación nueva pregunta si quieres traerla de vuelta.
-* **Va contigo a otra computadora (opcional).** Inicia sesión con GitHub (`openmon login` o Ajustes → Computadora) y tu mascota queda guardada en un Gist secreto de tu cuenta. En otra computadora, inicia sesión con la misma cuenta y sigue donde la dejaste. Si cambió en las dos, Openmon pregunta cuál conservar. Sin servidor de Openmon: la app habla directo con GitHub.
 
 ## Cómo se ve en la práctica
 
@@ -83,140 +48,21 @@ Detrás hay un juego: el huevo eclosiona, crece y evoluciona a una de 39 formas 
 | Hace una mueca | Algo falló, como una prueba |
 | Duerme | No pasa nada desde hace unos minutos |
 
-## Instalar desde el código
+## Instala en 3 pasos
 
-Necesitas [Node.js](https://nodejs.org) 22.12 o más nuevo y [Claude Code](https://claude.com/claude-code).
+1. Descarga el instalador en [Releases](https://github.com/tiagocardosobezerra/openmon/releases/latest): Windows `.exe`, macOS `.dmg` (Apple Silicon) o Linux `.AppImage`.
+2. Abre Openmon y haz clic en **Conectar** en el globo del huevo. Así se conecta Claude Code.
+3. Elige tu primer Openmon: Tinkit (ediciones), Owlet (lectura y búsqueda) o Sparkle (comandos). Después abre una conversación nueva en Claude Code y trabaja normalmente: el huevo eclosiona durante tu primera sesión.
 
-### 1. Instala
+Los avisos del agente corren con [Node.js](https://nodejs.org), que quien usa Claude Code ya tiene. Los instaladores aún no están firmados: en Windows, haz clic en "Más información → Ejecutar de todas formas"; en macOS, clic derecho en la app y "Abrir". ¿Prefieres el código? Mira [Instalar desde el código](docs/GUIDE.es.md#instalar-desde-el-código).
 
-```bash
-git clone https://github.com/tiagocardosobezerra/openmon.git
-cd openmon
-npm install
-npm link
-```
+**Privacidad:** todo queda en tu computadora, sin cuenta. Su única salida a internet es una vez al día, para ver en GitHub si hay una versión nueva (se puede apagar); el aviso en el celular y GitHub son opcionales. El asistente usa tu Claude Code, que habla con Anthropic como siempre; Openmon no envía nada más.
 
-`npm link` crea el comando `openmon`. La primera vez que la mascota se abre, Electron descarga su propio programa (unos 100 MB).
+## Y además
 
-### 2. Conéctalo a Claude Code
-
-```bash
-openmon install
-```
-
-Agrega los avisos (hooks) en `~/.claude/settings.json` y guarda una copia de seguridad. Solo para un proyecto: `openmon install --settings .claude/settings.json`. ¿Lo olvidaste? El propio huevo muestra un botón **Conectar**.
-
-### 3. Llama a tu Openmon
-
-```bash
-openmon start
-```
-
-El huevo aparece en la esquina de la pantalla y un ícono en la bandeja. Abre una conversación nueva en Claude Code y trabaja normalmente: eclosiona durante tu primera sesión. ¿Quieres verlo antes? `openmon demo`.
-
-| Comando | Qué hace |
-|---|---|
-| `openmon start` / `openmon stop` | Abre o guarda la mascota |
-| `openmon install` / `openmon uninstall` | Activa o desactiva los avisos de Claude Code (tu mascota queda guardada) |
-| `openmon demo` | Muestra una sesión de ejemplo en un huevo desechable |
-| `openmon playground` | Una mascota de pruebas con panel: mira todas las formas y escenas en minutos |
-| `openmon dex` / `openmon card` | Abre la Opendex o la tarjeta de entrenador |
-| `openmon name <apodo>` | Pone un apodo (`--clear` vuelve al nombre de la especie) |
-| `openmon backup [archivo]` / `openmon restore <archivo\|latest>` | Hace una copia o trae una mascota de vuelta |
-| `openmon login` / `openmon sync` / `openmon logout` | Lleva tu mascota entre computadoras con tu cuenta de GitHub |
-| `openmon install --agent gemini\|cursor\|opencode\|aider` | Conecta Openmon a Gemini CLI, Cursor, OpenCode o Aider |
-| `openmon autostart on\|off` | Abre la mascota al encender la computadora |
-| `openmon stats` / `openmon status` | La mascota en la terminal / si todo está conectado |
-
-## Utilidades del día a día
-
-**Avisos que ahorran tiempo**
-* **Parece trabado**: en medio de una tarea, sin ninguna herramienta corriendo y sin nada nuevo desde hace 4 minutos. Un clic te lleva al agente.
-* **Sigue corriendo**: un comando (pruebas, build) que corre hace más de 8 minutos.
-* **En bucle**: la misma falla 3 veces seguidas.
-* **Comando peligroso**: `rm -rf`, `git push --force`, `git reset --hard`, `DROP TABLE`, `curl … | sh` y parecidos ponen el pedido de permiso en **rojo**.
-* **Commit**: 30 ediciones en 45 minutos sin commit ganan un recordatorio amable.
-* **Conversación larga**: avisa cuando Claude resume la conversación para seguir.
-* **Pruebas de vuelta en verde**: celebra cuando pruebas que fallaban vuelven a pasar.
-
-**Responder sin dejar lo que haces**
-* **Permitir, Permitir siempre y Rechazar** en el globo. "Permitir siempre" aplica la regla que el propio Claude Code sugiere para ese pedido. **Explicar…** rechaza con un motivo que el agente lee (o rechaza y detiene al agente).
-* **Preguntas del agente**: sus opciones se vuelven botones en el globo; **Otra…** abre una ventanita para escribir tu respuesta.
-* **Mensaje a la conversación**: en el globo de "¡Terminó!" o en la tarjeta, **Mensaje** abre una ventanita. Un agente parado despierta enseguida; uno trabajando lo recibe con su próximo paso.
-* **Abrir** pasa la pregunta o el pedido a la ventana del agente enseguida, sin esperar a la mascota.
-* **Ver todo**: la burbuja muestra el comienzo del cambio; **Ver todo** abre una página con el cambio entero. Ahí, `Y` permite y `N` rechaza.
-* **Desde la notificación del sistema**: si no miras la mascota, la notificación llega con **Permitir** y **Rechazar**.
-* **Pausar todos los agentes**: en el panel **Más**, un botón pide a todas las conversaciones que trabajan que paren y te esperen.
-* **Reglas de permiso de Claude Code** en Configuración → Computadora, un interruptor cada una: leer y buscar sin preguntar, correr las pruebas sin preguntar, y preguntar siempre antes de borrar o publicar.
-* **¿Varios agentes esperando?** La tarjeta muestra los botones debajo de cada uno.
-* **Atajos**: `Ctrl+Alt+O` abre la tarjeta, `Ctrl+Alt+J` te lleva al agente que espera, `Ctrl+Alt+C` abre el chat con Claude, `Ctrl+Alt+A` hace una pregunta rápida y `Ctrl+Alt+S` pregunta sobre tu pantalla.
-
-**Números de tu trabajo**
-* **Tokens** usados hoy (en la tarjeta) y por día (en el Diario), leídos de los archivos de conversación del propio Claude Code, en tu computadora.
-* **Costo estimado** en dólares por proyecto y en los últimos 7 días, con los precios de lista de la API de Anthropic. Es una estimación: los planes mensuales (Pro, Max, Team) no pagan por token.
-* **Pedidos de hoy**: cada permiso pedido en el día, cómo se respondió (en la mascota, en el agente o sin respuesta) y el cambio que traía.
-* **Ayer en una línea** en el primer uso del día.
-* **Texto para la daily**: un botón en el Diario copia "último día de trabajo" y "hoy" listos para pegar.
-* **Horas por proyecto (CSV)**: tiempo de trabajo del agente por proyecto y día, para tu hoja de horas.
-* **Línea de tiempo** de cada sesión y **búsqueda** en todas ("¿en qué sesión tocó el agente cart.ts?").
-
-**Para tu día**
-* **Modo foco** (25, 50 o 90 minutos): solo aparece "te necesita"; al final, una sugerencia de pausa.
-* **Recordatorio de pausa** después de 50 o 90 minutos seguidos de trabajo.
-* **Se aparta en pantalla completa**: con un juego, un video o una presentación en pantalla completa, las mascotas se esconden y vuelven cuando termina (Windows y macOS; se puede apagar en Configuración → Mascota).
-* **Primeros pasos**: en la Opendex, una lista muestra lo que falta para empezar (conectar, primera sesión, elegir el inicial…) hasta que todo esté hecho.
-* **Versión nueva**: cuando sale una, la mascota avisa y el ícono de la bandeja muestra **Descargar**.
-* **Modo presentación**: cambia los nombres de proyecto por "Proyecto A, B…" y oculta los comandos en todo lo que muestra Openmon, para compartir pantalla.
-* **Aviso en el celular** (opcional, con la app gratuita ntfy): si un agente espera desde hace un rato, llega un aviso. Solo envía "Tu agente te necesita".
-* **En OBS**: la mascota con fondo transparente para transmisiones (la dirección está en la página de Configuración).
-
-## Para ir más allá
-
-### Configuración
-
-Haz clic derecho en la mascota y en **Más**, al pie de la tarjeta (o en el ícono de la bandeja). El menú tiene la tarjeta, las páginas, el **modo foco**, el **modo silencio** y la **Configuración**, una página con siete secciones:
-
-* **Mascota**: apodo, tamaño, idioma, sonidos, frases, pasear por la pantalla y repartir las conversaciones entre los Openmons en pantalla.
-* **Asistente**: abrir el asistente, su carpeta y su memoria, y leer las respuestas en voz alta.
-* **Avisos**: notificación del sistema y responder permisos desde la mascota (con el tiempo de espera).
-* **Foco y calma**: modo foco, modo silencio, modo presentación y recordatorio de pausa.
-* **Celular**: aviso en el celular con la app ntfy (opcional).
-* **Computadora**: iniciar con la computadora, conectar Claude Code y otros agentes, reglas de permiso de Claude Code, buscar versión nueva, tu mascota en cualquier computadora (cuenta de GitHub), copias de la mascota (hacer ahora, exportar, traer de un archivo) y devolver la mascota a la esquina.
-* **Avanzado**: atajos de teclado, OBS y demostración.
-
-### Tu arte
-
-Las 39 formas vienen en arte vectorial oficial (`art/official`), con poses y versiones brillantes. Para cambiarlas, pon imágenes con el nombre de la forma (`craft-adult.png`, `craft-adult.shiny@sleep.svg`…) en `~/.openmon/art`. La guía está en [docs/ART-PACKS.md](docs/ART-PACKS.md). `OPENMON_CLASSIC=1` vuelve al arte dibujado en código.
-
-### Otros agentes
-
-* **Gemini CLI**: `openmon install --agent gemini`. Muestra herramientas, pruebas, fin de tarea y pedidos de permiso.
-* **Cursor**: `openmon install --agent cursor`. Muestra herramientas, pruebas y fin de tarea (Cursor no avisa cuando te espera).
-* **OpenCode**: `openmon install --agent opencode` instala un plugin que muestra herramientas, fin de tarea y pedidos de permiso.
-* **Aider**: `openmon install --agent aider` muestra el comando para iniciar Aider con el aviso de "te toca".
-* **Codex CLI**: `openmon codex` muestra la línea para pegar en `~/.codex/config.toml`. Codex solo avisa las tareas terminadas, así que la mascota celebra y crece, pero no muestra las herramientas.
-* **Cualquier otro**: envía un POST a `http://127.0.0.1:4747/event` con `{"_agent":"signal","session":"mi-agente","kind":"tool-done","family":"craft"}`. Los tipos están en [`src/classify.js`](src/classify.js).
-
-<details>
-<summary><strong>Cómo funciona por dentro (código)</strong></summary>
-
-```
-Claude Code ──hook (async)──▶ src/hook.js ──POST /event──▶ daemon (127.0.0.1:4747)
-                                                             │ classify → sessions → pet
-                                                             ▼                       │
-                               ventana de la mascota / navegador / OBS ◀── SSE /stream └─▶ ~/.openmon/pet.json
-```
-
-* [`classify.js`](src/classify.js): convierte el aviso del agente en una señal pequeña.
-* [`sessions.js`](src/sessions.js): el estado de cada conversación y la pose que más importa.
-* [`pet.js`](src/pet.js): XP, amistad, evolución, misiones, objetos y accesorios, como funciones puras.
-* [`focus.js`](src/focus.js): encuentra la ventana del agente y la trae al frente.
-* [`backup.js`](src/backup.js): las copias en Documentos y la vuelta en una instalación nueva.
-* [`public/art.js`](public/art.js): dibuja el arte oficial, con ojos que parpadean y accesorios en su lugar.
-
-El servidor solo escucha en `127.0.0.1` y rechaza pedidos de otras páginas web (verificación de Origin y Host). El hook nunca imprime nada, siempre sale con 0 y se rinde en hasta 1,5 s. `openmon start` corre la mascota con un supervisor que la trae de vuelta en dos segundos si se cae.
-
-</details>
+* **Tu asistente personal.** `Ctrl+Alt+C` abre un chat con tu propio Claude Code, sin abrir Claude y sin clave de API, y `Ctrl+Alt+A` hace una pregunta rápida junto a la mascota. Crea recordatorios y tareas y guarda lo que debe recordar. Mira [el asistente](docs/ASSISTANT.es.md).
+* **Un juego.** El huevo eclosiona, crece y evoluciona a una de 39 formas según el trabajo del agente, con objetos, accesorios, legendarios y misiones. Mira [el juego](docs/GAME.es.md).
+* **Todo lo demás** está en la [guía](docs/GUIDE.es.md): el diario, las horas por proyecto, el modo foco, el aviso en el celular, otros agentes (Gemini CLI, Cursor, OpenCode, Aider, Codex), la configuración, los comandos e instalar desde el código.
 
 ## Cómo funciona por dentro
 
