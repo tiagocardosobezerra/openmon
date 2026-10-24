@@ -1086,7 +1086,8 @@
     // An answer from one of Openmon's chats: the reply itself, and the way to it.
     // After what needs you and what went wrong; before the plain "done".
     if (chatAnswer && Date.now() < chatAnswer.until && !companionId) {
-      return setBubble('done fulltext', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [[{ chat: chatAnswer.id }, tr('chat.openIt'), 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
+      const replies = canChat && canTalk && chatAnswer.next ? chatAnswer.next.actions.map((a, i) => [{ reply: a.message, ref: chatAnswer.id }, a.label, i === 0 ? 'primary' : '']) : [];
+      return setBubble('done fulltext', chatAnswer.title, chatAnswer.text, { buttons: canChat ? [...replies, [{ chat: chatAnswer.id }, tr('chat.openIt'), replies.length ? '' : 'primary']] : null, id: `answer|${chatAnswer.id}|${chatAnswer.until}` });
     }
     // A wild Openmon: try an Openball or let it go. The agents, and what went wrong, come first.
     const w = wildNow();
@@ -1101,7 +1102,15 @@
     }
     // The "done" bubble says it once (90 s); after that the pet just looks pleased.
     // (One of Openmon's own chats: its answer bubble said it already.)
-    if (pose === 'done' && now() - poseSince < 90 && !chatSessions[f.id]) return setBubble('done', tr('bubble.done'), recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}`, buttons: write });
+    // A turn that ended with a question ("Merge PR #21?", Claude's next-step
+    // box): the question and its answers stay while the turn is done; a
+    // click sends that answer to the conversation.
+    const next = f.next;
+    if (pose === 'done' && next && next.ask && !chatSessions[f.id]) {
+      const answers = canWrite ? next.actions.map((a, i) => [{ next: a.message, ref: f.id }, a.label, i === 0 ? 'primary' : '']) : [];
+      return setBubble('done fulltext', next.ask, next.recap || recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `next|${f.id}|${f.since}`, buttons: [...answers, ...(write || [])] });
+    }
+    if (pose === 'done' && now() - poseSince < 90 && !chatSessions[f.id]) return setBubble(next && next.recap ? 'done fulltext' : 'done', tr('bubble.done'), (next && next.recap) || recapLine(f.recap) || tr('done.sub'), { jump, eyebrow: f.label || tr('yourAgent'), id: `done|${f.id}|${f.since}`, buttons: write });
     // Nothing to say about the agents: whatever was dismissed is over.
     dismissed = null;
     return setBubble(null);
@@ -1682,7 +1691,8 @@
             pushToast(tr(e.failed === 'busy' ? 'chat.busy' : e.failed === 'limit' ? 'chat.limit' : 'chat.failed'), e.title || '', 7000, 'error');
             break;
           }
-          chatAnswer = { id: e.id, title: `💬 ${e.title || tr('chat.done')}`, text: e.answer || e.line || '', until: Date.now() + (e.quick ? 45_000 : 20_000) };
+          // An answer that ends with a question: the question and its buttons, longer.
+          chatAnswer = { id: e.id, title: `💬 ${e.title || tr('chat.done')}`, text: (e.next && e.next.ask) || e.answer || e.line || '', next: e.next || null, until: Date.now() + (e.next ? 5 * 60_000 : e.quick ? 45_000 : 20_000) };
           renderBubble();
           if (e.quick) speak(e.answer || e.line);
           break;
@@ -2164,6 +2174,21 @@
     if (e.target.closest && e.target.closest('[data-demo]')) {
       introOffer = 0;
       post('/api/demo');
+      dismissBubble();
+      return;
+    }
+    // The same for one of Openmon's own chats: the answer goes to that chat.
+    const reply = e.target.closest && e.target.closest('[data-reply]');
+    if (reply) {
+      postKeyed('/api/chat/send', { id: reply.dataset.ref, text: reply.dataset.reply });
+      chatAnswer = null;
+      dismissBubble();
+      return;
+    }
+    // An answer to the question a turn ended with: sent as your message.
+    const nextAnswer = e.target.closest && e.target.closest('[data-next]');
+    if (nextAnswer) {
+      postKeyed('/api/inbox/send', { session: nextAnswer.dataset.ref, text: nextAnswer.dataset.next });
       dismissBubble();
       return;
     }

@@ -18,7 +18,39 @@ function trusted(file) {
 
 // "Edit cart.js", "Bash: npm test", "Grep: total" — what a tool call did.
 // Claude Code's own plumbing (loading tool definitions), not work to show.
-const QUIET_TOOLS = new Set(['ToolSearch']);
+// Claude's app adds a few of its own (the task list it shows, its chapters).
+const QUIET_TOOLS = new Set(['ToolSearch', 'mcp__ccd_turn__update_plan', 'mcp__ccd_session__mark_chapter']);
+
+// The "next step" box at the end of a turn: what is done, one question and
+// up to two answers, each a message to send back. Claude's app has Claude
+// draw it with a tool of its own; Openmon's chats get the same tool
+// (next_step). Buttons for the app's own actions (commit, merge…) are left
+// out: only a message can be sent from here.
+const NEXT_TOOLS = new Set(['mcp__ccd_turn__wrap_up', 'mcp__openmon__next_step']);
+
+function nextStep(input) {
+  const i = input && typeof input === 'object' ? input : {};
+  const clip = (v, n) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, n) : '');
+  const recap = clip(i.recap, 400);
+  const ask = clip(i.ask, 160);
+  const actions = ask && Array.isArray(i.actions)
+    ? i.actions
+        .filter((a) => a && typeof a === 'object' && !a.action)
+        .map((a) => ({ label: clip(a.label, 30), message: clip(a.message, 300) || clip(a.label, 30) }))
+        .filter((a) => a.label)
+        .slice(0, 2)
+    : [];
+  return recap || ask ? { recap, ask, actions } : null;
+}
+
+// The box of the latest turn, if nothing was said to the agent after it.
+function lastNext(messages) {
+  for (let i = (messages || []).length - 1; i >= 0; i--) {
+    if (messages[i].role === 'user') return null;
+    if (messages[i].role === 'next') return messages[i];
+  }
+  return null;
+}
 
 function toolLine(name, input) {
   const i = input && typeof input === 'object' ? input : {};
@@ -81,7 +113,10 @@ function messagesOf(event) {
     const out = [];
     for (const b of msg.content) {
       if (b && b.type === 'text' && b.text && b.text.trim()) out.push({ role: 'assistant', text: b.text.trim(), at, id: msg.id || null });
-      else if (b && b.type === 'tool_use' && !QUIET_TOOLS.has(b.name)) out.push({ role: 'tool', text: toolLine(b.name, b.input), at, id: b.id || null });
+      else if (b && b.type === 'tool_use' && NEXT_TOOLS.has(b.name)) {
+        const next = nextStep(b.input);
+        if (next) out.push({ role: 'next', ...next, at, id: b.id || null });
+      } else if (b && b.type === 'tool_use' && !QUIET_TOOLS.has(b.name)) out.push({ role: 'tool', text: toolLine(b.name, b.input), at, id: b.id || null });
     }
     return out;
   }
@@ -127,4 +162,4 @@ function readTranscript(file, { limit = 300 } = {}) {
   return out.slice(-limit);
 }
 
-module.exports = { readTranscript, messagesOf, toolLine, trusted, QUIET_TOOLS };
+module.exports = { readTranscript, messagesOf, toolLine, trusted, QUIET_TOOLS, NEXT_TOOLS, nextStep, lastNext };

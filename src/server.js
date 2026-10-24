@@ -26,7 +26,7 @@ const { createBackups, unwrap } = require('./backup');
 const { createPowers, unlockedPowers } = require('./powers');
 const { redact } = require('./redact');
 const { createAssistant } = require('./assistant');
-const { readTranscript } = require('./transcript');
+const { readTranscript, lastNext, nextStep } = require('./transcript');
 const { createSchedule } = require('./schedule');
 
 // ntfy.sh topics: letters, digits, _ and -, long enough to be private.
@@ -181,7 +181,7 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       return `${names.size && /^pt/i.test(config.lang || '') ? 'Projeto' : 'Project'} ${names.get(label)}`;
     };
     const live = { ...s.live, sessions: (s.live.sessions || []).map((x) => ({ ...x, label: alias(x.label), detail: null, longTool: x.longTool ? { ...x.longTool, detail: null } : null })) };
-    if (live.focus) live.focus = { ...live.focus, label: alias(live.focus.label), detail: null, recap: null };
+    if (live.focus) live.focus = { ...live.focus, label: alias(live.focus.label), detail: null, recap: null, next: null };
     const petView = { ...s.pet, project: s.pet.project ? alias(s.pet.project) : s.pet.project, journal: (s.pet.journal || []).map((e) => ({ ...e, projects: {}, agentMs: {} })) };
     const partyView = s.party ? { ...s.party, members: s.party.members.map((m) => ({ ...m, project: m.project && alias(m.project) })), box: s.party.box.map((m) => ({ ...m, project: m.project && alias(m.project) })), upcoming: [] } : s.party;
     const companions = Object.fromEntries(Object.entries(s.companions || {}).map(([id, c]) => [id, { ...c, project: c.project ? alias(c.project) : c.project, journal: [] }]));
@@ -303,7 +303,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   function state() {
     const live = world.sessions.snapshot(now());
     // A finished turn carries its recap (files, commands, tests, time).
-    if (live.pose === 'done' && live.focus && world === real) live.focus.recap = powers.recap(live.focus.id);
+    if (live.pose === 'done' && live.focus && world === real) {
+      live.focus.recap = powers.recap(live.focus.id);
+      live.focus.next = nextSteps.get(live.focus.id) || null;
+    }
     return presentable({
       type: 'state',
       demo: world !== real,
@@ -365,6 +368,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       transcripts.set(signal.session, { file: String(payload.transcript_path), cwd: payload.cwd ? String(payload.cwd) : null });
       if (transcripts.size > 100) transcripts.delete(transcripts.keys().next().value);
     }
+    // A new request (or the end) takes the last turn's next step away.
+    if (target === real && (signal.kind === 'turn-start' || signal.kind === 'session-end')) nextSteps.delete(signal.session);
     if (target === real && signal.kind === 'session-end') {
       inbox.delete(signal.session);
       reachable.delete(signal.session);
@@ -393,6 +398,16 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     if (target === real && (signal.kind === 'turn-end' || signal.kind === 'session-end') && payload.transcript_path) {
       const delta = usage.read(String(payload.transcript_path));
       if (delta) events.push(...pet.addTokens(real.pet, delta, t, signal.label || null, config.tokenLimit || 0));
+    }
+    // The turn ended with a "next step" box (Claude's app draws one): its
+    // question and answers for the bubble too.
+    if (target === real && signal.kind === 'turn-end' && payload.transcript_path) {
+      const next = lastNext(readTranscript(String(payload.transcript_path), { limit: 40 }));
+      if (next) {
+        nextSteps.delete(signal.session);
+        nextSteps.set(signal.session, { recap: next.recap, ask: next.ask, actions: next.actions });
+        if (nextSteps.size > 100) nextSteps.delete(nextSteps.keys().next().value);
+      } else nextSteps.delete(signal.session);
     }
     if (target === real) persist(events.some((e) => e.type === 'evolve'));
     log(`${signal.kind.padEnd(14)} ${signal.label}${signal.detail ? ` · ${signal.detail}` : ''}`);
@@ -640,6 +655,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
 
   function sendMessage(session, text) {
     if (!reachable.has(session)) return { ok: false, reason: 'unsupported' };
+    // A message answers the question the turn ended with.
+    nextSteps.delete(session);
     const before = inbox.get(session);
     const all = before ? `${before.text}\n\n${text}` : text;
     if (releaseListener(session, all)) {
@@ -687,6 +704,9 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
   // ---- The assistant: Openmon's own conversations with Claude ----------
   // Where each Claude Code conversation is written (session -> file, folder).
   const transcripts = new Map();
+  // The "next step" box each conversation ended its last turn with
+  // (session -> { recap, ask, actions }), until the next request.
+  const nextSteps = new Map();
   // Chat windows listening to the conversations as they stream (key holders).
   const chatClients = new Set();
   const CHAT_WAIT_MS = 60 * 60 * 1000;
@@ -741,7 +761,8 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
       `You are ${name}, the user's Openmon: a ${pet.form(p)} (${p.stage}, nature: ${p.nature || 'calm'}) that lives on their desktop and works as their personal assistant. You talk with the user through the Openmon chat window and the pet's speech bubble.`,
       `Answer in ${pt ? 'Brazilian Portuguese' : es ? 'Spanish' : 'the user\'s language'}. Be warm, short and concrete; a touch of your nature is welcome, never at the cost of clarity. Use Markdown lists and code blocks when they help.`,
       `Today is ${new Date(now()).toString()}.`,
-      'You have Openmon tools (mcp__openmon__*): remind (the pet tells the user at a time), schedule_task (Openmon starts a conversation with Claude at a time and tells the user when it is done), list_schedule, cancel_scheduled, remember (a lasting fact in the assistant\'s memory), say (a line in the pet\'s bubble), notify (a system notification) and work_summary (what the user\'s coding agents did lately). Use them whenever the user asks for a reminder, a routine, to remember something, or about their work; confirm in one line what you set and when.',
+      'You have Openmon tools (mcp__openmon__*): remind (the pet tells the user at a time), schedule_task (Openmon starts a conversation with Claude at a time and tells the user when it is done), list_schedule, cancel_scheduled, remember (a lasting fact in the assistant\'s memory), say (a line in the pet\'s bubble), notify (a system notification), work_summary (what the user\'s coding agents did lately) and next_step (a question with up to two answer buttons under your answer). Use them whenever the user asks for a reminder, a routine, to remember something, or about their work; confirm in one line what you set and when.',
+      'When your answer leaves the user a choice or a go-ahead to give, end it with next_step (one question, the buttons that answer it) instead of asking in the text. Not for small talk or plain answers.',
       chat.cwd === assistantFolder() ? 'This is the assistant folder: general requests, not a code project. Its CLAUDE.md is your memory of the user.' : `You are working in the folder ${chat.cwd}.`,
     ];
     return `${lines.join('\n\n')}\n`;
@@ -821,6 +842,10 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
         return schedule.remove(String(args.id || '')) ? { ok: true, text: 'Cancelled.' } : { ok: false, error: 'no such id' };
       case 'remember':
         return rememberFact(args.fact) ? { ok: true, text: 'Saved in the assistant\'s memory.' } : { ok: false, error: 'empty fact' };
+      // The box itself is drawn from the conversation (the tool call); here
+      // only whether it has something to show.
+      case 'next_step':
+        return nextStep(args) ? { ok: true, text: 'Shown to the user under your answer.' } : { ok: false, error: 'give ask (and actions)' };
       case 'say': {
         const text = String(args.text || '').trim().slice(0, 300);
         if (!text) return { ok: false, error: 'empty text' };
@@ -862,13 +887,13 @@ function createDaemon({ port = DEFAULT_PORT, store = createStore(), now = Date.n
     onChange: (id, change) => chatBroadcast({ type: 'chat', id, ...change }),
     askPermission: askFromChat,
     askQuestion: questionFromChat,
-    onDone: (chat, text, failed = null) => {
+    onDone: (chat, text, failed = null, next = null) => {
       // Stuck requests of a finished turn go away with it.
       for (const p of [...permissions.values()]) if (p.chat === chat.id) settlePermission(p.id, null, { how: 'agent' });
       const line = config.present ? '' : String(text || '').split('\n').find((l) => l.trim()) || '';
       // The answer as plain text, short enough for the pet's bubble.
       const plain = config.present ? '' : String(text || '').replace(/```[\s\S]*?```/g, ' […] ').replace(/[*_`#>]/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
-      pushEvents([{ type: 'chat-done', id: chat.id, title: config.present ? '' : chat.title, line: line.slice(0, 160), answer: plain.length > 320 ? `${plain.slice(0, 317)}…` : plain, quick: chat.id === config.quickChat, failed }]);
+      pushEvents([{ type: 'chat-done', id: chat.id, title: config.present ? '' : chat.title, line: line.slice(0, 160), answer: plain.length > 320 ? `${plain.slice(0, 317)}…` : plain, quick: chat.id === config.quickChat, failed, next: config.present || !next || !next.ask ? null : { ask: next.ask, actions: next.actions } }]);
       // The game counts it too: the day's mission, friendship, a badge.
       if (world === real && text) {
         pushEvents(pet.assistantAnswered(real.pet, now()));

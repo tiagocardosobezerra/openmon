@@ -36,6 +36,19 @@ const TOOLS = [
     description: 'What the user\'s coding agents did lately, from the Openmon journal: per day, the projects, kinds of work, time and tokens. Good for a daily brief or an end-of-day summary.',
     inputSchema: { type: 'object', properties: { days: { type: 'number', description: '1 = today only; up to 14.' } } },
   },
+  {
+    name: 'next_step',
+    description: 'End your answer with a "next step" box when it leaves the user a decision: a short recap, one question, and up to two buttons that answer it (the first is your recommendation). A click sends the message of that button as the next message of the user. Call it last, once per answer, and only when there is a real choice to make.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        recap: { type: 'string', description: 'What is done and where it stands, one or two sentences.' },
+        ask: { type: 'string', description: 'The one question, at most 160 characters.' },
+        actions: { type: 'array', maxItems: 2, items: { type: 'object', properties: { label: { type: 'string', description: '1 to 3 words.' }, message: { type: 'string', description: 'What a click sends, in the words of the user.' } }, required: ['label'] } },
+      },
+      required: ['ask'],
+    },
+  },
 ];
 
 function callDaemon(name, args) {

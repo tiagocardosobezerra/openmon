@@ -18,7 +18,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { spawn: spawnProcess } = require('node:child_process');
-const { toolLine, QUIET_TOOLS } = require('./transcript');
+const { toolLine, QUIET_TOOLS, NEXT_TOOLS, nextStep, lastNext } = require('./transcript');
 
 const IDLE_MS = 10 * 60 * 1000;
 const MAX_MESSAGES = 500;
@@ -253,6 +253,10 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
           const failed = apiError(b.text);
           if (failed) add(id, { role: 'error', code: failed, text: b.text.trim().slice(0, 500) });
           else add(id, { role: 'assistant', text: b.text.trim() });
+        } else if (b.type === 'tool_use' && NEXT_TOOLS.has(b.name)) {
+          // The next-step box, drawn under the answer (not a tool line).
+          const next = nextStep(b.input);
+          if (next) add(id, { role: 'next', ...next });
         } else if (b.type === 'tool_use' && !QUIET_TOOLS.has(b.name)) {
           const line = toolLine(b.name, b.input);
           add(id, { role: 'tool', text: line, tool: b.name });
@@ -283,7 +287,7 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
       const turn = list.slice(lastUser + 1);
       const last = [...turn].reverse().find((m) => m.role === 'assistant');
       const failed = [...turn].reverse().find((m) => m.role === 'error');
-      onDone(view(c), last && !(failed && turn.indexOf(failed) > turn.indexOf(last)) ? last.text : '', failed ? failed.code : null);
+      onDone(view(c), last && !(failed && turn.indexOf(failed) > turn.indexOf(last)) ? last.text : '', failed ? failed.code : null, failed ? null : lastNext(turn));
       armIdle(id);
     }
   }
@@ -493,6 +497,7 @@ function createAssistant({ dir, now = Date.now, spawn = defaultSpawn, log = () =
     const lines = [`# ${c.title}`, '', `${c.cwd} · ${new Date(c.createdAt).toISOString().slice(0, 16).replace('T', ' ')}`, ''];
     for (const m of messages(id)) {
       if (m.role === 'tool') lines.push(`> ${m.text}`, '');
+      else if (m.role === 'next') lines.push(`> ${[m.recap, m.ask].filter(Boolean).join(' ')}`, '');
       else if (who[m.role]) lines.push(`${who[m.role]}:`, '', m.text, '');
     }
     return lines.join('\n');

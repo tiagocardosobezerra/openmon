@@ -37,6 +37,7 @@
   .ask { align-self: stretch; padding: 8px 10px; border-radius: 10px; border: 2px solid var(--outline); background: var(--surface); font-size: 13px; }
   .ask b { display: block; margin-bottom: 6px; }
   .ask .row { gap: 6px; }
+  .ask.next { border-color: var(--brand); }
   @media (prefers-reduced-motion: no-preference) { .doing::before { animation: blink 1s infinite; } }
   @keyframes blink { 50% { opacity: 0.2; } }
 </style>
@@ -208,6 +209,7 @@
     busy = true;
     $('send').disabled = true;
     $('status').textContent = '';
+    showNext(null);
     const r = chatId ? await api('/api/chat/send', { id: chatId, text, images }) : await api('/api/chat/quick', { text, images });
     if (!r || !r.ok) {
       busy = false;
@@ -248,6 +250,8 @@
         draft = el('div', 'a live');
         draft.hidden = true;
         $('talk').append(draft);
+      } else if (m.op === 'message' && m.message.role === 'next') {
+        showNext(m.message);
       } else if (m.op === 'message' && m.message.role === 'error') {
         $('status').textContent = { busy: T.busy, limit: T.limit, missing: T.missing, login: T.login }[m.message.code] || T.error;
       } else if (m.op === 'activity') doing(m.activity.kind === 'tool' ? m.activity.text : m.activity.kind === 'waking' ? T.waking : T.thinking);
@@ -258,9 +262,35 @@
     };
   }
 
+  // The answer ends with a question: its buttons here, a click replies with
+  // that answer (as if you typed it).
+  function showNext(next) {
+    const old = $('talk').querySelector('.next');
+    if (old) old.remove();
+    if (!next || !next.ask) return;
+    const card = el('div', 'ask next');
+    card.append(el('b', '', next.ask));
+    const row = el('div', 'row');
+    next.actions.forEach((a, i) => {
+      const b = el('button', `btn sm${i === 0 ? ' primary' : ''}`, a.label);
+      b.type = 'button';
+      b.title = a.message;
+      b.onclick = () => {
+        card.remove();
+        $('text').value = a.message;
+        $('f').requestSubmit();
+      };
+      row.append(b);
+    });
+    if (next.actions.length) card.append(row);
+    $('talk').append(card);
+    $('talk').scrollTop = $('talk').scrollHeight;
+    fit();
+  }
+
   // A request of this conversation (from the pet's state): Allow / Deny here.
   function showRequest(pending) {
-    let card = $('talk').querySelector('.ask');
+    let card = $('talk').querySelector('.ask:not(.next)');
     if (!pending) return card && card.remove();
     if (card && card.dataset.id === pending.id) return;
     if (card) card.remove();
@@ -324,6 +354,8 @@
     a.dataset.text = answer.text;
     a.innerHTML = markdown(answer.text);
     $('talk').append(a);
+    const next = msgs.slice(lastUser + 1).reverse().find((m) => m.role === 'next');
+    if (next) showNext(next);
     $('send').textContent = T.again;
     $('text').placeholder = T.reply;
     $('open').hidden = false;
