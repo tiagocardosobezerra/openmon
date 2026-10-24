@@ -336,6 +336,13 @@ function runScenario(scenario) {
     check(`${label}: coming back over the pet takes clicks again`, await until(() => w.__e2eIgnore === false, 1500));
     move(w, 6, 6);
     await until(() => w.__e2eIgnore === true, 1500);
+    // The mouse moves stop reaching the page (Windows drops the hook of a
+    // busy Openmon): the pointer on the pet still takes clicks (shell).
+    const at = w.getBounds();
+    cursor = { x: at.x + Math.round(p.x), y: at.y + Math.round(p.y) };
+    check(`${label}: a page that hears nothing still gets the pet grabbed (shell)`, await until(() => w.__e2eIgnore === false, 1500));
+    move(w, 6, 6);
+    await until(() => w.__e2eIgnore === true, 1500);
   }
 
   async function drag(w, others, label, saved) {

@@ -186,6 +186,9 @@ const WIN_W = 300;
 // empty part, so the extra height costs nothing.
 const WIN_H = 560;
 const NOTIFY_AFTER_MS = 20_000;
+// How long a pet page may stay silent with the pointer on the pet before
+// the shell hands it the click (see the hot-rects watch).
+const PAGE_DEAF_MS = 300;
 const captureArg = process.argv.indexOf('--capture');
 const capturePath = captureArg >= 0 ? process.argv[captureArg + 1] : null;
 
@@ -1044,6 +1047,7 @@ function wireIpc() {
     if (!w || w.isDestroyed()) return;
     w.setIgnoreMouseEvents(!on, { forward: true });
     w.__interactive = on;
+    w.__pageSaid = Date.now();
     if (on && !dragTimer) liftPet(w);
   });
   // Safety net: a pet window that takes clicks while the pointer is outside
@@ -1088,7 +1092,16 @@ function wireIpc() {
     const p = screen.getCursorScreenPoint();
     const inside = (b, x, y, rw, rh) => p.x >= b.x + x && p.x < b.x + x + rw && p.y >= b.y + y && p.y < b.y + y + rh;
     const pets = [win, ...companionWins.values()].filter((w) => w && !w.isDestroyed() && w.isVisible() && inside(w.getBounds(), 0, 0, w.getBounds().width, w.getBounds().height));
-    const over = pets.filter((w) => onSpot(w.getBounds(), w.__hot, p));
+    const t = Date.now();
+    for (const w of pets) {
+      if (!onSpot(w.getBounds(), w.__hot, p)) w.__spotSince = 0;
+      else if (!w.__spotSince) w.__spotSince = t;
+    }
+    // A pet alone hears the pointer itself, and its page decides: the shell
+    // steps in only when that page has said nothing for a while with the
+    // pointer on the pet (the mouse moves no longer reach it).
+    const deaf = (w) => pets.length > 1 || (t - w.__spotSince >= PAGE_DEAF_MS && t - (w.__pageSaid || 0) >= PAGE_DEAF_MS);
+    const over = pets.filter((w) => w.__spotSince && deaf(w));
     if (!over.length || over.some((w) => w.__interactive)) return;
     const pick = over.sort((a, b) => (b.__lifted || 0) - (a.__lifted || 0))[0];
     pick.setIgnoreMouseEvents(false);
